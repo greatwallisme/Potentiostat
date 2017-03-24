@@ -1,0 +1,734 @@
+/*************************************
+*************     Global    **********
+*************************************/
+* {
+	font-family: "Futura LT Light";
+	font-style: Extra Light;
+	font-size: 14pt;
+	color: #636161;
+	
+	outline: none;
+}
+*[ng-font-size-policy="small-font"] {
+	font-size: 12pt;
+}
+*[ng-font-size-policy="big-font"] {
+	font-size: 16pt;
+}
+*[ng-font-family-policy="bold"] {
+	font-family: "Futura LT Bold";
+	color: #827879;
+}
+*[ng-font-style-policy="italic"] {
+	font-style: italic;
+}
+/*************************************
+*******     Main background     ******
+*************************************/
+QMainWindow#mainUI {
+	min-width: 910px;
+	max-width: 910px;
+	min-height: 610px;
+	max-height: 610px;
+}
+QToolBar QLabel#logoLabel {
+	image: url(:/res/ui-logo.png);
+	min-width: 220px;
+	min-height: 40px;
+}
+QToolBar {
+	background: #FFFFFF;
+	border-top: none;
+	border-right: none;
+	border-left: none;
+	border-bottom: 1px solid #d2cece;
+}
+QToolBar::separator {
+	border-right: 1px solid #d2cece;
+	margin: 0px;
+}
+QToolBar QToolButton {
+	font-size: 14pt;
+
+	qproperty-icon: none;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #ffffff;
+	border-radius: 5px;
+
+	padding-top: 50px;
+	padding-bottom: 5px;
+
+	min-width: 70px;
+
+	color: #817878;
+}
+/*
+QToolBar QToolButton:hover {
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgb( 212, 209, 209 );
+	border-radius: 5px;
+	color: #000000;
+}
+*/
+QToolBar QToolButton:checked {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #ffffff;
+	border-radius: 5px;
+	color: #000000;
+}
+/*
+QToolBar QToolButton:checked:hover {
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgb( 212, 209, 209 );
+	border-radius: 5px;
+	color: #000000;
+}
+*/
+QToolButton[tool-widget-name="Accounts"]  {
+    background: url(:/res/icons/menu/user.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Accounts"]:hover,*/
+QToolButton[tool-widget-name="Accounts"]:checked {
+	background: url(:/res/icons/menu/user-active.png) top center;
+	background-repeat: none;
+}
+QToolButton[tool-widget-name="Bot"]  {
+	background: url(:/res/icons/menu/bolt.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Bot"]:hover,*/
+QToolButton[tool-widget-name="Bot"]:checked {
+	background: url(:/res/icons/menu/bolt-active.png) top center;
+	background-repeat: none;
+}
+QToolButton[tool-widget-name="Uploader"]  {
+	background: url(:/res/icons/menu/camera-retro.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Uploader"]:hover,*/
+QToolButton[tool-widget-name="Uploader"]:checked {
+	background: url(:/res/icons/menu/camera-retro-active.png) top center;
+	background-repeat: none;
+}
+QToolButton[tool-widget-name="Tools"]  {
+	background: url(:/res/icons/menu/cubes.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Tools"]:hover,*/
+QToolButton[tool-widget-name="Tools"]:checked {
+	background: url(:/res/icons/menu/cubes-active.png) top center;
+	background-repeat: none;
+}
+QToolButton[tool-widget-name="Settings"]  {
+	background: url(:/res/icons/menu/cogs.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Settings"]:hover,*/
+QToolButton[tool-widget-name="Settings"]:checked {
+	background: url(:/res/icons/menu/cogs-active.png) top center;
+	background-repeat: none;
+}
+QToolButton[tool-widget-name="Help"]  {
+	background: url(:/res/icons/menu/question-circle.png) top center;
+	background-repeat: none;
+}
+/*QToolButton[tool-widget-name="Help"]:hover,*/
+QToolButton[tool-widget-name="Help"]:checked {
+	background: url(:/res/icons/menu/question-circle-active.png) top center;
+	background-repeat: none;
+}
+QMainWindow *#centralWidget {
+	border-image: url(:/res/backgrounds/main-bg-gradient.jpg);
+}
+QStatusBar {
+	border-image: url(:/res/backgrounds/bottom-log-bg.jpg);
+}
+/*************************************
+*************     Liker     **********
+*************************************/
+QLineEdit, QTextEdit {
+	border-radius: 6px;
+	border: 1px solid #d2cece;
+	background: white;
+	selection-background-color: rgb(26, 188, 156);
+}
+QLineEdit {
+	max-width: 70px;
+	max-height: 40px;
+}
+QLineEdit[ng-font-size-policy="small-font"] {
+	max-width: 42px;
+	max-height: 25px;
+	
+	font-size: 9pt;
+}
+QPushButton {
+	border-style: solid;
+	border-width: 1px;
+	border-bottom-width: 2px;
+	border-color: rgb( 212, 209, 209 );
+	border-radius: 6px;
+	
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(236,233,233), stop: 1.0 rgb(255,255,255));
+	
+	max-width: 160px;
+	min-width: 160px;
+	min-height: 50px;
+	
+	font-size: 18pt;
+}
+QPushButton:hover {
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+                                stop: 0 rgb(215,212,212), stop: 1.0 rgb(244,244,244));
+}
+QPushButton#startLikerPB {
+	background-image: url(:/res/icons/essential/rocket-red.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 30px;
+	padding-left: 10px;
+}
+QPushButton#stopLikerPB {
+	background-image: url(:/res/icons/essential/times-circle-o.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 30px;
+	padding-left: 10px;
+}
+
+QComboBox {
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(230, 230, 230), stop: 1.0 rgb(237, 237, 237));
+	
+	border: 1px solid #e6e6e6;
+	border-bottom-width: 2px;
+	border-bottom-color: #8c8c8c;
+	border-right-color: #bbbbbb;
+	border-left-color: #bbbbbb;
+	
+	border-radius: 6px;
+	
+	font-size: 12pt;
+	
+	padding: 4px 1px 4px 25px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 40px;
+
+	border: none;
+}
+QComboBox::down-arrow {
+    image: url(:/res/combobox-dropdown.png);
+}
+QComboBox:on {
+	selection-background-color: rgb(26, 188, 156);
+	selection-color: #ffffff;
+}
+QComboBox:!on {
+	selection-background-color: rgb(26, 188, 156);
+	selection-color: #ffffff;
+}
+
+QCheckBox::indicator {
+	width: 22px;
+    height: 22px;
+}
+QCheckBox::indicator:unchecked {
+    image: url(:/res/checkbox-unchecked.png);
+}
+QCheckBox::indicator:checked {
+    image: url(:/res/checkbox-checked.png);
+}
+QCheckBox::indicator:checked:pressed {
+    image: url(:/res/checkbox-checked-pressed.png);
+}
+
+QTabWidget::pane {
+    border: 2px solid #d2cece;
+	border-radius: 6px;
+    position: absolute;
+    top: -1.4em;
+	padding: 10px;
+	padding-top: 50px;
+}
+QTabWidget::tab-bar {
+    alignment: center;
+}
+QTabWidget QTabBar::tab {
+	font-size: 14pt;
+    background: #ffffff;
+	
+    border-width: 1px;
+	border-left-width: 0px;
+	border-style: solid;
+	border-color: #aeaeae;
+	
+    min-width: 8ex;
+	
+    padding: 3px;
+	padding-left: 6px;
+	padding-right: 6px;
+	
+	color: #686565;
+}
+QTabWidget QTabBar::tab:first {
+	border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+	border-left-width: 1px;
+}
+QTabWidget QTabBar::tab:last {
+	border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+QTabWidget QTabBar::tab:selected {
+	color: #191919;
+	background: #eeeae9;
+}
+/*************************************
+*************    Account    **********
+*************************************/
+*#licenseInfoWidget, #accountManagerWidget {
+	border: 2px solid #d2cece;
+	border-radius: 6px;
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(246,246,246), stop: 1.0 rgb(255,255,255));
+}
+*#licenseInfoWidget {	
+	min-width: 330px;
+	max-width: 330px;
+	min-height: 360px;
+	max-height: 360px;
+}
+*#licenseHeader {
+	border: 2px solid #d2cece;
+	border-radius: 6px;
+	border-image: url(:/res/backgrounds/green-orange.jpg);
+	
+	min-height: 50px;
+	max-height: 50px;
+	
+	font-size: 18pt;
+	color: #000000;
+	
+	qproperty-alignment: AlignCenter;
+}
+*#subscrStatus, *#subscrType {
+	color: rgb(65, 174, 230);
+}
+QPushButton#manageLicenseButton {
+	background-image: url(:/res/icons/essential/usd-blue.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 10px;
+	padding-left: 10px;
+	
+	min-width: 200px;
+	max-width: 200px;
+	min-height: 40px;
+	
+	font-size: 14pt;
+}
+QLabel#licenseTipText, QLabel#footerText {
+	border-radius: 6px;
+	border-image: url(:/res/backgrounds/info.jpg);
+	
+	font-size: 9pt;
+	
+	qproperty-wordWrap: true;
+	
+	padding: 10px 20px 10px 20px;
+	margin: 1px;
+	
+	font: italic;
+}
+QToolBar#graphBar {
+	border: none;
+	border-radius: 4px;
+	border-image: url(:/res/backgrounds/blue-purple.jpg);
+	
+	min-height: 50px;
+	max-height: 50px;
+}
+#accountManagerWidget, #overlayWidget {
+	min-width: 520px;
+	max-width: 520px;
+	min-height: 435px;
+	max-height: 435px;
+}
+QToolBar QLabel#accountHeader {
+	font-size: 18pt;
+	color: #000000;
+	
+	qproperty-alignment: AlignCenter;
+}
+QToolButton[tool-widget-name="Add new"] {
+	qproperty-icon: url(:/res/icons/adduser.png);
+	padding: 0px;
+	border: none;
+	max-width: 42px;
+	min-width: 42px;
+	max-height: 42px;
+	min-height: 42px;
+}
+QToolButton[tool-widget-name="Account list"] {
+	qproperty-icon: url(:/res/icons/accountlist.png);
+	padding: 0px;
+	border: none;
+	max-width: 42px;
+	min-width: 42px;
+	max-height: 42px;
+	min-height: 42px;
+}
+QToolButton[tool-widget-name="Detailed account list"] {
+	qproperty-icon: url(:/res/icons/listview.png);
+	padding: 0px;
+	border: none;
+	max-width: 42px;
+	min-width: 42px;
+	max-height: 42px;
+	min-height: 42px;
+}
+QLabel#footerText {
+	qproperty-alignment: AlignCenter;
+	margin-bottom: 10px;
+}
+QLabel#loginAvatar {
+	max-width: 100px;
+	min-width: 100px;
+	max-height: 100px;
+	min-height: 100px;
+	
+	border-radius: 50px;
+	border-image: url(:/res/noprofpic.png);
+}
+QLineEdit#loginUsername, QLineEdit#loginPassword {
+	min-width: 250px;
+	max-width: 250px;
+	qproperty-alignment: AlignCenter;
+	
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	padding-right: 10px;
+	padding-left: 10px;
+}
+QLineEdit#loginUsername {
+	background-image: url(:/res/icons/accountadd-user.png);
+}
+QLineEdit#loginPassword {
+	background-image: url(:/res/icons/accountadd-pass.png);
+	qproperty-echoMode: Password;
+	lineedit-password-mask-delay: 1500;
+}
+QPushButton#loginButton {
+	background-image: url(:/res/icons/essential/rocket-blue-32.png);
+}
+QPushButton#logoutButton,
+QPushButton#loginButton {
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 10px;
+	padding-left: 10px;
+	
+	min-width: 100px;
+	max-width: 100px;
+	min-height: 40px;
+	
+	font-size: 14pt;
+}
+#overlayWidget {
+	background-color: #423c3c;
+	border-radius: 6px;
+	border: 2px solid #423c3c;
+}
+#overlayWidget QLabel {
+	color: white;
+	font-size: 16pt;
+}
+#overlayWidget QLineEdit {
+	min-width: 150px;
+	max-width: 150px;
+}
+#proxyLogo {
+	border-image: url(:/res/icons/essential/world-neon-28.png);
+	
+	min-width: 30px;
+	max-width: 30px;
+	min-height: 30px;
+	max-height: 30px;
+}
+#overlayWidget QLabel#proxySetupLabel {
+	font-family: "Futura LT Book";
+	font-size: 22pt;
+}
+#overlayWidget QPushButton {
+	background-image: url(:/res/icons/essential/rocket-blue-32.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 10px;
+	padding-left: 10px;
+	
+	min-height: 40px;
+	
+	font-size: 14pt;
+}
+#overlayWidget QPushButton#proxyCancelButton {
+	background-image: url(:/res/icons/essential/error-32.png);
+	min-width: 110px;
+	max-width: 110px;
+}
+#overlayWidget QPushButton#proxySaveButton {
+	background-image: url(:/res/icons/essential/tick-32.png);
+	min-width: 100px;
+	max-width: 100px;
+}
+#graphAccountListWidget {
+	border: none;
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(246,246,246), stop: 1.0 rgb(255,255,255));
+								
+	qproperty-iconSize: 140px 140px;
+	qproperty-spacing: 15;
+	qproperty-viewMode: IconMode;
+	
+}
+#graphAccountListWidget::item:selected {
+	background: none;
+	border: none;
+}
+#graphAccountListWidget::item:hover {
+	background: none;
+	border: none;
+}
+QScrollBar:vertical {
+	border: none;
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(246,246,246), stop: 1.0 rgb(255,255,255));
+}
+QScrollBar::handle:vertical {
+	background: rgb(153, 153, 153);
+	margin: 10px 9px 10px 0px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar:up-arrow:vertical, QScrollBar::down-arrow:vertical {
+	border:	none;
+	background: none;
+}
+QScrollBar:horizontal {
+	border: none;
+	background: rgb(246,246,246);
+}
+QScrollBar::handle:horizontal {
+	background: rgb(153, 153, 153);
+	margin: 0px 10px 9px 10px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal,
+QScrollBar:right-arrow:horizontal, QScrollBar::left-arrow:horizontal {
+	border:	none;
+	background: none;
+}
+QPushButton#logoutButton {
+	background-image: url(:/res/icons/essential/sign-out-red-32.png);
+}
+#userDetailedAvatar {
+	max-width: 150px;
+	min-width: 150px;
+	max-height: 150px;
+	min-height: 150px;
+	
+	border-radius: 75px;
+	border-image: url(:/res/noprofpic.png);
+}
+#userDetailedLine {
+	border-top: 2px solid rgb(65, 255, 227);
+	min-height: 1px;
+	max-height: 1px;
+	min-width: 300px;
+	max-width: 300px;
+}
+#userDetailedFollowers,
+#userDetailedFollowing,
+#userDetailedNewFollowers {
+	color: black;
+}
+#userDetailedFollowers,
+#userDetailedFollowing {
+	text-align: right;
+	qproperty-alignment: AlignRight;
+}
+QToolButton[tool-widget-name="Text tool buttons"] {
+	/*qproperty-toolButtonStyle: ToolButtonTextOnly;*/
+}
+#listNotion QToolButton {
+	border: none;
+	font-size: 12pt;
+}
+#listNotion QToolButton[tool-widget-name="Account list"] {
+	qproperty-iconSize: 30px 30px;
+}
+#accountList {
+	border: none;
+	background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,
+								stop: 0 rgb(246,246,246), stop: 1.0 rgb(255,255,255));
+								
+	font-size: 9pt;
+	selection-background-color: none;
+}
+#accountList::item:selected {
+	background: rgb(26, 188, 156);
+	border: none;
+}
+#accountList::item:hover:!selected {
+	background: none;
+	border: none;
+}
+#accountList QHeaderView {
+	font-size: 9pt;
+	background: none;
+	border: none;
+	qproperty-defaultAlignment: AlignCenter;
+}
+#accountList QHeaderView::section {
+	min-height: 30px;
+	max-height: 30px;
+	background: rgb(255,255,255);
+	border: 1px solid #d2cece;
+	border-top: none;
+	border-right: none;
+}
+#accountList QHeaderView::section:first {
+	border-left: none;
+}
+#accountList QScrollBar::handle:vertical {
+	margin-top: 40px;
+}
+#accountList QScrollBar:up-arrow:vertical {
+	background: rgb(255,255,255);
+	
+	min-height: 45px;
+	max-height: 45px;
+	border-bottom: 1px solid #d2cece;
+}
+/*************************************
+**********    Login screen   *********
+*************************************/
+QMainWindow#loginScreenUI {
+	min-width: 550px;
+	max-width: 550px;
+	min-height: 630px;
+	max-height: 630px;
+}
+#loginCentralWidget {
+	background: #4c4241;
+	
+	border-radius: 6px;
+}
+#loginCentralWidget * {
+	font-family: "ITC Avant Garde Std Bk";
+	color: white;
+}
+#loginCentralWidget QLabel#logo {
+	border-image: url(:/res/fire-icon\(loginscreen\).png);
+	
+	min-width: 60px;
+	max-width: 60px;
+	min-height: 60px;
+	max-height: 60px;
+}
+#loginCentralWidget QLabel#welcomeMessage {
+	font-size: 48pt;
+}
+#loginCentralWidget QLabel#authMessage {
+	font-size: 24pt;
+	
+	qproperty-wordWrap: true;
+}
+#loginCentralWidget QLabel#loginPassLabel {
+	color: #02fea9;
+	font-size: 16pt;
+}
+#loginCentralWidget QLineEdit {
+	min-width: 235px;
+	max-width: 235px;
+	
+	qproperty-alignment: AlignCenter;
+	
+	font-size: 11pt;
+	color: #636161;
+}
+#loginCentralWidget QLineEdit#passInput {
+	qproperty-echoMode: Password;
+	lineedit-password-mask-delay: 1500;
+}
+#loginCentralWidget QPushButton {
+	background: rgb(237, 233, 234);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: left center;
+	
+	text-align: right;
+	
+	padding-right: 10px;
+	padding-left: 10px;
+	
+	min-height: 35px;
+	
+	color: #636161;
+	font-size: 11pt;
+}
+
+#loginCentralWidget QPushButton#loginButton {
+	background-image: url(:/res/icons/essential/unlock-icon-color-32.png);
+	min-width: 80px;
+}
+#loginCentralWidget QPushButton#newButton {
+	background-image: url(:/res/icons/essential/iconRegister-32.png);
+	min-width: 235px;
+}
+#loginCentralWidget QLabel#orLabel,
+#loginCentralWidget QLabel#noteLabel {
+	font-style: italic;
+	font-size: 10pt;
+	
+	color: rgb(228, 219, 220);
+}
+#loginCentralWidget QLabel#orLabel {
+	qproperty-alignment: AlignCenter;
+}
+#loginCentralWidget QLabel#noteLabel {
+	qproperty-wordWrap: true;
+	
+	min-width: 450px;
+	max-width: 450px;
+}

@@ -5,3 +5,8 @@ build-*/
 *.user
 _out
 Build
+.vs/
+*.db
+*.opendb
+moc/
+*.obj
