@@ -14,7 +14,7 @@
 #include <MainWindow.h>
 
 void LoadStyle() {
-	QFile f(":/GUI.css");
+	QFile f("./GUI.css");
 	if (f.open(QIODevice::ReadOnly)) {
 		qobject_cast<QApplication*>(QApplication::instance())->setStyleSheet(f.readAll());
 		f.close();

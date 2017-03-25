@@ -94,7 +94,7 @@ void MainWindowUI::CreateCentralWidget() {
 	widgetsLayout->addWidget(CreateExperimentBuilderWidget());
 	widgetsLayout->addWidget(CreateOpenDataFileWidget());
 	
-	centralLayout->addWidget(CreateButton());
+	//centralLayout->addWidget(CreateButton());
 	centralLayout->addLayout(tabLayout);
 	//centralLayout->addWidget(CreatePlot());
 }
@@ -114,7 +114,7 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 
 	QWidget *topPanelWidget = OBJ_NAME(WDG(), "topPanelWidget");
 	QHBoxLayout *topPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(topPanelWidget)));
-	topPanelLayout->addWidget(channelLabel = OBJ_NAME(LBL("channel 1"), "channelLabel"));
+	topPanelLayout->addWidget(channelLabel = OBJ_NAME(LBL("Channel 1"), "channelLabel"));
 	topPanelLayout->addWidget(OBJ_NAME(LBL("To modify settings click the button"), "settingsCommentLabel"));
 	topPanelLayout->addWidget(hideExpandSettingsButton = OBJ_NAME(PBT("expand"), "hideExpandSettingsButton"));
 
@@ -151,6 +151,8 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	QVBoxLayout *selectChannelLayout = new QVBoxLayout;
 	selectChannel->setLayout(selectChannelLayout);
 	QComboBox *selectChannelCombo = new QComboBox;
+	QListView *selectChannelComboList = OBJ_NAME(new QListView, "selectChannelComboList");
+	selectChannelCombo->setView(selectChannelComboList);
 	selectChannelLayout->addWidget(selectChannelCombo);
 	selectChannelLayout->addStretch(1);
 	selectChannelCombo->addItem("Channel 1");
@@ -159,14 +161,18 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	selectChannelCombo->addItem("Channel 4");
 
 	connect(selectChannelCombo, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
-		SetText(channelLabel, text.toLower());
+		SetText(channelLabel, text);
 	});
 
 	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("OPERATING CONDITIONS")), "operatingConditions");
 	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
 	operatingConditions->setLayout(operatingConditionsLayout);
 	QComboBox *operatingConditionsCombo = new QComboBox;
+	QListView *operatingConditionsComboList = OBJ_NAME(new QListView, "operatingConditionsComboList");
+	operatingConditionsCombo->setView(operatingConditionsComboList);
 	QComboBox *currentRangeCombo = new QComboBox;
+	QListView *currentRangeComboList = OBJ_NAME(new QListView, "currentRangeComboList");
+	currentRangeCombo->setView(currentRangeComboList);
 	operatingConditionsLayout->addWidget(operatingConditionsCombo);
 	operatingConditionsLayout->addWidget(currentRangeCombo);
 	operatingConditionsLayout->addStretch(1);
@@ -280,7 +286,7 @@ QWidget* MainWindowUI::CreatePlot() {
 	}
 
 	curve1->setSamples(samples);
-	curve1->setPen(QColor(1, 74, 96), 1),
+	curve1->setPen(QColor(0x3D, 0x41, 0x4A), 1),
 	curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
 	curve1->attach(w);
