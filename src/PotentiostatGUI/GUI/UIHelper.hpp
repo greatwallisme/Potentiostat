@@ -36,8 +36,13 @@ WidgetType* SetObjectName(WidgetType *w, const QString &name) {
 }
 template<typename WidgetType>
 WidgetType* SetObjectProperty(WidgetType *w, const char *name, const QString &value) {
-    w->setProperty(name, value);
-    return w;
+	w->setProperty(name, value);
+	return w;
+}
+template<typename WidgetType>
+WidgetType* SetCheckable(WidgetType *w) {
+	w->setCheckable(true);
+	return w;
 }
 
 template<typename LayoutType>
@@ -67,6 +72,7 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 #define PBT(a)          new QPushButton(tr(a))
 #define WDG()			new QWidget
 #define LED(a)			new QLineEdit(tr(a))
+#define CKC(a)			new QCheckBox(tr(a))
 
 template<typename WidgetType>
 WidgetType* SetText(WidgetType *w, const QString &text) {
@@ -82,3 +88,5 @@ WidgetType* SetText(WidgetType *w, const QString &text) {
 
 #define NO_MARGIN(l)	SetZeroMargin(l)
 #define NO_SPACING(l)	SetZeroSpacing(l)
+
+#define CHEKABLE(w)		SetCheckable(w)

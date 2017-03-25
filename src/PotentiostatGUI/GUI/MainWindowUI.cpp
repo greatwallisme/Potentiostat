@@ -18,6 +18,7 @@
 #include <QToolButton>
 #include <QTabWidget>
 #include <QGroupBox>
+#include <QCheckBox>
 
 #include <QButtonGroup>
 
@@ -36,7 +37,10 @@
 
 #include <QString>
 
+#include <QtMath>
+
 #include <qwt_plot.h>
+#include <qwt_plot_curve.h>
 
 #include "UIHelper.hpp"
 
@@ -105,11 +109,14 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 
 	QVBoxLayout *cockpitLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
+	QPushButton *hideExpandSettingsButton;
+	QLabel *channelLabel;
+
 	QWidget *topPanelWidget = OBJ_NAME(WDG(), "topPanelWidget");
 	QHBoxLayout *topPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(topPanelWidget)));
-	topPanelLayout->addWidget(OBJ_NAME(LBL("channel 1"), "channelLabel"));
+	topPanelLayout->addWidget(channelLabel = OBJ_NAME(LBL("channel 1"), "channelLabel"));
 	topPanelLayout->addWidget(OBJ_NAME(LBL("To modify settings click the button"), "settingsCommentLabel"));
-	topPanelLayout->addWidget(OBJ_NAME(PBT("expand"), "hideExpandSettingsButton"));
+	topPanelLayout->addWidget(hideExpandSettingsButton = OBJ_NAME(PBT("expand"), "hideExpandSettingsButton"));
 
 	QWidget *bottomPanelWidget = OBJ_NAME(WDG(), "bottomPanelWidget");
 	QHBoxLayout *bottomPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(bottomPanelWidget)));
@@ -137,8 +144,84 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	bottomPanelLayout->addWidget(realTimeValues);
 	bottomPanelLayout->addWidget(runControl);
 
+	QWidget *settingsPanelWidget = OBJ_NAME(WDG(), "settingsPanelWidget");
+	QGridLayout *settingsPanelLayout = NO_SPACING(NO_MARGIN(new QGridLayout(settingsPanelWidget)));
+
+	QGroupBox *selectChannel = OBJ_NAME(new QGroupBox(tr("SELECT CHANNEL")), "selectChannel");
+	QVBoxLayout *selectChannelLayout = new QVBoxLayout;
+	selectChannel->setLayout(selectChannelLayout);
+	QComboBox *selectChannelCombo = new QComboBox;
+	selectChannelLayout->addWidget(selectChannelCombo);
+	selectChannelLayout->addStretch(1);
+	selectChannelCombo->addItem("Channel 1");
+	selectChannelCombo->addItem("Channel 2");
+	selectChannelCombo->addItem("Channel 3");
+	selectChannelCombo->addItem("Channel 4");
+
+	connect(selectChannelCombo, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
+		SetText(channelLabel, text.toLower());
+	});
+
+	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("OPERATING CONDITIONS")), "operatingConditions");
+	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
+	operatingConditions->setLayout(operatingConditionsLayout);
+	QComboBox *operatingConditionsCombo = new QComboBox;
+	QComboBox *currentRangeCombo = new QComboBox;
+	operatingConditionsLayout->addWidget(operatingConditionsCombo);
+	operatingConditionsLayout->addWidget(currentRangeCombo);
+	operatingConditionsLayout->addStretch(1);
+	operatingConditionsCombo->addItem("Potentiostat");
+	operatingConditionsCombo->addItem("Galvanostat");
+	currentRangeCombo->addItem("Autorange");
+
+	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(tr("COMMON SETTINGS")), "commonSettings");
+	QGridLayout *commonSettingsLayout = new QGridLayout;
+	commonSettings->setLayout(commonSettingsLayout);
+	commonSettingsLayout->addWidget(LBL("Sampling period"),			0, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("1.000")),			0, 1);
+	commonSettingsLayout->addWidget(LBL("seconds"),					0, 2);
+	commonSettingsLayout->addWidget(LBL("W. E. setpoint"),			1, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("0.000")),			1, 1);
+	commonSettingsLayout->addWidget(LBL("V"),						1, 2);
+	commonSettingsLayout->addWidget(CHEKABLE(PBT("Switch to open circuit")),	2, 0, 1, 3);
+	commonSettingsLayout->setRowStretch(3, 1);
+
+	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(tr("ADVANCED SETTINGS")), "advancedSettings");
+	QVBoxLayout *advancedSettingsLayout = new QVBoxLayout;
+	advancedSettings->setLayout(advancedSettingsLayout);
+	advancedSettingsLayout->addWidget(CHEKABLE(PBT("Discrete sampling")));
+	advancedSettingsLayout->addWidget(CHEKABLE(PBT("IR compensation")));
+	advancedSettingsLayout->addWidget(CHEKABLE(PBT("Voltage error correction")));
+	advancedSettingsLayout->addStretch(1);
+
+
+	settingsPanelLayout->addWidget(selectChannel,			0, 0);
+	settingsPanelLayout->addWidget(operatingConditions,		0, 1);
+	settingsPanelLayout->addWidget(commonSettings,			1, 0);
+	settingsPanelLayout->addWidget(advancedSettings,		1, 1);
+	settingsPanelLayout->setColumnStretch(0, 1);
+	settingsPanelLayout->setColumnStretch(1, 1);
+
+
+	QWidget *plotWidget = CreatePlot();
+	settingsPanelWidget->hide();
+
+	connect(hideExpandSettingsButton, &QPushButton::clicked, [=] {
+		if (settingsPanelWidget->isVisible()) {
+			SetText(hideExpandSettingsButton, "expand");
+			settingsPanelWidget->hide();
+			plotWidget->show();
+		}
+		else {
+			SetText(hideExpandSettingsButton, "collapse");
+			settingsPanelWidget->show();
+			plotWidget->hide();
+		}
+	});
+
+	cockpitLayout->addWidget(settingsPanelWidget);
 	cockpitLayout->addWidget(topPanelWidget);
-	cockpitLayout->addWidget(CreatePlot());
+	cockpitLayout->addWidget(plotWidget);
 	cockpitLayout->addWidget(bottomPanelWidget);
 
 	return w;
@@ -180,13 +263,29 @@ QWidget* MainWindowUI::CreateButton() {
 	return w;
 }
 QWidget* MainWindowUI::CreatePlot() {
-	static QWidget *w = 0;
+	static QwtPlot *w = 0;
 
 	if (w) {
 		return w;
 	}
 
 	w = new QwtPlot();
+
+	QwtPlotCurve *curve1 = new QwtPlotCurve("Curve 1");
+
+	QVector<QPointF> samples;
+
+	for (float x = 0; x < 10; x += 10 / 1000.) {
+		samples << QPointF(x, qSin(x)*1000);
+	}
+
+	curve1->setSamples(samples);
+	curve1->setPen(QColor(1, 74, 96), 1),
+	curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+
+	curve1->attach(w);
+
+	w->replot();
 
 	return w;
 }

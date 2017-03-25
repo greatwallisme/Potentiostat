@@ -5,8 +5,8 @@
 QMainWindow {
 	min-width: 910px;
 	max-width: 910px;
-	min-height: 610px;
-	max-height: 610px;
+	min-height: 660px;
+	max-height: 660px;
 }
 
 #central-widget {
@@ -64,13 +64,16 @@ QPushButton#bar-button:open {
 
 #topPanelWidget {
 	background-color: #E8464D;
+	
+	min-height: 82px;
+	max-height: 82px;
 }
 
 #channelLabel {
 	color: #f5f5f5;
 	font-size: 36px;
 	
-	padding: 19px;
+	/*padding: 19px;*/
 	padding-left: 50px;
 }
 
@@ -116,7 +119,7 @@ QPushButton#bar-button:open {
 	padding-left: 30px;
 }
 
-#realTimeValues::title {
+#realTimeValues::title, #runControl::title {
 	margin-top: 10px;
 	margin-left: 10px;
 }
@@ -130,12 +133,13 @@ QPushButton#bar-button:open {
 	color: #f5f5f5;
 	font-size: 16px;
 	
-	border: 2px solid #f5f5f5;
+	border: 1px solid #f5f5f5;
 	background: #2280B3;
 	
-	padding: 5px;
+	padding: 2px;
 	margin-right: 7px;
 	max-width: 90px;
+	max-height: 25px;
 	
 	selection-background-color: #E8464D;
 }
@@ -155,6 +159,148 @@ QPushButton#bar-button:open {
 
 /*//////////////////////////////////*/
 
+/*//////////////         COCKPIT SETTINGS WIDGET       ////////////////////*/
+
+#selectChannel, #operatingConditions,
+#commonSettings, #advancedSettings {
+	color: #f5f5f5;
+	font-weight: bold;
+	font-size: 16px;
+	
+	padding-top: 35px;
+	padding-bottom: 7px;
+	
+	margin: 20px;
+	background: #2280B3;
+	
+	border: none;
+}
+#selectChannel, #operatingConditions {
+	margin-bottom: 0px;
+}
+
+#selectChannel, #commonSettings {
+	margin-right: 0px;
+}
+
+
+#selectChannel::title, #operatingConditions::title,
+#commonSettings::title, #advancedSettings::title {
+	margin-top: 10px;
+	margin-left: 10px;
+}
+
+#selectChannel > *, #operatingConditions > *,
+#commonSettings > *, #advancedSettings > * {
+	color: #f5f5f5;
+	font-size: 14px;
+}
+
+#selectChannel > QLabel, #operatingConditions > QLabel,
+#commonSettings > QLabel, #advancedSettings > QLabel {
+	margin-left: 2px;
+}
+
+
+#selectChannel > QLineEdit, #operatingConditions > QLineEdit,
+#commonSettings > QLineEdit, #advancedSettings > QLineEdit {
+	color: #f5f5f5;
+	font-size: 16px;
+	
+	border: 1px solid #f5f5f5;
+	background: #2280B3;
+	
+	padding: 2px;
+	margin-right: 7px;
+	max-width: 90px;
+	max-height: 25px;
+	
+	selection-background-color: #E8464D;
+}
+
+#commonSettings >  QPushButton,
+#advancedSettings > QPushButton {
+	color: #f5f5f5;
+	border: 2px solid #f5f5f5;
+	padding: 5px;
+}
+
+#commonSettings > QPushButton:open,
+#advancedSettings > QPushButton:open {
+	background-color: #E8464D;
+	border: 1px solid #f5f5f5;
+}
+
+#operatingConditions > QComboBox,
+#selectChannel > QComboBox {
+	background: #2280B3;
+	
+	border: 1px solid #f5f5f5;
+	
+	padding: 4px 1px 4px 25px;
+}
+#operatingConditions > QComboBox::drop-down,
+#selectChannel > QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+
+	border: none;
+}
+/*
+#selectChannel > QComboBox::down-arrow {
+    image: url(:/_res/combobox-dropdown.png);
+}
+*/
+#operatingConditions > QComboBox::on,
+#selectChannel > QComboBox:on {
+	selection-background-color: rgb(26, 188, 156);
+	selection-color: #ffffff;
+}
+#operatingConditions > QComboBox::!on,
+#selectChannel > QComboBox:!on {
+	selection-background-color: rgb(26, 188, 156);
+	selection-color: #ffffff;
+}
+
+/*//////////////////////////////////*/
+
+/**/
+QwtPlot {
+	margin: 20px 20px 0px 20px;
+}
+
+QwtPlotCanvas {
+	border: none;
+    background-color: #f5f5f5;
+}
+
+QwtPlotGLCanvas {
+	border: none;
+    background-color: #f5f5f5;
+}
+
+QwtScaleWidget {
+    color: #999999;
+}
+
+QwtTextLabel#QwtPlotTitle {
+    color: #000000;
+}
+
+QwtTextLabel#QwtPlotFooter {
+    color: #000000;
+}
+
+QwtLegend {
+	border: none;
+    padding: 2px;
+    background: #f5f5f5;
+}
+
+QwtLegendLabel {
+    color: #000000;
+}
+/*/
 QwtPlot
 {
     border: 1px solid white;
@@ -220,4 +366,5 @@ QwtLegendLabel
 {
     color: white;
 }
+ */
  
