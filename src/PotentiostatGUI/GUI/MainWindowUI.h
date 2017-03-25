@@ -12,6 +12,12 @@ public:
 	void CreateUI();
 
 private:
+	void CreateCentralWidget();
+
+	QWidget* CreateCockpitModeWidget();
+	QWidget* CreateExperimentBuilderWidget();
+	QWidget* CreateOpenDataFileWidget();
+
 	QWidget* CreateButton();
 	QWidget* CreatePlot();
 

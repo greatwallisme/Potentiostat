@@ -40,6 +40,17 @@ WidgetType* SetObjectProperty(WidgetType *w, const char *name, const QString &va
     return w;
 }
 
+template<typename LayoutType>
+LayoutType* SetZeroMargin(LayoutType *l) {
+	l->setContentsMargins(0, 0, 0, 0);
+	return l;
+}
+template<typename LayoutType>
+LayoutType* SetZeroSpacing(LayoutType *l) {
+	l->setSpacing(0);
+	return l;
+}
+
 #define tr(...)         QObject::tr(__VA_ARGS__)
 #define connect(...)    QObject::connect(__VA_ARGS__)
 
@@ -55,6 +66,7 @@ WidgetType* SetObjectProperty(WidgetType *w, const char *name, const QString &va
 #define S_PBT(a)        SizedWidget(new QPushButton(tr(a)), GetSmaller)
 #define PBT(a)          new QPushButton(tr(a))
 #define WDG()			new QWidget
+#define LED(a)			new QLineEdit(tr(a))
 
 template<typename WidgetType>
 WidgetType* SetText(WidgetType *w, const QString &text) {
@@ -67,3 +79,6 @@ WidgetType* SetText(WidgetType *w, const QString &text) {
 
 #define OBJ_NAME(w, str) SetObjectName(w, str)
 #define OBJ_PROP(w, name, val) SetObjectProperty(w, name, val)
+
+#define NO_MARGIN(l)	SetZeroMargin(l)
+#define NO_SPACING(l)	SetZeroSpacing(l)
