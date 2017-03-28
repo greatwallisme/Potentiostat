@@ -33,7 +33,7 @@ QPushButton#bar-button {
 	border: none;
 	
 	padding: 13px;
-	padding-right: 20px;
+	padding-right: 25px;
 	padding-left: 40px;
 	
 	font-size: 12pt;
@@ -41,8 +41,12 @@ QPushButton#bar-button {
 
 QPushButton#bar-button:open {
 	background-color: #233342;
-	color: #f5f5f5;
+	color: #2DCC70;
 	border-top: 1px solid #151f28;
+	
+	border-left: 5px solid #2DCC70;
+	padding-left: 35px;
+	padding-top: 12px;
 }
 
 #logo {
@@ -71,7 +75,7 @@ QPushButton#bar-button:open {
 }
 
 #channelLabel {
-	color: #f5f5f5;
+	color: #e0e0e0;
 	font-size: 36px;
 	
 	/*padding: 19px;*/
@@ -129,7 +133,7 @@ QPushButton#bar-button:open {
 	
 	border: 1px solid #d0d0d0;
 	border-radius: 5px;
-	background-color: #ffffff;
+	background-color: #fafafa;
 	
 	border-bottom: 1px solid #909090;
 	border-right: 1px solid #909090;
@@ -237,7 +241,7 @@ QPushButton#bar-button:open {
 	
 	border: 1px solid #d0d0d0;
 	border-radius: 5px;
-	background-color: #ffffff;
+	background-color: #fafafa;
 	
 	border-bottom: 1px solid #909090;
 	border-right: 1px solid #909090;
@@ -276,9 +280,8 @@ QPushButton#bar-button:open {
 
 #operatingConditions > QComboBox,
 #selectChannel > QComboBox {
-	background: #ffffff;
 	color: #3D414A;
-	
+	background: #ffffff;
 	border: 1px solid #a0a0a0;
 	border-radius: 3px;
 	
@@ -289,11 +292,14 @@ QPushButton#bar-button:open {
 #selectChannel > QComboBox:hover {
 	border: 1px solid #3D414A;
 }
+/*
 #operatingConditions > QComboBox:open,
 #selectChannel > QComboBox:open {
+	background-color: #ffffff;
 	border-bottom-left-radius: 0px;
 	border-bottom-right-radius: 0px;
 }
+*/
 
 #operatingConditions > QComboBox::drop-down,
 #selectChannel > QComboBox::drop-down {
@@ -404,7 +410,7 @@ QwtPlot {
 	margin: 20px 20px 0px 20px;
 	
 	border: 1px solid #d0d0d0;
-	background-color: #ffffff;
+	background-color: #fafafa;
 	border-radius: 5px;
 	border-bottom: 1px solid #909090;
 	border-right: 1px solid #909090;
@@ -414,12 +420,12 @@ QwtPlot {
 
 QwtPlotCanvas {
 	border: none;
-    background-color: #ffffff;
+    background-color: #fafafa;
 }
 
 QwtPlotGLCanvas {
 	border: none;
-    background-color: #ffffff;
+    background-color: #fafafa;
 }
 
 QwtScaleWidget {
