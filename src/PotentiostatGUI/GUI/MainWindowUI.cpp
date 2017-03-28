@@ -72,7 +72,14 @@ void MainWindowUI::CreateCentralWidget() {
 	
 	barLayout->addWidget(OBJ_NAME(LBL("<logo>"), "logo"));
 
-	auto *pbt = OBJ_PROP(OBJ_NAME(PBT("Cockpit mode"), "bar-button"), "order", "first");
+	auto *pbt = OBJ_NAME(PBT(""), "bar-button");
+	pbt->setDisabled(true);
+	barLayout->addWidget(pbt);
+	pbt = OBJ_NAME(PBT(""), "bar-button");
+	pbt->setDisabled(true);
+	barLayout->addWidget(pbt);
+
+	pbt = OBJ_PROP(OBJ_NAME(PBT("Cockpit mode"), "bar-button"), "order", "first");
 	pbt->setCheckable(true);
 	pbt->setChecked(true);
 	buttonGroup->addButton(pbt);
@@ -94,9 +101,7 @@ void MainWindowUI::CreateCentralWidget() {
 	widgetsLayout->addWidget(CreateExperimentBuilderWidget());
 	widgetsLayout->addWidget(CreateOpenDataFileWidget());
 	
-	//centralLayout->addWidget(CreateButton());
 	centralLayout->addLayout(tabLayout);
-	//centralLayout->addWidget(CreatePlot());
 }
 QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	static QWidget *w = 0;
@@ -135,11 +140,15 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	realTimeValuesLayout->addWidget(LBL("Redox state"),				1, 2);
 	realTimeValuesLayout->addWidget(TXT_CNTR(LED("Open circuit")),	1, 3);
 
+	QPushButton *startStopButton;
 	QGroupBox *runControl = OBJ_NAME(new QGroupBox(tr("RUN CONTROL")), "runControl");
 	QVBoxLayout *runControlLayout = new QVBoxLayout;
 	runControl->setLayout(runControlLayout);
 	runControlLayout->addWidget(OBJ_NAME(LBL("To control run click the button"), "runControlLabel"));
-	runControlLayout->addWidget(OBJ_NAME(PBT("start"), "startStopButton"));
+	runControlLayout->addWidget(startStopButton = OBJ_NAME(PBT("start"), "startStopButton"));
+
+	connect(startStopButton, &QPushButton::clicked,
+		mw, &MainWindow::applyStyle);
 
 	bottomPanelLayout->addWidget(realTimeValues);
 	bottomPanelLayout->addWidget(runControl);
@@ -269,13 +278,17 @@ QWidget* MainWindowUI::CreateButton() {
 	return w;
 }
 QWidget* MainWindowUI::CreatePlot() {
-	static QwtPlot *w = 0;
+	static QWidget *plotWidget = 0;
 
-	if (w) {
-		return w;
+	if (plotWidget) {
+		return plotWidget;
 	}
 
-	w = new QwtPlot();
+	plotWidget = OBJ_NAME(WDG(), "plotWidget");
+	QVBoxLayout *plotWidgetLayout = NO_MARGIN(NO_SPACING(new QVBoxLayout(plotWidget)));
+
+	QwtPlot *w = new QwtPlot();
+	plotWidgetLayout->addWidget(w);
 
 	QwtPlotCurve *curve1 = new QwtPlotCurve("Curve 1");
 
@@ -293,5 +306,5 @@ QWidget* MainWindowUI::CreatePlot() {
 
 	w->replot();
 
-	return w;
+	return plotWidget;
 }
