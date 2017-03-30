@@ -10,3 +10,4 @@ Build
 *.opendb
 moc/
 *.obj
+UpgradeLog.htm
