@@ -4,9 +4,11 @@
 
 QMainWindow {
 	min-width: 910px;
-	max-width: 910px;
 	min-height: 660px;
+	/*
+	max-width: 910px;
 	max-height: 660px;
+	*/
 }
 
 #central-widget {

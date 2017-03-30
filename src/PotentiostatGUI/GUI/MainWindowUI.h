@@ -3,6 +3,8 @@
 class MainWindow;
 
 class QWidget;
+class QLabel;
+class QComboBox;
 
 class MainWindowUI {
 public:
@@ -18,8 +20,23 @@ private:
 	QWidget* CreateExperimentBuilderWidget();
 	QWidget* CreateOpenDataFileWidget();
 
-	QWidget* CreateButton();
-	QWidget* CreatePlot();
+	QWidget* CreateCockpitSettingsWidget();
+	QWidget* CreateCockpitTopWidget();
+	QWidget* CreateCockpitBottomWidget();
+	QWidget* CreateCockpitPlot();
+
+	void CreateCockpitLogic();
+
+	struct {
+		struct {
+			struct {
+				QLabel *channel;
+			} top;
+			struct {
+				QComboBox *selectChannel;
+			} settings;
+		} cockpit;
+	} ui;
 
 	MainWindow *mw;
 };

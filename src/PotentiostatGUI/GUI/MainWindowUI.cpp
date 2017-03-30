@@ -103,55 +103,12 @@ void MainWindowUI::CreateCentralWidget() {
 	
 	centralLayout->addLayout(tabLayout);
 }
-QWidget* MainWindowUI::CreateCockpitModeWidget() {
+QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	static QWidget *w = 0;
 
 	if (w) {
 		return w;
 	}
-
-	w = new QWidget();
-
-	QVBoxLayout *cockpitLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
-
-	QPushButton *hideExpandSettingsButton;
-	QLabel *channelLabel;
-
-	QWidget *topPanelWidget = OBJ_NAME(WDG(), "topPanelWidget");
-	QHBoxLayout *topPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(topPanelWidget)));
-	topPanelLayout->addWidget(channelLabel = OBJ_NAME(LBL("Channel 1"), "channelLabel"));
-	topPanelLayout->addWidget(OBJ_NAME(LBL("To modify settings click the button"), "settingsCommentLabel"));
-	topPanelLayout->addWidget(hideExpandSettingsButton = OBJ_NAME(PBT("expand"), "hideExpandSettingsButton"));
-
-	QWidget *bottomPanelWidget = OBJ_NAME(WDG(), "bottomPanelWidget");
-	QHBoxLayout *bottomPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(bottomPanelWidget)));
-
-	QGroupBox *realTimeValues = OBJ_NAME(new QGroupBox(tr("REAL TIME VALUES")), "realTimeValues");
-	QGridLayout *realTimeValuesLayout = new QGridLayout;
-	realTimeValues->setLayout(realTimeValuesLayout);
-	realTimeValuesLayout->addWidget(LBL("Ewe"),	0, 0);
-	realTimeValuesLayout->addWidget(TXT_CNTR(LED("-1.345 V")),		0, 1);
-	realTimeValuesLayout->addWidget(LBL("Ece"),	1, 0);
-	realTimeValuesLayout->addWidget(TXT_CNTR(LED("-2.255 V")),		1, 1);
-	realTimeValuesLayout->addWidget(LBL("Ewe - Ece"),				2, 0);
-	realTimeValuesLayout->addWidget(TXT_CNTR(LED("0.91 V")),		2, 1);
-	realTimeValuesLayout->addWidget(LBL("Current (mA)"),			0, 2);
-	realTimeValuesLayout->addWidget(TXT_CNTR(LED("0")),				0, 3);
-	realTimeValuesLayout->addWidget(LBL("Redox state"),				1, 2);
-	realTimeValuesLayout->addWidget(TXT_CNTR(LED("Open circuit")),	1, 3);
-
-	QPushButton *startStopButton;
-	QGroupBox *runControl = OBJ_NAME(new QGroupBox(tr("RUN CONTROL")), "runControl");
-	QVBoxLayout *runControlLayout = new QVBoxLayout;
-	runControl->setLayout(runControlLayout);
-	runControlLayout->addWidget(OBJ_NAME(LBL("To control run click the button"), "runControlLabel"));
-	runControlLayout->addWidget(startStopButton = OBJ_NAME(PBT("start"), "startStopButton"));
-
-	connect(startStopButton, &QPushButton::clicked,
-		mw, &MainWindow::applyStyle);
-
-	bottomPanelLayout->addWidget(realTimeValues);
-	bottomPanelLayout->addWidget(runControl);
 
 	QWidget *settingsPanelWidget = OBJ_NAME(WDG(), "settingsPanelWidget");
 	QGridLayout *settingsPanelLayout = NO_SPACING(NO_MARGIN(new QGridLayout(settingsPanelWidget)));
@@ -168,10 +125,7 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	selectChannelCombo->addItem("Channel 2");
 	selectChannelCombo->addItem("Channel 3");
 	selectChannelCombo->addItem("Channel 4");
-
-	connect(selectChannelCombo, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
-		SetText(channelLabel, text);
-	});
+	ui.cockpit.settings.selectChannel = selectChannelCombo;
 
 	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("OPERATING CONDITIONS")), "operatingConditions");
 	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
@@ -192,13 +146,13 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(tr("COMMON SETTINGS")), "commonSettings");
 	QGridLayout *commonSettingsLayout = new QGridLayout;
 	commonSettings->setLayout(commonSettingsLayout);
-	commonSettingsLayout->addWidget(LBL("Sampling period"),			0, 0);
-	commonSettingsLayout->addWidget(TXT_CNTR(LED("1.000")),			0, 1);
-	commonSettingsLayout->addWidget(LBL("seconds"),					0, 2);
-	commonSettingsLayout->addWidget(LBL("W. E. setpoint"),			1, 0);
-	commonSettingsLayout->addWidget(TXT_CNTR(LED("0.000")),			1, 1);
-	commonSettingsLayout->addWidget(LBL("V"),						1, 2);
-	commonSettingsLayout->addWidget(CHEKABLE(PBT("Switch to open circuit")),	2, 0, 1, 3);
+	commonSettingsLayout->addWidget(LBL("Sampling period"), 0, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("1.000")), 0, 1);
+	commonSettingsLayout->addWidget(LBL("seconds"), 0, 2);
+	commonSettingsLayout->addWidget(LBL("W. E. setpoint"), 1, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("0.000")), 1, 1);
+	commonSettingsLayout->addWidget(LBL("V"), 1, 2);
+	commonSettingsLayout->addWidget(CHEKABLE(PBT("Switch to open circuit")), 2, 0, 1, 3);
 	commonSettingsLayout->setRowStretch(3, 1);
 
 	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(tr("ADVANCED SETTINGS")), "advancedSettings");
@@ -210,34 +164,119 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	advancedSettingsLayout->addStretch(1);
 
 
-	settingsPanelLayout->addWidget(selectChannel,			0, 0);
-	settingsPanelLayout->addWidget(operatingConditions,		0, 1);
-	settingsPanelLayout->addWidget(commonSettings,			1, 0);
-	settingsPanelLayout->addWidget(advancedSettings,		1, 1);
+	settingsPanelLayout->addWidget(selectChannel, 0, 0);
+	settingsPanelLayout->addWidget(operatingConditions, 0, 1);
+	settingsPanelLayout->addWidget(commonSettings, 1, 0);
+	settingsPanelLayout->addWidget(advancedSettings, 1, 1);
 	settingsPanelLayout->setColumnStretch(0, 1);
 	settingsPanelLayout->setColumnStretch(1, 1);
 
+	w = settingsPanelWidget;
 
-	QWidget *plotWidget = CreatePlot();
-	settingsPanelWidget->hide();
-
-	connect(hideExpandSettingsButton, &QPushButton::clicked, [=] {
-		if (settingsPanelWidget->isVisible()) {
-			SetText(hideExpandSettingsButton, "expand");
-			settingsPanelWidget->hide();
-			plotWidget->show();
-		}
-		else {
-			SetText(hideExpandSettingsButton, "collapse");
-			settingsPanelWidget->show();
-			plotWidget->hide();
-		}
+	return w;
+}
+void MainWindowUI::CreateCockpitLogic() {
+	connect(ui.cockpit.settings.selectChannel, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
+		SetText(ui.cockpit.top.channel, text);
 	});
 
-	cockpitLayout->addWidget(settingsPanelWidget);
-	cockpitLayout->addWidget(topPanelWidget);
-	cockpitLayout->addWidget(plotWidget);
-	cockpitLayout->addWidget(bottomPanelWidget);
+	/*
+	connect(hideExpandSettingsButton, &QPushButton::clicked, [=] {
+	if (settingsPanelWidget->isVisible()) {
+	SetText(hideExpandSettingsButton, "expand");
+	settingsPanelWidget->hide();
+	plotWidget->show();
+	}
+	else {
+	SetText(hideExpandSettingsButton, "collapse");
+	settingsPanelWidget->show();
+	plotWidget->hide();
+	}
+	});
+	//*/
+}
+QWidget* MainWindowUI::CreateCockpitTopWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	QPushButton *hideExpandSettingsButton;
+
+	QWidget *topPanelWidget = OBJ_NAME(WDG(), "topPanelWidget");
+	QHBoxLayout *topPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(topPanelWidget)));
+
+	topPanelLayout->addWidget(ui.cockpit.top.channel = OBJ_NAME(LBL("Channel 1"), "channelLabel"));
+	topPanelLayout->addStretch(1);
+	topPanelLayout->addWidget(ui.cockpit.top.runControl = OBJ_NAME(PBT("ST"), "runControl"));
+	topPanelLayout->addWidget(ui.cockpit.top.settings = OBJ_NAME(PBT("EX"), "hideExpandSettingsButton"));
+
+	w = topPanelWidget;
+
+	return w;
+}
+QWidget* MainWindowUI::CreateCockpitBottomWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	QWidget *bottomPanelWidget = OBJ_NAME(WDG(), "bottomPanelWidget");
+	QHBoxLayout *bottomPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(bottomPanelWidget)));
+
+	QGroupBox *realTimeValues = OBJ_NAME(new QGroupBox(tr("REAL TIME VALUES")), "realTimeValues");
+	QGridLayout *realTimeValuesLayout = new QGridLayout;
+	realTimeValues->setLayout(realTimeValuesLayout);
+	realTimeValuesLayout->addWidget(LBL("Ewe"), 0, 0);
+	realTimeValuesLayout->addWidget(TXT_CNTR(LED("-1.345 V")), 0, 1);
+	realTimeValuesLayout->addWidget(LBL("Ece"), 1, 0);
+	realTimeValuesLayout->addWidget(TXT_CNTR(LED("-2.255 V")), 1, 1);
+	realTimeValuesLayout->addWidget(LBL("Ewe - Ece"), 2, 0);
+	realTimeValuesLayout->addWidget(TXT_CNTR(LED("0.91 V")), 2, 1);
+	realTimeValuesLayout->addWidget(LBL("Current (mA)"), 0, 2);
+	realTimeValuesLayout->addWidget(TXT_CNTR(LED("0")), 0, 3);
+	realTimeValuesLayout->addWidget(LBL("Redox state"), 1, 2);
+	realTimeValuesLayout->addWidget(TXT_CNTR(LED("Open circuit")), 1, 3);
+
+	QPushButton *startStopButton;
+	QGroupBox *runControl = OBJ_NAME(new QGroupBox(tr("RUN CONTROL")), "runControl");
+	QVBoxLayout *runControlLayout = new QVBoxLayout;
+	runControl->setLayout(runControlLayout);
+	runControlLayout->addWidget(OBJ_NAME(LBL("To control run click the button"), "runControlLabel"));
+	runControlLayout->addWidget(startStopButton = OBJ_NAME(PBT("start"), "startStopButton"));
+
+	connect(startStopButton, &QPushButton::clicked,
+		mw, &MainWindow::applyStyle);
+
+	bottomPanelLayout->addWidget(realTimeValues);
+	bottomPanelLayout->addWidget(runControl);
+
+	w = bottomPanelWidget;
+
+	return w;
+}
+QWidget* MainWindowUI::CreateCockpitModeWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = new QWidget();
+
+	QGridLayout *cockpitLayout = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
+
+	cockpitLayout->addWidget(CreateCockpitSettingsWidget(),	0, 0, 1, 2);
+	cockpitLayout->addWidget(CreateCockpitTopWidget(),		1, 0, 1, 2);
+	cockpitLayout->addWidget(CreateCockpitPlot(),			2, 0);
+	cockpitLayout->addWidget(CreateCockpitBottomWidget(),	3, 0);
+	cockpitLayout->addWidget(CreateCockpitSettingsWidget(), 2, 1, 2, 1);
+
+	CreateCockpitSettingsWidget()->hide();
+
+	CreateCockpitLogic();
 
 	return w;
 }
@@ -263,21 +302,7 @@ QWidget* MainWindowUI::CreateOpenDataFileWidget() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateButton() {
-	static QPushButton *w = 0;
-
-	if (w) {
-		return w;
-	}
-
-	w = PBT("Set Style");
-
-	connect(w, &QPushButton::clicked,
-		mw, &MainWindow::applyStyle);
-
-	return w;
-}
-QWidget* MainWindowUI::CreatePlot() {
+QWidget* MainWindowUI::CreateCockpitPlot() {
 	static QWidget *plotWidget = 0;
 
 	if (plotWidget) {
