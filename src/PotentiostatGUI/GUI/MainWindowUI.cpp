@@ -45,6 +45,15 @@
 
 #include "UIHelper.hpp"
 
+bool SettingsResizeEventFilter::eventFilter(QObject *obj, QEvent *e) {
+	if (e->type() == QEvent::Resize) {
+		emit ResizeSettings();
+		return true;
+	}
+	else {
+		return QObject::eventFilter(obj, e);
+	}
+}
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
@@ -172,7 +181,7 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	settingsPanelLayout->addStretch(1);
 
 
-	QScrollArea *scrollArea = new QScrollArea(CreateCockpitPlot());
+	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(CreateCockpitModeWidget()), "settingsPanelArea");
 
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setBackgroundRole(QPalette::Dark);
@@ -183,6 +192,30 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	ui.cockpit.settings.owner = w;
 
 	return w;
+}
+void MainWindowUI::InstallEventFilter() {
+	SettingsResizeEventFilter *filter = new SettingsResizeEventFilter(mw);
+	
+	connect(filter, &SettingsResizeEventFilter::ResizeSettings, [=] () {
+		ResizeSettings();
+	});
+
+	mw->installEventFilter(filter);
+}
+void MainWindowUI::ResizeSettings() {
+	QSize size = ui.cockpit.settings.owner->sizeHint();
+	
+	QRect cockpitRect = ui.cockpit.owner->geometry();
+	QRect topRect = ui.cockpit.top.owner->geometry();
+	QRect plotRect = ui.cockpit.plot.owner->geometry();
+	QRect bottomRect = ui.cockpit.bottom.owner->geometry();
+
+	ui.cockpit.settings.owner->setGeometry(cockpitRect.width() - size.width(),
+		topRect.height(),
+		size.width(),
+		plotRect.height() + bottomRect.height());
+
+	ui.cockpit.settings.owner->raise();
 }
 void MainWindowUI::CreateCockpitLogic() {
 	connect(ui.cockpit.settings.selectChannel, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
@@ -199,6 +232,7 @@ void MainWindowUI::CreateCockpitLogic() {
 		}
 		else {
 			ui.cockpit.settings.owner->show();
+			ResizeSettings();
 		}
 	});
 }
@@ -220,6 +254,7 @@ QWidget* MainWindowUI::CreateCockpitTopWidget() {
 	topPanelLayout->addWidget(ui.cockpit.top.settings = OBJ_NAME(PBT("EX"), "hideExpandSettingsButton"));
 
 	w = topPanelWidget;
+	ui.cockpit.top.owner = w;
 
 	return w;
 }
@@ -246,6 +281,7 @@ QWidget* MainWindowUI::CreateCockpitBottomWidget() {
 	bottomPanelLayout->addStretch(1);
 
 	w = bottomPanelWidget;
+	ui.cockpit.bottom.owner = w;
 
 	return w;
 }
@@ -257,6 +293,7 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	}
 
 	w = new QWidget();
+	ui.cockpit.owner = w;
 
 	QGridLayout *cockpitLayout = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
@@ -268,6 +305,7 @@ QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	CreateCockpitSettingsWidget()->hide();
 
 	CreateCockpitLogic();
+	InstallEventFilter();
 
 	return w;
 }
@@ -321,6 +359,8 @@ QWidget* MainWindowUI::CreateCockpitPlot() {
 	curve1->attach(w);
 
 	w->replot();
+
+	ui.cockpit.plot.owner = plotWidget;
 
 	return plotWidget;
 }

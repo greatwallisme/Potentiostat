@@ -52,6 +52,12 @@
     <ClCompile Include="MainWindowUI.cpp">
       <Filter>_src\MainWindow</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_MainWindowUI.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MainWindowUI.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="GUI.qrc">
@@ -60,11 +66,11 @@
     <CustomBuild Include="MainWindow.h">
       <Filter>_src\MainWindow</Filter>
     </CustomBuild>
+    <CustomBuild Include="MainWindowUI.h">
+      <Filter>_src\MainWindow</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MainWindowUI.h">
-      <Filter>_src\MainWindow</Filter>
-    </ClInclude>
     <ClInclude Include="UIHelper.hpp">
       <Filter>_src</Filter>
     </ClInclude>

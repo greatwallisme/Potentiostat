@@ -260,7 +260,12 @@ QPushButton#bar-button:open {
 	margin-right: 0px;
 }
 */
-
+/*
+#settingsPanelArea {
+	min-height: 200px;
+	min-width: 200px;
+}
+*/
 
 #selectChannel::title, #operatingConditions::title,
 #commonSettings::title, #advancedSettings::title {
