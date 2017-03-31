@@ -5,6 +5,7 @@ class MainWindow;
 class QWidget;
 class QLabel;
 class QComboBox;
+class QPushButton;
 
 class MainWindowUI {
 public:
@@ -31,10 +32,18 @@ private:
 		struct {
 			struct {
 				QLabel *channel;
+				QPushButton *runControl;
+				QPushButton *settings;
 			} top;
+			
 			struct {
 				QComboBox *selectChannel;
+				QWidget *owner;
 			} settings;
+
+			struct {
+				QLabel *ewe;
+			} bottom;
 		} cockpit;
 	} ui;
 

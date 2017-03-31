@@ -247,7 +247,11 @@ QPushButton#bar-button:open {
 	
 	border-bottom: 1px solid #909090;
 	border-right: 1px solid #909090;
+	
+	margin-left: 0px;
+	margin-right: 0px;
 }
+/*
 #selectChannel, #operatingConditions {
 	margin-bottom: 0px;
 }
@@ -255,6 +259,7 @@ QPushButton#bar-button:open {
 #selectChannel, #commonSettings {
 	margin-right: 0px;
 }
+*/
 
 
 #selectChannel::title, #operatingConditions::title,

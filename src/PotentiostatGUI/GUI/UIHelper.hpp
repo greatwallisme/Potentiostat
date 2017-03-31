@@ -72,7 +72,7 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 #define PBT(a)          new QPushButton(tr(a))
 #define WDG()			new QWidget
 #define LED(a)			new QLineEdit(tr(a))
-#define CKC(a)			new QCheckBox(tr(a))
+#define CKB(a)			new QCheckBox(tr(a))
 
 template<typename WidgetType>
 WidgetType* SetText(WidgetType *w, const QString &text) {
