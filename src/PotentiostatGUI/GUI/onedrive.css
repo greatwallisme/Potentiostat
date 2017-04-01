@@ -1,0 +1,400 @@
+* {
+	font-family: "Segoe";
+}
+
+QMainWindow {
+	min-width: 910px;
+	min-height: 660px;
+	/*
+	max-width: 910px;
+	max-height: 660px;
+	*/
+}
+
+/*
+#central-widget {
+	padding-top: 20px;
+}
+*/
+/*//////////////         BAR WIDGET       ////////////////////*/
+
+#bar-widget {
+	background-color: #ffffff;
+	padding-top: 20px;
+}
+
+#cockpit-owner {
+	margin-top: 0px;
+	background-color: #ffffff;
+}
+
+QPushButton#bar-button {
+	background-color: #ffffff;
+	
+	text-align: left;
+	color: #333333;
+	
+	border: none;
+	
+	padding: 13px;
+	padding-right: 25px;
+	padding-left: 40px;
+	
+	font-size: 12pt;
+}
+
+QPushButton#bar-button:hover {
+	background-color: #f8f8f8;
+}
+
+QPushButton#bar-button:open {
+	background-color: #f4f4f4;
+	color: #0078d7;
+	
+	border-left: 3px solid #0078d7;
+	padding-left: 37px;
+	padding-top: 13px;
+}
+
+#logo {
+	padding-left: 50px;
+	min-height:50px;
+	max-height: 50px;
+	background: #0078d7;
+	
+	color: #ffffff;
+	
+	font-size: 26px;
+	border-top: 1px solid #000000;
+}
+/*//////////////////////////////////*/
+
+/*//////////////         COCKPIT TOP WIDGET       ////////////////////*/
+
+#topPanelWidget {
+	background-color: #000000;
+	border-top: 1px solid #000000;
+	
+	min-height: 50px;
+	max-height: 50px;
+}
+
+#channelLabel {
+	color: #ffffff;
+	font-size: 26px;
+	
+	/*padding: 19px;*/
+	padding-left: 50px;
+}
+
+#startStopButton,
+#hideExpandSettingsButton {
+	min-height: 50px;
+	max-height: 50px;
+	min-width: 50px;
+	max-width: 50px;
+	
+	border: none;
+	color: #ffffff;
+	
+	border-left: 1px solid #4c4c4c;
+}
+#startStopButton:hover,
+#hideExpandSettingsButton:hover {
+	background-color: #104a7d;
+	border-left: 1px solid #5780a4;
+}
+
+#hideExpandSettingsButton:open  {
+	color: #000000;
+	background-color: #ffffff;
+	
+	border-left: 1px solid #ffffff;
+	border-top: 1px solid #000000;
+}
+#startStopButton:pressed  {
+	color: #000000;
+}
+#hideExpandSettingsButton {
+	background-image: url(:/GUI/_res/settings.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: center;
+}
+#hideExpandSettingsButton:hover  {
+	background-image: url(:/GUI/_res/settings-hover.png);
+}
+#hideExpandSettingsButton:open {
+	background-image: url(:/GUI/_res/settings-open.png);
+}
+
+#startStopButton {
+	background-image: url(:/GUI/_res/run-clicked.png);
+	background-repeat: no-repeat;
+	background-origin: content;
+	background-position: center;
+}
+#startStopButton:pressed {
+	background-image: url(:/GUI/_res/run.png);
+}
+
+/*//////////////////////////////////*/
+
+/*//////////////         COCKPIT BOTTOM WIDGET       ////////////////////*/
+
+#bottomPanelWidget {
+	background-color: #f4f4f4;
+	border: none;
+	
+	min-height: 40px;
+	max-height: 40px;
+}
+#bottomPanelWidget > * {
+	color: #000000;
+	font-size: 12px;
+}
+#bottomPanelWidget > QLabel {
+	margin-left: 5px;
+	padding-left: 3px;
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border: none;
+}
+#bottomPanelWidget > QLabel[type="label"] {
+	border-left: 1px solid #c8c8c8;
+}
+#bottomPanelWidget > QLabel[order="first"] {
+	margin-left: 10px;
+	border-left: none;
+}
+
+/*//////////////////////////////////*/
+
+/*//////////////         COCKPIT SETTINGS WIDGET       ////////////////////*/
+
+
+#selectChannel, #operatingConditions,
+#commonSettings, #advancedSettings {
+	color: #505050;
+	font-size: 20px;
+	
+	padding-top: 25px;
+	padding-bottom: 7px;
+	padding-left: 15px;
+	
+	margin-top: 20px;
+	
+	background-color: #f3f3f3;
+	border: none;
+	
+	margin-left: 0px;
+	margin-right: 15px;
+}
+
+#selectChannel::title, #operatingConditions::title,
+#commonSettings::title, #advancedSettings::title {
+	subcontrol-origin: margin;
+
+	margin-top: 5px;
+	margin-left: 0px;
+	margin-bottom: 20px;
+	
+	border-top-left-radius: 5px;
+	
+	padding-top: 10px;
+	padding-left: 10px;
+}
+
+#selectChannel > *, #operatingConditions > *,
+#commonSettings > *, #advancedSettings > * {
+	color: #505050;
+	font-size: 14px;
+}
+
+#operatingConditions > QComboBox,
+#selectChannel > QComboBox {
+	color: #505050;
+	background: #ffffff;
+	border: 1px solid #d2d2d2;
+	
+	padding: 4px 1px 4px 25px;
+	margin-left: 2px;
+}
+
+#operatingConditions > QComboBox:hover,
+#selectChannel > QComboBox:hover {
+	border: 1px solid #969696;
+	background: #e6e6e6;
+}
+#operatingConditions > QComboBox:open,
+#selectChannel > QComboBox:open {
+	border: 1px solid #969696;
+	background: #969696;
+}
+
+#operatingConditions > QComboBox::drop-down,
+#selectChannel > QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+
+	border: none;
+}
+
+#operatingConditions > QComboBox::down-arrow,
+#selectChannel > QComboBox::down-arrow {
+    image: url(:/GUI/_res/combobox-dropdown.png);
+	
+	margin-right: 25px;
+}
+
+#operatingConditionsComboList,
+#currentRangeComboList,
+#selectChannelComboList {
+    border: 1px solid #000000;
+	color: #505050;
+	background: #f3f3f3;
+	outline: 0;
+}
+
+#operatingConditionsComboList::item,
+#currentRangeComboList::item,
+#selectChannelComboList::item {
+	border: 0px;
+	padding: 15px;
+	padding-left: 20px;
+	color: #505050;
+}
+
+#operatingConditionsComboList::item:selected,
+#currentRangeComboList::item:selected,
+#selectChannelComboList::item:selected {
+	background: #d2d2d2;
+}
+
+#selectChannel > QLabel, #operatingConditions > QLabel,
+#commonSettings > QLabel, #advancedSettings > QLabel {
+	margin-left: 2px;
+}
+
+#selectChannel > QLineEdit, #operatingConditions > QLineEdit,
+#commonSettings > QLineEdit, #advancedSettings > QLineEdit {
+	color: #505050;
+	background: #ffffff;
+	border: 1px solid #d2d2d2;
+	
+	padding: 2px;
+	margin-right: 7px;
+	max-width: 90px;
+	max-height: 25px;
+	
+	selection-background-color: #737373;
+}
+
+
+#selectChannel > QLineEdit:hover ,
+#operatingConditions > QLineEdit:hover ,
+#commonSettings > QLineEdit:hover ,
+#advancedSettings > QLineEdit:hover  {
+	border: 1px solid #969696;
+}
+
+#selectChannel > QLineEdit:focus ,
+#operatingConditions > QLineEdit:focus ,
+#commonSettings > QLineEdit:focus ,
+#advancedSettings > QLineEdit:focus  {
+	border: 1px solid #d2d2d2;
+}
+
+#commonSettings >  QCheckBox,
+#advancedSettings > QCheckBox {
+	margin-left: 2px;
+	color: #color: #505050;
+	
+	padding: 5px;
+	
+	border: none;
+}
+
+#commonSettings >  QCheckBox::indicator:unchecked,
+#advancedSettings > QCheckBox::indicator:unchecked {
+    image: url(:/GUI/_res/checkbox-unchecked.png);
+	padding-top: 3px;
+}
+#commonSettings >  QCheckBox::indicator:unchecked:hover,
+#advancedSettings > QCheckBox::indicator:unchecked:hover {
+    image: url(:/GUI/_res/checkbox-unchecked-hover.png);
+	padding-top: 3px;
+}
+#commonSettings >  QCheckBox::indicator:checked,
+#advancedSettings > QCheckBox::indicator:checked {
+    image: url(:/GUI/_res/checkbox-checked.png);
+	padding-top: 3px;
+}
+#commonSettings >  QCheckBox::indicator:checked:hover,
+#advancedSettings > QCheckBox::indicator:checked:hover {
+    image: url(:/GUI/_res/checkbox-checked-hover.png);
+	padding-top: 3px;
+}
+
+/*//////////////////////////////////*/
+
+/**/
+#plotWidget {
+}
+
+QwtPlot {
+	margin: 30px;
+	
+	border: 1px solid #c8c8c8;
+	background-color: #f4f4f4;
+	
+	padding: 10px;
+}
+
+QwtPlotCanvas {
+	border: none;
+    background-color: #f4f4f4;
+}
+
+QwtPlotGLCanvas {
+	border: none;
+    background-color: #f4f4f4;
+}
+
+QwtScaleWidget {
+    color: #666666;
+}
+
+QwtTextLabel#QwtPlotTitle {
+    color: #000000;
+}
+
+QwtTextLabel#QwtPlotFooter {
+    color: #000000;
+}
+
+QwtLegend {
+	border: none;
+    padding: 2px;
+    background: #91A3A3;
+}
+
+QwtLegendLabel {
+    color: #000000;
+}
+/*//////////////////////////////////*/
+#settingsPanelWidget {
+	/*border-left: 1px solid #606060;*/
+	background: #f3f3f3;
+}
+#topPanelWidget {
+	/*border-bottom: 1px solid #606060;*/
+}
+
+#plotWidget {
+	border-left: 1px solid #eaeaea;
+}
+
+#bottomPanelWidget {
+	border-left: 1px solid #eaeaea;
+}
