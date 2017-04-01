@@ -113,86 +113,6 @@ void MainWindowUI::CreateCentralWidget() {
 	
 	centralLayout->addLayout(tabLayout);
 }
-QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
-	static QWidget *w = 0;
-
-	if (w) {
-		return w;
-	}
-
-	QWidget *settingsPanelWidget = OBJ_NAME(WDG(), "settingsPanelWidget");
-	QVBoxLayout *settingsPanelLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(settingsPanelWidget)));
-
-	QGroupBox *selectChannel = OBJ_NAME(new QGroupBox(tr("SELECT CHANNEL")), "selectChannel");
-	QVBoxLayout *selectChannelLayout = new QVBoxLayout;
-	selectChannel->setLayout(selectChannelLayout);
-	QComboBox *selectChannelCombo = new QComboBox;
-	QListView *selectChannelComboList = OBJ_NAME(new QListView, "selectChannelComboList");
-	selectChannelCombo->setView(selectChannelComboList);
-	selectChannelLayout->addWidget(selectChannelCombo);
-	selectChannelLayout->addStretch(1);
-	selectChannelCombo->addItem("Channel 1");
-	selectChannelCombo->addItem("Channel 2");
-	selectChannelCombo->addItem("Channel 3");
-	selectChannelCombo->addItem("Channel 4");
-	ui.cockpit.settings.selectChannel = selectChannelCombo;
-
-	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("OPERATING CONDITIONS")), "operatingConditions");
-	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
-	operatingConditions->setLayout(operatingConditionsLayout);
-	QComboBox *operatingConditionsCombo = new QComboBox;
-	QListView *operatingConditionsComboList = OBJ_NAME(new QListView, "operatingConditionsComboList");
-	operatingConditionsCombo->setView(operatingConditionsComboList);
-	QComboBox *currentRangeCombo = new QComboBox;
-	QListView *currentRangeComboList = OBJ_NAME(new QListView, "currentRangeComboList");
-	currentRangeCombo->setView(currentRangeComboList);
-	operatingConditionsLayout->addWidget(operatingConditionsCombo);
-	operatingConditionsLayout->addWidget(currentRangeCombo);
-	operatingConditionsLayout->addStretch(1);
-	operatingConditionsCombo->addItem("Potentiostat");
-	operatingConditionsCombo->addItem("Galvanostat");
-	currentRangeCombo->addItem("Autorange");
-
-	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(tr("COMMON SETTINGS")), "commonSettings");
-	QGridLayout *commonSettingsLayout = new QGridLayout;
-	commonSettings->setLayout(commonSettingsLayout);
-	commonSettingsLayout->addWidget(LBL("Sampling period"), 0, 0);
-	commonSettingsLayout->addWidget(TXT_CNTR(LED("1.000")), 0, 1);
-	commonSettingsLayout->addWidget(LBL("seconds"), 0, 2);
-	commonSettingsLayout->addWidget(LBL("W. E. setpoint"), 1, 0);
-	commonSettingsLayout->addWidget(TXT_CNTR(LED("0.000")), 1, 1);
-	commonSettingsLayout->addWidget(LBL("V"), 1, 2);
-	commonSettingsLayout->addWidget(CKB("Switch to open circuit"), 2, 0, 1, 3);
-	commonSettingsLayout->setRowStretch(3, 1);
-
-	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(tr("ADVANCED SETTINGS")), "advancedSettings");
-	QVBoxLayout *advancedSettingsLayout = new QVBoxLayout;
-	advancedSettings->setLayout(advancedSettingsLayout);
-	advancedSettingsLayout->addWidget(CKB("Discrete sampling"));
-	advancedSettingsLayout->addWidget(CKB("IR compensation"));
-	advancedSettingsLayout->addWidget(CKB("Voltage error correction"));
-	advancedSettingsLayout->addStretch(1);
-
-
-	settingsPanelLayout->addWidget(selectChannel);
-	settingsPanelLayout->addWidget(operatingConditions);
-	settingsPanelLayout->addWidget(commonSettings);
-	settingsPanelLayout->addWidget(advancedSettings);
-	settingsPanelLayout->addStretch(1);
-
-
-	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(CreateCockpitModeWidget()), "settingsPanelArea");
-
-	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-	scrollArea->setBackgroundRole(QPalette::Dark);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setWidget(settingsPanelWidget);
-
-	w = scrollArea;
-	ui.cockpit.settings.owner = w;
-
-	return w;
-}
 void MainWindowUI::InstallEventFilter() {
 	SettingsResizeEventFilter *filter = new SettingsResizeEventFilter(mw);
 	
@@ -250,8 +170,10 @@ QWidget* MainWindowUI::CreateCockpitTopWidget() {
 
 	topPanelLayout->addWidget(ui.cockpit.top.channel = OBJ_NAME(LBL("Channel 1"), "channelLabel"));
 	topPanelLayout->addStretch(1);
-	topPanelLayout->addWidget(ui.cockpit.top.runControl = OBJ_NAME(PBT("ST"), "startStopButton"));
-	topPanelLayout->addWidget(ui.cockpit.top.settings = OBJ_NAME(PBT("EX"), "hideExpandSettingsButton"));
+	topPanelLayout->addWidget(ui.cockpit.top.runControl = OBJ_NAME(PBT(""), "startStopButton"));
+	topPanelLayout->addWidget(ui.cockpit.top.settings = OBJ_NAME(PBT(""), "hideExpandSettingsButton"));
+
+	ui.cockpit.top.settings->setCheckable(true);
 
 	w = topPanelWidget;
 	ui.cockpit.top.owner = w;
@@ -268,22 +190,135 @@ QWidget* MainWindowUI::CreateCockpitBottomWidget() {
 	QWidget *bottomPanelWidget = OBJ_NAME(WDG(), "bottomPanelWidget");
 	QHBoxLayout *bottomPanelLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(bottomPanelWidget)));
 
-	bottomPanelLayout->addWidget(LBL("Ewe:"));
-	bottomPanelLayout->addWidget(LBL("-1.345 V"));
-	bottomPanelLayout->addWidget(LBL("Ece:"));
-	bottomPanelLayout->addWidget(LBL("-2.255 V"));
-	bottomPanelLayout->addWidget(LBL("Ewe - Ece:"));
-	bottomPanelLayout->addWidget(LBL("0.91 V"));
-	bottomPanelLayout->addWidget(LBL("Current (mA):"));
-	bottomPanelLayout->addWidget(LBL("0"));
-	bottomPanelLayout->addWidget(LBL("Redox state:"));
-	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Open circuit"), "order", "last"));
+	bottomPanelLayout->addWidget(OBJ_PROP(OBJ_PROP(LBL("Ewe:"), "type", "label"), "order", "first"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("-1.345 V"), "type", "value"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Ece:"), "type", "label"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("-2.255 V"), "type", "value"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Ewe - Ece:"), "type", "label"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("0.91 V"), "type", "value"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Current (mA):"), "type", "label"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("0"), "type", "value"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Redox state:"), "type", "label"));
+	bottomPanelLayout->addWidget(OBJ_PROP(LBL("Open circuit"), "type", "value"));
 	bottomPanelLayout->addStretch(1);
 
 	w = bottomPanelWidget;
 	ui.cockpit.bottom.owner = w;
 
 	return w;
+}
+QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	QWidget *settingsPanelWidget = OBJ_NAME(WDG(), "settingsPanelWidget");
+	QVBoxLayout *settingsPanelLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(settingsPanelWidget)));
+
+	QGroupBox *selectChannel = OBJ_NAME(new QGroupBox(tr("Select channel")), "selectChannel");
+	QVBoxLayout *selectChannelLayout = new QVBoxLayout;
+	selectChannel->setLayout(selectChannelLayout);
+	QComboBox *selectChannelCombo = new QComboBox;
+	QListView *selectChannelComboList = OBJ_NAME(new QListView, "selectChannelComboList");
+	selectChannelCombo->setView(selectChannelComboList);
+	selectChannelLayout->addWidget(selectChannelCombo);
+	selectChannelLayout->addStretch(1);
+	selectChannelCombo->addItem("Channel 1");
+	selectChannelCombo->addItem("Channel 2");
+	selectChannelCombo->addItem("Channel 3");
+	selectChannelCombo->addItem("Channel 4");
+	ui.cockpit.settings.selectChannel = selectChannelCombo;
+
+	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("Operating conditions")), "operatingConditions");
+	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
+	operatingConditions->setLayout(operatingConditionsLayout);
+	QComboBox *operatingConditionsCombo = new QComboBox;
+	QListView *operatingConditionsComboList = OBJ_NAME(new QListView, "operatingConditionsComboList");
+	operatingConditionsCombo->setView(operatingConditionsComboList);
+	QComboBox *currentRangeCombo = new QComboBox;
+	QListView *currentRangeComboList = OBJ_NAME(new QListView, "currentRangeComboList");
+	currentRangeCombo->setView(currentRangeComboList);
+	operatingConditionsLayout->addWidget(operatingConditionsCombo);
+	operatingConditionsLayout->addWidget(currentRangeCombo);
+	operatingConditionsLayout->addStretch(1);
+	operatingConditionsCombo->addItem("Potentiostat");
+	operatingConditionsCombo->addItem("Galvanostat");
+	currentRangeCombo->addItem("Autorange");
+
+	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(tr("Common settings")), "commonSettings");
+	QGridLayout *commonSettingsLayout = new QGridLayout;
+	commonSettings->setLayout(commonSettingsLayout);
+	commonSettingsLayout->addWidget(LBL("Sampling period"), 0, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("1.000")), 0, 1);
+	commonSettingsLayout->addWidget(LBL("seconds"), 0, 2);
+	commonSettingsLayout->addWidget(LBL("W. E. setpoint"), 1, 0);
+	commonSettingsLayout->addWidget(TXT_CNTR(LED("0.000")), 1, 1);
+	commonSettingsLayout->addWidget(LBL("V"), 1, 2);
+	commonSettingsLayout->addWidget(CKB("Switch to open circuit"), 2, 0, 1, 3);
+	commonSettingsLayout->setRowStretch(3, 1);
+
+	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(tr("Advanced settings")), "advancedSettings");
+	QVBoxLayout *advancedSettingsLayout = new QVBoxLayout;
+	advancedSettings->setLayout(advancedSettingsLayout);
+	advancedSettingsLayout->addWidget(CKB("Discrete sampling"));
+	advancedSettingsLayout->addWidget(CKB("IR compensation"));
+	advancedSettingsLayout->addWidget(CKB("Voltage error correction"));
+	advancedSettingsLayout->addStretch(1);
+
+
+	settingsPanelLayout->addWidget(selectChannel);
+	settingsPanelLayout->addWidget(operatingConditions);
+	settingsPanelLayout->addWidget(commonSettings);
+	settingsPanelLayout->addWidget(advancedSettings);
+	settingsPanelLayout->addStretch(1);
+
+
+	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(CreateCockpitModeWidget()), "settingsPanelArea");
+
+	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	scrollArea->setBackgroundRole(QPalette::Dark);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(settingsPanelWidget);
+
+	w = scrollArea;
+	ui.cockpit.settings.owner = w;
+
+	return w;
+}
+QWidget* MainWindowUI::CreateCockpitPlot() {
+	static QWidget *plotWidget = 0;
+
+	if (plotWidget) {
+		return plotWidget;
+	}
+
+	plotWidget = OBJ_NAME(WDG(), "plotWidget");
+	QVBoxLayout *plotWidgetLayout = NO_MARGIN(NO_SPACING(new QVBoxLayout(plotWidget)));
+
+	QwtPlot *w = new QwtPlot();
+	plotWidgetLayout->addWidget(w);
+
+	QwtPlotCurve *curve1 = new QwtPlotCurve("Curve 1");
+
+	QVector<QPointF> samples;
+
+	for (float x = 0; x < 10; x += 10 / 1000.) {
+		samples << QPointF(x, qSin(x) * 1000);
+	}
+
+	curve1->setSamples(samples);
+	curve1->setPen(QColor(166, 166, 166), 1),
+		curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+
+	curve1->attach(w);
+
+	w->replot();
+
+	ui.cockpit.plot.owner = plotWidget;
+
+	return plotWidget;
 }
 QWidget* MainWindowUI::CreateCockpitModeWidget() {
 	static QWidget *w = 0;
@@ -330,37 +365,4 @@ QWidget* MainWindowUI::CreateOpenDataFileWidget() {
 	w = new QWidget();
 
 	return w;
-}
-QWidget* MainWindowUI::CreateCockpitPlot() {
-	static QWidget *plotWidget = 0;
-
-	if (plotWidget) {
-		return plotWidget;
-	}
-
-	plotWidget = OBJ_NAME(WDG(), "plotWidget");
-	QVBoxLayout *plotWidgetLayout = NO_MARGIN(NO_SPACING(new QVBoxLayout(plotWidget)));
-
-	QwtPlot *w = new QwtPlot();
-	plotWidgetLayout->addWidget(w);
-
-	QwtPlotCurve *curve1 = new QwtPlotCurve("Curve 1");
-
-	QVector<QPointF> samples;
-
-	for (float x = 0; x < 10; x += 10 / 1000.) {
-		samples << QPointF(x, qSin(x)*1000);
-	}
-
-	curve1->setSamples(samples);
-	curve1->setPen(QColor(0x3D, 0x41, 0x4A), 1),
-	curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-
-	curve1->attach(w);
-
-	w->replot();
-
-	ui.cockpit.plot.owner = plotWidget;
-
-	return plotWidget;
 }

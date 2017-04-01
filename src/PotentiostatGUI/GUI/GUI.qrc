@@ -1,5 +1,14 @@
 <RCC>
     <qresource prefix="/GUI">
         <file>_res/combobox-dropdown.png</file>
+        <file>_res/settings.png</file>
+        <file>_res/settings-hover.png</file>
+        <file>_res/settings-open.png</file>
+        <file>_res/checkbox-checked.png</file>
+        <file>_res/checkbox-checked-hover.png</file>
+        <file>_res/checkbox-unchecked.png</file>
+        <file>_res/checkbox-unchecked-hover.png</file>
+        <file>_res/run.png</file>
+        <file>_res/run-clicked.png</file>
     </qresource>
 </RCC>
