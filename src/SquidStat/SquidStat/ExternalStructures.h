@@ -1,0 +1,29 @@
+#pragma once
+
+#pragma pack(push, 1)
+
+typedef enum {
+	HANDSHAKE = 65,
+	REPORT_STATUS,
+	SEND_CAL_DATA,
+	SET_OPMODE,
+	MANUAL_DC_SAMPLE,
+	V_SETPOINT,
+	I_SETPOINT,
+	SETUP_AC_SAMPLING,
+	RUN_FRA
+} USBcommand_t;
+
+typedef enum {
+	UR_HANDSHAKE = 65,
+	UR_REPORT_STATUS,
+	UR_SEND_CAL_DATA,
+	UR_SET_OPMODE,
+	UR_MANUAL_DC_SAMPLE,
+	UR_V_SETPOINT,
+	UR_I_SETPOINT,
+	UR_SETUP_AC_SAMPLING,
+	UR_RUN_FRA
+} USBresponse_t;
+
+#pragma pack(pop)
