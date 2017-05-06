@@ -3,6 +3,7 @@
 #include "Log.h"
 
 #include "InstrumentEnumerator.h"
+#include "InstrumentOperator.h"
 #include "ExternalStructures.h"
 
 int main(int argc, char *argv[]) {
@@ -28,19 +29,23 @@ int main(int argc, char *argv[]) {
 		LOG() << info.portName << ": " << info.serial;
 	}
 
-	foreach(const InstrumentInfo &info, instrumentList) {
-		bool ok;
-		CalibrationData calData = instrumentEnumerator.GetCalibrationData(info, &ok);
+	if (instrumentList.size()) {
+		InstrumentInfo &info(instrumentList[0]);
 
-		if (ok) {
-			LOG() << "Calibration received for" << info.portName;
-		}
-		else {
-			LOG() << "Calibration NOT received";
-		}
+		LOG() << "Start working with" << info.portName;
+
+		static InstrumentOperator instrumentOperator(info);
+
+		QObject::connect(&instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
+			[=](const CalibrationData &calData) {
+				LOG() << "Calibration received";
+
+				instrumentOperator.StartExperiment();
+			}
+		);
+
+		instrumentOperator.RequestCalibrationData();
 	}
-
-	;
 
 	return a.exec();
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "InstrumentStructures.h"
-#include "ExternalStructures.h"
 
 class InstrumentEnumerator {
 public:
@@ -9,8 +8,6 @@ public:
 
 	InstrumentList FindInstruments();
 	InstrumentList FindInstrumentsActive();
-
-	CalibrationData GetCalibrationData(const InstrumentInfo&, bool *ok = 0);
 
 private:
 };

@@ -41,6 +41,9 @@
     <Filter Include="_scr\ExternalStructures">
       <UniqueIdentifier>{4f57282a-fdbe-45f2-b01e-57764c809a89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\InstrumentOperator">
+      <UniqueIdentifier>{a393c293-a8a1-4cd6-9c07-1cb1574420c1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -60,6 +63,15 @@
     </ClCompile>
     <ClCompile Include="SerialCommunicator.cpp">
       <Filter>_scr\SerialCommunicator</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_InstrumentOperator.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_InstrumentOperator.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="InstrumentOperator.cpp">
+      <Filter>_scr\InstrumentOperator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +94,9 @@
   <ItemGroup>
     <CustomBuild Include="SerialCommunicator.h">
       <Filter>_scr\SerialCommunicator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="InstrumentOperator.h">
+      <Filter>_scr\InstrumentOperator</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

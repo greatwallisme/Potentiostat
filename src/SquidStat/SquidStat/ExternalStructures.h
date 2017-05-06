@@ -12,6 +12,7 @@ typedef enum {
 	I_SETPOINT,
 	SETUP_AC_SAMPLING,
 	RUN_FRA,
+	START_EXPERIMENT,
 
 	USB_COMMAND_LAST
 } USBcommand_t;
