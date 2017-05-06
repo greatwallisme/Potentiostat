@@ -16,12 +16,19 @@ public slots:
 	bool Start();
 	void Stop();
 
-	void SendCommand(USBcommand_t comm, quint8 channel, const QByteArray &data);
+	void SendCommand(CommandID comm, quint8 channel, const QByteArray &data);
+
+private slots:
+	void DataArrived();
 
 signals:
-	void ResponseReceived(USBresponse_t resp, quint8 channel, const QByteArray &data);
+	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);
 
 private:
+	int FindPacket(const char *start, const char *end);
+	bool CheckPacket(const ResponsePacket *resp);
+
 	InstrumentInfo _instrumentInfo;
-	QSerialPort _serialPort;
+	QSerialPort *_serialPort;
+	QByteArray _rawData;
 };
