@@ -34,11 +34,11 @@ typedef USBcommand_t CommandID;
 typedef USBresponse_t ResponseID;
 
 
-#define COMMAND_FRAIMING_BYTES	0xFFEE
-#define RESPONSE_FRAIMING_BYTES	0xFF
+#define COMMAND_FRAIMING_BYTES	0xAAEE
+#define RESPONSE_FRAIMING_BYTES	0xAA
 
 #define MAX_CHANNEL_VALUE		4
-#define MAX_DATA_LENGTH			0xFFFF
+#define MAX_DATA_LENGTH			2048
 
 struct CommandPacket {
 	quint16 fraiming;
@@ -55,5 +55,26 @@ struct ResponsePacket {
 	quint16 len;
 	char data[0];
 };
+
+typedef struct {
+	float m_DACdcP;   //DACdc V-to-bin slope, x > 0
+	float m_DACdcN;   //DACdc V-to-bin slope, x < 0
+	float b_DACdc;    //DACdc V-to-bin intercept
+	float m_refP;     //Ref bin-to-V slope, x > 0
+	float m_refN;     //Ref bin-to-V slope, x < 0
+	float b_ref;      //Ref bin-to-V intercept
+	float m_eweP;     //Ewe bin-to-V slope, x > 0
+	float m_eweN;     //Ewe bin-to-V slope, x < 0
+	float b_ewe;      //Ewe bin-to-V intercept
+	float m_eceP;     //Ece bin-to-V slope, x > 0
+	float m_eceN;     //Ece bin-to-V slope, x < 0
+	float b_ece;      //Ece bin-to-V intercept
+	float m_iP[8];    //Current bin-to-mA slope, x > 0
+	float m_iN[8];    //Current bin-to-mA slope, x < 0
+	float b_i[8];     //Current bin-to-mA intercept
+	float m_DACac;    //DACac bin-to-mVAC slope
+} cal_t;
+
+typedef cal_t CalibrationData;
 
 #pragma pack(pop)

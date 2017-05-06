@@ -56,7 +56,9 @@
     </Link>
     <PostBuildEvent>
       <Command>copy $(QTDIR)\bin\Qt5Cored.dll $(OutDir)\
-copy $(QTDIR)\bin\Qt5SerialPortd.dll $(OutDir)\</Command>
+copy $(QTDIR)\bin\Qt5SerialPortd.dll $(OutDir)\
+mkdir $(OutDir)\platforms\
+copy $(QTDIR)\plugins\platforms\qwindowsd.dll $(OutDir)\platforms\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -76,7 +78,9 @@ copy $(QTDIR)\bin\Qt5SerialPortd.dll $(OutDir)\</Command>
     </Link>
     <PostBuildEvent>
       <Command>copy $(QTDIR)\bin\Qt5Core.dll $(OutDir)\
-copy $(QTDIR)\bin\Qt5SerialPort.dll $(OutDir)\</Command>
+copy $(QTDIR)\bin\Qt5SerialPort.dll $(OutDir)\
+mkdir $(OutDir)\platforms\
+copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

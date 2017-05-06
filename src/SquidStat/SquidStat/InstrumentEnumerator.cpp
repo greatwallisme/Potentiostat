@@ -48,26 +48,24 @@ InstrumentList InstrumentEnumerator::FindInstrumentsActive() {
 			continue;
 		}
 
-		for (int i = 0; i < 3; ++i) {
-			handshakeResponseArrived = false;
+		handshakeResponseArrived = false;
 
-			QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
-				[=](ResponseID resp, quint8 channel, const QByteArray &data) {
-					if (resp == UR_HANDSHAKE) {
-						handshakeResponseArrived = true;
-						eventLoop.quit();
-					}
+		QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
+			[=](ResponseID resp, quint8 channel, const QByteArray &data) {
+				if (resp == UR_HANDSHAKE) {
+					handshakeResponseArrived = true;
+					eventLoop.quit();
 				}
-			);
+			}
+		);
 
-			communicator.SendCommand((CommandID)HANDSHAKE);
+		communicator.SendCommand((CommandID)HANDSHAKE);
 
 
-			QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
-			eventLoop.exec();
+		QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+		eventLoop.exec();
 
-			QObject::disconnect(connection);
-		}
+		QObject::disconnect(connection);
 
 		communicator.Stop();
 
@@ -78,6 +76,45 @@ InstrumentList InstrumentEnumerator::FindInstrumentsActive() {
 
 	return ret;
 }
-void InstrumentEnumerator::GetCalibrationData(const InstrumentInfo &instrumentInfo) {
-	;
+CalibrationData InstrumentEnumerator::GetCalibrationData(const InstrumentInfo &instrumentInfo, bool *ok) {
+	CalibrationData ret;
+	memset(&ret, 0x00, sizeof(CalibrationData));
+
+	static QEventLoop eventLoop;
+
+	if (ok) {
+		*ok = false;
+	}
+
+	SerialCommunicator communicator(instrumentInfo);
+
+	if (!communicator.Start()) {
+		return ret;
+	}
+
+	QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
+		[=](ResponseID resp, quint8 channel, const QByteArray &data) {
+			if (resp == UR_SEND_CAL_DATA) {
+				if (data.size() == sizeof(CalibrationData)) {
+					memcpy(const_cast<CalibrationData*>(&ret), data.data(), sizeof(CalibrationData));
+					if (ok) {
+						*ok = true;
+					}
+				}
+				eventLoop.quit();
+			}
+		}
+	);
+
+	communicator.SendCommand((CommandID)SEND_CAL_DATA);
+
+
+	QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+	eventLoop.exec();
+
+	QObject::disconnect(connection);
+
+	communicator.Stop();
+
+	return ret;
 }

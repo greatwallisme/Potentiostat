@@ -1,0 +1,4 @@
+[submodule "_firmware"]
+	path = _firmware
+	url = https://github.com/mdion1/Squidstat_firmware_2017_04_13.git
+	branch = master

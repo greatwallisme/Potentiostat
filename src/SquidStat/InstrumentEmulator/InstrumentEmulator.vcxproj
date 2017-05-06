@@ -73,7 +73,8 @@
     </Link>
     <PostBuildEvent>
       <Command>copy $(QTDIR)\bin\Qt5Core.dll $(OutDir)\
-copy $(QTDIR)\bin\Qt5Network.dll $(OutDir)\</Command>
+copy $(QTDIR)\bin\Qt5Network.dll $(OutDir)\
+copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
