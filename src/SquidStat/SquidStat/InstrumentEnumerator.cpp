@@ -1,11 +1,11 @@
 #include "InstrumentEnumerator.h"
+#include "SerialCommunicator.h"
 #include "Config.h"
 
 #include <QSerialPortInfo>
 #include <QByteArray>
-
-char helloRequest[] = {0xEE, 0xFF, 'A', 0x00, 0x00};
-char helloResponse[] = { 'H', 'e', 'l', 'l', 'o' };
+#include <QEventLoop>
+#include <QTimer>
 
 InstrumentEnumerator::InstrumentEnumerator() {
 
@@ -32,41 +32,48 @@ InstrumentList InstrumentEnumerator::FindInstruments() {
 }
 InstrumentList InstrumentEnumerator::FindInstrumentsActive() {
 	InstrumentList ret;
+	static bool handshakeResponseArrived;
+	static QEventLoop eventLoop;
 
 	auto availablePorts = QSerialPortInfo::availablePorts();
 
 	foreach(const QSerialPortInfo &serialPortInfo, availablePorts) {
-		QSerialPort serialPort(serialPortInfo);
-		serialPort.setBaudRate(DefaultSerialPortSettings::Baudrate());
-		serialPort.setDataBits(DefaultSerialPortSettings::DataBits());
-		serialPort.setFlowControl(DefaultSerialPortSettings::FlowControl());
-		serialPort.setParity(DefaultSerialPortSettings::Parity());
-		serialPort.setStopBits(DefaultSerialPortSettings::StopBits());
-
-		if (!serialPort.open(QIODevice::ReadWrite)) {
-			continue;
-		}
-
-		serialPort.write(helloRequest, sizeof(helloRequest));
-		serialPort.flush();
-
-		serialPort.waitForReadyRead(1000);
-
-		if (serialPort.bytesAvailable() < sizeof(helloResponse)) {
-			serialPort.close();
-			continue;
-		}
-
-		if (serialPort.read(sizeof(helloResponse)) != QByteArray(helloResponse, sizeof(helloResponse))) {
-			serialPort.close();
-			continue;
-		}
-
 		InstrumentInfo instrumentInfo;
 		instrumentInfo.portName = serialPortInfo.portName();
 		instrumentInfo.serial = serialPortInfo.serialNumber();
 
-		ret << instrumentInfo;
+		SerialCommunicator communicator(instrumentInfo);
+
+		if (!communicator.Start()) {
+			continue;
+		}
+
+		for (int i = 0; i < 3; ++i) {
+			handshakeResponseArrived = false;
+
+			QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
+				[=](ResponseID resp, quint8 channel, const QByteArray &data) {
+					if (resp == UR_HANDSHAKE) {
+						handshakeResponseArrived = true;
+						eventLoop.quit();
+					}
+				}
+			);
+
+			communicator.SendCommand((CommandID)HANDSHAKE);
+
+
+			QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+			eventLoop.exec();
+
+			QObject::disconnect(connection);
+		}
+
+		communicator.Stop();
+
+		if (handshakeResponseArrived) {
+			ret << instrumentInfo;
+		}
 	}
 
 	return ret;

@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SquidStat", "SquidStat\SquidStat.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_SquidStat", "SquidStat\SquidStat.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InstrumentEmulator", "InstrumentEmulator\InstrumentEmulator.vcxproj", "{E0869052-B226-4575-BACC-B46E1B365E20}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x86.Build.0 = Debug|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x86.ActiveCfg = Release|Win32
 		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x86.Build.0 = Release|Win32
+		{E0869052-B226-4575-BACC-B46E1B365E20}.Debug|x86.ActiveCfg = Debug|Win32
+		{E0869052-B226-4575-BACC-B46E1B365E20}.Debug|x86.Build.0 = Debug|Win32
+		{E0869052-B226-4575-BACC-B46E1B365E20}.Release|x86.ActiveCfg = Release|Win32
+		{E0869052-B226-4575-BACC-B46E1B365E20}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

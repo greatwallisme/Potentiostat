@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 		LOG() << info.portName << ": " << info.serial;
 	}
 
-	LOG() << "Search instruments via HELLO request";
+	LOG() << "Search instruments via HANDSHAKE request";
 	instrumentList = instrumentEnumerator.FindInstrumentsActive();
 
 	LOG() << "Found" << instrumentList.size() << "instruments";

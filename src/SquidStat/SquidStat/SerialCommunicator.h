@@ -16,7 +16,7 @@ public slots:
 	bool Start();
 	void Stop();
 
-	void SendCommand(CommandID comm, quint8 channel, const QByteArray &data);
+	void SendCommand(CommandID comm, quint8 channel = 0, const QByteArray &data = QByteArray());
 
 private slots:
 	void DataArrived();

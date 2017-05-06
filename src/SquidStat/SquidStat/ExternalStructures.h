@@ -25,7 +25,9 @@ typedef enum {
 	UR_V_SETPOINT,
 	UR_I_SETPOINT,
 	UR_SETUP_AC_SAMPLING,
-	UR_RUN_FRA
+	UR_RUN_FRA,
+
+	USB_RESPONCE_LAST
 } USBresponse_t;
 
 typedef USBcommand_t CommandID;

@@ -30,7 +30,7 @@ void SerialCommunicator::SendCommand(CommandID comm, quint8 channel, const QByte
 	pack->fraiming = COMMAND_FRAIMING_BYTES;
 	pack->comm = comm;
 	pack->channel = channel;
-	pack->len = data.length();
+	pack->len = data.size();
 	memcpy(pack->data, data.data(), data.size());
 
 	_serialPort->write(toSend);
