@@ -110,34 +110,34 @@ QScrollBar:vertical {
      border: none;
      width: 10px;
      margin: 0px;
- }
- QScrollBar::handle:vertical {
-     background: #b8cbdc;
-     min-height: 20px;
- }
- QScrollBar::add-line:vertical {
-     border: none;
-     height: 0px;
-     subcontrol-position: bottom;
-     subcontrol-origin: margin;
- }
+}
+QScrollBar::handle:vertical {
+	background: #b8cbdc;
+	min-height: 20px;
+}
+QScrollBar::add-line:vertical {
+	border: none;
+	height: 0px;
+	subcontrol-position: bottom;
+	subcontrol-origin: margin;
+}
 
- QScrollBar::sub-line:vertical {
-     border: none;
-     height: 0px;
-     subcontrol-position: top;
-     subcontrol-origin: margin;
- }
- QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
-     border: 2px solid grey;
-     width: 3px;
-     height: 3px;
-     background: white;
- }
+QScrollBar::sub-line:vertical {
+	border: none;
+	height: 0px;
+	subcontrol-position: top;
+	subcontrol-origin: margin;
+}
+QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+	border: 2px solid grey;
+	width: 3px;
+	height: 3px;
+	background: white;
+}
 
- QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-     background: none;
- }
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+	background: none;
+}
 
 /*//////////////         CONTROL BUTTONS       ////////////////////*/
 #control-button-blue {
@@ -171,23 +171,24 @@ QScrollBar:vertical {
 
 /*//////////////         PLOT       ////////////////////*/
 QwtPlot {
-    border: 1px solid white;
-    border-radius: 10px;
-    padding: 10px;
-    background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 Brown, stop: 0.5 Chocolate, stop: 1 Brown );
+	margin: 30px;
+	border: none;
+	background-color: #ffffff;
 }
 QwtPlotCanvas {
-    border: 1px solid White;
-    border-radius: 10px;
-    background-color: Tan;
+    border: none;
+    background-color: #ffffff;
 }
 QwtScaleWidget {
-    color: palette(light);
+    color: #4d565f;
+	font-family: "Segoe UI Semibold";
 }
-QwtTextLabel#QwtPlotTitle {
-    color: palette(light);
+QwtText {
+    color: #000000;
+	font-family: "Arial";
+	font-size: 20px;
 }
+/*
 QwtLegend {
     border: 1px solid white;
     border-radius: 10px;
@@ -197,6 +198,7 @@ QwtLegend {
 QwtLegendItem {
     color: palette(light);
 }
+*/
 /*
 QwtPlot {
 	margin: 30px;

@@ -3,6 +3,7 @@
 
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
+#include <qwt_legend.h>
 
 #include "UIHelper.hpp"
 
@@ -156,12 +157,23 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	QVBoxLayout *lay = NO_MARGIN(NO_SPACING(new QVBoxLayout(w)));
 
 	QwtPlot *plot = new QwtPlot();
-	//plot->setAxisScale(QwtPlot::xBottom, 0, 30);
+	plot->setAxisScale(QwtPlot::xBottom, 0, 30);
 	plot->setAxisScale(QwtPlot::yLeft, -1, 1);
+	QwtText title;
+	title.setFont(QFont("Segoe UI", 14));
+	title.setText("Frequency (Hz)");
+	plot->setAxisTitle(QwtPlot::xBottom, title);
+	title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	plot->setAxisTitle(QwtPlot::yLeft, title);
+
+	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
 	lay->addWidget(plot);
 
-	QwtPlotCurve *curve = new QwtPlotCurve("Sample graph");
+	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
+	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve->setPen(QColor(42, 127, 220), 1);
+	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 	curve->attach(plot);
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](quint8 channel, const ExperimentalData &expData) {
