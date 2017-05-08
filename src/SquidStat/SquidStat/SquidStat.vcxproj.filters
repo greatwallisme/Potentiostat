@@ -44,6 +44,12 @@
     <Filter Include="_scr\InstrumentOperator">
       <UniqueIdentifier>{a393c293-a8a1-4cd6-9c07-1cb1574420c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\MainWindow">
+      <UniqueIdentifier>{a2098341-09db-4e56-bf12-f3808d4481f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="_scr\Log">
+      <UniqueIdentifier>{1ba6f2b0-217e-4669-9ff0-ca752f93f82e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -73,13 +79,34 @@
     <ClCompile Include="InstrumentOperator.cpp">
       <Filter>_scr\InstrumentOperator</Filter>
     </ClCompile>
+    <ClCompile Include="MainWindow.cpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_MainWindow.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_MainWindow.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="MainWindowUI.cpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>_scr\Log</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_Log.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_Log.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\qrc_GUI.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InstrumentEnumerator.h">
       <Filter>_scr\InstrumentEnumerator</Filter>
-    </ClInclude>
-    <ClInclude Include="Log.h">
-      <Filter>_scr</Filter>
     </ClInclude>
     <ClInclude Include="Config.h">
       <Filter>_scr\Config</Filter>
@@ -90,6 +117,9 @@
     <ClInclude Include="ExternalStructures.h">
       <Filter>_scr\ExternalStructures</Filter>
     </ClInclude>
+    <ClInclude Include="UIHelper.hpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="SerialCommunicator.h">
@@ -97,6 +127,18 @@
     </CustomBuild>
     <CustomBuild Include="InstrumentOperator.h">
       <Filter>_scr\InstrumentOperator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="MainWindow.h">
+      <Filter>_scr\MainWindow</Filter>
+    </CustomBuild>
+    <CustomBuild Include="MainWindowUI.h">
+      <Filter>_scr\MainWindow</Filter>
+    </CustomBuild>
+    <CustomBuild Include="Log.h">
+      <Filter>_scr\Log</Filter>
+    </CustomBuild>
+    <CustomBuild Include="GUI.qrc">
+      <Filter>Resource Files</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

@@ -14,13 +14,15 @@ public:
 
 public slots:
 	void RequestCalibrationData();
-	void StartExperiment();
+	void StartExperiment(quint8 channel = 0);
+	void StopExperiment(quint8 channel = 0);
 
 private slots:
 	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);
 
 signals:
 	void CalibrationDataReceived(const CalibrationData&);
+	void ExperimentalDataReceived(quint8 channel, const ExperimentalData&);
 
 private:
 	SerialCommunicator *_communicator;

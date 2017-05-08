@@ -32,6 +32,9 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="_src\Config">
+      <UniqueIdentifier>{172363a8-65d5-4adb-adbe-b059750aecb7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -46,10 +49,18 @@
     <ClCompile Include="GeneratedFiles\Release\moc_SerialCommunicator.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="..\SquidStat\Config.cpp">
+      <Filter>_src\Config</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="SerialCommunicator.h">
       <Filter>_src\SerialCommunicator</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\SquidStat\Config.h">
+      <Filter>_src\Config</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

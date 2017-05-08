@@ -56,30 +56,30 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 	return l;
 }
 
-#define tr(...)         QObject::tr(__VA_ARGS__)
-#define connect(...)    QObject::connect(__VA_ARGS__)
+#define TR(...)         QObject::tr(__VA_ARGS__)
+#define CONNECT(...)    QObject::connect(__VA_ARGS__)
 
-#define LBL(a)          new QLabel(tr(a))
-#define S_LBL(a)        SizedWidget(new QLabel(tr(a)), GetSmaller)
-#define B_LBL(a)        SizedWidget(new QLabel(tr(a)), GetBigger)
-#define S_CKB(a)        SizedWidget(new QCheckBox(tr(a)), GetSmaller)
-#define S_LED(a)        SetMinimumSizePolicy(SizedWidget(new QLineEdit(tr(a)), GetSmaller))
+#define LBL(a)          new QLabel(TR(a))
+#define S_LBL(a)        SizedWidget(new QLabel(TR(a)), GetSmaller)
+#define B_LBL(a)        SizedWidget(new QLabel(TR(a)), GetBigger)
+#define S_CKB(a)        SizedWidget(new QCheckBox(TR(a)), GetSmaller)
+#define S_LED(a)        SetMinimumSizePolicy(SizedWidget(new QLineEdit(TR(a)), GetSmaller))
 #define BOLD(a)         FontFamilyWidget(a, GetBold)
 #define ITALIC(a)       FontStyleWidget(a, GetItalic)
 
-#define B_PBT(a)        SizedWidget(new QPushButton(tr(a)), GetBigger)
-#define S_PBT(a)        SizedWidget(new QPushButton(tr(a)), GetSmaller)
-#define PBT(a)          new QPushButton(tr(a))
+#define B_PBT(a)        SizedWidget(new QPushButton(TR(a)), GetBigger)
+#define S_PBT(a)        SizedWidget(new QPushButton(TR(a)), GetSmaller)
+#define PBT(a)          new QPushButton(TR(a))
 #define WDG()			new QWidget
-#define LED(a)			new QLineEdit(tr(a))
-#define CKB(a)			new QCheckBox(tr(a))
+#define LED(a)			new QLineEdit(TR(a))
+#define CKB(a)			new QCheckBox(TR(a))
 
 template<typename WidgetType>
 WidgetType* SetText(WidgetType *w, const QString &text) {
     w->setText(text);
     return w;
 }
-#define TOOL_BT(a)      SetText(new QToolButton, tr(a))
+#define TOOL_BT(a)      SetText(new QToolButton, TR(a))
 
 #define TXT_CNTR(a)     SetHCenterAlignment(a)
 

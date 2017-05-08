@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QObject>
-#include <QTcpSocket>
+#include <QSerialPort>
 
 #include <ExternalStructures.h>
 #include <InstrumentStructures.h>
@@ -28,6 +28,6 @@ private:
 	int FindPacket(const char *start, const char *end);
 	bool CheckPacket(const CommandPacket *resp);
 
-	QTcpSocket *_serialPort;
+	QSerialPort *_serialPort;
 	QByteArray _rawData;
 };

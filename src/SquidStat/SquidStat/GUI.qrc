@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/GUI">
+        <file>Resources/fonts/Esphimere Bold Italic.otf</file>
+        <file>Resources/fonts/Esphimere Bold.otf</file>
+        <file>Resources/fonts/Esphimere Extra Light Italic.otf</file>
+        <file>Resources/fonts/Esphimere Extra Light.otf</file>
+        <file>Resources/fonts/Esphimere Italic.otf</file>
+        <file>Resources/fonts/Esphimere Semi Bold Italic.otf</file>
+        <file>Resources/fonts/Esphimere Semi Bold.otf</file>
+        <file>Resources/fonts/Esphimere Thin Italic.otf</file>
+        <file>Resources/fonts/Esphimere Thin.otf</file>
+        <file>Resources/fonts/Esphimere.otf</file>
+        <file>Resources/fonts/segoeui(1).ttf</file>
+        <file>Resources/fonts/SEGOEUIB_2.ttf</file>
+        <file>Resources/fonts/segoeuii_2.ttf</file>
+        <file>Resources/fonts/segoeuil_0.ttf</file>
+        <file>Resources/fonts/segoeuisl.ttf</file>
+        <file>Resources/fonts/SEGOEUIZ_2.ttf</file>
+        <file>Resources/fonts/seguibl.ttf</file>
+        <file>Resources/fonts/seguibli.ttf</file>
+        <file>Resources/fonts/seguili.ttf</file>
+        <file>Resources/fonts/seguisb_0.ttf</file>
+        <file>Resources/fonts/seguisbi.ttf</file>
+        <file>Resources/fonts/seguisli.ttf</file>
+        <file>Resources/fonts/Esphimere Light.ttf</file>
+        <file>Resources/combobox-dropdown.png</file>
+    </qresource>
+</RCC>

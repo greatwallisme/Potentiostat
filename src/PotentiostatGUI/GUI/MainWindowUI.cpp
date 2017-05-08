@@ -116,7 +116,7 @@ void MainWindowUI::CreateCentralWidget() {
 void MainWindowUI::InstallEventFilter() {
 	SettingsResizeEventFilter *filter = new SettingsResizeEventFilter(mw);
 	
-	connect(filter, &SettingsResizeEventFilter::ResizeSettings, [=] () {
+	CONNECT(filter, &SettingsResizeEventFilter::ResizeSettings, [=] () {
 		ResizeSettings();
 	});
 
@@ -138,15 +138,15 @@ void MainWindowUI::ResizeSettings() {
 	ui.cockpit.settings.owner->raise();
 }
 void MainWindowUI::CreateCockpitLogic() {
-	connect(ui.cockpit.settings.selectChannel, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
+	CONNECT(ui.cockpit.settings.selectChannel, static_cast<void(QComboBox::*)(const QString &)>(&QComboBox::activated), [=](const QString &text) {
 		SetText(ui.cockpit.top.channel, text);
 	});
 
 
-	connect(ui.cockpit.top.runControl, &QPushButton::clicked,
+	CONNECT(ui.cockpit.top.runControl, &QPushButton::clicked,
 		mw, &MainWindow::applyStyle);
 
-	connect(ui.cockpit.top.settings, &QPushButton::clicked, [=] {
+	CONNECT(ui.cockpit.top.settings, &QPushButton::clicked, [=] {
 		if (ui.cockpit.settings.owner->isVisible()) {
 			ui.cockpit.settings.owner->hide();
 		}
@@ -217,7 +217,7 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	QWidget *settingsPanelWidget = OBJ_NAME(WDG(), "settingsPanelWidget");
 	QVBoxLayout *settingsPanelLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(settingsPanelWidget)));
 
-	QGroupBox *selectChannel = OBJ_NAME(new QGroupBox(tr("Select channel")), "selectChannel");
+	QGroupBox *selectChannel = OBJ_NAME(new QGroupBox(TR("Select channel")), "selectChannel");
 	QVBoxLayout *selectChannelLayout = new QVBoxLayout;
 	selectChannel->setLayout(selectChannelLayout);
 	QComboBox *selectChannelCombo = new QComboBox;
@@ -231,7 +231,7 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	selectChannelCombo->addItem("Channel 4");
 	ui.cockpit.settings.selectChannel = selectChannelCombo;
 
-	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(tr("Operating conditions")), "operatingConditions");
+	QGroupBox *operatingConditions = OBJ_NAME(new QGroupBox(TR("Operating conditions")), "operatingConditions");
 	QVBoxLayout *operatingConditionsLayout = new QVBoxLayout;
 	operatingConditions->setLayout(operatingConditionsLayout);
 	QComboBox *operatingConditionsCombo = new QComboBox;
@@ -247,7 +247,7 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	operatingConditionsCombo->addItem("Galvanostat");
 	currentRangeCombo->addItem("Autorange");
 
-	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(tr("Common settings")), "commonSettings");
+	QGroupBox *commonSettings = OBJ_NAME(new QGroupBox(TR("Common settings")), "commonSettings");
 	QGridLayout *commonSettingsLayout = new QGridLayout;
 	commonSettings->setLayout(commonSettingsLayout);
 	commonSettingsLayout->addWidget(LBL("Sampling period"), 0, 0);
@@ -259,7 +259,7 @@ QWidget* MainWindowUI::CreateCockpitSettingsWidget() {
 	commonSettingsLayout->addWidget(CKB("Switch to open circuit"), 2, 0, 1, 3);
 	commonSettingsLayout->setRowStretch(3, 1);
 
-	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(tr("Advanced settings")), "advancedSettings");
+	QGroupBox *advancedSettings = OBJ_NAME(new QGroupBox(TR("Advanced settings")), "advancedSettings");
 	QVBoxLayout *advancedSettingsLayout = new QVBoxLayout;
 	advancedSettings->setLayout(advancedSettingsLayout);
 	advancedSettingsLayout->addWidget(CKB("Discrete sampling"));

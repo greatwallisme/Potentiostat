@@ -1,16 +1,22 @@
 #include "SerialCommunicator.h"
 
-#include <QHostAddress>
+#include <Config.h>
 
 SerialCommunicator::SerialCommunicator(QObject *parent) :
 	QObject(parent)
 {
-	_serialPort = new QTcpSocket(this);
+	_serialPort = new QSerialPort(this);
+	_serialPort->setPortName("COM4");
+	_serialPort->setBaudRate(DefaultSerialPortSettings::Baudrate());
+	_serialPort->setDataBits(DefaultSerialPortSettings::DataBits());
+	_serialPort->setFlowControl(DefaultSerialPortSettings::FlowControl());
+	_serialPort->setParity(DefaultSerialPortSettings::Parity());
+	_serialPort->setStopBits(DefaultSerialPortSettings::StopBits());
 
-	connect(_serialPort, &QTcpSocket::readyRead, this, &SerialCommunicator::DataArrived);
+	connect(_serialPort, &QSerialPort::readyRead, this, &SerialCommunicator::DataArrived);
 }
 void SerialCommunicator::Start() {
-	_serialPort->connectToHost(QHostAddress::LocalHost, 33333);
+	_serialPort->open(QIODevice::ReadWrite);
 }
 void SerialCommunicator::Stop() {
 	_serialPort->close();
@@ -56,7 +62,7 @@ bool SerialCommunicator::CheckPacket(const CommandPacket *resp) {
 	}
 
 	bool commandFound = false;
-	for (quint8 val = UR_HANDSHAKE; val < USB_RESPONCE_LAST; ++val) {
+	for (quint8 val = HANDSHAKE; val < USB_COMMAND_LAST; ++val) {
 		if (val == resp->comm) {
 			commandFound = true;
 			break;
@@ -97,7 +103,7 @@ void SerialCommunicator::DataArrived() {
 		}
 
 		if ((endPtr - dataPtr) < (sizeof(CommandPacket) + comm->len)) {
-			continue;
+			break;
 		}
 
 		emit CommandReceived((CommandID)comm->comm, comm->channel, QByteArray(comm->data, comm->len));

@@ -17,6 +17,7 @@ InstrumentList InstrumentEnumerator::FindInstruments() {
 
 
 	foreach(const QSerialPortInfo &serialPortInfo, availablePorts) {
+		auto name = serialPortInfo.portName();
 		if (serialPortInfo.manufacturer() != MANUFACTURER_NAME) {
 			continue;
 		}

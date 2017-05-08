@@ -1,4 +1,4 @@
-#include <QtCore/QCoreApplication>
+#include <QApplication>
 
 #include "Log.h"
 
@@ -6,8 +6,21 @@
 #include "InstrumentOperator.h"
 #include "ExternalStructures.h"
 
+#include "MainWindow.h"
+
+#include <QTimer>
+#include <QtGlobal>
+
+
 int main(int argc, char *argv[]) {
-	QCoreApplication a(argc, argv);
+	QApplication a(argc, argv);
+	qInstallMessageHandler(LogMessageHandler);
+
+	MainWindow w;
+
+	w.show();
+
+	return a.exec();
 
 	InstrumentEnumerator instrumentEnumerator;
 
@@ -29,23 +42,38 @@ int main(int argc, char *argv[]) {
 		LOG() << info.portName << ": " << info.serial;
 	}
 
+	InstrumentOperator *instrumentOperator = 0;
 	if (instrumentList.size()) {
 		InstrumentInfo &info(instrumentList[0]);
 
 		LOG() << "Start working with" << info.portName;
 
-		static InstrumentOperator instrumentOperator(info);
+		instrumentOperator = new InstrumentOperator(info);
 
-		QObject::connect(&instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
+		QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
 			[=](const CalibrationData &calData) {
 				LOG() << "Calibration received";
 
-				instrumentOperator.StartExperiment();
+				instrumentOperator->StartExperiment();
 			}
 		);
 
-		instrumentOperator.RequestCalibrationData();
+
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
+			[=](quint8 channel, const ExperimentalData &expData) {
+				LOG() << "Experimental data received";
+			}
+		);
+
+		QTimer::singleShot(500, instrumentOperator, &InstrumentOperator::RequestCalibrationData);
+		QTimer::singleShot(5000, [=]() {
+			instrumentOperator->StopExperiment();
+		});
 	}
 
-	return a.exec();
+	if (instrumentOperator) {
+		delete instrumentOperator;
+	}
+
+	return 0;
 }

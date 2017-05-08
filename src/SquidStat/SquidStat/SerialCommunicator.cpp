@@ -2,6 +2,8 @@
 
 #include "Config.h"
 
+#include "Log.h"
+
 SerialCommunicator::SerialCommunicator(const InstrumentInfo &info, QObject *parent) :
 	QObject(parent),
 	_instrumentInfo(info)
@@ -81,7 +83,9 @@ bool SerialCommunicator::CheckPacket(const ResponsePacket *resp) {
 	return true;
 }
 void SerialCommunicator::DataArrived() {
-	_rawData += _serialPort->readAll();
+	QByteArray newData = _serialPort->readAll();
+	
+	_rawData += newData;
 
 	if (_rawData.size() < sizeof(ResponsePacket)) {
 		return;
@@ -105,7 +109,7 @@ void SerialCommunicator::DataArrived() {
 		}
 
 		if ((endPtr - dataPtr) < (sizeof(ResponsePacket) + resp->len)) {
-			continue;
+			break;
 		}
 
 		emit ResponseReceived((ResponseID)resp->comm, resp->channel, QByteArray(resp->data, resp->len));

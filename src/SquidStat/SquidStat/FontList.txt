@@ -1,0 +1,256 @@
+Family: "Esphimere"
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere"
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Extra Light"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Extra Light"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere"
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Light"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Semi Bold"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Semi Bold"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Thin"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere Thin"
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Esphimere"
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Extra Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semi Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Thin" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semilight" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Black" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semibold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semilight" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Black" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semibold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semilight" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Black" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semibold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Light"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Semilight"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Light" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semilight" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Bold Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Black" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Semibold" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Black"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Black"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Light"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Semibold"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Semibold"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------
+Family: "Segoe UI Semilight"
+Style "Regular" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+Style "Italic" is smoothy scalable
+Smooth sizes: 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
+----------------------------

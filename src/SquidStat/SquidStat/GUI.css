@@ -1,0 +1,242 @@
+* {
+	font-family: "Segoe UI";
+	font-size: 14px;
+	color: #1d1d1d;
+}
+
+QMainWindow {
+	min-width: 1366px;
+	min-height: 768px;
+	max-width: 1366px;
+	max-height: 768px;
+}
+
+QWidget {
+	background-color: #ffffff;
+}
+
+/*//////////////         APPLY BUTTON       ////////////////////*/
+
+#apply-button {
+	background-color: #ffbec0;
+	border: 1px solid #ce2026;
+	margin-left: 20px;
+	margin-top: 10px;
+	padding: 10px;
+	
+	color: #7b1a1e;
+}
+
+#apply-button-owner {
+	background-color: #ce2026;
+	border: none;
+}
+/*//////////////         SELECT HARDWARE       ////////////////////*/
+#heading-label {
+	font-family: "Esphimere";
+	font-size: 24px;
+	color: #ce2026;
+	border: 1px solid #ffffff;
+	/*background: qlineargradient( x1:0 y1:0, x2:1 y2:0, stop:0 cyan, stop:1 blue);*/
+	background: #ffffff;
+	padding-top: 50px;
+	padding-left: 30px;
+}
+#regular-comment-label {
+	font-family: "Segoe UI Semibold";
+	color: #4d565f;
+	margin-left: 30px;
+	margin-top: 20px;
+}
+
+QLineEdit, QComboBox {
+	border: 1px solid #c6ccd2;
+	min-height: 30px;
+	margin-top: 20px;
+	padding-left: 15px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+
+	border: none;
+}
+QComboBox::down-arrow {
+    image: url(:/GUI/Resources/combobox-dropdown.png);
+	
+	margin-right: 25px;
+}
+#combo-list {
+    border: 1px solid #c6ccd2;
+	background: #ffffff;
+	outline: 0;
+}
+#combo-list::item {
+	border: none;
+	padding: 5px;
+	padding-left: 10px;
+}
+#combo-list::item:selected {
+	background-color: #ffbec0;
+	color: #7b1a1e;
+}
+
+#secondary-button {
+	font-family: "Segoe UI Semibold";
+	color: #2c81dc;
+	border: 3px solid #bee1e1;
+	min-height: 40px;
+	margin: 10px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+#secondary-button:hover {
+	border-color: #53b0fe;
+}
+#secondary-button:pressed  {
+	border-color: #bee1e1;
+}
+
+/*//////////////         LOG       ////////////////////*/
+
+QTextEdit {
+	border: 1px solid #c6ccd2;
+	min-height: 30px;
+	margin-top: 20px;
+	padding-left: 15px;
+	margin-left: 30px;
+}
+QScrollBar:vertical {
+     border: none;
+     width: 10px;
+     margin: 0px;
+ }
+ QScrollBar::handle:vertical {
+     background: #b8cbdc;
+     min-height: 20px;
+ }
+ QScrollBar::add-line:vertical {
+     border: none;
+     height: 0px;
+     subcontrol-position: bottom;
+     subcontrol-origin: margin;
+ }
+
+ QScrollBar::sub-line:vertical {
+     border: none;
+     height: 0px;
+     subcontrol-position: top;
+     subcontrol-origin: margin;
+ }
+ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+     border: 2px solid grey;
+     width: 3px;
+     height: 3px;
+     background: white;
+ }
+
+ QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+     background: none;
+ }
+
+/*//////////////         CONTROL BUTTONS       ////////////////////*/
+#control-button-blue {
+	border: none;
+	border: 2px solid #d4e7ee;
+	background-color: #eef9fb;
+	min-height: 50px;
+	margin-top: 20px;
+	font-size: 16px;
+}
+#control-button-blue:hover {
+	border-color: #82b6e6;
+}
+#control-button-blue:pressed {
+	border-color: #d4e7ee;
+}
+#control-button-red {
+	border: none;
+	border: 2px solid #e8cecf;
+	background-color: #f7edec;
+	min-height: 50px;
+	margin-top: 20px;
+	font-size: 16px;
+}
+#control-button-red:hover {
+	border-color: #d95b5f;
+}
+#control-button-red:pressed {
+	border-color: #e8cecf;
+}
+
+/*//////////////         PLOT       ////////////////////*/
+QwtPlot {
+    border: 1px solid white;
+    border-radius: 10px;
+    padding: 10px;
+    background-color: qlineargradient( x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 Brown, stop: 0.5 Chocolate, stop: 1 Brown );
+}
+QwtPlotCanvas {
+    border: 1px solid White;
+    border-radius: 10px;
+    background-color: Tan;
+}
+QwtScaleWidget {
+    color: palette(light);
+}
+QwtTextLabel#QwtPlotTitle {
+    color: palette(light);
+}
+QwtLegend {
+    border: 1px solid white;
+    border-radius: 10px;
+    padding: 10px;
+    background: brown;
+}
+QwtLegendItem {
+    color: palette(light);
+}
+/*
+QwtPlot {
+	margin: 30px;
+	
+	border: 1px solid #c8c8c8;
+	background-color: #f4f4f4;
+	
+	padding: 10px;
+}
+
+QwtPlotCanvas {
+	border: none;
+    background-color: #f4f4f4;
+}
+
+QwtPlotGLCanvas {
+	border: none;
+    background-color: #f4f4f4;
+}
+
+QwtScaleWidget {
+    color: #666666;
+}
+
+QwtTextLabel#QwtPlotTitle {
+    color: #000000;
+}
+
+QwtTextLabel#QwtPlotFooter {
+    color: #000000;
+}
+
+QwtLegend {
+	border: none;
+    padding: 2px;
+    background: #91A3A3;
+}
+
+QwtLegendLabel {
+    color: #000000;
+}
+*/
+/*//////////////////////////////////*/
