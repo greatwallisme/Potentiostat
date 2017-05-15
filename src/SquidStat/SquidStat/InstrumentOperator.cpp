@@ -15,14 +15,14 @@ InstrumentOperator::~InstrumentOperator() {
 }
 void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data) {
 	switch (resp) {
-		case UR_SEND_CAL_DATA:
+		case CAL_DATA:
 			if (data.size() == sizeof(CalibrationData)) {
 				CalibrationData *calData = (CalibrationData*)data.data();
 				emit CalibrationDataReceived(*calData);
 			}
 			break;
 
-		case UR_EXPERIMENTAL_DATA:
+		case ADCDC_DATA:
 			if (data.size() == sizeof(ExperimentalData)) {
 				ExperimentalData *expData = (ExperimentalData*)data.data();
 				emit ExperimentalDataReceived(channel, *expData);
@@ -39,6 +39,7 @@ void InstrumentOperator::RequestCalibrationData() {
 void InstrumentOperator::StartExperiment(quint8 channel) {
 	ExperimentNode_t exp[5];
 
+	/*
 	exp[0].nodeType = BRANCHNODE_HEAD;
 	
 	exp[1].nodeType = DCNODE_SWEEP;
@@ -69,9 +70,10 @@ void InstrumentOperator::StartExperiment(quint8 channel) {
 	exp[3].BranchNodeTail.branchHeadIndex = 0;
 
 	exp[4].nodeType = END_EXPERIMENT_NODE;
+	//*/
 
-	_communicator->SendCommand((CommandID)START_EXPERIMENT, channel, QByteArray((char*)exp, sizeof(exp)));
+	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel, QByteArray((char*)exp, sizeof(exp)));
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {
-	_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
+	//_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
 }

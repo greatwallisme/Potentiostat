@@ -65,16 +65,16 @@ bool SerialCommunicator::CheckPacket(const ResponsePacket *resp) {
 		return false;
 	}
 
-	bool commandFound = false;
-	for (quint8 val = HANDSHAKE; val < USB_COMMAND_LAST; ++val) {
-		if (val == resp->comm) {
-			commandFound = true;
-			break;
-		}
-	}
-	if (!commandFound) {
-		return false;
-	}
+	//bool commandFound = false;
+	//for (quint8 val = HANDSHAKE; val < USB_COMMAND_LAST; ++val) {
+	//	if (val == resp->comm) {
+	//		commandFound = true;
+	//		break;
+	//	}
+	//}
+	//if (!commandFound) {
+	//	return false;
+	//}
 
 	if (resp->len > MAX_DATA_LENGTH) {
 		return false;

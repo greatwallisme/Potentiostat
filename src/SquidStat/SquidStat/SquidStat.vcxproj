@@ -33,12 +33,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>.\..\..\..\_firmware\firmware\src\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
+    <IncludePath>.\..\..\..\Hardware_emulator\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>.\..\..\..\_firmware\firmware\src\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
+    <IncludePath>.\..\..\..\Hardware_emulator\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

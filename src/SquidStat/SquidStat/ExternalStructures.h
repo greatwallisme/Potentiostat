@@ -8,32 +8,16 @@ typedef enum {
 } DCSamplingMode_t;
 
 #include <global_typedefs.h>
-#include <PotentiostatStruct.h>
-#include <ExperimentNodeStruct.h>
-#include <BareMetalPeripherals/Baremetal_SignalGenStruct.h>
+#include <cal.h>
+#include <ExperimentNode.h>
 
-typedef enum {
-	UR_HANDSHAKE = 65,
-	UR_REPORT_STATUS,
-	UR_SEND_CAL_DATA,
-	UR_SET_OPMODE,
-	UR_MANUAL_DC_SAMPLE,
-	UR_V_SETPOINT,
-	UR_I_SETPOINT,
-	UR_SETUP_AC_SAMPLING,
-	UR_RUN_FRA,
-	UR_EXPERIMENTAL_DATA,
-
-	USB_RESPONCE_LAST
-} USBresponse_t;
-
-typedef USBcommand_t CommandID;
-typedef USBresponse_t ResponseID;
+typedef PCcommand_t CommandID;
+typedef Notifications_t ResponseID;
 
 typedef cal_t CalibrationData;
 
-#define COMMAND_FRAIMING_BYTES	0xFFEE
-#define RESPONSE_FRAIMING_BYTES	0xFF
+#define COMMAND_FRAIMING_BYTES	FRAMING_WORD
+#define RESPONSE_FRAIMING_BYTES	FRAMING_UBYTE
 
 #define MAX_CHANNEL_VALUE		4
 #define MAX_DATA_LENGTH			2048

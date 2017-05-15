@@ -53,7 +53,7 @@ InstrumentList InstrumentEnumerator::FindInstrumentsActive() {
 
 		QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
 			[=](ResponseID resp, quint8 channel, const QByteArray &data) {
-				if (resp == UR_HANDSHAKE) {
+				if (resp == HANDSHAKE_RESPONSE) {
 					handshakeResponseArrived = true;
 					eventLoop.quit();
 				}
