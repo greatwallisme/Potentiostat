@@ -30,6 +30,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		default:
+			resp;
 			break;
 	}
 }

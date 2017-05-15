@@ -29,10 +29,10 @@ void SerialCommunicator::SendCommand(CommandID comm, quint8 channel, const QByte
 	QByteArray toSend(sizeof(CommandPacket) + data.size(), 0x00);
 	CommandPacket *pack = (CommandPacket*)toSend.data();
 
-	pack->fraiming = COMMAND_FRAIMING_BYTES;
-	pack->comm = comm;
-	pack->channel = channel;
-	pack->len = data.size();
+	pack->frame = COMMAND_FRAIMING_BYTES;
+	pack->hdr.command = comm;
+	pack->hdr.channelNum = channel;
+	pack->hdr.dataLength = data.size();
 	memcpy(pack->data, data.data(), data.size());
 
 	_serialPort->write(toSend);
@@ -45,7 +45,7 @@ int SerialCommunicator::FindPacket(const char *startPtr, const char *endPtr) {
 	const ResponsePacket *resp;
 	while ((endPtr - dataPtr) >= sizeof(ResponsePacket)) {
 		resp = (const ResponsePacket*)dataPtr;
-		if (RESPONSE_FRAIMING_BYTES == resp->fraiming) {
+		if (COMMAND_FRAIMING_BYTES == resp->hdr.frame) {
 			foundFraiming = true;
 			break;
 		}
@@ -61,7 +61,7 @@ int SerialCommunicator::FindPacket(const char *startPtr, const char *endPtr) {
 	return res;
 }
 bool SerialCommunicator::CheckPacket(const ResponsePacket *resp) {
-	if (resp->channel > MAX_CHANNEL_VALUE) {
+	if (resp->hdr.channelNum > MAX_CHANNEL_VALUE) {
 		return false;
 	}
 
@@ -76,7 +76,7 @@ bool SerialCommunicator::CheckPacket(const ResponsePacket *resp) {
 	//	return false;
 	//}
 
-	if (resp->len > MAX_DATA_LENGTH) {
+	if (resp->hdr.dataLength > MAX_DATA_LENGTH) {
 		return false;
 	}
 
@@ -108,12 +108,12 @@ void SerialCommunicator::DataArrived() {
 			continue;
 		}
 
-		if ((endPtr - dataPtr) < (sizeof(ResponsePacket) + resp->len)) {
+		if ((endPtr - dataPtr) < (sizeof(ResponsePacket) + resp->hdr.dataLength)) {
 			break;
 		}
 
-		emit ResponseReceived((ResponseID)resp->comm, resp->channel, QByteArray(resp->data, resp->len));
-		dataPtr += (sizeof(ResponsePacket) + resp->len);
+		emit ResponseReceived((ResponseID)resp->hdr.returnCode, resp->hdr.channelNum, QByteArray(resp->data, resp->hdr.dataLength));
+		dataPtr += (sizeof(ResponsePacket) + resp->hdr.dataLength);
 	}
 
 	_rawData.remove(0, dataPtr - _rawData.data());

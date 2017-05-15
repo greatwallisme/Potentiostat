@@ -10,6 +10,7 @@ typedef enum {
 #include <global_typedefs.h>
 #include <cal.h>
 #include <ExperimentNode.h>
+#include <ComPacket.h>
 
 typedef PCcommand_t CommandID;
 typedef Notifications_t ResponseID;
@@ -17,7 +18,6 @@ typedef Notifications_t ResponseID;
 typedef cal_t CalibrationData;
 
 #define COMMAND_FRAIMING_BYTES	FRAMING_WORD
-#define RESPONSE_FRAIMING_BYTES	FRAMING_UBYTE
 
 #define MAX_CHANNEL_VALUE		4
 #define MAX_DATA_LENGTH			2048
@@ -30,18 +30,13 @@ struct ExperimentalData {
 };
 
 struct CommandPacket {
-	quint16 fraiming;
-	quint8 comm;
-	quint8 channel;
-	quint16 len;
+	quint16 frame;
+	FramelessComPacketHeader_t hdr;
 	char data[0];
 };
 
 struct ResponsePacket {
-	quint8 fraiming;
-	quint8 comm;
-	quint8 channel;
-	quint16 len;
+	FramedComPacketHeader_t hdr;
 	char data[0];
 };
 
