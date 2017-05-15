@@ -11,3 +11,4 @@ Build
 moc/
 *.obj
 UpgradeLog.htm
+GeneratedFiles/
