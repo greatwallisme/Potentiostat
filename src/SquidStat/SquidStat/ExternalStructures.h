@@ -11,6 +11,7 @@ typedef enum {
 #include <cal.h>
 #include <ExperimentNode.h>
 #include <ComPacket.h>
+#include <DAC_ADC_Buffer_types.h>
 
 typedef PCcommand_t CommandID;
 typedef Notifications_t ResponseID;
