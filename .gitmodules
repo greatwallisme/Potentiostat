@@ -2,7 +2,3 @@
 	path = _firmware
 	url = https://github.com/mdion1/Squidstat_firmware_2017_04_13.git
 	branch = master
-[submodule "Hardware_emulator"]
-	path = Hardware_emulator
-	url = https://github.com/mdion1/Hardware_emulator.git
-	branch = master
