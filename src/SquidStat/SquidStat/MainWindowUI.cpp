@@ -157,13 +157,15 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	QVBoxLayout *lay = NO_MARGIN(NO_SPACING(new QVBoxLayout(w)));
 
 	QwtPlot *plot = new QwtPlot();
-	plot->setAxisScale(QwtPlot::xBottom, 0, 30);
-	plot->setAxisScale(QwtPlot::yLeft, -1, 1);
+	plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
+	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));
-	title.setText("Frequency (Hz)");
+	//title.setText("Frequency (Hz)");
+	title.setText("Timestamp (ms)");
 	plot->setAxisTitle(QwtPlot::xBottom, title);
-	title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	title.setText("Current (ewe)");
 	plot->setAxisTitle(QwtPlot::yLeft, title);
 
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
@@ -177,9 +179,11 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	curve->attach(plot);
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](quint8 channel, const ExperimentalData &expData) {
-		static QVector<double> xPlotData, yPlotData;
-		xPlotData.append(expData.x);
-		yPlotData.append(expData.y);
+		static QVector<qreal> xPlotData, yPlotData;
+		qreal x = expData.timestamp / 100000UL;
+		qreal y = expData.adcData.ewe;
+		xPlotData.append(x);
+		yPlotData.append(y);
 
 		curve->setSamples(xPlotData, yPlotData);
 		plot->replot();

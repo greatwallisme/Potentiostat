@@ -37,6 +37,7 @@ void MainWindow::SearchHwHandshake() {
 void MainWindow::SelectHardware(const InstrumentInfo &info, quint8 channel) {
 	static QMetaObject::Connection calibrationDataReceivedConnection;
 	static QMetaObject::Connection experimentalDataReceivedConnection;
+	static QMetaObject::Connection experimentComletedConnection;
 	LOG() << "Start working with" << info.portName;
 
 	currentInstrument.instrumentInfo = info;
@@ -45,10 +46,17 @@ void MainWindow::SelectHardware(const InstrumentInfo &info, quint8 channel) {
 	if (instrumentOperator) {
 		disconnect(calibrationDataReceivedConnection);
 		disconnect(experimentalDataReceivedConnection);
+		disconnect(experimentComletedConnection);
 		instrumentOperator->deleteLater();
 	}
 
 	instrumentOperator = new InstrumentOperator(info);
+	experimentComletedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted,
+		[=]() {
+			LOG() << "Experiment completed";
+		}
+	);
+
 	calibrationDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
 		[=](const CalibrationData &calData) {
 			LOG() << "Calibration received";

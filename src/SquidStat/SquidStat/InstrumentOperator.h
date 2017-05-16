@@ -23,6 +23,7 @@ private slots:
 signals:
 	void CalibrationDataReceived(const CalibrationData&);
 	void ExperimentalDataReceived(quint8 channel, const ExperimentalData&);
+	void ExperimentCompleted();
 
 private:
 	SerialCommunicator *_communicator;

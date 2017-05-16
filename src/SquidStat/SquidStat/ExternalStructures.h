@@ -23,11 +23,12 @@ typedef cal_t CalibrationData;
 #define MAX_CHANNEL_VALUE		4
 #define MAX_DATA_LENGTH			2048
 
-#pragma pack(push, 4)
+#pragma pack(push, 1)
 
 struct ExperimentalData {
-	float x;
-	float y;
+	ADCdc_datastruct_t adcData;
+	currentRange_t currentRange;
+	uint64_t timestamp;
 };
 
 struct CommandPacket {

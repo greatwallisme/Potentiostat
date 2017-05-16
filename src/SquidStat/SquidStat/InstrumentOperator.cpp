@@ -23,7 +23,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case ADCDC_DATA:
-			/*
+			//*
 			if (data.size() == sizeof(ExperimentalData)) {
 				ExperimentalData *expData = (ExperimentalData*)data.data();
 				emit ExperimentalDataReceived(channel, *expData);
@@ -33,8 +33,12 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			//*/
 			break;
 
+		case EXPERIMENT_COMPLETE:
+			emit ExperimentCompleted();
+			break;
+
 		default:
-			resp;
+			resp = CAL_DATA;
 			break;
 	}
 }
