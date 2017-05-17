@@ -12,7 +12,12 @@
 #include <QtGlobal>
 
 
+#include <ExperimentReader.h>
+
 int main(int argc, char *argv[]) {
+
+	ExperimentContainer ec = ExperimentReader::Generate(QByteArray());
+
 	QApplication a(argc, argv);
 	qInstallMessageHandler(LogMessageHandler);
 

@@ -95,6 +95,7 @@ copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="ExperimentReader.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_InstrumentOperator.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
@@ -135,6 +136,20 @@ copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h" />
+    <CustomBuild Include="ExperimentReader.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Command>
+    </CustomBuild>
     <ClInclude Include="ExternalStructures.h" />
     <ClInclude Include="InstrumentEnumerator.h" />
     <ClInclude Include="UIHelper.hpp" />

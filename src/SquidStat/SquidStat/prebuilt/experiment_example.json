@@ -1,0 +1,60 @@
+{
+	"short-name" : 	"Example",
+	"name" : "Experimant example",
+	"description" : "This experiment sweeps the potential of the working electrode from E1 to E2 at constant scan rate dE/dT",
+	"image-path" : "./experiment.png",
+	"nodes" : {
+		"count" : 1,
+		"type" : "set",
+		"elements" : [
+			{
+				"count" : 1,
+				"type" : "node",
+				"parameters" : {
+					"node-type" : "DCNODE_SWEEP"
+				}
+			},
+			{
+				"count" : 1,
+				"type" : "node",
+				"parameters" : {
+					"node-type" : "DCNODE_POINT"
+				}
+			},
+			{
+				"count" : 5,
+				"type" : "set",
+				"elements" : [
+					{
+						"count" : 1,
+						"type" : "node",
+						"parameters" : {
+							"node-type" : "DCNODE_NORMALPULSE"
+						}
+					},
+					{
+						"count" : 1,
+						"type" : "node",
+						"parameters" : {
+							"node-type" : "DCNODE_DIFFPULSE"
+						}
+					},
+					{
+						"count" : 1,
+						"type" : "node",
+						"parameters" : {
+							"node-type" : "DCNODE_SQRWAVE"
+						}
+					}
+				]
+			},
+			{
+				"count" : 1,
+				"type" : "node",
+				"parameters" : {
+					"node-type" : "DCNODE_SINEWAVE"
+				}
+			}
+		]
+	}
+}

@@ -1,0 +1,32 @@
+{
+	"short-name" : 	"Linear Sweep Voltametry",
+	"name" : "Linear Sweep Voltametry",
+	"description" : "This experiment sweeps the potential of the working electrode from E1 to E2 at constant scan rate dE/dT",
+	"image-path" : "./experiment.png",
+	"nodes" : {
+		"count" : 1,
+		"type" : "set",
+		"elements" : [
+			{
+				"count" : 2,
+				"type" : "node",
+				"parameters" : {
+					"nodeType" : "DCNODE_SWEEP",
+					"tMin" : "100000",
+					"tMax" : "10000000000",
+					"samplingParams" : {
+						"ADCTimerDiv" : 2,
+						"ADCTimerPeriod" : 15625,
+						"ADCBufferSize" : 20,
+						"DACMultiplier" : 20
+					},
+					"DCSweep" : {
+						"VStart" : 0,
+						"VEnd" : 1024,
+						"dVdt" : 1
+					}
+				}
+			}
+		]
+	}
+}

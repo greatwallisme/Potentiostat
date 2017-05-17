@@ -52,19 +52,22 @@ void InstrumentOperator::StartExperiment(quint8 channel) {
 	exp[0].nodeType = DCNODE_SWEEP;
 	exp[0].tMin = 100000;
 	exp[0].tMax = 10000000000;
-	exp[0].samplingParams.ADCTimerDiv = 7;
+	exp[0].samplingParams.ADCTimerDiv = 2;
 	exp[0].samplingParams.ADCTimerPeriod = 15625;
 	exp[0].samplingParams.ADCBufferSize = 20;
+	exp[0].samplingParams.DACMultiplier = 20;
 	exp[0].DCSweep.VStart = 0;
 	exp[0].DCSweep.VEnd = 1024;
 	exp[0].DCSweep.dVdt = 1;
 
+	exp[1].isTail = true;
 	exp[1].nodeType = DCNODE_SWEEP;
 	exp[1].tMin = 100000;
 	exp[1].tMax = 100000000;
-	exp[1].samplingParams.ADCTimerDiv = 7;
+	exp[1].samplingParams.ADCTimerDiv = 2;
 	exp[1].samplingParams.ADCTimerPeriod = 15625;
 	exp[1].samplingParams.ADCBufferSize = 20;
+	exp[1].samplingParams.DACMultiplier = 20;
 	exp[1].DCSweep.VStart = 1024;
 	exp[1].DCSweep.VEnd = 0;
 	exp[1].DCSweep.dVdt = -1;

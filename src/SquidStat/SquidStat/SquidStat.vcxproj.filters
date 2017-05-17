@@ -50,6 +50,9 @@
     <Filter Include="_scr\Log">
       <UniqueIdentifier>{1ba6f2b0-217e-4669-9ff0-ca752f93f82e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\ExperimentReader">
+      <UniqueIdentifier>{c284b4cb-72f7-4fe9-bb8b-3f8531e7a72b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -103,6 +106,9 @@
     <ClCompile Include="GeneratedFiles\qrc_GUI.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExperimentReader.cpp">
+      <Filter>_scr\ExperimentReader</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InstrumentEnumerator.h">
@@ -139,6 +145,9 @@
     </CustomBuild>
     <CustomBuild Include="GUI.qrc">
       <Filter>Resource Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="ExperimentReader.h">
+      <Filter>_scr\ExperimentReader</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
