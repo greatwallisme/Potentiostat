@@ -15,29 +15,13 @@
 		throw QString("Field \"" name "\" has incorrect type (" #check ")");	\
 	}
 
-/*
-#define FIND_VALUE_OPTIONAL(name, check)										\
+#define FILL_VALUE_OPTIONAL(name, check, var, convert)							\
 	if (joEnd != (joIt = jo.constFind(name))) {									\
 		if (!joIt->check()) {													\
 			throw QString("Field \"" name "\" has incorrect type (" #check ")");\
 		}																		\
+		var = joIt->convert();													\
 	}
-//*/
-/*
-"tMin" : "100000",
-"tMax" : "10000000000",
-"samplingParams" : {
-"ADCTimerDiv" : 2,
-"ADCTimerPeriod" : 15625,
-"ADCBufferSize" : 20,
-"DACMultiplier" : 20
-},
-"DCSweep" : {
-"VStart" : 0,
-"VEnd" : 1024,
-"dVdt" : 1
-}
-//*/
 
 NodeType_t GetNodeType(const QString &str) {
 	#define CHECK_NODE_TYPE(type)	\
@@ -65,6 +49,10 @@ void ReadNodeParameters(const QJsonObject &jo, ExperimentNode_t &node) {
 
 	FIND_VALUE("nodeType", isString);
 	node.nodeType = GetNodeType(joIt->toString());
+
+	FILL_VALUE_OPTIONAL("VStart", isDouble, node.DCSweep.VStart, toInt);
+	FILL_VALUE_OPTIONAL("VEnd", isDouble, node.DCSweep.VEnd, toInt);
+	FILL_VALUE_OPTIONAL("dVdt", isDouble, node.DCSweep.dVdt, toDouble);
 }
 
 void ReadNodes(const QJsonObject &jo, NodeContainer &nc) {

@@ -9,8 +9,15 @@
 
 #include "Log.h"
 
+#include <QButtonGroup>
+
 #include <QIntValidator>
 #include <QListView>
+#include <QTabWidget>
+
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QStackedLayout>
 
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
@@ -28,11 +35,8 @@ void MainWindowUI::CreateCentralWidget() {
 	QGridLayout *centralLayout = NO_SPACING(NO_MARGIN(new QGridLayout(centralWidget)));
 	mw->setCentralWidget(centralWidget);
 
-	centralLayout->addWidget(GetApplyStyleButton(),		0, 0, 1, 2);
-	centralLayout->addWidget(GetSearchHardwareWidget(), 1, 0);
-	centralLayout->addWidget(GetLogWidget(),			2, 0);
-	centralLayout->addWidget(GetPlotWidget(),			1, 1, 2, 1);
-	centralLayout->addWidget(GetControlButtonsWidget(), 3, 0, 1, 2);
+	centralLayout->addWidget(GetApplyStyleButton(),		0, 0);
+	centralLayout->addWidget(GetMainTabWidget(),		1, 0);
 }
 QWidget* MainWindowUI::GetApplyStyleButton() {
 	static QWidget *w = 0;
@@ -51,6 +55,116 @@ QWidget* MainWindowUI::GetApplyStyleButton() {
 	lay->addWidget(pbt);
 	lay->addWidget(OBJ_NAME(PBT("SweepVoltammetry.csv"), "apply-button"));
 	lay->addStretch(1);
+
+	return w;
+}
+QWidget* MainWindowUI::GetMainTabWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	QVBoxLayout *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+	QHBoxLayout *barLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	QStackedLayout *widgetsLayout = NO_MARGIN(new QStackedLayout);
+
+	lay->addLayout(barLayout);
+	lay->addLayout(widgetsLayout);
+
+	widgetsLayout->addWidget(GetOldSearchHardwareTab());
+	widgetsLayout->addWidget(GetRunExperimentTab());
+
+	QButtonGroup *buttonGroup = new QButtonGroup(mw);
+	
+	auto *pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
+	pbt->setCheckable(true);
+	pbt->setChecked(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+		
+		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
+	});
+
+	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetRunExperimentTab());
+	});
+
+	pbt = OBJ_PROP(OBJ_NAME(PBT("New Data Window"), "bar-button"), "order", "last");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	barLayout->addStretch(1);
+
+	return w;
+}
+QWidget* MainWindowUI::GetOldSearchHardwareTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	QGridLayout *lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
+
+	lay->addWidget(GetSearchHardwareWidget(), 1, 0);
+	lay->addWidget(GetLogWidget(), 2, 0);
+	lay->addWidget(GetPlotWidget(), 1, 1, 2, 1);
+	lay->addWidget(GetControlButtonsWidget(), 3, 0, 1, 2);
+
+	return w;
+}
+QWidget* MainWindowUI::GetRunExperimentTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
+
+	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
+	auto *experimentList = new QListView;
+
+	experimentListLay->addWidget(LBL("Experiments"));
+	experimentListLay->addWidget(experimentList);
+
+	auto *descriptionWidget = WDG();
+	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
+
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.icon = LBL("icon"));
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.fullName = LBL("Linear Sweep Voltametry"));
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.text = LBL("This experiment sweeps the potential of the working electrode from E1 to E2 at constant scan rate dE/dT"));
+	descriptionWidgetLay->addStretch(1);
+
+	auto *paramsWidget = WDG();
+	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(paramsWidget)));
+	
+	ui.runExperiment.paramsLay->addWidget(LBL("Parameters"));
+	ui.runExperiment.paramsLay->addWidget(LED());
+	ui.runExperiment.paramsLay->addStretch(1);
+
+	lay->addLayout(experimentListLay);
+	lay->addWidget(descriptionWidget);
+	lay->addWidget(paramsWidget);
 
 	return w;
 }

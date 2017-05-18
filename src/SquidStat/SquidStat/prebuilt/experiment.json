@@ -11,14 +11,20 @@
 				"repetition" : 1,
 				"type" : "node",
 				"parameters" : {
-					"nodeType" : "DCNODE_SWEEP"
+					"nodeType" : "DCNODE_SWEEP",
+					"VStart" : 0,
+					"VEnd" : 1024,
+					"dVdt" : 1
 				}
 			},
 			{
 				"repetition" : 1,
 				"type" : "node",
 				"parameters" : {
-					"nodeType" : "DCNODE_SWEEP"
+					"nodeType" : "DCNODE_SWEEP",
+					"VStart" : 1024,
+					"VEnd" : 0,
+					"dVdt" : -1
 				}
 			}
 		]

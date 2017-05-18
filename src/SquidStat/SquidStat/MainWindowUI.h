@@ -7,6 +7,7 @@ class QLabel;
 class QComboBox;
 class QPushButton;
 class QEvent;
+class QVBoxLayout;
 
 #include <QObject>
 
@@ -23,13 +24,26 @@ private:
 	void CreateCentralWidget();
 
 	QWidget* GetApplyStyleButton();
+
+	QWidget* GetMainTabWidget();
+
+	QWidget* GetOldSearchHardwareTab();
+	QWidget* GetRunExperimentTab();
+
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
 	
 	struct {
-		;
+		struct {
+			struct {
+				QWidget *icon;
+				QLabel *fullName;
+				QLabel *text;
+			} descr;
+			QVBoxLayout *paramsLay;
+		} runExperiment;
 	} ui;
 
 	struct {

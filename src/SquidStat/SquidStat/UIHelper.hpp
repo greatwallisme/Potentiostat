@@ -18,6 +18,11 @@ WidgetType* SetObjectName(WidgetType *w, const QString &name) {
 	w->setObjectName(name);
 	return w;
 }
+template<typename WidgetType>
+WidgetType* SetObjectProperty(WidgetType *w, const char *name, const QString &value) {
+	w->setProperty(name, value);
+	return w;
+}
 template<typename LayoutType>
 LayoutType* SetZeroMargin(LayoutType *l) {
 	l->setContentsMargins(0, 0, 0, 0);
@@ -43,7 +48,8 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 
 
 
-#define OBJ_NAME(qobject, qstring) SetObjectName(qobject, qstring)
+#define OBJ_NAME(qobject, qstring)	SetObjectName(qobject, qstring)
+#define OBJ_PROP(w, name, val)		SetObjectProperty(w, name, val)
 
 #define NO_MARGIN(qlayout)	SetZeroMargin(qlayout)
 #define NO_SPACING(qlayout)	SetZeroSpacing(qlayout)
