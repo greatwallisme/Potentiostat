@@ -157,7 +157,7 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	QVBoxLayout *lay = NO_MARGIN(NO_SPACING(new QVBoxLayout(w)));
 
 	QwtPlot *plot = new QwtPlot();
-	plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
+	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
 	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));

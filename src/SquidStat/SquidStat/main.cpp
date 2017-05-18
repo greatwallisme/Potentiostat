@@ -12,12 +12,25 @@
 #include <QtGlobal>
 
 
+#include <QFile>
 #include <ExperimentReader.h>
 
 int main(int argc, char *argv[]) {
-
-	ExperimentContainer ec = ExperimentReader::Generate(QByteArray());
-
+	/*
+	QFile f("prebuilt/experiment_example.json");
+	if (f.open(QIODevice::ReadOnly)) {
+		ExperimentContainer ec;
+		try {
+			ec = ExperimentReader::Generate(f.readAll());
+		}
+		catch (const QString &str) {
+			qDebug() << str;
+		}
+		auto nodePtrs = ExperimentReader::GetNodeListForUserInput(ec);
+		auto nodes = ExperimentReader::GetNodeArrayForInstrument(ec);
+		f.close();
+	}
+	//*/
 	QApplication a(argc, argv);
 	qInstallMessageHandler(LogMessageHandler);
 

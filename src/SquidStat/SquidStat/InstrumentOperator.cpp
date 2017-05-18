@@ -49,6 +49,7 @@ void InstrumentOperator::StartExperiment(quint8 channel) {
 	ExperimentNode_t exp[3];
 
 	exp[0].isHead = true;
+	exp[0].isTail = false;
 	exp[0].nodeType = DCNODE_SWEEP;
 	exp[0].tMin = 100000;
 	exp[0].tMax = 10000000000;
@@ -60,6 +61,7 @@ void InstrumentOperator::StartExperiment(quint8 channel) {
 	exp[0].DCSweep.VEnd = 1024;
 	exp[0].DCSweep.dVdt = 1;
 
+	exp[1].isHead = false;
 	exp[1].isTail = true;
 	exp[1].nodeType = DCNODE_SWEEP;
 	exp[1].tMin = 100000;

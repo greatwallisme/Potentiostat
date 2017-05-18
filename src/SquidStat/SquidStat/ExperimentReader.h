@@ -3,6 +3,7 @@
 #include <QString>
 #include <QList>
 #include <QByteArray>
+#include <QVector>
 
 #include "ExternalStructures.h"
 
@@ -12,7 +13,7 @@ struct NodeContainer {
 		SET
 	};
 
-	qint32 count;
+	qint32 repetition;
 	Type type;
 
 	QList<NodeContainer> elements;
@@ -29,4 +30,6 @@ struct ExperimentContainer {
 
 namespace ExperimentReader {
 	ExperimentContainer Generate(const QByteArray &jsonData);
+	QList<ExperimentNode_t*> GetNodeListForUserInput(ExperimentContainer&);
+	QVector<ExperimentNode_t> GetNodeArrayForInstrument(ExperimentContainer&);
 };
