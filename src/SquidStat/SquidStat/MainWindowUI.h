@@ -11,7 +11,9 @@ class QVBoxLayout;
 class QGridLayout;
 
 #include <QObject>
+#include <QMap>
 
+#include "ExternalStructures.h"
 #include "InstrumentStructures.h"
 
 class MainWindowUI {
@@ -35,7 +37,11 @@ private:
 	QWidget* GetLogWidget();
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
-	
+
+	QWidget* PrebuiltExpCreateGroupHeader(const ExperimentNode_t*);
+	QWidget* PrebuiltExpCreateParamsInput(ExperimentNode_t*);
+	void FillNodeParameters();
+
 	struct {
 		struct {
 			struct {
@@ -43,7 +49,7 @@ private:
 				QLabel *fullName;
 				QLabel *text;
 			} descr;
-			QGridLayout *paramsLay;
+			QVBoxLayout *paramsLay;
 		} runExperiment;
 	} ui;
 
@@ -51,6 +57,15 @@ private:
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
+
+	QList<QWidget*> prebuiltParamWidgets;
+
+	struct SavedInputs {
+		ExperimentNode_t *node;
+		QMap<QString, QWidget*> input;
+	};
+
+	QList<SavedInputs> prebuiltExpInputs;
 
 	MainWindow *mw;
 };

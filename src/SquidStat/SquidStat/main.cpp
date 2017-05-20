@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 			[=](const CalibrationData &calData) {
 				LOG() << "Calibration received";
 
-				instrumentOperator->StartExperiment();
+				//instrumentOperator->StartExperiment();
 			}
 		);
 

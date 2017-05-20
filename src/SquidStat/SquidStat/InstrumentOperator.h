@@ -4,6 +4,7 @@
 
 #include "ExternalStructures.h"
 #include "SerialCommunicator.h"
+#include "ExperimentReader.h"
 
 class InstrumentOperator : public QObject {
 	Q_OBJECT
@@ -14,7 +15,7 @@ public:
 
 public slots:
 	void RequestCalibrationData();
-	void StartExperiment(quint8 channel = 0);
+	void StartExperiment(QVector<ExperimentNode_t>, quint8 channel = 0);
 	void StopExperiment(quint8 channel = 0);
 
 private slots:

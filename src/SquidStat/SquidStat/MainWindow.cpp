@@ -57,7 +57,19 @@ void MainWindow::LoadPrebuildExperiments() {
 	emit PrebuiltExperimentsFound(prebuiltExperiments);
 }
 void MainWindow::PrebuiltExperimentSelected(int index) {
-	emit PrebuiltExperimentSetParameters(prebuiltExperiments.at(index));
+	if ( (index < 0) || (index >= prebuiltExperiments.size()) ) {
+		return;
+	}
+
+	currentPrebuiltExperimentsIndex = index;
+	emit PrebuiltExperimentSetDescription(prebuiltExperiments.at(index));
+	try {
+		auto ecList = ExperimentReader::GetNodeListForUserInput(prebuiltExperiments[index]);
+		emit PrebuiltExperimentSetParameters(ecList);
+	}
+	catch (const QString &err) {
+		LOG() << err;
+	}
 }
 void MainWindow::SearchHwVendor() {
 	LOG() << "Search instruments by the manufacturer name";
@@ -125,8 +137,10 @@ void MainWindow::StartExperiment() {
 		return;
 	}
 	
+	ExperimentContainer &ec(prebuiltExperiments[currentPrebuiltExperimentsIndex]);
+	
 	LOG() << "Start experiment";
-	instrumentOperator->StartExperiment(currentInstrument.channel);
+	instrumentOperator->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), currentInstrument.channel);
 }
 void MainWindow::StopExperiment() {
 	if (!instrumentOperator) {

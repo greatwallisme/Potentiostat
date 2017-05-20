@@ -28,6 +28,69 @@
 
 #define PREBUILT_EXP_DIR	"./prebuilt/"
 
+QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
+	auto ret = OBJ_NAME(LBL("Unknown node type"), "heading-label");
+
+	switch (node->nodeType) {
+		case DCNODE_SWEEP:
+			ret->setText("DC Sweep");
+			break;
+		default:
+			break;
+	}
+
+	return ret;
+}
+
+QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
+	auto *ret = WDG();
+	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
+	SavedInputs savedInputs;
+	QWidget *w;
+
+	savedInputs.node = node;
+
+#define INSERT_LED(left_comment, right_comment, default_value, row)		\
+	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(left_comment), "experiment-params-comment"), "comment-placement", "left"),	row, 0);\
+	lay->addWidget(w = new QLineEdit(QString("%1").arg(default_value)),														row, 1);\
+	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(right_comment), "experiment-params-comment"), "comment-placement", "right"),				row, 2); \
+	savedInputs.input[QString(#default_value)] = w;
+
+	switch (node->nodeType) {
+		case DCNODE_SWEEP:
+			INSERT_LED("Start Voltage", "V", node->DCSweep.VStart, 0);
+			INSERT_LED("End Voltage", "V", node->DCSweep.VEnd, 1);
+			INSERT_LED("dV/dt", "", node->DCSweep.dVdt, 2);
+			break;
+		default:
+			break;
+	}
+
+	return ret;
+}
+void MainWindowUI::FillNodeParameters() {
+	try {
+	#define GET_VALUE_FROM_LED(field, getter) \
+		field = qobject_cast<QLineEdit*>(input.input[QString(#field)])->text().getter();
+		foreach(SavedInputs input, prebuiltExpInputs) {
+			ExperimentNode_t *node = input.node;
+			QWidget *w;
+			switch (node->nodeType) {
+			case DCNODE_SWEEP:
+				GET_VALUE_FROM_LED(node->DCSweep.VStart, toInt);
+				GET_VALUE_FROM_LED(node->DCSweep.VEnd, toInt);
+				GET_VALUE_FROM_LED(node->DCSweep.dVdt, toInt);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	catch (...) {
+		;
+	}
+}
+
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
@@ -177,6 +240,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
 
 	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+	startExpPbt->hide();
 	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	buttonLay->addStretch(1);
@@ -192,7 +256,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	paramsWidgetLay->setRowStretch(2, 1);
 
 	auto *scrollAreaWidget = WDG();
-	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(scrollAreaWidget)));
+	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
 
 	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
 	paramsWidgetLay->addWidget(scrollArea, 2, 1);
@@ -222,10 +286,41 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		mw->PrebuiltExperimentSelected(index.row());
 	});
 
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const ExperimentContainer &ec) {
+	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
 		ui.runExperiment.descr.fullName->setText(ec.name);
 		ui.runExperiment.descr.text->setText(ec.description);
 		ui.runExperiment.descr.icon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
+		startExpPbt->show();
+	});
+
+	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
+		prebuiltExpInputs.clear();
+		foreach(QWidget *wdg, prebuiltParamWidgets) {
+			ui.runExperiment.paramsLay->removeWidget(wdg);
+			wdg->deleteLater();
+		}
+		prebuiltParamWidgets.clear();
+
+		int row = 0;
+		foreach(ExperimentNode_t *node, nodeList) {
+			auto header = PrebuiltExpCreateGroupHeader(node);
+			auto params = PrebuiltExpCreateParamsInput(node);
+
+			ui.runExperiment.paramsLay->addWidget(header);
+			ui.runExperiment.paramsLay->addWidget(params);
+
+			prebuiltParamWidgets << header;
+			prebuiltParamWidgets << params;
+		}
+		auto stretchWdg = WDG();
+		ui.runExperiment.paramsLay->addWidget(stretchWdg, 1);
+		prebuiltParamWidgets << stretchWdg;
+	});
+
+	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
+		FillNodeParameters();
+
+		mw->StartExperiment();
 	});
 
 //#define ADD_DUMMY_PARAMETER(row)\
@@ -409,8 +504,8 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 	buttonLay->addWidget(startExperiment = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
 	buttonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
-	CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
-	CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
+	//CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
+	//CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
 
 	return w;
 }

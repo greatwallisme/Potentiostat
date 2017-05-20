@@ -40,7 +40,8 @@ signals:
 	void DataArrived(quint8 channel, const ExperimentalData &expData);
 
 	void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
-	void PrebuiltExperimentSetParameters(const ExperimentContainer&);
+	void PrebuiltExperimentSetDescription(const ExperimentContainer&);
+	void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
 private:
 	MainWindowUI *ui;
@@ -51,6 +52,7 @@ private:
 		quint8 channel;
 	} currentInstrument;
 	QList<ExperimentContainer> prebuiltExperiments;
+	int currentPrebuiltExperimentsIndex;
 };
 
 #endif // MAINWINDOW_H
