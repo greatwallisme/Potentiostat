@@ -51,8 +51,11 @@ private:
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
-	QList<ExperimentContainer> prebuiltExperiments;
-	int currentPrebuiltExperimentsIndex;
+
+	struct {
+		QList<ExperimentContainer> ecList;
+		int selectedEcIndex;
+	} prebuiltExperiments;
 };
 
 #endif // MAINWINDOW_H

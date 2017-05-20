@@ -29,7 +29,7 @@ MainWindow::~MainWindow() {
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
-	prebuiltExperiments.clear();
+	prebuiltExperiments.ecList.clear();
 
 	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
 
@@ -47,25 +47,25 @@ void MainWindow::LoadPrebuildExperiments() {
 		file.close();
 
 		try {
-			prebuiltExperiments << ExperimentReader::GenerateExperimentContainer(jsonData);
+			prebuiltExperiments.ecList << ExperimentReader::GenerateExperimentContainer(jsonData);
 		}
 		catch (const QString &err) {
 			LOG() << "Error in the file" << expFileInfo.fileName() << "-" << err;
 		}
 	}
 
-	emit PrebuiltExperimentsFound(prebuiltExperiments);
+	emit PrebuiltExperimentsFound(prebuiltExperiments.ecList);
 }
 void MainWindow::PrebuiltExperimentSelected(int index) {
-	if ( (index < 0) || (index >= prebuiltExperiments.size()) ) {
+	if ( (index < 0) || (index >= prebuiltExperiments.ecList.size()) ) {
 		return;
 	}
 
-	currentPrebuiltExperimentsIndex = index;
-	emit PrebuiltExperimentSetDescription(prebuiltExperiments.at(index));
+	prebuiltExperiments.selectedEcIndex = index;
+	emit PrebuiltExperimentSetDescription(prebuiltExperiments.ecList.at(index));
 	try {
-		auto ecList = ExperimentReader::GetNodeListForUserInput(prebuiltExperiments[index]);
-		emit PrebuiltExperimentSetParameters(ecList);
+		auto ecPtrList = ExperimentReader::GetNodeListForUserInput(prebuiltExperiments.ecList[index]);
+		emit PrebuiltExperimentSetParameters(ecPtrList);
 	}
 	catch (const QString &err) {
 		LOG() << err;
@@ -117,12 +117,17 @@ void MainWindow::SelectHardware(const InstrumentInfo &info, quint8 channel) {
 	);
 
 
+	experimentalDataReceivedConnection =
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
+			this, &MainWindow::DataArrived);
+	/*
 	experimentalDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
 		[=](quint8 channel, const ExperimentalData &expData) {
 			//LOG() << "Experimental data received";
 			emit DataArrived(channel, expData);
 		}
 	);
+	//*/
 }
 void MainWindow::RequestCalibration() {
 	if (!instrumentOperator) {
@@ -137,7 +142,7 @@ void MainWindow::StartExperiment() {
 		return;
 	}
 	
-	ExperimentContainer &ec(prebuiltExperiments[currentPrebuiltExperimentsIndex]);
+	ExperimentContainer &ec(prebuiltExperiments.ecList[prebuiltExperiments.selectedEcIndex]);
 	
 	LOG() << "Start experiment";
 	instrumentOperator->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), currentInstrument.channel);

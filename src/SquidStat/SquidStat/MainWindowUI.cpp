@@ -66,13 +66,15 @@ QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
 			break;
 	}
 
+	prebuiltExperimentData.inputsList << savedInputs;
+
 	return ret;
 }
 void MainWindowUI::FillNodeParameters() {
 	try {
 	#define GET_VALUE_FROM_LED(field, getter) \
 		field = qobject_cast<QLineEdit*>(input.input[QString(#field)])->text().getter();
-		foreach(SavedInputs input, prebuiltExpInputs) {
+		foreach(SavedInputs input, prebuiltExperimentData.inputsList) {
 			ExperimentNode_t *node = input.node;
 			QWidget *w;
 			switch (node->nodeType) {
@@ -211,6 +213,10 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		return w;
 	}
 
+	QLabel *descrIcon;
+	QLabel *descrName;
+	QLabel *descrText;
+
 	w = WDG();
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
 
@@ -227,9 +233,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
 	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
 
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.icon = OBJ_NAME(LBL(""), "experiment-description-icon"));
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.fullName = OBJ_NAME(LBL(""), "experiment-description-name"));
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.text = OBJ_NAME(LBL(""), "experiment-description-text"));
+	descriptionWidgetLay->addWidget(descrIcon = OBJ_NAME(LBL(""), "experiment-description-icon"));
+	descriptionWidgetLay->addWidget(descrName = OBJ_NAME(LBL(""), "experiment-description-name"));
+	descriptionWidgetLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
 	descriptionWidgetLay->addStretch(1);
 
 	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
@@ -252,11 +258,10 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"),	1, 0, 2, 1);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"),	1, 3, 2, 1);
 	paramsWidgetLay->addLayout(buttonLay, 3, 1);
-	//paramsWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"),		1, 1);
 	paramsWidgetLay->setRowStretch(2, 1);
 
 	auto *scrollAreaWidget = WDG();
-	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
+	QVBoxLayout *paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
 
 	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
 	paramsWidgetLay->addWidget(scrollArea, 2, 1);
@@ -287,34 +292,34 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	});
 
 	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
-		ui.runExperiment.descr.fullName->setText(ec.name);
-		ui.runExperiment.descr.text->setText(ec.description);
-		ui.runExperiment.descr.icon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
+		descrName->setText(ec.name);
+		descrText->setText(ec.description);
+		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
 		startExpPbt->show();
 	});
 
 	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
-		prebuiltExpInputs.clear();
-		foreach(QWidget *wdg, prebuiltParamWidgets) {
-			ui.runExperiment.paramsLay->removeWidget(wdg);
+		prebuiltExperimentData.inputsList.clear();
+		foreach(QWidget *wdg, prebuiltExperimentData.paramWidgets) {
+			paramsLay->removeWidget(wdg);
 			wdg->deleteLater();
 		}
-		prebuiltParamWidgets.clear();
+		prebuiltExperimentData.paramWidgets.clear();
 
 		int row = 0;
 		foreach(ExperimentNode_t *node, nodeList) {
 			auto header = PrebuiltExpCreateGroupHeader(node);
 			auto params = PrebuiltExpCreateParamsInput(node);
 
-			ui.runExperiment.paramsLay->addWidget(header);
-			ui.runExperiment.paramsLay->addWidget(params);
+			paramsLay->addWidget(header);
+			paramsLay->addWidget(params);
 
-			prebuiltParamWidgets << header;
-			prebuiltParamWidgets << params;
+			prebuiltExperimentData.paramWidgets << header;
+			prebuiltExperimentData.paramWidgets << params;
 		}
 		auto stretchWdg = WDG();
-		ui.runExperiment.paramsLay->addWidget(stretchWdg, 1);
-		prebuiltParamWidgets << stretchWdg;
+		paramsLay->addWidget(stretchWdg, 1);
+		prebuiltExperimentData.paramWidgets << stretchWdg;
 	});
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
@@ -322,33 +327,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 		mw->StartExperiment();
 	});
-
-//#define ADD_DUMMY_PARAMETER(row)\
-//	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Parameper " #row " = "), "experiment-params-comment"), "comment-placement", "left"),	row, 0);\
-//	ui.runExperiment.paramsLay->addWidget(LED(),					row, 1);\
-//	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("mV"), "experiment-params-comment"), "comment-placement", "right"),				row, 2);
-//	
-//	ADD_DUMMY_PARAMETER(0);
-//	ADD_DUMMY_PARAMETER(1);
-//	ADD_DUMMY_PARAMETER(2);
-//	ADD_DUMMY_PARAMETER(3);
-//	ADD_DUMMY_PARAMETER(4);
-//	ADD_DUMMY_PARAMETER(5);
-//	ADD_DUMMY_PARAMETER(6);
-//	ADD_DUMMY_PARAMETER(7);
-//	ADD_DUMMY_PARAMETER(8);
-//	ADD_DUMMY_PARAMETER(9);
-//	ADD_DUMMY_PARAMETER(10);
-//	ADD_DUMMY_PARAMETER(11);
-//	ADD_DUMMY_PARAMETER(12);
-//	ADD_DUMMY_PARAMETER(13);
-//	ADD_DUMMY_PARAMETER(14);
-	/*
-	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Extreamly Long Parameper Name Name Name Name Name = "), "experiment-params-comment"), "comment-placement", "left"), 15, 0);
-	ui.runExperiment.paramsLay->addWidget(LED(), 15, 1);
-	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("mV"), "experiment-params-comment"), "comment-placement", "right"), 15, 2);
-	//*/
-	//ui.runExperiment.paramsLay->setRowStretch(15, 1);
 
 	return w;
 }

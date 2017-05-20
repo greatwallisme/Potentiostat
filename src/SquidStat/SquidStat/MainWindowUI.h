@@ -45,11 +45,7 @@ private:
 	struct {
 		struct {
 			struct {
-				QLabel *icon;
-				QLabel *fullName;
-				QLabel *text;
 			} descr;
-			QVBoxLayout *paramsLay;
 		} runExperiment;
 	} ui;
 
@@ -58,14 +54,15 @@ private:
 		quint8 channel;
 	} currentInstrument;
 
-	QList<QWidget*> prebuiltParamWidgets;
-
 	struct SavedInputs {
 		ExperimentNode_t *node;
 		QMap<QString, QWidget*> input;
 	};
 
-	QList<SavedInputs> prebuiltExpInputs;
+	struct {
+		QList<QWidget*> paramWidgets;
+		QList<SavedInputs> inputsList;
+	} prebuiltExperimentData;
 
 	MainWindow *mw;
 };

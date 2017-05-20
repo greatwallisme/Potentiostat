@@ -119,7 +119,6 @@ QPushButton#bar-button:open {
 	max-height: 140px;
 }
 #experiment-description-icon {
-	/*image: url(prebuilt/experiment.png);*/
 	image-position: left center;
 	
 	min-height: 180px;
@@ -170,7 +169,10 @@ QPushButton#bar-button:open {
 	margin-left: 7px;
 	margin-right: 40px;
 }
-#experiment-params-spacing-top,
+#experiment-params-spacing-top {
+	min-height: 70px;
+	max-height: 70px;
+}
 #experiment-params-spacing-bottom {
 	min-height: 100px;
 	max-height: 100px;
