@@ -32,6 +32,7 @@ private:
 
 	QWidget* GetOldSearchHardwareTab();
 	QWidget* GetRunExperimentTab();
+	QWidget* GetNewDataWindowTab();
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();

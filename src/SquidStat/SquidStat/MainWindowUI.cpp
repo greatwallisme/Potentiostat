@@ -150,6 +150,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 	widgetsLayout->addWidget(GetRunExperimentTab());
+	widgetsLayout->addWidget(GetNewDataWindowTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
 	
@@ -185,6 +186,14 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
 
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
+	});
+
 	barLayout->addStretch(1);
 
 	return w;
@@ -203,130 +212,6 @@ QWidget* MainWindowUI::GetOldSearchHardwareTab() {
 	lay->addWidget(GetLogWidget(), 2, 0);
 	lay->addWidget(GetPlotWidget(), 1, 1, 2, 1);
 	lay->addWidget(GetControlButtonsWidget(), 3, 0, 1, 2);
-
-	return w;
-}
-QWidget* MainWindowUI::GetRunExperimentTab() {
-	static QWidget *w = 0;
-
-	if (w) {
-		return w;
-	}
-
-	QLabel *descrIcon;
-	QLabel *descrName;
-	QLabel *descrText;
-
-	w = WDG();
-	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
-
-	auto *experimentListOwner = OBJ_PROP(OBJ_NAME(WDG(), "experiment-list-owner"), "widget-type", "left-grey");
-	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(experimentListOwner)));
-	auto *experimentList = OBJ_PROP(OBJ_NAME(new QListView, "experiment-list"), "widget-type", "left-grey");
-	experimentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
-
-	experimentListLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiments"), "heading-label"), "widget-type", "left-grey"));
-	experimentListLay->addWidget(experimentList);
-
-	auto *descriptionHelpLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
-
-	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
-	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
-
-	descriptionWidgetLay->addWidget(descrIcon = OBJ_NAME(LBL(""), "experiment-description-icon"));
-	descriptionWidgetLay->addWidget(descrName = OBJ_NAME(LBL(""), "experiment-description-name"));
-	descriptionWidgetLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
-	descriptionWidgetLay->addStretch(1);
-
-	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
-	descriptionHelpLay->addWidget(descriptionWidget);
-	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-bottom"));
-
-	auto *paramsWidget = WDG();
-	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
-
-	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
-	startExpPbt->hide();
-	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
-
-	buttonLay->addStretch(1);
-	buttonLay->addWidget(startExpPbt);
-	buttonLay->addStretch(1);
-
-	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"),	0, 0, 1, 3);
-	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
-	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"),	1, 0, 2, 1);
-	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"),	1, 3, 2, 1);
-	paramsWidgetLay->addLayout(buttonLay, 3, 1);
-	paramsWidgetLay->setRowStretch(2, 1);
-
-	auto *scrollAreaWidget = WDG();
-	QVBoxLayout *paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
-
-	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
-	paramsWidgetLay->addWidget(scrollArea, 2, 1);
-
-	lay->addWidget(experimentListOwner);
-	lay->addLayout(descriptionHelpLay);
-	lay->addWidget(paramsWidget);
-
-
-	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-	scrollArea->setWidgetResizable(true);
-	scrollArea->setWidget(scrollAreaWidget);
-	
-	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
-		QStandardItemModel *model = new QStandardItemModel(4, 1);
-		
-		int row = 0;
-
-		foreach(const ExperimentContainer &exp, expList) {
-			model->setItem(row++, new QStandardItem(exp.shortName));
-		}
-		
-		experimentList->setModel(model);
-	});
-
-	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
-		mw->PrebuiltExperimentSelected(index.row());
-	});
-
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
-		descrName->setText(ec.name);
-		descrText->setText(ec.description);
-		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
-		startExpPbt->show();
-	});
-
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
-		prebuiltExperimentData.inputsList.clear();
-		foreach(QWidget *wdg, prebuiltExperimentData.paramWidgets) {
-			paramsLay->removeWidget(wdg);
-			wdg->deleteLater();
-		}
-		prebuiltExperimentData.paramWidgets.clear();
-
-		int row = 0;
-		foreach(ExperimentNode_t *node, nodeList) {
-			auto header = PrebuiltExpCreateGroupHeader(node);
-			auto params = PrebuiltExpCreateParamsInput(node);
-
-			paramsLay->addWidget(header);
-			paramsLay->addWidget(params);
-
-			prebuiltExperimentData.paramWidgets << header;
-			prebuiltExperimentData.paramWidgets << params;
-		}
-		auto stretchWdg = WDG();
-		paramsLay->addWidget(stretchWdg, 1);
-		prebuiltExperimentData.paramWidgets << stretchWdg;
-	});
-
-	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
-		FillNodeParameters();
-
-		mw->StartExperiment();
-	});
 
 	return w;
 }
@@ -484,6 +369,180 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	//CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
 	//CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
+
+	return w;
+}
+QWidget* MainWindowUI::GetRunExperimentTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	QLabel *descrIcon;
+	QLabel *descrName;
+	QLabel *descrText;
+
+	w = WDG();
+	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
+
+	auto *experimentListOwner = OBJ_PROP(OBJ_NAME(WDG(), "experiment-list-owner"), "widget-type", "left-grey");
+	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(experimentListOwner)));
+	auto *experimentList = OBJ_PROP(OBJ_NAME(new QListView, "experiment-list"), "widget-type", "left-grey");
+	experimentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+	experimentListLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiments"), "heading-label"), "widget-type", "left-grey"));
+	experimentListLay->addWidget(experimentList);
+
+	auto *descriptionHelpLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
+
+	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
+	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
+
+	descriptionWidgetLay->addWidget(descrIcon = OBJ_NAME(LBL(""), "experiment-description-icon"));
+	descriptionWidgetLay->addWidget(descrName = OBJ_NAME(LBL(""), "experiment-description-name"));
+	descriptionWidgetLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
+	descriptionWidgetLay->addStretch(1);
+
+	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
+	descriptionHelpLay->addWidget(descriptionWidget);
+	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-bottom"));
+
+	auto *paramsWidget = WDG();
+	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
+
+	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+	startExpPbt->hide();
+	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(startExpPbt);
+	buttonLay->addStretch(1);
+
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
+	paramsWidgetLay->addLayout(buttonLay, 3, 1);
+	paramsWidgetLay->setRowStretch(2, 1);
+
+	auto *scrollAreaWidget = WDG();
+	QVBoxLayout *paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
+
+	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
+	paramsWidgetLay->addWidget(scrollArea, 2, 1);
+
+	lay->addWidget(experimentListOwner);
+	lay->addLayout(descriptionHelpLay);
+	lay->addWidget(paramsWidget);
+
+
+	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(scrollAreaWidget);
+
+	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
+		QStandardItemModel *model = new QStandardItemModel(4, 1);
+
+		int row = 0;
+
+		foreach(const ExperimentContainer &exp, expList) {
+			model->setItem(row++, new QStandardItem(exp.shortName));
+		}
+
+		experimentList->setModel(model);
+	});
+
+	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
+		mw->PrebuiltExperimentSelected(index.row());
+	});
+
+	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
+		descrName->setText(ec.name);
+		descrText->setText(ec.description);
+		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
+		startExpPbt->show();
+	});
+
+	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
+		prebuiltExperimentData.inputsList.clear();
+		foreach(QWidget *wdg, prebuiltExperimentData.paramWidgets) {
+			paramsLay->removeWidget(wdg);
+			wdg->deleteLater();
+		}
+		prebuiltExperimentData.paramWidgets.clear();
+
+		int row = 0;
+		foreach(ExperimentNode_t *node, nodeList) {
+			auto header = PrebuiltExpCreateGroupHeader(node);
+			auto params = PrebuiltExpCreateParamsInput(node);
+
+			paramsLay->addWidget(header);
+			paramsLay->addWidget(params);
+
+			prebuiltExperimentData.paramWidgets << header;
+			prebuiltExperimentData.paramWidgets << params;
+		}
+		auto stretchWdg = WDG();
+		paramsLay->addWidget(stretchWdg, 1);
+		prebuiltExperimentData.paramWidgets << stretchWdg;
+	});
+
+	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
+		FillNodeParameters();
+
+		mw->StartExperiment();
+	});
+
+	return w;
+}
+QWidget* MainWindowUI::GetNewDataWindowTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = OBJ_NAME(WDG(), "new-data-window-owner");
+
+	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+	QTabWidget *docTabs = OBJ_NAME(new QTabWidget, "plot-tab");
+	
+	lay->addWidget(docTabs);
+
+	docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
+	
+	CONNECT(docTabs->tabBar(), &QTabBar::tabBarClicked, [=](int index) {
+		if (index != docTabs->count() - 1) {
+			return;
+		}
+		static int i = 1;
+		docTabs->insertTab(docTabs->count() - 1, WDG(), QString("LinearSweep%1.csv").arg(i++));
+	});
+
+	static QPushButton *closeTabButton = 0;
+	static QMetaObject::Connection closeTabButtonConnection;
+	static int prevCloseTabButtonPos = -1;
+
+	CONNECT(docTabs->tabBar(), &QTabBar::currentChanged, [=](int index) {
+		if ((0 > index) || (index >= docTabs->count() - 1)) {
+			return;
+		}
+
+		if (closeTabButton) {
+			QObject::disconnect(closeTabButtonConnection);
+			docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+			closeTabButton->deleteLater();
+		}
+
+		docTabs->tabBar()->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+		prevCloseTabButtonPos = index;
+
+		closeTabButtonConnection = 
+			CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
+				;
+			});
+	});
 
 	return w;
 }

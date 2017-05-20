@@ -24,5 +24,9 @@
         <file>Resources/fonts/seguisli.ttf</file>
         <file>Resources/fonts/Esphimere Light.ttf</file>
         <file>Resources/combobox-dropdown.png</file>
+        <file>Resources/tab-close.png</file>
+        <file>Resources/tab-close-hover.png</file>
+        <file>Resources/new-tab.png</file>
+        <file>Resources/new-tab-hover.png</file>
     </qresource>
 </RCC>

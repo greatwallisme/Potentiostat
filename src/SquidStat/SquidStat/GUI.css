@@ -16,21 +16,6 @@ QWidget {
 }
 
 /*//////////////         APPLY BUTTON       ////////////////////*/
-/*
-#apply-button {
-	background-color: #ffbec0;
-	border: 1px solid #ce2026;
-	margin-left: 20px;
-	margin-top: 10px;
-	padding: 10px;
-	
-	color: #7b1a1e;
-}
-#apply-button-owner {
-	background-color: #ce2026;
-	border: none;
-}
-*/
 #apply-button {
 	background-color: #7b1a1e;
 	border: none;
@@ -198,6 +183,74 @@ QPushButton#bar-button:open {
 }
 #primary-button:pressed  {
 	background-color: #2c81dc;
+}
+/*//////////////         NEW DATA WINDOW       ////////////////////*/
+#new-data-window-owner {
+	border: none;
+	background-color: #ce2026;
+}
+#plot-tab {
+}
+#plot-tab::pane {
+	/*border-top: 1px solid #ce2026;*/
+}
+#plot-tab QTabBar {
+	background-color: #ce2026;
+}
+#plot-tab::tab-bar {
+	left: 25px;
+}
+#plot-tab QTabBar::tab {
+	padding: 8px;
+	padding-right: 15px;
+	padding-left: 20px;
+	margin-top: 10px;
+	
+	background-color: #ffbec0;
+	
+	border-left: 1px solid #ce2026;
+	border-bottom: 1px solid #ce2026;
+	
+	color: #7b1a1e;
+}
+#plot-tab QTabBar::tab:selected {
+    color: #000000;
+	background-color: #ffffff;
+}
+#plot-tab QTabBar::tab:last,
+#plot-tab QTabBar::tab:last:selected,
+#plot-tab QTabBar::tab:only-one {
+	font-size: 18pt;
+	color: #ce2026;
+	
+	/*border: 1px solid black;*/
+	
+	padding-top: 12px;
+	padding-left: 12px;
+	padding-right: 9px;
+	margin-right: -20px;
+	
+	background-color: #ffbec0;
+}
+#close-document-pbt {
+	qproperty-text: "";
+	border: none;
+	
+	image: url(:/GUI/Resources/tab-close.png);
+	
+	min-height: 15px;
+	max-height: 15px;
+	min-width: 15px;
+	max-width: 15px;
+	
+	margin-top: 10px;
+	margin-right: 10px;
+}
+#close-document-pbt:hover {
+	image: url(:/GUI/Resources/tab-close-hover.png);
+}
+#close-document-pbt:open {
+	image: url(:/GUI/Resources/tab-close.png);
 }
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
