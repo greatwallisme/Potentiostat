@@ -8,6 +8,7 @@ class QComboBox;
 class QPushButton;
 class QEvent;
 class QVBoxLayout;
+class QGridLayout;
 
 #include <QObject>
 
@@ -38,11 +39,11 @@ private:
 	struct {
 		struct {
 			struct {
-				QWidget *icon;
+				QLabel *icon;
 				QLabel *fullName;
 				QLabel *text;
 			} descr;
-			QVBoxLayout *paramsLay;
+			QGridLayout *paramsLay;
 		} runExperiment;
 	} ui;
 

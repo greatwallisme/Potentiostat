@@ -116,7 +116,7 @@ void ParseExperimentJson(const QJsonObject &jo, ExperimentContainer &ec) {
 	ReadNodes(joIt->toObject(), ec.nodes);
 }
 
-ExperimentContainer ExperimentReader::Generate(const QByteArray &jsonData) {
+ExperimentContainer ExperimentReader::GenerateExperimentContainer(const QByteArray &jsonData) {
 	QJsonParseError parseError;
 	QJsonDocument jdoc = QJsonDocument::fromJson(jsonData, &parseError);
 

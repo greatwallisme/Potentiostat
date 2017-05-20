@@ -4,8 +4,14 @@
 
 #include "InstrumentEnumerator.h"
 #include "InstrumentOperator.h"
+#include "ExperimentReader.h"
 
 #include "Log.h"
+
+#include <QDir>
+#include <QList>
+
+#define PREBUILT_EXP_DIR	"./prebuilt/"
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -14,9 +20,44 @@ MainWindow::MainWindow(QWidget *parent) :
 {
 	LoadFonts();
     ui->CreateUI();
+
+	LoadPrebuildExperiments();
 }
 MainWindow::~MainWindow() {
     delete ui;
+}
+void MainWindow::LoadPrebuildExperiments() {
+	LOG() << "Loading prebuilt experiments";
+
+	prebuiltExperiments.clear();
+
+	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+
+	foreach(const QFileInfo &expFileInfo, expFileInfos) {
+		auto filePath = expFileInfo.absoluteFilePath();
+
+		QFile file(filePath);
+
+		if (!file.open(QIODevice::ReadOnly)) {
+			continue;
+		}
+
+		auto jsonData = file.readAll();
+
+		file.close();
+
+		try {
+			prebuiltExperiments << ExperimentReader::GenerateExperimentContainer(jsonData);
+		}
+		catch (const QString &err) {
+			LOG() << "Error in the file" << expFileInfo.fileName() << "-" << err;
+		}
+	}
+
+	emit PrebuiltExperimentsFound(prebuiltExperiments);
+}
+void MainWindow::PrebuiltExperimentSelected(int index) {
+	emit PrebuiltExperimentSetParameters(prebuiltExperiments.at(index));
 }
 void MainWindow::SearchHwVendor() {
 	LOG() << "Search instruments by the manufacturer name";

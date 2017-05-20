@@ -9,6 +9,8 @@
 
 #include "Log.h"
 
+#include "ExperimentReader.h"
+
 #include <QButtonGroup>
 
 #include <QIntValidator>
@@ -18,6 +20,13 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QStackedLayout>
+#include <QScrollArea>
+
+#include <QStandardItemModel>
+
+#include <QPixmap>
+
+#define PREBUILT_EXP_DIR	"./prebuilt/"
 
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
@@ -66,11 +75,12 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	}
 
 	w = WDG();
-	QVBoxLayout *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
-	QHBoxLayout *barLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
-	QStackedLayout *widgetsLayout = NO_MARGIN(new QStackedLayout);
+	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+	auto *barWidget = OBJ_NAME(WDG(), "top-tab-bar-owner");
+	auto *barLayout = NO_SPACING(NO_MARGIN(new QHBoxLayout(barWidget)));
+	auto *widgetsLayout = NO_MARGIN(new QStackedLayout);
 
-	lay->addLayout(barLayout);
+	lay->addWidget(barWidget);
 	lay->addLayout(widgetsLayout);
 
 	widgetsLayout->addWidget(GetOldSearchHardwareTab());
@@ -141,30 +151,109 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	w = WDG();
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
 
-	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
-	auto *experimentList = new QListView;
+	auto *experimentListOwner = OBJ_PROP(OBJ_NAME(WDG(), "experiment-list-owner"), "widget-type", "left-grey");
+	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(experimentListOwner)));
+	auto *experimentList = OBJ_PROP(OBJ_NAME(new QListView, "experiment-list"), "widget-type", "left-grey");
+	experimentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-	experimentListLay->addWidget(LBL("Experiments"));
+	experimentListLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiments"), "heading-label"), "widget-type", "left-grey"));
 	experimentListLay->addWidget(experimentList);
 
-	auto *descriptionWidget = WDG();
+	auto *descriptionHelpLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
+
+	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
 	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
 
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.icon = LBL("icon"));
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.fullName = LBL("Linear Sweep Voltametry"));
-	descriptionWidgetLay->addWidget(ui.runExperiment.descr.text = LBL("This experiment sweeps the potential of the working electrode from E1 to E2 at constant scan rate dE/dT"));
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.icon = OBJ_NAME(LBL(""), "experiment-description-icon"));
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.fullName = OBJ_NAME(LBL(""), "experiment-description-name"));
+	descriptionWidgetLay->addWidget(ui.runExperiment.descr.text = OBJ_NAME(LBL(""), "experiment-description-text"));
 	descriptionWidgetLay->addStretch(1);
 
-	auto *paramsWidget = WDG();
-	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(paramsWidget)));
-	
-	ui.runExperiment.paramsLay->addWidget(LBL("Parameters"));
-	ui.runExperiment.paramsLay->addWidget(LED());
-	ui.runExperiment.paramsLay->addStretch(1);
+	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
+	descriptionHelpLay->addWidget(descriptionWidget);
+	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-bottom"));
 
-	lay->addLayout(experimentListLay);
-	lay->addWidget(descriptionWidget);
+	auto *paramsWidget = WDG();
+	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
+
+	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(startExpPbt);
+	buttonLay->addStretch(1);
+
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"),	0, 0, 1, 3);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"),	1, 0, 2, 1);
+	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"),	1, 3, 2, 1);
+	paramsWidgetLay->addLayout(buttonLay, 3, 1);
+	//paramsWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"),		1, 1);
+	paramsWidgetLay->setRowStretch(2, 1);
+
+	auto *scrollAreaWidget = WDG();
+	ui.runExperiment.paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(scrollAreaWidget)));
+
+	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
+	paramsWidgetLay->addWidget(scrollArea, 2, 1);
+
+	lay->addWidget(experimentListOwner);
+	lay->addLayout(descriptionHelpLay);
 	lay->addWidget(paramsWidget);
+
+
+	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(scrollAreaWidget);
+	
+	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
+		QStandardItemModel *model = new QStandardItemModel(4, 1);
+		
+		int row = 0;
+
+		foreach(const ExperimentContainer &exp, expList) {
+			model->setItem(row++, new QStandardItem(exp.shortName));
+		}
+		
+		experimentList->setModel(model);
+	});
+
+	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
+		mw->PrebuiltExperimentSelected(index.row());
+	});
+
+	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const ExperimentContainer &ec) {
+		ui.runExperiment.descr.fullName->setText(ec.name);
+		ui.runExperiment.descr.text->setText(ec.description);
+		ui.runExperiment.descr.icon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
+	});
+
+//#define ADD_DUMMY_PARAMETER(row)\
+//	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Parameper " #row " = "), "experiment-params-comment"), "comment-placement", "left"),	row, 0);\
+//	ui.runExperiment.paramsLay->addWidget(LED(),					row, 1);\
+//	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("mV"), "experiment-params-comment"), "comment-placement", "right"),				row, 2);
+//	
+//	ADD_DUMMY_PARAMETER(0);
+//	ADD_DUMMY_PARAMETER(1);
+//	ADD_DUMMY_PARAMETER(2);
+//	ADD_DUMMY_PARAMETER(3);
+//	ADD_DUMMY_PARAMETER(4);
+//	ADD_DUMMY_PARAMETER(5);
+//	ADD_DUMMY_PARAMETER(6);
+//	ADD_DUMMY_PARAMETER(7);
+//	ADD_DUMMY_PARAMETER(8);
+//	ADD_DUMMY_PARAMETER(9);
+//	ADD_DUMMY_PARAMETER(10);
+//	ADD_DUMMY_PARAMETER(11);
+//	ADD_DUMMY_PARAMETER(12);
+//	ADD_DUMMY_PARAMETER(13);
+//	ADD_DUMMY_PARAMETER(14);
+	/*
+	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Extreamly Long Parameper Name Name Name Name Name = "), "experiment-params-comment"), "comment-placement", "left"), 15, 0);
+	ui.runExperiment.paramsLay->addWidget(LED(), 15, 1);
+	ui.runExperiment.paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("mV"), "experiment-params-comment"), "comment-placement", "right"), 15, 2);
+	//*/
+	//ui.runExperiment.paramsLay->setRowStretch(15, 1);
 
 	return w;
 }

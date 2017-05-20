@@ -29,7 +29,7 @@ struct ExperimentContainer {
 };
 
 namespace ExperimentReader {
-	ExperimentContainer Generate(const QByteArray &jsonData);
+	ExperimentContainer GenerateExperimentContainer(const QByteArray &jsonData);
 	QList<ExperimentNode_t*> GetNodeListForUserInput(ExperimentContainer&);
 	QVector<ExperimentNode_t> GetNodeArrayForInstrument(ExperimentContainer&);
 };

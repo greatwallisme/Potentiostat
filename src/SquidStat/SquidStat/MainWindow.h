@@ -6,8 +6,11 @@
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
 
+#include <QList>
+
 class MainWindowUI;
 class InstrumentOperator;
+class ExperimentContainer;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -19,6 +22,9 @@ public:
 public slots:
 	void LoadFonts();
     void ApplyStyle();
+	
+	void LoadPrebuildExperiments();
+	void PrebuiltExperimentSelected(int);
 
 	void SearchHwVendor();
 	void SearchHwHandshake();
@@ -33,6 +39,9 @@ signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(quint8 channel, const ExperimentalData &expData);
 
+	void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
+	void PrebuiltExperimentSetParameters(const ExperimentContainer&);
+
 private:
 	MainWindowUI *ui;
 
@@ -41,6 +50,7 @@ private:
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
+	QList<ExperimentContainer> prebuiltExperiments;
 };
 
 #endif // MAINWINDOW_H
