@@ -543,8 +543,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 
 		if (closeTabButton) {
-			QObject::disconnect(closeTabButtonConnection);
 			docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+			QObject::disconnect(closeTabButtonConnection);
 			closeTabButton->deleteLater();
 		}
 
@@ -572,17 +572,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 					}
 				}
 
-				if (closeTabButton) {
-					QObject::disconnect(closeTabButtonConnection);
-					docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
-					closeTabButton->deleteLater();
-					closeTabButton = 0;
-					prevCloseTabButtonPos = -1;
-				}
-
+				docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+				QObject::disconnect(closeTabButtonConnection);
+				closeTabButton->deleteLater();
+				closeTabButton = 0;
 				docTabs->removeTab(currentIndex);
 				wdg->deleteLater();
-				closeTabButton = 0;
 			});
 	});
 
