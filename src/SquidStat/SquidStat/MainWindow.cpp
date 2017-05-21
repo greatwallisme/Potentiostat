@@ -11,6 +11,8 @@
 #include <QDir>
 #include <QList>
 
+#include <stdlib.h>
+
 #define PREBUILT_EXP_DIR	"./prebuilt/"
 
 bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
@@ -300,6 +302,21 @@ void MainWindow::StopExperiment(const QUuid &id) {
 	LOG() << "Stop experiment";
 	instrumentOperator->StopExperiment(currentInstrument.channel);
 	//*/
+}
+void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName) {
+	QFile f(fileName);
+
+	if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+		return;
+	}
+
+	int minCount = qMin(xData.size(), yData.size());
+
+	for (quint64 i = 0; i < minCount; ++i) {
+		f.write(QString("%1;%2\n").arg(xData[i]).arg(yData[i]).toLatin1());
+	}
+
+	f.close();
 }
 
 #include <QApplication>

@@ -10,6 +10,7 @@ class QEvent;
 class QVBoxLayout;
 class QGridLayout;
 class QStackedLayout;
+class QTabWidget;
 
 class QwtPlot;
 class QwtPlotCurve;
@@ -56,8 +57,9 @@ private:
 			} descr;
 		} runExperiment;
 		struct {
-			QPushButton *newDataTab;
-		} mainTab;
+			QPushButton *newDataTabButton;
+			QTabWidget *docTabs;
+		} newDataTab;
 	} ui;
 	
 	struct {

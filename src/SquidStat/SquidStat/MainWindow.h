@@ -36,6 +36,8 @@ public slots:
 	void StartExperiment();
 	void StopExperiment(const QUuid&);
 
+	void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
+
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);

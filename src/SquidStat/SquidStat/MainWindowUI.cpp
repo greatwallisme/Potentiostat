@@ -27,6 +27,7 @@
 #include <QPixmap>
 
 #include <QTime>
+#include <QFileDialog>
 
 #define PREBUILT_EXP_DIR	"./prebuilt/"
 
@@ -187,7 +188,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
 	
-	ui.mainTab.newDataTab = pbt;
+	ui.newDataTab.newDataTabButton = pbt;
 	
 	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
@@ -518,6 +519,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 	QTabWidget *docTabs = OBJ_NAME(new QTabWidget, "plot-tab");
+	ui.newDataTab.docTabs = docTabs;
 	
 	lay->addWidget(docTabs);
 
@@ -578,7 +580,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const QString &expName) {
 		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
-		ui.mainTab.newDataTab->click();
+		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
 
@@ -638,9 +640,48 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
 	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 	curve->attach(plot);
 
-	lay->addWidget(plot, 1, 1, 2, 1);
+	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	QPushButton *saveDataButton;
+
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(saveDataButton = OBJ_NAME(PBT("Save Experiment Data"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(buttonLay, 0, 0);
+	lay->addWidget(plot, 0, 1);
 	lay->setColumnStretch(0, 1);
 	lay->setColumnStretch(1, 1);
+
+	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {
+		auto wdg = ui.newDataTab.docTabs->currentWidget();
+		auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+		if (0 != plot) {
+			auto it = dataTabs.plots.begin();
+
+			for (; it != dataTabs.plots.end(); ++it) {
+				if (it.value().plot == plot) {
+					break;
+				}
+			}
+
+			if (it == dataTabs.plots.end()) {
+				return;
+			}
+
+			static QString dirName;
+			QString tabName = ui.newDataTab.docTabs->tabText(ui.newDataTab.docTabs->currentIndex());
+			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
+			auto dialogRet = QFileDialog::getSaveFileName(mw, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+
+			if (dialogRet.isEmpty()) {
+				return;
+			}
+			dirName = QFileInfo(dialogRet).absolutePath();
+
+			mw->SaveData(it->xData, it->yData, dialogRet);
+		}
+	});
 
 	return w;
 }
