@@ -1,6 +1,8 @@
 #include "InstrumentOperator.h"
 #include "ExternalStructures.h"
 
+#include "Log.h"
+
 InstrumentOperator::InstrumentOperator(const InstrumentInfo &info, QObject *parent) :
 	QObject(parent)
 {
@@ -38,7 +40,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		default:
-			resp = CAL_DATA;
+			LOG() << "Unknown response";
 			break;
 	}
 }
