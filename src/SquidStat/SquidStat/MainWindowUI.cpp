@@ -26,6 +26,8 @@
 
 #include <QPixmap>
 
+#include <QTime>
+
 #define PREBUILT_EXP_DIR	"./prebuilt/"
 
 QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
@@ -533,8 +535,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
 
-	CONNECT(docTabs->tabBar(), &QTabBar::currentChanged, [=](int index) {
-		if ((0 > index) || (index >= docTabs->count() - 1)) {
+	CONNECT(docTabs, &QTabWidget::currentChanged, [=](int index) {
+		if ((index < 0) || (index >= docTabs->count() - 1)) {
 			return;
 		}
 
@@ -549,12 +551,33 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		closeTabButtonConnection = 
 			CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
-				;
+				int currentIndex = docTabs->currentIndex();
+
+				if ((-1 == currentIndex) || (currentIndex >= docTabs->count() - 1)) {
+					return;
+				}
+
+				auto wdg = docTabs->widget(currentIndex);
+				auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+				if (0 != plot) {
+					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
+						if (it.value().plot == plot) {
+							mw->StopExperiment(it.key());
+							dataTabs.plots.remove(it.key());
+							break;
+						}
+					}
+				}
+
+				docTabs->removeTab(currentIndex);
+				wdg->deleteLater();
+				closeTabButton = 0;
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id) {
-		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id), id.toString());
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const QString &expName) {
+		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.mainTab.newDataTab->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
@@ -587,7 +610,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
-	QwtPlot *plot = new QwtPlot();
+	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
 	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
 
 	PlotHandler plotHandler;

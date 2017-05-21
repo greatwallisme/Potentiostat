@@ -34,7 +34,7 @@ public slots:
 	void RequestCalibration();
 
 	void StartExperiment();
-	void StopExperiment();
+	void StopExperiment(const QUuid&);
 
 signals:
 	void HardwareFound(const InstrumentList&);
@@ -44,12 +44,11 @@ signals:
 	void PrebuiltExperimentSetDescription(const ExperimentContainer&);
 	void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
-	void CreateNewDataWindow(const QUuid&);
+	void CreateNewDataWindow(const QUuid&, const QString&);
 
 private:
 	void CleanupCurrentHardware();
 	void FillHardware(const InstrumentList &);
-	void ForBreakPoint();
 
 	MainWindowUI *ui;
 
@@ -59,8 +58,11 @@ private:
 	struct InstrumentHandler {
 		InstrumentInfo info;
 		InstrumentOperator *oper;
-		bool busy;
-		QUuid expId;
+		struct {
+			bool busy;
+			QUuid id;
+			quint8 channel;
+		} experiment;
 		QList<QMetaObject::Connection> connections;
 	};
 

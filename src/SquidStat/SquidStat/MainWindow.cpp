@@ -53,7 +53,7 @@ void MainWindow::FillHardware(const InstrumentList &instrumentList) {
 		InstrumentHandler handler;
 		handler.oper = 0;
 		handler.info = *it;
-		handler.busy = false;
+		handler.experiment.busy = false;
 
 		hardware.handlers << handler;
 	}
@@ -205,17 +205,13 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 
 	return ret;
 }
-void MainWindow::ForBreakPoint() {
-	static int i = 0;
-	++i;
-}
 void MainWindow::StartExperiment() {
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
 	}
 
-	if (hardware.currentInstrument.handler->busy) {
+	if (hardware.currentInstrument.handler->experiment.busy) {
 		LOG() << "Current instrument is busy now";
 		return;
 	}
@@ -238,8 +234,8 @@ void MainWindow::StartExperiment() {
 				return;
 			}
 
-			handler->busy = false;
-			handler->expId = QUuid();
+			handler->experiment.busy = false;
+			handler->experiment.id = QUuid();
 
 			LOG() << "Experiment completed";
 		});
@@ -264,21 +260,38 @@ void MainWindow::StartExperiment() {
 				return;
 			}
 
-			emit DataArrived(handler->expId, channel, expData);
+			emit DataArrived(handler->experiment.id, channel, expData);
 		});
 	}
 	
-	hardware.currentInstrument.handler->busy = true;
-	hardware.currentInstrument.handler->expId = QUuid::createUuid();
-
-	emit CreateNewDataWindow(hardware.currentInstrument.handler->expId);
+	hardware.currentInstrument.handler->experiment.busy = true;
+	hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
+	hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
 	ExperimentContainer &ec(prebuiltExperiments.ecList[prebuiltExperiments.selectedEcIndex]);
+
+	emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, ec.shortName);
 	
 	LOG() << "Start experiment";
 	hardware.currentInstrument.handler->oper->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), hardware.currentInstrument.channel);
 }
-void MainWindow::StopExperiment() {
+void MainWindow::StopExperiment(const QUuid &id) {
+	auto it = hardware.handlers.begin();
+	for (; it != hardware.handlers.end(); ++it) {
+		if (it->experiment.id == id) {
+			break;
+		}
+	}
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	if (!it->experiment.busy) {
+		return;
+	}
+
+	it->oper->StopExperiment(it->experiment.channel);
 	/*
 	if (!instrumentOperator) {
 		return;
