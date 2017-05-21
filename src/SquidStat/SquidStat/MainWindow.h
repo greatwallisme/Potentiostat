@@ -7,6 +7,7 @@
 #include "ExternalStructures.h"
 
 #include <QList>
+#include <QUuid>
 
 class MainWindowUI;
 class InstrumentOperator;
@@ -37,25 +38,46 @@ public slots:
 
 signals:
 	void HardwareFound(const InstrumentList&);
-	void DataArrived(quint8 channel, const ExperimentalData &expData);
+	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
 
 	void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
 	void PrebuiltExperimentSetDescription(const ExperimentContainer&);
 	void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
+	void CreateNewDataWindow(const QUuid&);
+
 private:
+	void CleanupCurrentHardware();
+	void FillHardware(const InstrumentList &);
+	void ForBreakPoint();
+
 	MainWindowUI *ui;
 
-	InstrumentOperator *instrumentOperator;
+	//InstrumentOperator *instrumentOperator;
+	
+
+	struct InstrumentHandler {
+		InstrumentInfo info;
+		InstrumentOperator *oper;
+		bool busy;
+		QUuid expId;
+		QList<QMetaObject::Connection> connections;
+	};
+
 	struct {
-		InstrumentInfo instrumentInfo;
-		quint8 channel;
-	} currentInstrument;
+		QList<InstrumentHandler> handlers;
+		struct {
+			QList<InstrumentHandler>::iterator handler;
+			quint8 channel;
+		} currentInstrument;
+	} hardware;
 
 	struct {
 		QList<ExperimentContainer> ecList;
 		int selectedEcIndex;
 	} prebuiltExperiments;
+
+	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
 };
 
 #endif // MAINWINDOW_H

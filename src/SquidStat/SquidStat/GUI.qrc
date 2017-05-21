@@ -28,5 +28,6 @@
         <file>Resources/tab-close-hover.png</file>
         <file>Resources/new-tab.png</file>
         <file>Resources/new-tab-hover.png</file>
+        <file>Resources/start.png</file>
     </qresource>
 </RCC>

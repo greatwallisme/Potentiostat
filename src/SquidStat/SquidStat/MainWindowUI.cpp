@@ -41,7 +41,6 @@ QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node
 
 	return ret;
 }
-
 QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
 	auto *ret = WDG();
 	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
@@ -58,9 +57,9 @@ QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
 
 	switch (node->nodeType) {
 		case DCNODE_SWEEP:
-			INSERT_LED("Start Voltage", "V", node->DCSweep.VStart, 0);
-			INSERT_LED("End Voltage", "V", node->DCSweep.VEnd, 1);
-			INSERT_LED("dV/dt", "", node->DCSweep.dVdt, 2);
+			INSERT_LED("Start Voltage = ", "V", node->DCSweep.VStart, 0);
+			INSERT_LED("End Voltage = ", "V", node->DCSweep.VEnd, 1);
+			INSERT_LED("dV/dt = ", "", node->DCSweep.dVdt, 2);
 			break;
 		default:
 			break;
@@ -185,7 +184,9 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
-
+	
+	ui.mainTab.newDataTab = pbt;
+	
 	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
 			return;
@@ -212,6 +213,8 @@ QWidget* MainWindowUI::GetOldSearchHardwareTab() {
 	lay->addWidget(GetLogWidget(), 2, 0);
 	lay->addWidget(GetPlotWidget(), 1, 1, 2, 1);
 	lay->addWidget(GetControlButtonsWidget(), 3, 0, 1, 2);
+	lay->setColumnStretch(0, 1);
+	lay->setColumnStretch(1, 1);
 
 	return w;
 }
@@ -225,7 +228,7 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	QPushButton *searchByVendor;
 	QPushButton *searchViaHandshake;
 	QPushButton *selectHardware;
-	QPushButton *requestCalibration;
+	//QPushButton *requestCalibration;
 	QComboBox *hwList;
 	QLineEdit *channelEdit;
 
@@ -244,7 +247,7 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	buttonLay->addWidget(searchByVendor = OBJ_NAME(PBT("Search by vendor"), "secondary-button"), 0, 1);
 	buttonLay->addWidget(searchViaHandshake = OBJ_NAME(PBT("Search via handshake"), "secondary-button"), 0, 2);
 	buttonLay->addWidget(selectHardware = OBJ_NAME(PBT("Select this hardware"), "secondary-button"), 1, 1);
-	buttonLay->addWidget(requestCalibration = OBJ_NAME(PBT("Request calibration"), "secondary-button"), 1, 2);
+	//buttonLay->addWidget(requestCalibration = OBJ_NAME(PBT("Request calibration"), "secondary-button"), 1, 2);
 	buttonLay->setColumnStretch(0, 1);
 	buttonLay->setColumnStretch(3, 1);
 
@@ -278,7 +281,7 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	CONNECT(selectHardware, &QPushButton::clicked, [=]() {
 		mw->SelectHardware(currentInstrument.instrumentInfo, currentInstrument.channel);
 	});
-	CONNECT(requestCalibration, &QPushButton::clicked, mw, &MainWindow::RequestCalibration);
+	//CONNECT(requestCalibration, &QPushButton::clicked, mw, &MainWindow::RequestCalibration);
 
 	channelEdit->setValidator(new QIntValidator(0, MAX_CHANNEL_VALUE));
 	channelEdit->setText("0");
@@ -315,11 +318,13 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	}
 
 	w = WDG();
+	/*
 	QVBoxLayout *lay = NO_MARGIN(NO_SPACING(new QVBoxLayout(w)));
 
 	QwtPlot *plot = new QwtPlot();
 	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
 	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
+	//plot->setAxisAutoScale(QwtPlot::yLeft, true);
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));
 	//title.setText("Frequency (Hz)");
@@ -338,7 +343,8 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	curve->setPen(QColor(42, 127, 220), 1);
 	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 	curve->attach(plot);
-
+	//*/
+	/*
 	CONNECT(mw, &MainWindow::DataArrived, [=](quint8 channel, const ExperimentalData &expData) {
 		static QVector<qreal> xPlotData, yPlotData;
 		qreal x = expData.timestamp / 100000UL;
@@ -349,7 +355,7 @@ QWidget* MainWindowUI::GetPlotWidget() {
 		curve->setSamples(xPlotData, yPlotData);
 		plot->replot();
 	});
-
+	//*/
 	return w;
 }
 QWidget* MainWindowUI::GetControlButtonsWidget() {
@@ -363,9 +369,10 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 	QPushButton *stopExperiment;
 
 	w = WDG();
+	w->setMinimumHeight(50);
 	QHBoxLayout *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
-	buttonLay->addWidget(startExperiment = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
-	buttonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
+	//buttonLay->addWidget(startExperiment = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
+	//buttonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
 	//CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
 	//CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
@@ -412,6 +419,8 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
 
 	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+	startExpPbt->setIcon(QIcon(":/GUI/Resources/start.png"));
+	startExpPbt->setIconSize(QPixmap(":/GUI/Resources/start.png").size());
 	startExpPbt->hide();
 	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
@@ -543,6 +552,72 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				;
 			});
 	});
+
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id) {
+		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id), id.toString());
+		ui.mainTab.newDataTab->click();
+		docTabs->setCurrentIndex(docTabs->count() - 2);
+	});
+
+	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData) {
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		qreal x = expData.timestamp / 100000UL;
+		qreal y = expData.adcData.ewe;
+
+
+		if (handler.xData.isEmpty()) {
+			handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
+		}
+
+		handler.xData.append(x);
+		handler.yData.append(y);
+
+		handler.curve->setSamples(handler.xData, handler.yData);
+		handler.plot->replot();
+	});
+
+	return w;
+}
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
+	auto w = WDG();
+
+	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
+
+	QwtPlot *plot = new QwtPlot();
+	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
+
+	PlotHandler plotHandler;
+	plotHandler.plot = plot;
+	plotHandler.curve = curve;
+	dataTabs.plots[id] = plotHandler;
+
+	plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
+	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
+	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
+	QwtText title;
+	title.setFont(QFont("Segoe UI", 14));
+	//title.setText("Frequency (Hz)");
+	title.setText("Timestamp (ms)");
+	plot->setAxisTitle(QwtPlot::xBottom, title);
+	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	title.setText("Current (ewe)");
+	plot->setAxisTitle(QwtPlot::yLeft, title);
+
+	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
+
+	
+	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve->setPen(QColor(42, 127, 220), 1);
+	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+	curve->attach(plot);
+
+	lay->addWidget(plot, 1, 1, 2, 1);
+	lay->setColumnStretch(0, 1);
+	lay->setColumnStretch(1, 1);
 
 	return w;
 }

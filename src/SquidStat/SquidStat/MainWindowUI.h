@@ -9,9 +9,14 @@ class QPushButton;
 class QEvent;
 class QVBoxLayout;
 class QGridLayout;
+class QStackedLayout;
+
+class QwtPlot;
+class QwtPlotCurve;
 
 #include <QObject>
 #include <QMap>
+#include <QVector>
 
 #include "ExternalStructures.h"
 #include "InstrumentStructures.h"
@@ -32,7 +37,9 @@ private:
 
 	QWidget* GetOldSearchHardwareTab();
 	QWidget* GetRunExperimentTab();
+
 	QWidget* GetNewDataWindowTab();
+	QWidget* CreateNewDataTabWidget(const QUuid&);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -48,8 +55,11 @@ private:
 			struct {
 			} descr;
 		} runExperiment;
+		struct {
+			QPushButton *newDataTab;
+		} mainTab;
 	} ui;
-
+	
 	struct {
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
@@ -64,6 +74,17 @@ private:
 		QList<QWidget*> paramWidgets;
 		QList<SavedInputs> inputsList;
 	} prebuiltExperimentData;
+
+	struct PlotHandler {
+		QwtPlot* plot;
+		QwtPlotCurve *curve;
+		QVector<qreal> xData;
+		QVector<qreal> yData;
+	};
+
+	struct {
+		QMap<QUuid, PlotHandler> plots;
+	} dataTabs;
 
 	MainWindow *mw;
 };
