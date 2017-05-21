@@ -1,6 +1,6 @@
 {
-	"short-name" : 	"Linear Sweep Voltametry",
-	"name" : "Linear Sweep Voltametry",
+	"short-name" : 	"Linear Sweep Voltammetry",
+	"name" : "Linear Sweep Voltammetry",
 	"description" : "This experiment sweeps the potential of the working electrode from E1 to E2 at constant scan rate dE/dT",
 	"image-path" : "./experiment.png",
 	"nodes" : {

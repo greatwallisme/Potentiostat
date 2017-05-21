@@ -90,7 +90,9 @@ copy $(QTDIR)\bin\Qt5OpenGL.dll $(OutDir)\
 mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\
 copy $(ProjectDir)\GUI.css $(OutDir)\
-copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\</Command>
+copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
+mkdir $(OutDir)\prebuilt\
+copy $(ProjectDir)\prebuilt\ $(OutDir)\prebuilt\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
