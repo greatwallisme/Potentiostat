@@ -222,12 +222,9 @@ QPushButton#bar-button:open {
 	background-color: #ffffff;
 }
 #plot-tab QTabBar::tab:last,
-#plot-tab QTabBar::tab:last:selected,
 #plot-tab QTabBar::tab:only-one {
 	font-size: 18pt;
 	color: #ce2026;
-	
-	/*border: 1px solid black;*/
 	
 	padding-top: 12px;
 	padding-left: 12px;
@@ -235,6 +232,10 @@ QPushButton#bar-button:open {
 	margin-right: -20px;
 	
 	background-color: #ffbec0;
+}
+#plot-tab QTabBar::tab:last:selected,
+#plot-tab QTabBar::tab:only-one {
+	padding-bottom: 10px;
 }
 #close-document-pbt {
 	qproperty-text: "";
