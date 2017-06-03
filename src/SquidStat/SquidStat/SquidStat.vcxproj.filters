@@ -53,6 +53,9 @@
     <Filter Include="_scr\ExperimentReader">
       <UniqueIdentifier>{c284b4cb-72f7-4fe9-bb8b-3f8531e7a72b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\Experiments">
+      <UniqueIdentifier>{8289f32b-cdfb-4ee4-9fea-0673be5b2c79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -109,6 +112,9 @@
     <ClCompile Include="ExperimentReader.cpp">
       <Filter>_scr\ExperimentReader</Filter>
     </ClCompile>
+    <ClCompile Include="ExampleExperiment.cpp">
+      <Filter>_scr\Experiments</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InstrumentEnumerator.h">
@@ -125,6 +131,15 @@
     </ClInclude>
     <ClInclude Include="UIHelper.hpp">
       <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="Experiment.h">
+      <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="ExampleExperiment.h">
+      <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperimentUIHelper.h">
+      <Filter>_scr\Experiments</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

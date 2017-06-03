@@ -22,8 +22,10 @@ bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new MainWindowUI(this))
-	//instrumentOperator(0)
 {
+	prebuiltExperiments.selectedExp = 0;
+	hardware.currentInstrument.handler = hardware.handlers.end();
+
 	LoadFonts();
     ui->CreateUI();
 
@@ -62,9 +64,16 @@ void MainWindow::FillHardware(const InstrumentList &instrumentList) {
 
 	hardware.currentInstrument.handler = hardware.handlers.end();
 }
+
+#include <ExampleExperiment.h>
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
+	prebuiltExperiments.expList << new ExampleExperiment;
+
+	emit PrebuiltExperimentsFound(prebuiltExperiments.expList);
+
+	/*
 	prebuiltExperiments.ecList.clear();
 
 	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
@@ -91,8 +100,13 @@ void MainWindow::LoadPrebuildExperiments() {
 	}
 
 	emit PrebuiltExperimentsFound(prebuiltExperiments.ecList);
+	//*/
 }
-void MainWindow::PrebuiltExperimentSelected(int index) {
+//void MainWindow::PrebuiltExperimentSelected(int index) {
+void MainWindow::PrebuiltExperimentSelected(const Experiment *exp) {
+	prebuiltExperiments.selectedExp = exp;
+
+	/*
 	if ( (index < 0) || (index >= prebuiltExperiments.ecList.size()) ) {
 		return;
 	}
@@ -106,6 +120,7 @@ void MainWindow::PrebuiltExperimentSelected(int index) {
 	catch (const QString &err) {
 		LOG() << err;
 	}
+	//*/
 }
 void MainWindow::SearchHwVendor() {
 	LOG() << "Search instruments by the manufacturer name";
@@ -207,7 +222,7 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 
 	return ret;
 }
-void MainWindow::StartExperiment() {
+void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
@@ -215,6 +230,17 @@ void MainWindow::StartExperiment() {
 
 	if (hardware.currentInstrument.handler->experiment.busy) {
 		LOG() << "Current instrument is busy now";
+		return;
+	}
+
+	if (0 == prebuiltExperiments.selectedExp) {
+		LOG() << "No experiment selected";
+		return;
+	}
+
+	QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg);
+	if (nodesData.isEmpty()) {
+		LOG() << "Error while getting user input";
 		return;
 	}
 
@@ -270,12 +296,14 @@ void MainWindow::StartExperiment() {
 	hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
 	hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-	ExperimentContainer &ec(prebuiltExperiments.ecList[prebuiltExperiments.selectedEcIndex]);
+	//ExperimentContainer &ec(prebuiltExperiments.ecList[prebuiltExperiments.selectedEcIndex]);
 
-	emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, ec.shortName);
+	//emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, ec.shortName);
+	emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp->GetShortName());
 	
 	LOG() << "Start experiment";
-	hardware.currentInstrument.handler->oper->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), hardware.currentInstrument.channel);
+	//hardware.currentInstrument.handler->oper->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), hardware.currentInstrument.channel);
+	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
 }
 void MainWindow::StopExperiment(const QUuid &id) {
 	auto it = hardware.handlers.begin();

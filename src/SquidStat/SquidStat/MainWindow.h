@@ -6,6 +6,8 @@
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
 
+#include <Experiment.h>
+
 #include <QList>
 #include <QUuid>
 
@@ -25,7 +27,8 @@ public slots:
     void ApplyStyle();
 	
 	void LoadPrebuildExperiments();
-	void PrebuiltExperimentSelected(int);
+	//void PrebuiltExperimentSelected(int);
+	void PrebuiltExperimentSelected(const Experiment*);
 
 	void SearchHwVendor();
 	void SearchHwHandshake();
@@ -33,7 +36,7 @@ public slots:
 	void SelectHardware(const InstrumentInfo&, quint8 channel);
 	void RequestCalibration();
 
-	void StartExperiment();
+	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
 
 	void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
@@ -42,9 +45,10 @@ signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
 
-	void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
-	void PrebuiltExperimentSetDescription(const ExperimentContainer&);
-	void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
+	//void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
+	void PrebuiltExperimentsFound(const QList<Experiment*>&);
+	//void PrebuiltExperimentSetDescription(const ExperimentContainer&);
+	//void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
 	void CreateNewDataWindow(const QUuid&, const QString&);
 
@@ -77,8 +81,10 @@ private:
 	} hardware;
 
 	struct {
-		QList<ExperimentContainer> ecList;
-		int selectedEcIndex;
+		//QList<ExperimentContainer> ecList;
+		//int selectedEcIndex;
+		const Experiment* selectedExp;
+		QList<Experiment*> expList;
 	} prebuiltExperiments;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);

@@ -47,7 +47,8 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 void InstrumentOperator::RequestCalibrationData() {
 	_communicator->SendCommand((CommandID)SEND_CAL_DATA);
 }
-void InstrumentOperator::StartExperiment(QVector<ExperimentNode_t> nodes, quint8 channel) {
+//void InstrumentOperator::StartExperiment(QVector<ExperimentNode_t> nodes, quint8 channel) {
+void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 channel) {
 	/*
 	ExperimentNode_t exp[3];
 
@@ -82,7 +83,8 @@ void InstrumentOperator::StartExperiment(QVector<ExperimentNode_t> nodes, quint8
 	exp[2].nodeType = END_EXPERIMENT_NODE;
 	//*/
 
-	_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, QByteArray((char*)&nodes[0], nodes.size()*sizeof(ExperimentNode_t)));
+	//_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, QByteArray((char*)&nodes[0], nodes.size()*sizeof(ExperimentNode_t)));
+	_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
 	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel);
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {

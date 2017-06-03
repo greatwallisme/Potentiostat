@@ -67,14 +67,18 @@ private:
 		quint8 channel;
 	} currentInstrument;
 
+	/*
 	struct SavedInputs {
 		ExperimentNode_t *node;
 		QMap<QString, QWidget*> input;
 	};
+	//*/
 
 	struct {
-		QList<QWidget*> paramWidgets;
-		QList<SavedInputs> inputsList;
+		//QList<QWidget*> paramWidgets;
+		//QList<SavedInputs> inputsList;
+
+		QWidget *userInputs;
 	} prebuiltExperimentData;
 
 	struct PlotHandler {

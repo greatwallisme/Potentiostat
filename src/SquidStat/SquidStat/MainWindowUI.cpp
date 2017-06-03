@@ -30,7 +30,7 @@
 #include <QFileDialog>
 
 #define PREBUILT_EXP_DIR	"./prebuilt/"
-
+/*
 QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
 	auto ret = OBJ_NAME(LBL("Unknown node type"), "heading-label");
 
@@ -94,10 +94,12 @@ void MainWindowUI::FillNodeParameters() {
 		;
 	}
 }
-
+//*/
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
+	prebuiltExperimentData.userInputs = 0;
+
 	mw->setObjectName("mainUI");
 	mw->ApplyStyle();
 }
@@ -431,10 +433,14 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addStretch(1);
 
+	auto paramsHeadLabel = OBJ_NAME(LBL("Parameters"), "heading-label");
+	paramsHeadLabel->hide();
+
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
+	paramsWidgetLay->addWidget(paramsHeadLabel, 1, 1);
 	paramsWidgetLay->addLayout(buttonLay, 3, 1);
 	paramsWidgetLay->setRowStretch(2, 1);
 
@@ -453,27 +459,50 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
 
-	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
+	//CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
+	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<Experiment*> &expList) {
 		QStandardItemModel *model = new QStandardItemModel(4, 1);
 
 		int row = 0;
 
-		foreach(const ExperimentContainer &exp, expList) {
-			model->setItem(row++, new QStandardItem(exp.shortName));
+		foreach(const Experiment* exp, expList) {
+			auto *item = new QStandardItem(exp->GetShortName());
+			item->setData(QVariant::fromValue(exp), Qt::UserRole);
+			
+			model->setItem(row++, item);
 		}
 
 		experimentList->setModel(model);
 	});
 
 	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
-		mw->PrebuiltExperimentSelected(index.row());
+		auto exp = index.data(Qt::UserRole).value<const Experiment*>();
+		descrName->setText(exp->GetFullName());
+		descrText->setText(exp->GetDescription());
+		descrIcon->setPixmap(exp->GetImage());
+
+		if (prebuiltExperimentData.userInputs) {
+			paramsLay->removeWidget(prebuiltExperimentData.userInputs);
+			prebuiltExperimentData.userInputs->deleteLater();
+		}
+
+		prebuiltExperimentData.userInputs = exp->CreateUserInput();
+		paramsLay->addWidget(prebuiltExperimentData.userInputs);
+
+		startExpPbt->show();
+		paramsHeadLabel->show();
+		
+		mw->PrebuiltExperimentSelected(exp);
+		//mw->PrebuiltExperimentSelected(index.row());
 	});
 
+	/*
 	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
 		descrName->setText(ec.name);
 		descrText->setText(ec.description);
 		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
 		startExpPbt->show();
+		paramsHeadLabel->show();
 	});
 
 	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
@@ -499,11 +528,12 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		paramsLay->addWidget(stretchWdg, 1);
 		prebuiltExperimentData.paramWidgets << stretchWdg;
 	});
+	//*/
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
-		FillNodeParameters();
+		//FillNodeParameters();
 
-		mw->StartExperiment();
+		mw->StartExperiment(prebuiltExperimentData.userInputs);
 	});
 
 	return w;
