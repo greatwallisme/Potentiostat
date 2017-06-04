@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_SquidStat", "SquidStat\SquidStat.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+	ProjectSection(ProjectDependencies) = postProject
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {30A251DE-4089-4203-9BD0-22CBDAF64A59}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InstrumentEmulator", "InstrumentEmulator\InstrumentEmulator.vcxproj", "{E0869052-B226-4575-BACC-B46E1B365E20}"
 EndProject

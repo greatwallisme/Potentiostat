@@ -55,16 +55,51 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_INSERT_TEXT_INPUT(REPEATS_DEFAULT, REPEATS_OBJ_NAME, row, 1);
 	_INSERT_RIGHT_COMMENT("", row, 2);
 
+	++row;
+	_INSERT_LEFT_COMMENT("Test radio 1", row, 0);
+	_START_RADIO_BUTTON_GROUP("Test radio 1 id");
+		_INSERT_RADIO_BUTTON("Ref", row, 1);
+		_INSERT_RADIO_BUTTON("Open circuit", row, 2);
+	_END_RADIO_BUTTON_GROUP();
+
+	++row;
+	_INSERT_LEFT_COMMENT("Test radio 2", row, 0);
+	_START_RADIO_BUTTON_GROUP("Test radio 2 id");
+		_INSERT_RADIO_BUTTON("Ref", row, 1);
+		_INSERT_RADIO_BUTTON("Open circuit", row, 2);
+	_END_RADIO_BUTTON_GROUP();
+
+	++row;
+	_INSERT_LEFT_COMMENT("Test drop down", row, 0);
+	_START_DROP_DOWN("Test drop down id", row, 1);
+		_ADD_DROP_DOWN_ITEM("Item 1");
+		_ADD_DROP_DOWN_ITEM("Item 2");
+		_ADD_DROP_DOWN_ITEM("Item 3");
+	_END_DROP_DOWN();
+
+	++row;
+	_INSERT_LEFT_COMMENT("Test radio layout", row, 0);
+	_START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT("Test radio layout id", row, 1);
+		_INSERT_RADIO_BUTTON_LAYOUT("Ref");
+		_INSERT_RADIO_BUTTON_LAYOUT("Open circuit");
+	_END_RADIO_BUTTON_GROUP_LAYOUT();
+
 	_SET_ROW_STRETCH(++row, 1);
+	_SET_COL_STRETCH(3, 1);
 
 	USER_INPUT_END();
 }
 QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
-	QByteArray ret;
+	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-	if (wdg->objectName() != TOP_WIDGET_NAME) {
-		return ret;
-	}
+	QString selectedRadio1;
+	QString selectedRadio2;
+	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
+	GET_SELECTED_RADIO(selectedRadio2, "Test radio 2 id");
+
+
+	QString selectedDropDown;
+	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
 
 	qint32 startVoltage;
 	qint32 endVoltage;
@@ -88,7 +123,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
 	exp.DCSweep.VStart = startVoltage;
 	exp.DCSweep.VEnd = endVoltage;
 	exp.DCSweep.dVdt = voltageStep;
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = true;
@@ -104,10 +139,10 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
 	exp.DCSweep.dVdt = -voltageStep;
 	exp.MaxPlays = repeats;
 	exp.branchHeadIndex = 0;
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+	PUSH_NEW_NODE_DATA();
 
-	return ret;
+	NODES_DATA_END();
 }

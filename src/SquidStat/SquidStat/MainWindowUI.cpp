@@ -461,7 +461,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	//CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
 	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<AbstractExperiment*> &expList) {
-		QStandardItemModel *model = new QStandardItemModel(4, 1);
+		QStandardItemModel *model = new QStandardItemModel(expList.size(), 1);
 
 		int row = 0;
 
@@ -476,23 +476,30 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	});
 
 	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
-		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
-		descrName->setText(exp->GetFullName());
-		descrText->setText(exp->GetDescription());
-		descrIcon->setPixmap(exp->GetImage());
-
 		if (prebuiltExperimentData.userInputs) {
 			paramsLay->removeWidget(prebuiltExperimentData.userInputs);
 			prebuiltExperimentData.userInputs->deleteLater();
 		}
 
-		prebuiltExperimentData.userInputs = exp->CreateUserInput();
-		paramsLay->addWidget(prebuiltExperimentData.userInputs);
+		if (index.isValid()) {
+			auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
 
-		startExpPbt->show();
-		paramsHeadLabel->show();
-		
-		mw->PrebuiltExperimentSelected(exp);
+			descrName->setText(exp->GetFullName());
+			descrText->setText(exp->GetDescription());
+			descrIcon->setPixmap(exp->GetImage());
+
+			prebuiltExperimentData.userInputs = exp->CreateUserInput();
+			paramsLay->addWidget(prebuiltExperimentData.userInputs);
+				
+			mw->PrebuiltExperimentSelected(exp);
+
+			startExpPbt->show();
+			paramsHeadLabel->show();
+		}
+		else {
+			startExpPbt->hide();
+			paramsHeadLabel->hide();
+		}
 		//mw->PrebuiltExperimentSelected(index.row());
 	});
 

@@ -63,6 +63,10 @@ mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindowsd.dll $(OutDir)\platforms\
 copy $(ProjectDir)\GUI.css $(OutDir)\</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>rmdir prebuilt
+mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -94,6 +98,10 @@ copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
 copy $(ProjectDir)\prebuilt\ $(OutDir)\prebuilt\</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>rmdir prebuilt
+mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp" />

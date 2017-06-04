@@ -188,6 +188,20 @@ QPushButton#bar-button:open {
 #primary-button[button-type="experiment-start-pbt"] {
 
 }
+QRadioButton {
+	border: none;
+	font-size: 16px;
+	margin-left: 15px;
+	margin-right: 15px;
+	padding-top: 17px;
+	qproperty-alignment: 'AlignLeft | AlignVCenter';
+}
+QRadioButton::indicator::unchecked {
+    image: url(:/GUI/Resources/radio-clear.png);
+}
+QRadioButton::indicator::checked {
+    image: url(:/GUI/Resources/radio-selected.png);
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #new-data-window-owner {
 	border: none;

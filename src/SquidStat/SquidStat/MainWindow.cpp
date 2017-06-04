@@ -6,10 +6,14 @@
 #include "InstrumentOperator.h"
 #include "ExperimentReader.h"
 
+#include <ExperimentFactoryInterface.h>
+
 #include "Log.h"
 
 #include <QDir>
 #include <QList>
+
+#include <QPluginLoader>
 
 #include <stdlib.h>
 
@@ -34,6 +38,18 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow() {
 	CleanupCurrentHardware();
     delete ui;
+
+	CleanupExperiments();
+}
+void MainWindow::CleanupExperiments() {
+	foreach(auto exp, prebuiltExperiments.expList) {
+		delete exp;
+	}
+
+	foreach(auto loader, prebuiltExperiments.expLoaders) {
+		loader->unload();
+		loader->deleteLater();
+	}
 }
 void MainWindow::CleanupCurrentHardware() {
 	for (auto it = hardware.handlers.begin(); it != hardware.handlers.end(); ++it) {
@@ -67,7 +83,31 @@ void MainWindow::FillHardware(const InstrumentList &instrumentList) {
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
-	prebuiltExperiments.expList << new ExampleExperiment;
+	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+
+	foreach(const QFileInfo &expFileInfo, expFileInfos) {
+		auto filePath = expFileInfo.absoluteFilePath();
+
+		auto loader = new QPluginLoader(filePath, this);
+
+		if (!loader->load()) {
+			loader->deleteLater();
+			continue;
+		}
+
+		auto instance = qobject_cast<ExperimentFactoryInterface*>(loader->instance());
+
+		if (0 == instance) {
+			loader->unload();
+			loader->deleteLater();
+			continue;
+		}
+
+		prebuiltExperiments.expList << instance->CreateExperiment();
+		prebuiltExperiments.expLoaders << loader;
+	}
+
+	//prebuiltExperiments.expList << new ExampleExperiment;
 
 	emit PrebuiltExperimentsFound(prebuiltExperiments.expList);
 

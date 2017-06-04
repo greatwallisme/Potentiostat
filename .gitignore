@@ -12,3 +12,4 @@ moc/
 *.obj
 UpgradeLog.htm
 GeneratedFiles/
+src/SquidStat/SquidStat/prebuilt/*

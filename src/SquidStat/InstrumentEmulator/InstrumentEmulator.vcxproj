@@ -55,6 +55,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Networkd.lib;Qt5SerialPortd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>rmdir prebuilt
+mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -77,6 +81,10 @@ copy $(QTDIR)\bin\Qt5SerialPort.dll $(OutDir)\
 mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\</Command>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>rmdir prebuilt
+mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\SquidStat\Config.cpp" />

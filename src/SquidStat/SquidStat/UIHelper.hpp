@@ -12,6 +12,7 @@
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QPushButton>
+#include <QRadioButton>
 
 template<typename WidgetType>
 WidgetType* SetObjectName(WidgetType *w, const QString &name) {
@@ -45,6 +46,7 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 #define LED()			new QLineEdit
 #define TED()			new QTextEdit
 #define PBT(str)		new QPushButton(TR(str))
+#define RBT(str)		new QRadioButton(TR(str))
 
 
 

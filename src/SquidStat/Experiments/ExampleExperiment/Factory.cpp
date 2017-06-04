@@ -1,5 +1,7 @@
 #include "Factory.h"
 
+#include "ExampleExperiment.h"
+
 AbstractExperiment* Factory::CreateExperiment(const QVariant&) {
-	return 0;
+	return new ExampleExperiment;
 }

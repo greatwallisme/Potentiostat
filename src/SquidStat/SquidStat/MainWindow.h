@@ -14,6 +14,7 @@
 class MainWindowUI;
 class InstrumentOperator;
 class ExperimentContainer;
+class QPluginLoader;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -54,6 +55,7 @@ signals:
 
 private:
 	void CleanupCurrentHardware();
+	void CleanupExperiments();
 	void FillHardware(const InstrumentList &);
 
 	MainWindowUI *ui;
@@ -85,6 +87,7 @@ private:
 		//int selectedEcIndex;
 		const AbstractExperiment* selectedExp;
 		QList<AbstractExperiment*> expList;
+		QList<QPluginLoader*> expLoaders;
 	} prebuiltExperiments;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
