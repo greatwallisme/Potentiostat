@@ -6,7 +6,7 @@
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
 
-#include <Experiment.h>
+#include <AbstractExperiment.h>
 
 #include <QList>
 #include <QUuid>
@@ -28,7 +28,7 @@ public slots:
 	
 	void LoadPrebuildExperiments();
 	//void PrebuiltExperimentSelected(int);
-	void PrebuiltExperimentSelected(const Experiment*);
+	void PrebuiltExperimentSelected(const AbstractExperiment*);
 
 	void SearchHwVendor();
 	void SearchHwHandshake();
@@ -46,7 +46,7 @@ signals:
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
 
 	//void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
-	void PrebuiltExperimentsFound(const QList<Experiment*>&);
+	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 	//void PrebuiltExperimentSetDescription(const ExperimentContainer&);
 	//void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
@@ -83,8 +83,8 @@ private:
 	struct {
 		//QList<ExperimentContainer> ecList;
 		//int selectedEcIndex;
-		const Experiment* selectedExp;
-		QList<Experiment*> expList;
+		const AbstractExperiment* selectedExp;
+		QList<AbstractExperiment*> expList;
 	} prebuiltExperiments;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);

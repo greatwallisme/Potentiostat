@@ -460,12 +460,12 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setWidget(scrollAreaWidget);
 
 	//CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
-	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<Experiment*> &expList) {
+	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<AbstractExperiment*> &expList) {
 		QStandardItemModel *model = new QStandardItemModel(4, 1);
 
 		int row = 0;
 
-		foreach(const Experiment* exp, expList) {
+		foreach(const AbstractExperiment* exp, expList) {
 			auto *item = new QStandardItem(exp->GetShortName());
 			item->setData(QVariant::fromValue(exp), Qt::UserRole);
 			
@@ -476,7 +476,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	});
 
 	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
-		auto exp = index.data(Qt::UserRole).value<const Experiment*>();
+		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
 		descrName->setText(exp->GetFullName());
 		descrText->setText(exp->GetDescription());
 		descrIcon->setPixmap(exp->GetImage());

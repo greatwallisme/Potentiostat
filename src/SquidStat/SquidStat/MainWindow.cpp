@@ -64,8 +64,6 @@ void MainWindow::FillHardware(const InstrumentList &instrumentList) {
 
 	hardware.currentInstrument.handler = hardware.handlers.end();
 }
-
-#include <ExampleExperiment.h>
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
@@ -103,7 +101,7 @@ void MainWindow::LoadPrebuildExperiments() {
 	//*/
 }
 //void MainWindow::PrebuiltExperimentSelected(int index) {
-void MainWindow::PrebuiltExperimentSelected(const Experiment *exp) {
+void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 	prebuiltExperiments.selectedExp = exp;
 
 	/*

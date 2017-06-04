@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Experiment.h>
+#include <AbstractExperiment.h>
 
-class ExampleExperiment : public Experiment {
-
+class ExampleExperiment : public AbstractExperiment {
+public:
 	QString GetShortName() const;
 	QString GetFullName() const;
 	QString GetDescription() const;

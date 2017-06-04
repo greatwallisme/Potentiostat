@@ -97,7 +97,6 @@ copy $(ProjectDir)\prebuilt\ $(OutDir)\prebuilt\</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp" />
-    <ClCompile Include="ExampleExperiment.cpp" />
     <ClCompile Include="ExperimentReader.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_InstrumentOperator.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -153,10 +152,10 @@ copy $(ProjectDir)\prebuilt\ $(OutDir)\prebuilt\</Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </Command>
     </CustomBuild>
-    <ClInclude Include="ExampleExperiment.h" />
-    <ClInclude Include="Experiment.h" />
+    <CustomBuild Include="AbstractExperiment.h" />
     <ClInclude Include="ExperimentUIHelper.h" />
     <ClInclude Include="ExternalStructures.h" />
+    <ClInclude Include="ExperimentFactoryInterface.h" />
     <ClInclude Include="InstrumentEnumerator.h" />
     <ClInclude Include="UIHelper.hpp" />
     <CustomBuild Include="MainWindowUI.h">

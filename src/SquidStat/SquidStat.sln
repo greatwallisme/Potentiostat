@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "InstrumentEmulator", "Instr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experiments", "Experiments", "{654DB27D-514D-478B-B635-296AEEB8CA89}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExampleExperiment", "Experiments\ExampleExperiment\ExampleExperiment.vcxproj", "{30A251DE-4089-4203-9BD0-22CBDAF64A59}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -23,9 +25,16 @@ Global
 		{E0869052-B226-4575-BACC-B46E1B365E20}.Debug|x86.Build.0 = Debug|Win32
 		{E0869052-B226-4575-BACC-B46E1B365E20}.Release|x86.ActiveCfg = Release|Win32
 		{E0869052-B226-4575-BACC-B46E1B365E20}.Release|x86.Build.0 = Release|Win32
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Debug|x86.ActiveCfg = Debug|Win32
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Debug|x86.Build.0 = Debug|Win32
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Release|x86.ActiveCfg = Release|Win32
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {654DB27D-514D-478B-B635-296AEEB8CA89}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		Qt5Version = $(DefaultQtVersion)

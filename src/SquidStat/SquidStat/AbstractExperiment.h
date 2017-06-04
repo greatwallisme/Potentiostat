@@ -1,15 +1,15 @@
 #pragma once
 
+#include <QMetaType> 
+
 class QString;
 class QByteArray;
 class QPixmap;
 class QWidget;
 
-#include <QVariant>
-
-class Experiment {
+class AbstractExperiment {
 public:
-	Experiment() {};
+	AbstractExperiment() {};
 
 	virtual QString GetShortName() const = 0;
 	virtual QString GetFullName() const = 0;
@@ -21,12 +21,5 @@ public:
 	virtual QByteArray GetNodesData(QWidget*) const = 0;
 };
 
-Q_DECLARE_METATYPE(Experiment*)
-Q_DECLARE_METATYPE(const Experiment*)
-
-class ExperimentFactory : public QObject {
-public:
-	virtual Experiment* CreateExperiment(const QVariant& = QVariant()) = 0;
-};
-
-Q_DECLARE_INTERFACE(ExperimentFactory, "squidstat.ExperimentFactory")
+Q_DECLARE_METATYPE(AbstractExperiment*)
+Q_DECLARE_METATYPE(const AbstractExperiment*)

@@ -30,7 +30,7 @@ QString ExampleExperiment::GetCategory() const {
 	return "Example";
 }
 QPixmap ExampleExperiment::GetImage() const {
-	return QPixmap();
+	return QPixmap(":/GUI/Resources/experiment.png");
 }
 QWidget* ExampleExperiment::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);

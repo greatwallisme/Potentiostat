@@ -112,9 +112,6 @@
     <ClCompile Include="ExperimentReader.cpp">
       <Filter>_scr\ExperimentReader</Filter>
     </ClCompile>
-    <ClCompile Include="ExampleExperiment.cpp">
-      <Filter>_scr\Experiments</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="InstrumentEnumerator.h">
@@ -132,13 +129,10 @@
     <ClInclude Include="UIHelper.hpp">
       <Filter>_scr\MainWindow</Filter>
     </ClInclude>
-    <ClInclude Include="Experiment.h">
-      <Filter>_scr\Experiments</Filter>
-    </ClInclude>
-    <ClInclude Include="ExampleExperiment.h">
-      <Filter>_scr\Experiments</Filter>
-    </ClInclude>
     <ClInclude Include="ExperimentUIHelper.h">
+      <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperimentFactoryInterface.h">
       <Filter>_scr\Experiments</Filter>
     </ClInclude>
   </ItemGroup>
@@ -163,6 +157,9 @@
     </CustomBuild>
     <CustomBuild Include="ExperimentReader.h">
       <Filter>_scr\ExperimentReader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="AbstractExperiment.h">
+      <Filter>_scr\Experiments</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
