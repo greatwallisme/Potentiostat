@@ -15,6 +15,50 @@ QWidget {
 	background-color: #ffffff;
 }
 
+QLineEdit, QComboBox {
+	border: 1px solid #c6ccd2;
+	min-height: 30px;
+	margin-top: 20px;
+	padding-left: 15px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+
+	border: none;
+}
+QComboBox::down-arrow {
+    image: url(:/GUI/Resources/combobox-dropdown.png);
+	
+	margin-right: 25px;
+}
+#combo-list {
+    border: 1px solid #c6ccd2;
+	background: #ffffff;
+	outline: 0;
+}
+#combo-list::item {
+	border: none;
+	padding: 5px;
+	padding-left: 10px;
+}
+#combo-list::item:selected {
+	background-color: #ffbec0;
+	color: #7b1a1e;
+}
+QRadioButton {
+	border: none;
+	font-size: 16px;
+	margin-left: 15px;
+	margin-right: 15px;
+	padding-top: 17px;
+}
+QRadioButton::indicator::unchecked {
+    image: url(:/GUI/Resources/radio-clear.png);
+}
+QRadioButton::indicator::checked {
+    image: url(:/GUI/Resources/radio-selected.png);
+}
 /*//////////////         APPLY BUTTON       ////////////////////*/
 #apply-button {
 	background-color: #7b1a1e;
@@ -87,6 +131,40 @@ QPushButton#bar-button:open {
 	border-top: 1px solid #cce7f2;
 	border-bottom: 1px solid #cce7f2;
 	color: #000000;
+}
+#select-category {
+	border-color: #84878e;
+}
+#search-experiments-spacing {
+	min-width: 19px;
+	max-width: 19px;
+	border: none;
+	margin-right: 1px;
+	background-color: #f8f9fb;
+}
+#search-experiments-clear {
+	min-height: 30px;
+	border: none;
+	border-bottom: 1px solid #2c81de;
+	background-color: #f8f9fb;
+	margin-bottom: 20px;
+	margin-top: 20px;
+}
+#search-experiments-label {
+	margin-left: 20px;
+	margin-bottom: 20px;
+	margin-top: 20px;
+	border: none;
+	border-bottom: 1px solid #2c81de;
+	background-color: #f8f9fb;
+}
+#search-experiments {
+	margin-bottom: 20px;
+	border: none;
+	border-bottom: 1px solid #2c81de;
+	background-color: #f8f9fb;
+	
+	qproperty-placeholderText: "Search";
 }
 /*//////////////     EXPERIMENT DESCRIPTION    ////////////////////*/
 #experiment-description-owner {
@@ -188,20 +266,6 @@ QPushButton#bar-button:open {
 #primary-button[button-type="experiment-start-pbt"] {
 
 }
-QRadioButton {
-	border: none;
-	font-size: 16px;
-	margin-left: 15px;
-	margin-right: 15px;
-	padding-top: 17px;
-	qproperty-alignment: 'AlignLeft | AlignVCenter';
-}
-QRadioButton::indicator::unchecked {
-    image: url(:/GUI/Resources/radio-clear.png);
-}
-QRadioButton::indicator::checked {
-    image: url(:/GUI/Resources/radio-selected.png);
-}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #new-data-window-owner {
 	border: none;
@@ -290,38 +354,6 @@ QRadioButton::indicator::checked {
 	margin-top: 10px;
 	margin-bottom: 10px;
 	padding-top: 20px;
-}
-
-QLineEdit, QComboBox {
-	border: 1px solid #c6ccd2;
-	min-height: 30px;
-	margin-top: 20px;
-	padding-left: 15px;
-}
-QComboBox::drop-down {
-    subcontrol-origin: padding;
-    subcontrol-position: top right;
-
-	border: none;
-}
-QComboBox::down-arrow {
-    image: url(:/GUI/Resources/combobox-dropdown.png);
-	
-	margin-right: 25px;
-}
-#combo-list {
-    border: 1px solid #c6ccd2;
-	background: #ffffff;
-	outline: 0;
-}
-#combo-list::item {
-	border: none;
-	padding: 5px;
-	padding-left: 10px;
-}
-#combo-list::item:selected {
-	background-color: #ffbec0;
-	color: #7b1a1e;
 }
 
 #secondary-button {

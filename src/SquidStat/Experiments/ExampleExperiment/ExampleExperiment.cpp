@@ -27,7 +27,7 @@ QString ExampleExperiment::GetDescription() const {
 	return "This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT";
 }
 QString ExampleExperiment::GetCategory() const {
-	return "Example";
+	return "Example Category";
 }
 QPixmap ExampleExperiment::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");

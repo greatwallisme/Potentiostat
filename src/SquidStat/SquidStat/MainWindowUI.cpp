@@ -16,6 +16,7 @@
 #include <QIntValidator>
 #include <QListView>
 #include <QTabWidget>
+#include <QSortFilterProxyModel>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -29,7 +30,11 @@
 #include <QTime>
 #include <QFileDialog>
 
-#define PREBUILT_EXP_DIR	"./prebuilt/"
+#include <QXmlStreamReader>
+
+//#define PREBUILT_EXP_DIR	"./prebuilt/"
+#define EXPERIMENT_VIEW_ALL_CATEGORY  "View All"
+
 /*
 QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
 	auto ret = OBJ_NAME(LBL("Unknown node type"), "heading-label");
@@ -384,6 +389,48 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
+class ExperimentFilterModel : public QSortFilterProxyModel {
+	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
+		QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+
+		if (!index.isValid()) {
+			return false;
+		}
+
+		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
+		//setFilterFixedString
+		QString pattern = filterRegExp().pattern();
+
+		QString descriptionPlain = "";
+		QXmlStreamReader xml("<i>" + exp->GetDescription() + "</i>");
+		while (!xml.atEnd()) {
+			if (xml.readNext() == QXmlStreamReader::Characters) {
+				descriptionPlain += xml.text();
+			}
+		}
+
+		bool validCategory = false;
+		if (_category == EXPERIMENT_VIEW_ALL_CATEGORY) {
+			validCategory = true;
+		}
+		else {
+			validCategory = _category == exp->GetCategory();
+		}
+
+		return (exp->GetShortName().contains(pattern, filterCaseSensitivity()) ||
+			exp->GetFullName().contains(pattern, filterCaseSensitivity()) ||
+			descriptionPlain.contains(pattern, filterCaseSensitivity())) && validCategory;
+	}
+
+public:
+	void SetCurrentCategory(const QString &category) {
+		_category = category;
+		invalidateFilter();
+	}
+
+private:
+	QString _category;
+};
 QWidget* MainWindowUI::GetRunExperimentTab() {
 	static QWidget *w = 0;
 
@@ -402,8 +449,54 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *experimentListLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(experimentListOwner)));
 	auto *experimentList = OBJ_PROP(OBJ_NAME(new QListView, "experiment-list"), "widget-type", "left-grey");
 	experimentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	auto proxyModel = new ExperimentFilterModel;
+	proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+	proxyModel->setSourceModel(new QStandardItemModel(0, 0));
+	experimentList->setModel(proxyModel);
 
-	experimentListLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiments"), "heading-label"), "widget-type", "left-grey"));
+	auto searchLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
+	QLabel *searchLabel;
+	QPushButton *searchClearPbt;
+	QLineEdit *searchExpLed;
+	searchLay->addWidget(searchLabel = OBJ_NAME(LBL(""), "search-experiments-label"));
+	searchLay->addWidget(searchExpLed = OBJ_NAME(LED(), "search-experiments"));
+	searchLay->addWidget(searchClearPbt = OBJ_NAME(PBT(""), "search-experiments-clear"));
+	searchLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+	searchLabel->setPixmap(QPixmap(":/GUI/Resources/search-icon.png"));
+	searchClearPbt->setIcon(QIcon(":/GUI/Resources/search-clear-button.png"));
+	searchClearPbt->setIconSize(QPixmap(":/GUI/Resources/search-clear-button.png").size());
+	searchClearPbt->hide();
+
+	CONNECT(searchExpLed, &QLineEdit::textChanged, [=](const QString &text) {
+		if (text.isEmpty()) {
+			searchClearPbt->hide();
+		}
+		else {
+			searchClearPbt->show();
+		}
+	});
+
+	CONNECT(searchClearPbt, &QPushButton::clicked, [=]() {
+		searchExpLed->clear();
+	});
+
+	CONNECT(searchExpLed, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterFixedString);
+
+	auto selectCategoryLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
+	auto selectCategory = OBJ_NAME(CMB(), "select-category");
+	selectCategory->setView(OBJ_NAME(new QListView, "combo-list"));
+
+	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+	selectCategoryLay->addWidget(selectCategory);
+	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+
+	CONNECT(selectCategory, &QComboBox::currentTextChanged, [=](const QString &category) {
+		proxyModel->SetCurrentCategory(category);
+	});
+
+	experimentListLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Categories"), "heading-label"), "widget-type", "left-grey"));
+	experimentListLay->addLayout(selectCategoryLay);
+	experimentListLay->addLayout(searchLay);
 	experimentListLay->addWidget(experimentList);
 
 	auto *descriptionHelpLay = NO_SPACING(NO_MARGIN(new QVBoxLayout()));
@@ -470,15 +563,28 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			item->setData(QVariant::fromValue(exp), Qt::UserRole);
 			
 			model->setItem(row++, item);
-		}
 
-		experimentList->setModel(model);
+			selectCategory->addItem(exp->GetCategory());
+		}
+		selectCategory->addItem(EXPERIMENT_VIEW_ALL_CATEGORY);
+		selectCategory->setCurrentIndex(selectCategory->count() - 1);
+
+		//experimentList->setModel(model);
+		auto oldModel = proxyModel->sourceModel();
+		proxyModel->setSourceModel(model);
+		oldModel->deleteLater();
 	});
 
-	CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
+	//CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
+	CONNECT(experimentList->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &index, const QModelIndex &) {
 		if (prebuiltExperimentData.userInputs) {
 			paramsLay->removeWidget(prebuiltExperimentData.userInputs);
 			prebuiltExperimentData.userInputs->deleteLater();
+			prebuiltExperimentData.userInputs = 0;
+
+			descrName->setText("");
+			descrText->setText("");
+			descrIcon->setPixmap(QPixmap());
 		}
 
 		if (index.isValid()) {

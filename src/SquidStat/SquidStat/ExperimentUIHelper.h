@@ -41,6 +41,9 @@
 	{											\
 		auto button = RBT(text);				\
 		group->addButton(button);				\
+		if(0 == group->checkedButton()) {		\
+			button->setChecked(true);			\
+		}										\
 		butLay->addWidget(button);				\
 	}
 
@@ -49,6 +52,9 @@
 	{											\
 		auto button = RBT(text);				\
 		group->addButton(button);				\
+		if(0 == group->checkedButton()) {		\
+			button->setChecked(true);			\
+		}										\
 		lay->addWidget(button, row, col);		\
 	}
 

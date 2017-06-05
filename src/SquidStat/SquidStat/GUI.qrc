@@ -31,5 +31,7 @@
         <file>Resources/start.png</file>
         <file>Resources/radio-clear.png</file>
         <file>Resources/radio-selected.png</file>
+        <file>Resources/search-icon.png</file>
+        <file>Resources/search-clear-button.png</file>
     </qresource>
 </RCC>

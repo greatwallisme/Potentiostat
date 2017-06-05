@@ -93,10 +93,10 @@ copy $(QTDIR)\bin\Qt5PrintSupport.dll $(OutDir)\
 copy $(QTDIR)\bin\Qt5OpenGL.dll $(OutDir)\
 mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\
-copy $(ProjectDir)\GUI.css $(OutDir)\
+copy $(ProjectDir)\GUI.css $(OutDir)\ /Y
 copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
-copy $(ProjectDir)\prebuilt\ $(OutDir)\prebuilt\</Command>
+copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rmdir prebuilt
