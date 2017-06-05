@@ -36,41 +36,41 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_LEFT_COMMENT("Start Voltage = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Start Voltage = ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
-	_INSERT_RIGHT_COMMENT("V", row, 2);
+	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_LEFT_COMMENT("End Voltage = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("End Voltage = ", row, 0);
 	_INSERT_TEXT_INPUT(END_VOLTAGE_DEFAULT, END_VOLTAGE_OBJ_NAME, row, 1);
-	_INSERT_RIGHT_COMMENT("V", row, 2);
+	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_LEFT_COMMENT("dV/dt = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("dV/dt = ", row, 0);
 	_INSERT_TEXT_INPUT(VOLTAGE_STEP_DEFAULT, VOLTAGE_STEP_OBJ_NAME, row, 1);
-	_INSERT_RIGHT_COMMENT("", row, 2);
+	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 
 	++row;
-	_INSERT_LEFT_COMMENT("Repeats = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
 	_INSERT_TEXT_INPUT(REPEATS_DEFAULT, REPEATS_OBJ_NAME, row, 1);
-	_INSERT_RIGHT_COMMENT("", row, 2);
+	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 
 	++row;
-	_INSERT_LEFT_COMMENT("Test radio 1", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 1", row, 0);
 	_START_RADIO_BUTTON_GROUP("Test radio 1 id");
 		_INSERT_RADIO_BUTTON("Ref", row, 1);
 		_INSERT_RADIO_BUTTON("Open circuit", row, 2);
 	_END_RADIO_BUTTON_GROUP();
 
 	++row;
-	_INSERT_LEFT_COMMENT("Test radio 2", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 2", row, 0);
 	_START_RADIO_BUTTON_GROUP("Test radio 2 id");
 		_INSERT_RADIO_BUTTON("Ref", row, 1);
 		_INSERT_RADIO_BUTTON("Open circuit", row, 2);
 	_END_RADIO_BUTTON_GROUP();
 
 	++row;
-	_INSERT_LEFT_COMMENT("Test drop down", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Test drop down", row, 0);
 	_START_DROP_DOWN("Test drop down id", row, 1);
 		_ADD_DROP_DOWN_ITEM("Item 1");
 		_ADD_DROP_DOWN_ITEM("Item 2");
@@ -78,7 +78,7 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_END_DROP_DOWN();
 
 	++row;
-	_INSERT_LEFT_COMMENT("Test radio layout", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Test radio layout", row, 0);
 	_START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT("Test radio layout id", row, 1);
 		_INSERT_RADIO_BUTTON_LAYOUT("Ref");
 		_INSERT_RADIO_BUTTON_LAYOUT("Open circuit");
@@ -110,7 +110,6 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
 	GET_TEXT_INPUT_VALUE(voltageStep, VOLTAGE_STEP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(repeats, REPEATS_OBJ_NAME);
 
-	ExperimentNode_t exp;
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP;

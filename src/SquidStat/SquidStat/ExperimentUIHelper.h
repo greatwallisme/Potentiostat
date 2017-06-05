@@ -11,10 +11,10 @@
 
 #include <UIHelper.hpp>
 
-#define _INSERT_LEFT_COMMENT(text, row, col) \
+#define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
 	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "left"),	row, col);
 
-#define _INSERT_RIGHT_COMMENT(text, row, col) \
+#define _INSERT_LEFT_ALIGN_COMMENT(text, row, col) \
 	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "right"), row, col);
 
 #define _INSERT_TEXT_INPUT(default_value, obj_name, row, col) \
@@ -89,7 +89,8 @@
 	QByteArray ret;						\
 	if (widget->objectName() != name) { \
 		return ret;						\
-	}
+	}									\
+	ExperimentNode_t exp;
 
 #define NODES_DATA_END()	return ret;
 
