@@ -29,6 +29,7 @@
 
 #include <QTime>
 #include <QFileDialog>
+#include <QStringList>
 
 #include <QXmlStreamReader>
 
@@ -558,15 +559,21 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 		int row = 0;
 
+		QStringList categoryStrList;
 		foreach(const AbstractExperiment* exp, expList) {
 			auto *item = new QStandardItem(exp->GetShortName());
 			item->setData(QVariant::fromValue(exp), Qt::UserRole);
 			
 			model->setItem(row++, item);
 
-			selectCategory->addItem(exp->GetCategory());
+			categoryStrList << exp->GetCategory();
 		}
-		selectCategory->addItem(EXPERIMENT_VIEW_ALL_CATEGORY);
+		categoryStrList << EXPERIMENT_VIEW_ALL_CATEGORY;
+		categoryStrList.removeDuplicates();
+
+		foreach(auto str, categoryStrList) {
+			selectCategory->addItem(str);
+		}
 		selectCategory->setCurrentIndex(selectCategory->count() - 1);
 
 		//experimentList->setModel(model);

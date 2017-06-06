@@ -12,7 +12,8 @@
 #define REPEATS_OBJ_NAME		"repeats"
 
 #define START_VOLTAGE_DEFAULT	0
-#define END_VOLTAGE_DEFAULT		1024
+//#define END_VOLTAGE_DEFAULT		1024
+#define END_VOLTAGE_DEFAULT		50
 #define VOLTAGE_STEP_DEFAULT	1
 #define REPEATS_DEFAULT			3
 
@@ -32,10 +33,50 @@ QString ExampleExperiment::GetCategory() const {
 QPixmap ExampleExperiment::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
+/*
+#include <QIntValidator>
+#include <QDoubleValidator>
+#include <QRegExpValidator>
+//*/
 QWidget* ExampleExperiment::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
+	/*
+	_INSERT_RIGHT_ALIGN_COMMENT("Input mask ", row, 0);
+	auto test = new QLineEdit();
+	lay->addWidget(test, row, 1);
+	test->setInputMask("00:00:00");
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Input mask + blank char ", row, 0);
+	test = new QLineEdit();
+	lay->addWidget(test, row, 1);
+	test->setInputMask("00 \\d\\ays 00:00:00;_");
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("RegExp validator + placeholder ", row, 0);
+	test = new QLineEdit();
+	lay->addWidget(test, row, 1);
+	test->setPlaceholderText("hh:mm:ss");
+	test->setValidator(new QRegExpValidator(QRegExp("[0-9]{0,2}:[0-9]{0,2}:[0-9]{1,2}")));
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Int validator [0; 1024] ", row, 0);
+	test = new QLineEdit();
+	lay->addWidget(test, row, 1);
+	test->setValidator(new QIntValidator(0, 1024));
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Double validator [-1.000; 1.000] ", row, 0);
+	test = new QLineEdit();
+	lay->addWidget(test, row, 1);
+	auto validator = new QDoubleValidator(-1.0, 1.0, 3, test);
+	validator->setNotation(QDoubleValidator::StandardNotation);
+	test->setValidator(validator);
+
+	++row;
+	//*/
 	_INSERT_RIGHT_ALIGN_COMMENT("Start Voltage = ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
@@ -54,7 +95,7 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
 	_INSERT_TEXT_INPUT(REPEATS_DEFAULT, REPEATS_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
-
+	/*
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 1", row, 0);
 	_START_RADIO_BUTTON_GROUP("Test radio 1 id");
@@ -83,15 +124,15 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 		_INSERT_RADIO_BUTTON_LAYOUT("Ref");
 		_INSERT_RADIO_BUTTON_LAYOUT("Open circuit");
 	_END_RADIO_BUTTON_GROUP_LAYOUT();
-
+	//*/
 	_SET_ROW_STRETCH(++row, 1);
 	_SET_COL_STRETCH(3, 1);
 
 	USER_INPUT_END();
 }
-QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
+QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-
+	/*
 	QString selectedRadio1;
 	QString selectedRadio2;
 	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
@@ -100,6 +141,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg) const {
 
 	QString selectedDropDown;
 	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
+	//*/
 
 	qint32 startVoltage;
 	qint32 endVoltage;

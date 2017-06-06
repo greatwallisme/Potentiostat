@@ -275,13 +275,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		LOG() << "No experiment selected";
 		return;
 	}
-
-	QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg);
-	if (nodesData.isEmpty()) {
-		LOG() << "Error while getting user input";
-		return;
-	}
-
+	
 	if (0 == hardware.currentInstrument.handler->oper) {
 		InstrumentOperator *instrumentOperator = new InstrumentOperator(hardware.currentInstrument.handler->info);
 		hardware.currentInstrument.handler->oper = instrumentOperator;
@@ -309,6 +303,21 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived, this, [=](const CalibrationData &calData) {
 			LOG() << "Calibration received";
+			
+			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, calData);
+			if (nodesData.isEmpty()) {
+				LOG() << "Error while getting user input";
+				return;
+			}
+
+			hardware.currentInstrument.handler->experiment.busy = true;
+			hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
+			hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
+
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp->GetShortName());
+
+			LOG() << "Start experiment";
+			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
 		});
 
 
@@ -330,18 +339,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		});
 	}
 	
-	hardware.currentInstrument.handler->experiment.busy = true;
-	hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
-	hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-	//ExperimentContainer &ec(prebuiltExperiments.ecList[prebuiltExperiments.selectedEcIndex]);
-
-	//emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, ec.shortName);
-	emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp->GetShortName());
-	
-	LOG() << "Start experiment";
-	//hardware.currentInstrument.handler->oper->StartExperiment(ExperimentReader::GetNodeArrayForInstrument(ec), hardware.currentInstrument.channel);
-	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
+	hardware.currentInstrument.handler->oper->RequestCalibrationData();
 }
 void MainWindow::StopExperiment(const QUuid &id) {
 	auto it = hardware.handlers.begin();

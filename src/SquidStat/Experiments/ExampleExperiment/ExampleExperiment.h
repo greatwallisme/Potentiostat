@@ -11,5 +11,5 @@ public:
 	QPixmap GetImage() const;
 
 	QWidget* CreateUserInput() const;
-	QByteArray GetNodesData(QWidget*) const;
+	QByteArray GetNodesData(QWidget*, const CalibrationData&) const;
 };

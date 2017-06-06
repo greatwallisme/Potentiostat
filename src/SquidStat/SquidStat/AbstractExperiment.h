@@ -1,6 +1,7 @@
 #pragma once
 
-#include <QMetaType> 
+#include <QMetaType>
+#include <ExternalStructures.h>
 
 class QString;
 class QByteArray;
@@ -18,7 +19,7 @@ public:
 	virtual QPixmap GetImage() const = 0;
 
 	virtual QWidget* CreateUserInput() const = 0;
-	virtual QByteArray GetNodesData(QWidget*) const = 0;
+	virtual QByteArray GetNodesData(QWidget*, const CalibrationData&) const = 0;
 };
 
 Q_DECLARE_METATYPE(AbstractExperiment*)
