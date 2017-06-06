@@ -21,6 +21,9 @@ QLineEdit, QComboBox {
 	margin-top: 20px;
 	padding-left: 15px;
 }
+QComboBox {
+	padding-right: 20px;
+}
 QComboBox::drop-down {
     subcontrol-origin: padding;
     subcontrol-position: top right;
@@ -213,7 +216,7 @@ QPushButton#bar-button:open {
 	color: #677284;
 	font-size: 16px;
 }
-/*//////////////     EXPERIMENT PARAMETERS     ////////////////////*/
+/*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
 #experiment-params-scroll-area {
 	border: none;
 }
@@ -221,7 +224,7 @@ QPushButton#bar-button:open {
 	border: none;
 	color: #677284;
 	font-size: 16px;
-	margin-left: 15px;
+	margin-left: 25px;
 	margin-right: 15px;
 	padding-top: 17px;
 }
@@ -335,10 +338,20 @@ QPushButton#bar-button:open {
 #close-document-pbt:open {
 	image: url(:/GUI/Resources/tab-close.png);
 }
+#new-data-tab-top-spacing {
+	min-height: 35px;
+	max-height: 35px;
+	border: node;
+}
+#new-data-tab-left-spacing {
+	min-width: 15px;
+	max-width: 15px;
+	border: node;
+}
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
 	font-family: "Esphimere";
-	font-size: 20px;
+	font-size: 24px;
 	color: #ce2026;
 	border: 1px solid #ffffff;
 	/*background: qlineargradient( x1:0 y1:0, x2:1 y2:0, stop:0 cyan, stop:1 blue);*/

@@ -732,7 +732,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	});
 
 	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const QString &expName) {
-		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
+		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id, expName), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
@@ -743,12 +743,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
 
-		qreal x = expData.timestamp / 100000UL;
+		qreal x = (qreal)expData.timestamp / 100000000UL;
 		qreal y = expData.adcData.ewe;
 
 
 		if (handler.xData.isEmpty()) {
-			handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
+			//handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
 		}
 
 		handler.xData.append(x);
@@ -760,7 +760,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -773,8 +773,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
 	plotHandler.curve = curve;
 	dataTabs.plots[id] = plotHandler;
 
-	plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
-	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
+	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
+	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
 	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));
@@ -793,18 +793,50 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
 	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 	curve->attach(plot);
 
-	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
+
+	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+
+	auto xCombo = CMB();
+	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
+	xCombo->setView(xComboList);
+	xCombo->addItem("Timestamp");
+	xCombo->addItem("Ewe");
+	xCombo->addItem("Current");
+
+	auto yCombo = CMB();
+	QListView *yComboList = OBJ_NAME(new QListView, "combo-list");
+	yCombo->setView(yComboList);
+	yCombo->addItem("Ewe");
+	yCombo->addItem("Current");
+	yCombo->addItem("Ece");
+	yCombo->addItem("Integral d(Current)/d(time)");
+
+	settingsLay->addWidget(xCombo, 1, 1);
+	settingsLay->addWidget(yCombo, 2, 1);
+	settingsLay->setColumnStretch(2, 1);
+
+	/*
+	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
 	QPushButton *saveDataButton;
 
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(saveDataButton = OBJ_NAME(PBT("Save Experiment Data"), "secondary-button"));
 	buttonLay->addStretch(1);
+	//*/
 
-	lay->addLayout(buttonLay, 0, 0);
-	lay->addWidget(plot, 0, 1);
-	lay->setColumnStretch(0, 1);
+	settingsLay->setRowStretch(5, 1);
+
+	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
+	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
+	lay->addLayout(settingsLay, 1, 1);
+	lay->addWidget(plot, 0, 2, -1, 1);
 	lay->setColumnStretch(1, 1);
+	lay->setColumnStretch(2, 1);
 
+	/*
 	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {
 		auto wdg = ui.newDataTab.docTabs->currentWidget();
 		auto plot = wdg->findChild<QWidget*>("qwt-plot");
@@ -835,6 +867,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id) {
 			mw->SaveData(it->xData, it->yData, dialogRet);
 		}
 	});
+	//*/
 
 	return w;
 }

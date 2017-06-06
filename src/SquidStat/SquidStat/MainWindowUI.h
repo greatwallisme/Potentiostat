@@ -40,7 +40,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
