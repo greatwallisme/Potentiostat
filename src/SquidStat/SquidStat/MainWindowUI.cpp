@@ -715,6 +715,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				if (0 != plot) {
 					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
 						if (it.value().plot == plot) {
+							QObject::disconnect(it.value().xVarComboConnection);
+							QObject::disconnect(it.value().yVarComboConnection);
 							mw->StopExperiment(it.key());
 							dataTabs.plots.remove(it.key());
 							break;
@@ -743,9 +745,25 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
 
+		qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+
+		if (handler.data.currentIntegral.isEmpty()) {
+			handler.data.currentIntegral.append(expData.adcData.current/timestamp);
+		}
+		else {
+			qreal newVal = handler.data.currentIntegral.last();
+			newVal += (handler.data.current.last() + expData.adcData.current) * (timestamp + handler.data.timestamp.last()) / 2.;
+			handler.data.currentIntegral.append(newVal);
+		}
+
+		handler.data.timestamp.append(timestamp);
+		handler.data.ewe.append(expData.adcData.ewe);
+		handler.data.ece.append(expData.adcData.ece);
+		handler.data.current.append(expData.adcData.current);
+
+		/*
 		qreal x = (qreal)expData.timestamp / 100000000UL;
 		qreal y = expData.adcData.ewe;
-
 
 		if (handler.xData.isEmpty()) {
 			//handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
@@ -753,9 +771,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		handler.xData.append(x);
 		handler.yData.append(y);
+		//*/
 
-		handler.curve->setSamples(handler.xData, handler.yData);
-		handler.plot->replot();
+		if (handler.data.xData && handler.data.yData) {
+			handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+			handler.plot->replot();
+		}
 	});
 
 	return w;
@@ -768,21 +789,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
 	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
 
-	PlotHandler plotHandler;
-	plotHandler.plot = plot;
-	plotHandler.curve = curve;
-	dataTabs.plots[id] = plotHandler;
-
 	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
 	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
 	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));
 	//title.setText("Frequency (Hz)");
-	title.setText("Timestamp (ms)");
+	title.setText("Timestamp (s)");
 	plot->setAxisTitle(QwtPlot::xBottom, title);
 	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
-	title.setText("Current (ewe)");
+	title.setText("Ewe");
 	plot->setAxisTitle(QwtPlot::yLeft, title);
 
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
@@ -799,20 +815,26 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
 
+	#define PLOT_VAR_TIMESTAMP			"Timestamp"
+	#define PLOT_VAR_EWE				"Ewe"
+	#define PLOT_VAR_CURRENT			"Current"
+	#define PLOT_VAR_ECE				"Ece"
+	#define PLOT_VAR_CURRENT_INTEGRAL	"Integral d(Current)/d(time)"
+
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
-	xCombo->addItem("Timestamp");
-	xCombo->addItem("Ewe");
-	xCombo->addItem("Current");
+	xCombo->addItem(PLOT_VAR_TIMESTAMP);
+	xCombo->addItem(PLOT_VAR_EWE);
+	xCombo->addItem(PLOT_VAR_CURRENT);
 
 	auto yCombo = CMB();
 	QListView *yComboList = OBJ_NAME(new QListView, "combo-list");
 	yCombo->setView(yComboList);
-	yCombo->addItem("Ewe");
-	yCombo->addItem("Current");
-	yCombo->addItem("Ece");
-	yCombo->addItem("Integral d(Current)/d(time)");
+	yCombo->addItem(PLOT_VAR_EWE);
+	yCombo->addItem(PLOT_VAR_CURRENT);
+	yCombo->addItem(PLOT_VAR_ECE);
+	yCombo->addItem(PLOT_VAR_CURRENT_INTEGRAL);
 
 	settingsLay->addWidget(xCombo, 1, 1);
 	settingsLay->addWidget(yCombo, 2, 1);
@@ -835,6 +857,74 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	lay->addWidget(plot, 0, 2, -1, 1);
 	lay->setColumnStretch(1, 1);
 	lay->setColumnStretch(2, 1);
+
+	PlotHandler plotHandler;
+	plotHandler.plot = plot;
+	plotHandler.curve = curve;
+	plotHandler.xVarCombo = xCombo;
+	plotHandler.yVarCombo = yCombo;
+	//plotHandler.data.xData = &plotHandler.data.timestamp;
+	//plotHandler.data.yData = &plotHandler.data.ewe;
+
+	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		//*
+		QwtText title;
+		title.setFont(QFont("Segoe UI", 14));
+		if (curText == PLOT_VAR_TIMESTAMP) {
+			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
+			title.setText("Timestamp (s)");
+		}
+		else if (curText == PLOT_VAR_EWE) {
+			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.ewe;
+			title.setText("Ewe");
+		}
+		else if (curText == PLOT_VAR_CURRENT) {
+			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.current;
+			title.setText("Current");
+		}
+		else {
+			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
+			title.setText("Timestamp (s)");
+		}
+
+		plot->setAxisTitle(QwtPlot::xBottom, title);
+		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
+		dataTabs.plots[id].plot->replot();
+		//*/
+	});
+
+	plotHandler.yVarComboConnection = CONNECT(yCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		//*
+		QwtText title;
+		title.setFont(QFont("Segoe UI", 14));
+		if (curText == PLOT_VAR_ECE) {
+			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ece;
+		}
+		else if (curText == PLOT_VAR_CURRENT_INTEGRAL) {
+			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.currentIntegral;
+			title.setText(PLOT_VAR_CURRENT_INTEGRAL);
+		}
+		else if (curText == PLOT_VAR_EWE) {
+			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
+			title.setText("Ewe");
+		}
+		else if (curText == PLOT_VAR_CURRENT) {
+			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.current;
+			title.setText("Current");
+		}
+		else {
+			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
+		}
+
+		plot->setAxisTitle(QwtPlot::yLeft, title);
+		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
+		dataTabs.plots[id].plot->replot();
+		//*/
+	});
+
+	dataTabs.plots[id] = plotHandler;
+	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
+	dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
 
 	/*
 	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {

@@ -82,10 +82,22 @@ private:
 	} prebuiltExperimentData;
 
 	struct PlotHandler {
+		PlotHandler() { data.xData = 0; data.yData = 0; }
 		QwtPlot* plot;
 		QwtPlotCurve *curve;
-		QVector<qreal> xData;
-		QVector<qreal> yData;
+		QComboBox *xVarCombo;
+		QComboBox *yVarCombo;
+		QMetaObject::Connection xVarComboConnection;
+		QMetaObject::Connection yVarComboConnection;
+		struct {
+			QVector<qreal> timestamp;
+			QVector<qreal> ewe;
+			QVector<qreal> ece;
+			QVector<qreal> current;
+			QVector<qreal> currentIntegral;
+			QVector<qreal> *xData;
+			QVector<qreal> *yData;
+		} data;
 	};
 
 	struct {
