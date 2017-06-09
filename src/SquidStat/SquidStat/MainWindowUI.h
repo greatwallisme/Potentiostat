@@ -47,9 +47,11 @@ private:
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
 
+	/*
 	QWidget* PrebuiltExpCreateGroupHeader(const ExperimentNode_t*);
 	QWidget* PrebuiltExpCreateParamsInput(ExperimentNode_t*);
 	void FillNodeParameters();
+	//*/
 
 	struct {
 		struct {

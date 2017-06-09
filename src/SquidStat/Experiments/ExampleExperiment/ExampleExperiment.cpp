@@ -87,6 +87,9 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
+	_INSERT_VERTICAL_SPACING(row);
+
+	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("dV/dt = ", row, 0);
 	_INSERT_TEXT_INPUT(VOLTAGE_STEP_DEFAULT, VOLTAGE_STEP_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
@@ -95,13 +98,19 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
 	_INSERT_TEXT_INPUT(REPEATS_DEFAULT, REPEATS_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
-	/*
+
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
+	//*
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 1", row, 0);
 	_START_RADIO_BUTTON_GROUP("Test radio 1 id");
 		_INSERT_RADIO_BUTTON("Ref", row, 1);
 		_INSERT_RADIO_BUTTON("Open circuit", row, 2);
 	_END_RADIO_BUTTON_GROUP();
+
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 2", row, 0);
@@ -111,12 +120,18 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 	_END_RADIO_BUTTON_GROUP();
 
 	++row;
+	_INSERT_VERTICAL_SPACING(row);
+
+	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Test drop down", row, 0);
 	_START_DROP_DOWN("Test drop down id", row, 1);
 		_ADD_DROP_DOWN_ITEM("Item 1");
 		_ADD_DROP_DOWN_ITEM("Item 2");
 		_ADD_DROP_DOWN_ITEM("Item 3");
 	_END_DROP_DOWN();
+
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Test radio layout", row, 0);

@@ -12,13 +12,25 @@
 #include <UIHelper.hpp>
 
 #define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "left"),	row, col);
+	{ \
+		auto lbl = OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "left"); \
+		OBJ_PROP(lbl, "experiment-params-widget", "low-margin"); \
+		lay->addWidget(lbl, row, col); \
+	}
 
 #define _INSERT_LEFT_ALIGN_COMMENT(text, row, col) \
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "right"), row, col);
+	{ \
+		auto lbl = OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "right"); \
+		OBJ_PROP(lbl, "experiment-params-widget", "low-margin"); \
+		lay->addWidget(lbl, row, col); \
+	}
 
 #define _INSERT_TEXT_INPUT(default_value, obj_name, row, col) \
-	lay->addWidget(OBJ_NAME(new QLineEdit(QString("%1").arg(default_value)), obj_name), row, col);
+	{	\
+		auto led = OBJ_NAME(new QLineEdit(QString("%1").arg(default_value)), obj_name); \
+		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
+		lay->addWidget(led, row, col); \
+	}
 
 #define _START_RADIO_BUTTON_GROUP(obj_name)		\
 	{										\
@@ -40,6 +52,7 @@
 #define _INSERT_RADIO_BUTTON_LAYOUT(text)	\
 	{											\
 		auto button = RBT(text);				\
+		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
 		group->addButton(button);				\
 		if(0 == group->checkedButton()) {		\
 			button->setChecked(true);			\
@@ -51,6 +64,7 @@
 #define _INSERT_RADIO_BUTTON(text, row, col)	\
 	{											\
 		auto button = RBT(text);				\
+		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
 		group->addButton(button);				\
 		if(0 == group->checkedButton()) {		\
 			button->setChecked(true);			\
@@ -61,12 +75,16 @@
 #define _START_DROP_DOWN(obj_name, row, col)			\
 	{													\
 		auto combo = OBJ_NAME(CMB(), obj_name);			\
+		OBJ_PROP(combo, "experiment-params-widget", "low-margin"); \
 		QListView *comboList = OBJ_NAME(new QListView, "combo-list"); \
 		combo->setView(comboList);						\
 		lay->addWidget(combo, row, col);
 
 #define _END_DROP_DOWN()								\
 	}
+
+#define _INSERT_VERTICAL_SPACING(row)					\
+	lay->addWidget(OBJ_PROP(WDG(), "experiment-params-widget", "vertical-spacing"), row, 0, 1, -1);
 
 #define _ADD_DROP_DOWN_ITEM(text)	\
 		combo->addItem(text);
