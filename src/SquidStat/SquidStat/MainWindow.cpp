@@ -14,6 +14,7 @@
 #include <QList>
 
 #include <QPluginLoader>
+#include <QFileDialog>
 
 #include <stdlib.h>
 
@@ -243,6 +244,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
+			emit ExperimentCompleted(handler->experiment.id);
+
 			handler->experiment.busy = false;
 			handler->experiment.id = QUuid();
 
@@ -259,11 +262,30 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
+			static QString dirName;
+			QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QTime::currentTime().toString("hh:mm:ss") + ")";
+			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
+			auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+
+			if (dialogRet.isEmpty()) {
+				return;
+			}
+			dirName = QFileInfo(dialogRet).absolutePath();
+
+			auto saveFile = new QFile(this);
+			saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
+			if (!saveFile->open(QIODevice::WriteOnly)) {
+				saveFile->deleteLater();
+				return;
+			}
+
 			hardware.currentInstrument.handler->experiment.busy = true;
 			hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
 			hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp);
+			prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
+
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile);
 
 			LOG() << "Start experiment";
 			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
@@ -309,6 +331,7 @@ void MainWindow::StopExperiment(const QUuid &id) {
 
 	it->oper->StopExperiment(it->experiment.channel);
 }
+/*
 void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName) {
 	QFile f(fileName);
 
@@ -324,6 +347,7 @@ void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yDa
 
 	f.close();
 }
+//*/
 
 #include <QApplication>
 #include <QFile>

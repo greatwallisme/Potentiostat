@@ -239,3 +239,20 @@ void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &co
 	container[PLOT_VAR_ECE].append(expData.adcData.ece);
 	container[PLOT_VAR_CURRENT].append(expData.adcData.current);
 }
+void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
+	saveFile.write(QString("%1;%2;%3;%4;%5\n")
+		.arg(PLOT_VAR_TIMESTAMP)
+		.arg(PLOT_VAR_EWE)
+		.arg(PLOT_VAR_CURRENT)
+		.arg(PLOT_VAR_ECE)
+		.arg(PLOT_VAR_CURRENT_INTEGRAL).toLatin1());
+}
+void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) const {
+	saveFile.write(QString("%1;%2;%3;%4;%5\n")
+		.arg(container[PLOT_VAR_TIMESTAMP].last())
+		.arg(container[PLOT_VAR_EWE].last())
+		.arg(container[PLOT_VAR_CURRENT].last())
+		.arg(container[PLOT_VAR_ECE].last())
+		.arg(container[PLOT_VAR_CURRENT_INTEGRAL].last()).toLatin1());
+	saveFile.flush();
+}

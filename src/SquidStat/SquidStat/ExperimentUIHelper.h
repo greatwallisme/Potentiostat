@@ -10,6 +10,8 @@
 #include <QHBoxLayout>
 #include <QSettings>
 
+#include <QFile>
+
 #include <UIHelper.hpp>
 
 #define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"

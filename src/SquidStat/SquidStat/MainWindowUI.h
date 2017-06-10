@@ -41,7 +41,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*, QFile*);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -95,6 +95,7 @@ private:
 		const AbstractExperiment *exp;
 		struct {
 			DataMap container;
+			QFile *saveFile;
 			/*
 			QVector<qreal> timestamp;
 			QVector<qreal> ewe;

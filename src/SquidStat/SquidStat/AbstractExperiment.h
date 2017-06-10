@@ -7,6 +7,7 @@ class QString;
 class QByteArray;
 class QPixmap;
 class QWidget;
+class QFile;
 
 #include <QMap>
 #include <QVector>
@@ -30,6 +31,9 @@ public:
 	virtual QStringList GetXAxisParameters() const = 0;
 	virtual QStringList GetYAxisParameters() const = 0;
 	virtual void PushNewData(const ExperimentalData&, DataMap &) const = 0;
+	
+	virtual void SaveDataHeader(QFile&) const = 0;
+	virtual void SaveData(QFile&, const DataMap&) const = 0;
 };
 
 Q_DECLARE_METATYPE(AbstractExperiment*)

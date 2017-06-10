@@ -10,6 +10,7 @@
 
 #include <QList>
 #include <QUuid>
+#include <QFile>
 
 class MainWindowUI;
 class InstrumentOperator;
@@ -38,15 +39,16 @@ public slots:
 	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
 
-	void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
+	//void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
 
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
+	void ExperimentCompleted(const QUuid&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 
-	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*);
+	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*);
 
 private:
 	void CleanupCurrentHardware();
@@ -61,7 +63,7 @@ private:
 	struct InstrumentHandler {
 		InstrumentInfo info;
 		InstrumentOperator *oper;
-		struct {
+		struct ExpDescriptor {
 			bool busy;
 			QUuid id;
 			quint8 channel;

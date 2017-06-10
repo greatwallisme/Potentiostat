@@ -486,7 +486,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
 
-	//CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
 	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<AbstractExperiment*> &expList) {
 		QStandardItemModel *model = new QStandardItemModel(expList.size(), 1);
 
@@ -515,7 +514,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		oldModel->deleteLater();
 	});
 
-	//CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
 	CONNECT(experimentList->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &index, const QModelIndex &) {
 		if (prebuiltExperimentData.userInputs) {
 			paramsLay->removeWidget(prebuiltExperimentData.userInputs);
@@ -548,40 +546,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		}
 		//mw->PrebuiltExperimentSelected(index.row());
 	});
-
-	/*
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
-		descrName->setText(ec.name);
-		descrText->setText(ec.description);
-		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
-		startExpPbt->show();
-		paramsHeadLabel->show();
-	});
-
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
-		prebuiltExperimentData.inputsList.clear();
-		foreach(QWidget *wdg, prebuiltExperimentData.paramWidgets) {
-			paramsLay->removeWidget(wdg);
-			wdg->deleteLater();
-		}
-		prebuiltExperimentData.paramWidgets.clear();
-
-		int row = 0;
-		foreach(ExperimentNode_t *node, nodeList) {
-			auto header = PrebuiltExpCreateGroupHeader(node);
-			auto params = PrebuiltExpCreateParamsInput(node);
-
-			paramsLay->addWidget(header);
-			paramsLay->addWidget(params);
-
-			prebuiltExperimentData.paramWidgets << header;
-			prebuiltExperimentData.paramWidgets << params;
-		}
-		auto stretchWdg = WDG();
-		paramsLay->addWidget(stretchWdg, 1);
-		prebuiltExperimentData.paramWidgets << stretchWdg;
-	});
-	//*/
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
 		//FillNodeParameters();
@@ -650,6 +614,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 						if (it.value().plot == plot) {
 							QObject::disconnect(it.value().xVarComboConnection);
 							QObject::disconnect(it.value().yVarComboConnection);
+							
+							if (it.value().data.saveFile) {
+								it.value().data.saveFile->close();
+								it.value().data.saveFile->deleteLater();
+								it.value().data.saveFile = 0;
+							}
+
 							mw->StopExperiment(it.key());
 							dataTabs.plots.remove(it.key());
 							break;
@@ -666,12 +637,22 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp) {
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile) {
 		QString expName = exp->GetShortName();
-		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp);
+		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp, saveFile);
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
+	});
+
+	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
+		PlotHandler &handler(dataTabs.plots[id]);
+		
+		if (handler.data.saveFile) {
+			handler.data.saveFile->close();
+			handler.data.saveFile->deleteLater();
+			handler.data.saveFile = 0;
+		}
 	});
 
 	struct {
@@ -689,6 +670,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id]);
 
 		handler.exp->PushNewData(expData, handler.data.container);
+		if (handler.data.saveFile) {
+			handler.exp->SaveData(*handler.data.saveFile, handler.data.container);
+		}
 
 		if (handler.data.xData && handler.data.yData) {
 			handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
@@ -698,7 +682,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp, QFile *saveFile) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -770,6 +754,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.xVarCombo = xCombo;
 	plotHandler.yVarCombo = yCombo;
 	plotHandler.exp = exp;
+	plotHandler.data.saveFile = saveFile;
 
 	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);
