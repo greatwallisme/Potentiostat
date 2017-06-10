@@ -33,74 +33,8 @@
 
 #include <QXmlStreamReader>
 
-//#define PREBUILT_EXP_DIR	"./prebuilt/"
 #define EXPERIMENT_VIEW_ALL_CATEGORY  "View All"
 
-/*
-QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
-	auto ret = OBJ_NAME(LBL("Unknown node type"), "heading-label");
-
-	switch (node->nodeType) {
-		case DCNODE_SWEEP:
-			ret->setText("DC Sweep");
-			break;
-		default:
-			break;
-	}
-
-	return ret;
-}
-QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
-	auto *ret = WDG();
-	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
-	SavedInputs savedInputs;
-	QWidget *w;
-
-	savedInputs.node = node;
-
-#define INSERT_LED(left_comment, right_comment, default_value, row)		\
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(left_comment), "experiment-params-comment"), "comment-placement", "left"),	row, 0);\
-	lay->addWidget(w = new QLineEdit(QString("%1").arg(default_value)),														row, 1);\
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(right_comment), "experiment-params-comment"), "comment-placement", "right"),				row, 2); \
-	savedInputs.input[QString(#default_value)] = w;
-
-	switch (node->nodeType) {
-		case DCNODE_SWEEP:
-			INSERT_LED("Start Voltage = ", "V", node->DCSweep.VStart, 0);
-			INSERT_LED("End Voltage = ", "V", node->DCSweep.VEnd, 1);
-			INSERT_LED("dV/dt = ", "", node->DCSweep.dVdt, 2);
-			break;
-		default:
-			break;
-	}
-
-	prebuiltExperimentData.inputsList << savedInputs;
-
-	return ret;
-}
-void MainWindowUI::FillNodeParameters() {
-	try {
-	#define GET_VALUE_FROM_LED(field, getter) \
-		field = qobject_cast<QLineEdit*>(input.input[QString(#field)])->text().getter();
-		foreach(SavedInputs input, prebuiltExperimentData.inputsList) {
-			ExperimentNode_t *node = input.node;
-			QWidget *w;
-			switch (node->nodeType) {
-			case DCNODE_SWEEP:
-				GET_VALUE_FROM_LED(node->DCSweep.VStart, toInt);
-				GET_VALUE_FROM_LED(node->DCSweep.VEnd, toInt);
-				GET_VALUE_FROM_LED(node->DCSweep.dVdt, toInt);
-				break;
-			default:
-				break;
-			}
-		}
-	}
-	catch (...) {
-		;
-	}
-}
-//*/
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
@@ -399,7 +333,6 @@ class ExperimentFilterModel : public QSortFilterProxyModel {
 		}
 
 		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
-		//setFilterFixedString
 		QString pattern = filterRegExp().pattern();
 
 		QString descriptionPlain = "";
@@ -415,7 +348,7 @@ class ExperimentFilterModel : public QSortFilterProxyModel {
 			validCategory = true;
 		}
 		else {
-			validCategory = _category == exp->GetCategory();
+			validCategory = exp->GetCategory().contains(_category);
 		}
 
 		return (exp->GetShortName().contains(pattern, filterCaseSensitivity()) ||
@@ -733,11 +666,21 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const QString &expName) {
-		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id, expName), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp) {
+		QString expName = exp->GetShortName();
+		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp);
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
+
+	struct {
+		QStringList xLabels;
+		QStringList yLabels;
+		QMap<QString, QVector<qreal>> vectors;
+		QVector<qreal> *xData;
+		QVector<qreal> *yData;
+	};
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData) {
 		if (!dataTabs.plots.keys().contains(id)) {
@@ -745,33 +688,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
 
-		qreal timestamp = (qreal)expData.timestamp / 100000000UL;
-
-		if (handler.data.currentIntegral.isEmpty()) {
-			handler.data.currentIntegral.append(expData.adcData.current/timestamp);
-		}
-		else {
-			qreal newVal = handler.data.currentIntegral.last();
-			newVal += (handler.data.current.last() + expData.adcData.current) * (timestamp + handler.data.timestamp.last()) / 2.;
-			handler.data.currentIntegral.append(newVal);
-		}
-
-		handler.data.timestamp.append(timestamp);
-		handler.data.ewe.append(expData.adcData.ewe);
-		handler.data.ece.append(expData.adcData.ece);
-		handler.data.current.append(expData.adcData.current);
-
-		/*
-		qreal x = (qreal)expData.timestamp / 100000000UL;
-		qreal y = expData.adcData.ewe;
-
-		if (handler.xData.isEmpty()) {
-			//handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
-		}
-
-		handler.xData.append(x);
-		handler.yData.append(y);
-		//*/
+		handler.exp->PushNewData(expData, handler.data.container);
 
 		if (handler.data.xData && handler.data.yData) {
 			handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
@@ -781,7 +698,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -812,32 +729,21 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
 	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-
-	#define PLOT_VAR_TIMESTAMP			"Timestamp"
-	#define PLOT_VAR_EWE				"Ewe"
-	#define PLOT_VAR_CURRENT			"Current"
-	#define PLOT_VAR_ECE				"Ece"
-	#define PLOT_VAR_CURRENT_INTEGRAL	"Integral d(Current)/d(time)"
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
-	xCombo->addItem(PLOT_VAR_TIMESTAMP);
-	xCombo->addItem(PLOT_VAR_EWE);
-	xCombo->addItem(PLOT_VAR_CURRENT);
+	xCombo->addItems(exp->GetXAxisParameters());
 
 	auto yCombo = CMB();
 	QListView *yComboList = OBJ_NAME(new QListView, "combo-list");
 	yCombo->setView(yComboList);
-	yCombo->addItem(PLOT_VAR_EWE);
-	yCombo->addItem(PLOT_VAR_CURRENT);
-	yCombo->addItem(PLOT_VAR_ECE);
-	yCombo->addItem(PLOT_VAR_CURRENT_INTEGRAL);
+	yCombo->addItems(exp->GetYAxisParameters());
 
-	settingsLay->addWidget(xCombo, 1, 1);
-	settingsLay->addWidget(yCombo, 2, 1);
+	settingsLay->addWidget(yCombo, 1, 1);
+	settingsLay->addWidget(xCombo, 2, 1);
 	settingsLay->setColumnStretch(2, 1);
 
 	/*
@@ -863,69 +769,40 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.curve = curve;
 	plotHandler.xVarCombo = xCombo;
 	plotHandler.yVarCombo = yCombo;
-	//plotHandler.data.xData = &plotHandler.data.timestamp;
-	//plotHandler.data.yData = &plotHandler.data.ewe;
+	plotHandler.exp = exp;
 
 	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		//*
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		handler.data.xData = &handler.data.container[curText];
+
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
-		if (curText == PLOT_VAR_TIMESTAMP) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-			title.setText("Timestamp (s)");
-		}
-		else if (curText == PLOT_VAR_EWE) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.ewe;
-			title.setText("Ewe");
-		}
-		else if (curText == PLOT_VAR_CURRENT) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.current;
-			title.setText("Current");
-		}
-		else {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-			title.setText("Timestamp (s)");
-		}
-
-		plot->setAxisTitle(QwtPlot::xBottom, title);
-		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
-		dataTabs.plots[id].plot->replot();
-		//*/
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
+		
+		handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+		handler.plot->replot();
 	});
 
 	plotHandler.yVarComboConnection = CONNECT(yCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		//*
+		PlotHandler &handler(dataTabs.plots[id]);
+		
+		handler.data.yData = &handler.data.container[curText];
+
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
-		if (curText == PLOT_VAR_ECE) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ece;
-		}
-		else if (curText == PLOT_VAR_CURRENT_INTEGRAL) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.currentIntegral;
-			title.setText(PLOT_VAR_CURRENT_INTEGRAL);
-		}
-		else if (curText == PLOT_VAR_EWE) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
-			title.setText("Ewe");
-		}
-		else if (curText == PLOT_VAR_CURRENT) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.current;
-			title.setText("Current");
-		}
-		else {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
-		}
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
 
-		plot->setAxisTitle(QwtPlot::yLeft, title);
-		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
-		dataTabs.plots[id].plot->replot();
-		//*/
+		handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+		handler.plot->replot();
 	});
 
 	dataTabs.plots[id] = plotHandler;
-	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-	dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
-
+	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.container[xCombo->currentText()];
+	dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.container[yCombo->currentText()];
+	
 	/*
 	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {
 		auto wdg = ui.newDataTab.docTabs->currentWidget();

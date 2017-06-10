@@ -12,11 +12,15 @@
 #define REPEATS_OBJ_NAME		"repeats"
 
 #define START_VOLTAGE_DEFAULT	0
-//#define END_VOLTAGE_DEFAULT		1024
-#define END_VOLTAGE_DEFAULT		50
+#define END_VOLTAGE_DEFAULT		1024
 #define VOLTAGE_STEP_DEFAULT	1
 #define REPEATS_DEFAULT			3
 
+#define PLOT_VAR_TIMESTAMP			"Timestamp"
+#define PLOT_VAR_EWE				"Ewe"
+#define PLOT_VAR_CURRENT			"Current"
+#define PLOT_VAR_ECE				"Ece"
+#define PLOT_VAR_CURRENT_INTEGRAL	"Integral d(Current)/d(time)"
 
 QString ExampleExperiment::GetShortName() const {
 	return "Example Experiment";
@@ -27,8 +31,10 @@ QString ExampleExperiment::GetFullName() const {
 QString ExampleExperiment::GetDescription() const {
 	return "This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT";
 }
-QString ExampleExperiment::GetCategory() const {
-	return "Example Category";
+QStringList ExampleExperiment::GetCategory() const {
+	return QStringList() <<
+		"Example Category" <<
+		"Example Category 2";
 }
 QPixmap ExampleExperiment::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
@@ -147,7 +153,7 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 }
 QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
+	//*
 	QString selectedRadio1;
 	QString selectedRadio2;
 	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
@@ -201,4 +207,35 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	PUSH_NEW_NODE_DATA();
 
 	NODES_DATA_END();
+}
+
+QStringList ExampleExperiment::GetXAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_TIMESTAMP <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT;
+}
+QStringList ExampleExperiment::GetYAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT << 
+		PLOT_VAR_ECE <<
+		PLOT_VAR_CURRENT_INTEGRAL;
+}
+void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container) const {
+	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+
+	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.adcData.current / timestamp);
+	}
+	else {
+		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].last();
+		newVal += (container[PLOT_VAR_CURRENT].last() + expData.adcData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(newVal);
+	}
+
+	container[PLOT_VAR_TIMESTAMP].append(timestamp);
+	container[PLOT_VAR_EWE].append(expData.adcData.ewe);
+	container[PLOT_VAR_ECE].append(expData.adcData.ece);
+	container[PLOT_VAR_CURRENT].append(expData.adcData.current);
 }

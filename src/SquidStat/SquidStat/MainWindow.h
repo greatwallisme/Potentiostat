@@ -28,14 +28,12 @@ public slots:
     void ApplyStyle();
 	
 	void LoadPrebuildExperiments();
-	//void PrebuiltExperimentSelected(int);
 	void PrebuiltExperimentSelected(const AbstractExperiment*);
 
 	void SearchHwVendor();
 	void SearchHwHandshake();
 
 	void SelectHardware(const InstrumentInfo&, quint8 channel);
-	void RequestCalibration();
 
 	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
@@ -46,12 +44,9 @@ signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
 
-	//void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
-	//void PrebuiltExperimentSetDescription(const ExperimentContainer&);
-	//void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
-	void CreateNewDataWindow(const QUuid&, const QString&);
+	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*);
 
 private:
 	void CleanupCurrentHardware();
@@ -83,8 +78,6 @@ private:
 	} hardware;
 
 	struct {
-		//QList<ExperimentContainer> ecList;
-		//int selectedEcIndex;
 		const AbstractExperiment* selectedExp;
 		QList<AbstractExperiment*> expList;
 		QList<QPluginLoader*> expLoaders;

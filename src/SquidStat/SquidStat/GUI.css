@@ -62,6 +62,9 @@ QRadioButton::indicator::unchecked {
 QRadioButton::indicator::checked {
     image: url(:/GUI/Resources/radio-selected.png);
 }
+QLabel {
+	margin-top: 16px;
+}
 /*//////////////         APPLY BUTTON       ////////////////////*/
 #apply-button {
 	background-color: #7b1a1e;

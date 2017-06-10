@@ -8,8 +8,11 @@
 #include <QWidget>
 
 #include <QHBoxLayout>
+#include <QSettings>
 
 #include <UIHelper.hpp>
+
+#define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"
 
 #define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
 	{ \
@@ -27,17 +30,36 @@
 
 #define _INSERT_TEXT_INPUT(default_value, obj_name, row, col) \
 	{	\
-		auto led = OBJ_NAME(new QLineEdit(QString("%1").arg(default_value)), obj_name); \
+		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
+		led->setText(settings.value(obj_name, default_value).toString()); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
 	}
 
-#define _START_RADIO_BUTTON_GROUP(obj_name)		\
+#define _START_RADIO_BUTTON_GROUP(obj_name)	\
 	{										\
 		auto group = new QButtonGroup(ret);	\
 		OBJ_NAME(group, obj_name);
 
-#define _END_RADIO_BUTTON_GROUP() \
+#define _END_RADIO_BUTTON_GROUP()				\
+		auto val = settings.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
+	}
+
+#define _INSERT_RADIO_BUTTON(text, row, col)	\
+	{											\
+		auto button = RBT(text);				\
+		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
+		group->addButton(button);				\
+		if(0 == group->checkedButton()) {		\
+			button->setChecked(true);			\
+		}										\
+		lay->addWidget(button, row, col);		\
 	}
 
 #define _START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT(obj_name, row, col)	\
@@ -45,8 +67,15 @@
 	auto butLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));		\
 	lay->addLayout(butLay, row, col);
 
-#define _END_RADIO_BUTTON_GROUP_LAYOUT() \
-		butLay->addStretch(1);			 \
+#define _END_RADIO_BUTTON_GROUP_LAYOUT()		\
+		butLay->addStretch(1);					\
+		auto val = settings.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
 	}
 
 #define _INSERT_RADIO_BUTTON_LAYOUT(text)	\
@@ -60,18 +89,6 @@
 		butLay->addWidget(button);				\
 	}
 
-
-#define _INSERT_RADIO_BUTTON(text, row, col)	\
-	{											\
-		auto button = RBT(text);				\
-		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
-		group->addButton(button);				\
-		if(0 == group->checkedButton()) {		\
-			button->setChecked(true);			\
-		}										\
-		lay->addWidget(button, row, col);		\
-	}
-
 #define _START_DROP_DOWN(obj_name, row, col)			\
 	{													\
 		auto combo = OBJ_NAME(CMB(), obj_name);			\
@@ -81,13 +98,20 @@
 		lay->addWidget(combo, row, col);
 
 #define _END_DROP_DOWN()								\
+		auto val = settings.value(combo->objectName(), "").toString();\
+		for(int i = 0; i < combo->count(); ++i) {		\
+			if (val == combo->itemText(i)) {			\
+				combo->setCurrentIndex(i);				\
+				break;									\
+			}											\
+		}												\
 	}
-
-#define _INSERT_VERTICAL_SPACING(row)					\
-	lay->addWidget(OBJ_PROP(WDG(), "experiment-params-widget", "vertical-spacing"), row, 0, 1, -1);
 
 #define _ADD_DROP_DOWN_ITEM(text)	\
 		combo->addItem(text);
+
+#define _INSERT_VERTICAL_SPACING(row)					\
+	lay->addWidget(OBJ_PROP(WDG(), "experiment-params-widget", "vertical-spacing"), row, 0, 1, -1);
 
 #define _SET_ROW_STRETCH(row, stretch)	\
 	lay->setRowStretch(row, stretch);
@@ -98,7 +122,9 @@
 #define USER_INPUT_START(name)	\
 	auto *ret = WDG();		\
 	OBJ_NAME(ret, name);	\
-	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
+	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret))); \
+	QSettings settings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+	settings.beginGroup(GetFullName());
 
 #define USER_INPUT_END()	return ret;
 
@@ -108,7 +134,9 @@
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
-	ExperimentNode_t exp;
+	ExperimentNode_t exp;				\
+	QSettings settings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+	settings.beginGroup(GetFullName());
 
 #define NODES_DATA_END()	return ret;
 
@@ -122,7 +150,8 @@
 	if(0 == var ## Wdg) {	\
 		return ret;			\
 	}						\
-	var = var ## Wdg->text().toLongLong();
+	var = var ## Wdg->text().toLongLong();	\
+	settings.setValue(obj_name, var ## Wdg->text());
 
 #define GET_SELECTED_RADIO(var, obj_name)						\
 	auto var ## Grp = wdg->findChild<QButtonGroup*>(obj_name);	\
@@ -133,12 +162,13 @@
 	auto var ## Checked = var ## Grp->checkedButton();	\
 	if (var ## Checked) {								\
 		var = var ## Checked->text();					\
-	}
+	}						\
+	settings.setValue(obj_name, var);
 
 #define GET_SELECTED_DROP_DOWN(var, obj_name)			\
 	auto var ## DD = wdg->findChild<QComboBox*>(obj_name);	\
 	if(0 == var ## DD) {				\
 		return ret;						\
 	}									\
-	var = var ## DD->currentText();
-	
+	var = var ## DD->currentText();		\
+	settings.setValue(obj_name, var);

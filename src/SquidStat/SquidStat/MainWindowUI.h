@@ -21,6 +21,7 @@ class QwtPlotCurve;
 
 #include "ExternalStructures.h"
 #include "InstrumentStructures.h"
+#include "AbstractExperiment.h"
 
 class MainWindowUI {
 public:
@@ -40,7 +41,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -91,14 +92,18 @@ private:
 		QComboBox *yVarCombo;
 		QMetaObject::Connection xVarComboConnection;
 		QMetaObject::Connection yVarComboConnection;
+		const AbstractExperiment *exp;
 		struct {
+			DataMap container;
+			/*
 			QVector<qreal> timestamp;
 			QVector<qreal> ewe;
 			QVector<qreal> ece;
 			QVector<qreal> current;
 			QVector<qreal> currentIntegral;
-			QVector<qreal> *xData;
-			QVector<qreal> *yData;
+			//*/
+			DataVector *xData;
+			DataVector *yData;
 		} data;
 	};
 

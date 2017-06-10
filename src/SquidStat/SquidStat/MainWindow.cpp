@@ -197,57 +197,6 @@ void MainWindow::SelectHardware(const InstrumentInfo &info, quint8 channel) {
 	hardware.currentInstrument.channel = channel;
 
 	LOG() << "Start working with" << info.portName;
-	/*
-	static QMetaObject::Connection calibrationDataReceivedConnection;
-	static QMetaObject::Connection experimentalDataReceivedConnection;
-	static QMetaObject::Connection experimentComletedConnection;
-
-	currentInstrument.instrumentInfo = info;
-	currentInstrument.channel = channel;
-
-	if (instrumentOperator) {
-		disconnect(calibrationDataReceivedConnection);
-		disconnect(experimentalDataReceivedConnection);
-		disconnect(experimentComletedConnection);
-		instrumentOperator->deleteLater();
-	}
-
-	instrumentOperator = new InstrumentOperator(info);
-	experimentComletedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted,
-		[=]() {
-			LOG() << "Experiment completed";
-		}
-	);
-
-	calibrationDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
-		[=](const CalibrationData &calData) {
-			LOG() << "Calibration received";
-		}
-	);
-
-
-	experimentalDataReceivedConnection =
-		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
-			this, &MainWindow::DataArrived);
-	//*/
-	/*
-	experimentalDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
-		[=](quint8 channel, const ExperimentalData &expData) {
-			//LOG() << "Experimental data received";
-			emit DataArrived(channel, expData);
-		}
-	);
-	//*/
-}
-void MainWindow::RequestCalibration() {
-	/*
-	if (!instrumentOperator) {
-		return;
-	}
-
-	LOG() << "Request calibration";
-	instrumentOperator->RequestCalibrationData();
-	//*/
 }
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(InstrumentOperator *oper) {
 	QList<MainWindow::InstrumentHandler>::iterator ret = hardware.handlers.begin();
@@ -314,7 +263,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
 			hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp->GetShortName());
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp);
 
 			LOG() << "Start experiment";
 			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
@@ -359,14 +308,6 @@ void MainWindow::StopExperiment(const QUuid &id) {
 	}
 
 	it->oper->StopExperiment(it->experiment.channel);
-	/*
-	if (!instrumentOperator) {
-		return;
-	}
-
-	LOG() << "Stop experiment";
-	instrumentOperator->StopExperiment(currentInstrument.channel);
-	//*/
 }
 void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName) {
 	QFile f(fileName);
