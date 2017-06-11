@@ -16,6 +16,24 @@
 
 #define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"
 
+class Disconnector : public QObject {
+public:
+	Disconnector(QObject *parent) : QObject(parent) {}
+	~Disconnector() {
+		foreach(auto c, connections) {
+			disconnect(c);
+		}
+	}
+
+	Disconnector& operator <<(const QMetaObject::Connection &c) {
+		connections << c;
+		return *this;
+	}
+
+private:
+	QList<QMetaObject::Connection> connections;
+};
+
 #define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
 	{ \
 		auto lbl = OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "left"); \
@@ -36,6 +54,11 @@
 		led->setText(settings.value(obj_name, default_value).toString()); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
+		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(obj_name, str); \
+		}); \
 	}
 
 #define _START_RADIO_BUTTON_GROUP(obj_name)	\
@@ -51,6 +74,11 @@
 				break;							\
 			}									\
 		}										\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(group->objectName(), button->text()); \
+		});										\
 	}
 
 #define _INSERT_RADIO_BUTTON(text, row, col)	\
@@ -78,6 +106,11 @@
 				break;							\
 			}									\
 		}										\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(group->objectName(), button->text()); \
+		});										\
 	}
 
 #define _INSERT_RADIO_BUTTON_LAYOUT(text)	\
@@ -107,6 +140,11 @@
 				break;									\
 			}											\
 		}												\
+		*diconnector << CONNECT(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(combo->objectName(), str); \
+		});												\
 	}
 
 #define _ADD_DROP_DOWN_ITEM(text)	\
@@ -126,7 +164,8 @@
 	OBJ_NAME(ret, name);	\
 	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret))); \
 	QSettings settings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
-	settings.beginGroup(GetFullName());
+	settings.beginGroup(GetFullName()); \
+	auto diconnector = new Disconnector(ret);
 
 #define USER_INPUT_END()	return ret;
 
@@ -136,9 +175,7 @@
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
-	ExperimentNode_t exp;				\
-	QSettings settings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
-	settings.beginGroup(GetFullName());
+	ExperimentNode_t exp;
 
 #define NODES_DATA_END()	return ret;
 
@@ -152,8 +189,7 @@
 	if(0 == var ## Wdg) {	\
 		return ret;			\
 	}						\
-	var = var ## Wdg->text().toLongLong();	\
-	settings.setValue(obj_name, var ## Wdg->text());
+	var = var ## Wdg->text().toLongLong();
 
 #define GET_SELECTED_RADIO(var, obj_name)						\
 	auto var ## Grp = wdg->findChild<QButtonGroup*>(obj_name);	\
@@ -164,13 +200,11 @@
 	auto var ## Checked = var ## Grp->checkedButton();	\
 	if (var ## Checked) {								\
 		var = var ## Checked->text();					\
-	}						\
-	settings.setValue(obj_name, var);
+	}
 
 #define GET_SELECTED_DROP_DOWN(var, obj_name)			\
 	auto var ## DD = wdg->findChild<QComboBox*>(obj_name);	\
 	if(0 == var ## DD) {				\
 		return ret;						\
 	}									\
-	var = var ## DD->currentText();		\
-	settings.setValue(obj_name, var);
+	var = var ## DD->currentText();

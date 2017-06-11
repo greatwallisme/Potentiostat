@@ -41,7 +41,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*, QFile*);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*, QFile*, const CalibrationData &);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -85,7 +85,7 @@ private:
 	} prebuiltExperimentData;
 
 	struct PlotHandler {
-		PlotHandler() { data.xData = 0; data.yData = 0; }
+		PlotHandler() { data.xData = 0; data.yData = 0; data.saveFile = 0; }
 		QwtPlot* plot;
 		QwtPlotCurve *curve;
 		QComboBox *xVarCombo;
@@ -96,6 +96,7 @@ private:
 		struct {
 			DataMap container;
 			QFile *saveFile;
+			CalibrationData cal;
 			/*
 			QVector<qreal> timestamp;
 			QVector<qreal> ewe;

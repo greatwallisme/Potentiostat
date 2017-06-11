@@ -637,9 +637,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile) {
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
 		QString expName = exp->GetShortName();
-		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp, saveFile);
+		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp, saveFile, calData);
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
@@ -655,21 +655,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	struct {
-		QStringList xLabels;
-		QStringList yLabels;
-		QMap<QString, QVector<qreal>> vectors;
-		QVector<qreal> *xData;
-		QVector<qreal> *yData;
-	};
-
 	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
 
-		handler.exp->PushNewData(expData, handler.data.container);
+		handler.exp->PushNewData(expData, handler.data.container, handler.data.cal);
 		if (handler.data.saveFile) {
 			handler.exp->SaveData(*handler.data.saveFile, handler.data.container);
 		}
@@ -682,7 +674,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp, QFile *saveFile) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -755,6 +747,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.yVarCombo = yCombo;
 	plotHandler.exp = exp;
 	plotHandler.data.saveFile = saveFile;
+	plotHandler.data.cal = calData;
 
 	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);

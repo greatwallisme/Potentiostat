@@ -15,7 +15,7 @@ public:
 
 	QStringList GetXAxisParameters() const;
 	QStringList GetYAxisParameters() const;
-	void PushNewData(const ExperimentalData&, DataMap &) const;
+	void PushNewData(const ExperimentalData&, DataMap &, const CalibrationData&) const;
 
 	void SaveDataHeader(QFile&) const;
 	void SaveData(QFile&, const DataMap&) const;

@@ -222,7 +222,7 @@ QStringList ExampleExperiment::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container) const {
+void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
@@ -247,12 +247,18 @@ void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
 		.arg(PLOT_VAR_ECE)
 		.arg(PLOT_VAR_CURRENT_INTEGRAL).toLatin1());
 }
+
+#include <QStringBuilder>
 void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) const {
-	saveFile.write(QString("%1;%2;%3;%4;%5\n")
-		.arg(container[PLOT_VAR_TIMESTAMP].last())
-		.arg(container[PLOT_VAR_EWE].last())
-		.arg(container[PLOT_VAR_CURRENT].last())
-		.arg(container[PLOT_VAR_ECE].last())
-		.arg(container[PLOT_VAR_CURRENT_INTEGRAL].last()).toLatin1());
+	static QChar decimalPoint = QLocale().decimalPoint();
+
+	QString toWrite;
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last()).replace(QChar('.'), decimalPoint);
+
+	saveFile.write( toWrite.toLatin1() );
 	saveFile.flush();
 }

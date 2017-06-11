@@ -285,7 +285,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 
 			prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
 
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile);
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, calData);
 
 			LOG() << "Start experiment";
 			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);

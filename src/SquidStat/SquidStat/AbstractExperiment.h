@@ -30,7 +30,7 @@ public:
 
 	virtual QStringList GetXAxisParameters() const = 0;
 	virtual QStringList GetYAxisParameters() const = 0;
-	virtual void PushNewData(const ExperimentalData&, DataMap &) const = 0;
+	virtual void PushNewData(const ExperimentalData&, DataMap &, const CalibrationData&) const = 0;
 	
 	virtual void SaveDataHeader(QFile&) const = 0;
 	virtual void SaveData(QFile&, const DataMap&) const = 0;
