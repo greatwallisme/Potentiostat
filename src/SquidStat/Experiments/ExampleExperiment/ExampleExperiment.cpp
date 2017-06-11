@@ -16,11 +16,12 @@
 #define VOLTAGE_STEP_DEFAULT	1
 #define REPEATS_DEFAULT			3
 
-#define PLOT_VAR_TIMESTAMP			"Timestamp"
-#define PLOT_VAR_EWE				"Ewe"
-#define PLOT_VAR_CURRENT			"Current"
-#define PLOT_VAR_ECE				"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL	"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP				"Timestamp"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
+#define PLOT_VAR_EWE					"Ewe"
+#define PLOT_VAR_CURRENT				"Current"
+#define PLOT_VAR_ECE					"Ece"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
 QString ExampleExperiment::GetShortName() const {
 	return "Example Experiment";
@@ -212,6 +213,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 QStringList ExampleExperiment::GetXAxisParameters() const {
 	return QStringList() <<
 		PLOT_VAR_TIMESTAMP <<
+		PLOT_VAR_TIMESTAMP_NORMALIZED <<
 		PLOT_VAR_EWE <<
 		PLOT_VAR_CURRENT;
 }
@@ -223,6 +225,7 @@ QStringList ExampleExperiment::GetYAxisParameters() const {
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
 void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
+	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
@@ -238,6 +241,11 @@ void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &co
 	container[PLOT_VAR_EWE].append(expData.adcData.ewe);
 	container[PLOT_VAR_ECE].append(expData.adcData.ece);
 	container[PLOT_VAR_CURRENT].append(expData.adcData.current);
+
+	if (!timestampOffset.contains(&container)) {
+		timestampOffset[&container] = timestamp;
+	}
+	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
 }
 void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
 	saveFile.write(QString("%1;%2;%3;%4;%5\n")
@@ -248,7 +256,6 @@ void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
 		.arg(PLOT_VAR_CURRENT_INTEGRAL).toLatin1());
 }
 
-#include <QStringBuilder>
 void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) const {
 	static QChar decimalPoint = QLocale().decimalPoint();
 

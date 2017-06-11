@@ -33,7 +33,8 @@
 
 #include <QXmlStreamReader>
 
-#define EXPERIMENT_VIEW_ALL_CATEGORY  "View All"
+#define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
+#define NONE_Y_AXIS_VARIABLE			"None"
 
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
@@ -612,8 +613,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				if (0 != plot) {
 					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
 						if (it.value().plot == plot) {
-							QObject::disconnect(it.value().xVarComboConnection);
-							QObject::disconnect(it.value().yVarComboConnection);
+							foreach(auto conn, it.value().varComboConnection) {
+								QObject::disconnect(conn);
+							}
 							
 							if (it.value().data.saveFile) {
 								it.value().data.saveFile->close();
@@ -666,8 +668,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.exp->SaveData(*handler.data.saveFile, handler.data.container);
 		}
 
-		if (handler.data.xData && handler.data.yData) {
-			handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+		if (handler.data.xData && handler.data.y1Data) {
+			handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
+			handler.plot->replot();
+		}
+
+		if (handler.data.xData && handler.data.y2Data) {
+			handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
 			handler.plot->replot();
 		}
 	});
@@ -680,7 +687,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
-	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
+	QwtPlotCurve *curve1 = new QwtPlotCurve("");
 
 	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
 	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
@@ -693,43 +700,56 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
 	title.setText("Ewe");
 	plot->setAxisTitle(QwtPlot::yLeft, title);
+		
+	curve1->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve1->setPen(QColor(42, 127, 220), 1);
+	curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+	curve1->attach(plot);
+
+	//plot->enableAxis(QwtPlot::yRight);
+	//plot->setAxisAutoScale(QwtPlot::yRight);
+
+	QwtPlotCurve *curve2 = new QwtPlotCurve("");
+
+	title.setText(NONE_Y_AXIS_VARIABLE);
+	plot->setAxisTitle(QwtPlot::yRight, title);
+
+	curve2->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve2->setPen(QColor(208, 35, 39), 1);
+	curve2->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+	curve2->setYAxis(QwtPlot::yRight);
+	//curve2->attach(plot);
+
 
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
-	
-	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
-	curve->setPen(QColor(42, 127, 220), 1);
-	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-	curve->attach(plot);
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
 	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y1 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y2 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
 	xCombo->addItems(exp->GetXAxisParameters());
 
-	auto yCombo = CMB();
-	QListView *yComboList = OBJ_NAME(new QListView, "combo-list");
-	yCombo->setView(yComboList);
-	yCombo->addItems(exp->GetYAxisParameters());
+	auto y1Combo = CMB();
+	QListView *y1ComboList = OBJ_NAME(new QListView, "combo-list");
+	y1Combo->setView(y1ComboList);
+	y1Combo->addItems(exp->GetYAxisParameters());
 
-	settingsLay->addWidget(yCombo, 1, 1);
-	settingsLay->addWidget(xCombo, 2, 1);
+	auto y2Combo = CMB();
+	QListView *y2ComboList = OBJ_NAME(new QListView, "combo-list");
+	y2Combo->setView(y2ComboList);
+	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << exp->GetYAxisParameters());
+
+	settingsLay->addWidget(xCombo, 1, 1);
+	settingsLay->addWidget(y1Combo, 2, 1);
+	settingsLay->addWidget(y2Combo, 3, 1);
 	settingsLay->setColumnStretch(2, 1);
-
-	/*
-	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
-	QPushButton *saveDataButton;
-
-	buttonLay->addStretch(1);
-	buttonLay->addWidget(saveDataButton = OBJ_NAME(PBT("Save Experiment Data"), "secondary-button"));
-	buttonLay->addStretch(1);
-	//*/
 
 	settingsLay->setRowStretch(5, 1);
 
@@ -742,14 +762,15 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
-	plotHandler.curve = curve;
+	plotHandler.curve1 = curve1;
+	plotHandler.curve2 = curve2;
 	plotHandler.xVarCombo = xCombo;
-	plotHandler.yVarCombo = yCombo;
+	plotHandler.yVarCombo = y1Combo;
 	plotHandler.exp = exp;
 	plotHandler.data.saveFile = saveFile;
 	plotHandler.data.cal = calData;
 
-	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+	plotHandler.varComboConnection << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);
 
 		handler.data.xData = &handler.data.container[curText];
@@ -759,60 +780,56 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
 		
-		handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+		handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
+		handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
 		handler.plot->replot();
 	});
 
-	plotHandler.yVarComboConnection = CONNECT(yCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+	plotHandler.varComboConnection << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);
 		
-		handler.data.yData = &handler.data.container[curText];
+		handler.data.y1Data = &handler.data.container[curText];
 
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
 
-		handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
+		handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
+		handler.curve1->setTitle(curText);
+		handler.plot->replot();
+	});
+
+	plotHandler.varComboConnection << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		if (curText == NONE_Y_AXIS_VARIABLE) {
+			handler.curve2->detach();
+			handler.plot->enableAxis(QwtPlot::yRight, false);
+		}
+		else {
+			handler.curve2->attach(handler.plot);
+			handler.plot->enableAxis(QwtPlot::yRight);
+		}
+
+		handler.data.y2Data = &handler.data.container[curText];
+
+		QwtText title;
+		title.setFont(QFont("Segoe UI", 14));
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yRight, title);
+
+		handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
+		handler.curve2->setTitle(curText);
 		handler.plot->replot();
 	});
 
 	dataTabs.plots[id] = plotHandler;
 	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.container[xCombo->currentText()];
-	dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.container[yCombo->currentText()];
+	dataTabs.plots[id].data.y1Data = &dataTabs.plots[id].data.container[y1Combo->currentText()];
+	dataTabs.plots[id].data.y2Data = &dataTabs.plots[id].data.container[NONE_Y_AXIS_VARIABLE];
+	dataTabs.plots[id].curve1->setTitle(y1Combo->currentText());
+	dataTabs.plots[id].curve2->setTitle(NONE_Y_AXIS_VARIABLE);
 	
-	/*
-	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {
-		auto wdg = ui.newDataTab.docTabs->currentWidget();
-		auto plot = wdg->findChild<QWidget*>("qwt-plot");
-
-		if (0 != plot) {
-			auto it = dataTabs.plots.begin();
-
-			for (; it != dataTabs.plots.end(); ++it) {
-				if (it.value().plot == plot) {
-					break;
-				}
-			}
-
-			if (it == dataTabs.plots.end()) {
-				return;
-			}
-
-			static QString dirName;
-			QString tabName = ui.newDataTab.docTabs->tabText(ui.newDataTab.docTabs->currentIndex());
-			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
-			auto dialogRet = QFileDialog::getSaveFileName(mw, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
-
-			if (dialogRet.isEmpty()) {
-				return;
-			}
-			dirName = QFileInfo(dialogRet).absolutePath();
-
-			mw->SaveData(it->xData, it->yData, dialogRet);
-		}
-	});
-	//*/
-
 	return w;
 }

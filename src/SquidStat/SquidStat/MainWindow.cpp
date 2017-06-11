@@ -15,10 +15,13 @@
 
 #include <QPluginLoader>
 #include <QFileDialog>
+#include <QSettings>
 
 #include <stdlib.h>
 
-#define PREBUILT_EXP_DIR	"./prebuilt/"
+#define PREBUILT_EXP_DIR			"./prebuilt/"
+#define SQUID_STAT_PARAMETERS_INI	"SquidStatParameters.ini"
+#define DATA_SAVE_PATH				"data-save-dir-name"
 
 bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.portName == a.portName) && (b.serial == a.serial));
@@ -108,8 +111,6 @@ void MainWindow::LoadPrebuildExperiments() {
 		prebuiltExperiments.expLoaders << loader;
 	}
 
-	//prebuiltExperiments.expList << new ExampleExperiment;
-
 	emit PrebuiltExperimentsFound(prebuiltExperiments.expList);
 
 	/*
@@ -141,25 +142,8 @@ void MainWindow::LoadPrebuildExperiments() {
 	emit PrebuiltExperimentsFound(prebuiltExperiments.ecList);
 	//*/
 }
-//void MainWindow::PrebuiltExperimentSelected(int index) {
 void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 	prebuiltExperiments.selectedExp = exp;
-
-	/*
-	if ( (index < 0) || (index >= prebuiltExperiments.ecList.size()) ) {
-		return;
-	}
-
-	prebuiltExperiments.selectedEcIndex = index;
-	emit PrebuiltExperimentSetDescription(prebuiltExperiments.ecList.at(index));
-	try {
-		auto ecPtrList = ExperimentReader::GetNodeListForUserInput(prebuiltExperiments.ecList[index]);
-		emit PrebuiltExperimentSetParameters(ecPtrList);
-	}
-	catch (const QString &err) {
-		LOG() << err;
-	}
-	//*/
 }
 void MainWindow::SearchHwVendor() {
 	LOG() << "Search instruments by the manufacturer name";
@@ -262,7 +246,9 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			static QString dirName;
+			QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+
+			QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
 			QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QTime::currentTime().toString("hh:mm:ss") + ")";
 			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
 			auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
@@ -271,6 +257,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 			dirName = QFileInfo(dialogRet).absolutePath();
+			settings.setValue(DATA_SAVE_PATH, dirName);
 
 			auto saveFile = new QFile(this);
 			saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());

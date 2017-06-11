@@ -69,43 +69,27 @@ private:
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
-
-	/*
-	struct SavedInputs {
-		ExperimentNode_t *node;
-		QMap<QString, QWidget*> input;
-	};
-	//*/
-
+	
 	struct {
-		//QList<QWidget*> paramWidgets;
-		//QList<SavedInputs> inputsList;
-
 		QWidget *userInputs;
 	} prebuiltExperimentData;
 
 	struct PlotHandler {
-		PlotHandler() { data.xData = 0; data.yData = 0; data.saveFile = 0; }
+		PlotHandler() { data.xData = 0; data.y1Data = 0; data.y2Data = 0; data.saveFile = 0; }
 		QwtPlot* plot;
-		QwtPlotCurve *curve;
+		QwtPlotCurve *curve1;
+		QwtPlotCurve *curve2;
 		QComboBox *xVarCombo;
 		QComboBox *yVarCombo;
-		QMetaObject::Connection xVarComboConnection;
-		QMetaObject::Connection yVarComboConnection;
+		QList<QMetaObject::Connection> varComboConnection;
 		const AbstractExperiment *exp;
 		struct {
 			DataMap container;
 			QFile *saveFile;
 			CalibrationData cal;
-			/*
-			QVector<qreal> timestamp;
-			QVector<qreal> ewe;
-			QVector<qreal> ece;
-			QVector<qreal> current;
-			QVector<qreal> currentIntegral;
-			//*/
 			DataVector *xData;
-			DataVector *yData;
+			DataVector *y1Data;
+			DataVector *y2Data;
 		} data;
 	};
 
