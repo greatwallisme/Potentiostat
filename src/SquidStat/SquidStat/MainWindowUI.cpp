@@ -31,7 +31,7 @@
 #include <QFileDialog>
 #include <QStringList>
 #include <QSettings>
-#include <QMessageBox>
+#include <QColorDialog>
 
 #include <QXmlStreamReader>
 
@@ -40,6 +40,8 @@
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
 
+#define DEFAULT_MAJOR_CURVE_COLOR		QColor(42, 127, 220)
+#define DEFAULT_MINOR_CURVE_COLOR		QColor(208, 35, 39)
 
 
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
@@ -938,6 +940,155 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
+
+template<typename T, typename F>
+void ModifyObject(QObject *parent, F &lambda) {
+	foreach(QObject* obj, parent->children()) {
+		T* objT = qobject_cast<T*>(obj);
+		if (objT) {
+			lambda(objT);
+		}
+
+		ModifyObject<T>(obj, lambda);
+	}
+}
+#include <QDialogButtonBox>
+bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
+	bool ret = false;
+
+	QColorDialog colorDialog(DEFAULT_MAJOR_CURVE_COLOR, parent);
+	colorDialog.setWindowFlags(Qt::SplashScreen);
+	colorDialog.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
+
+	QObject *dialogPtr = &colorDialog;
+
+	QPushButton *ok;
+	QPushButton *cancel;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(ok = PBT("Select"));
+	buttonLay->addWidget(cancel = PBT("Cancel"));
+	buttonLay->addStretch(1);
+
+	QObject::connect(ok, SIGNAL(clicked()), &colorDialog, SLOT(accept()));
+	QObject::connect(cancel, SIGNAL(clicked()), &colorDialog, SLOT(reject()));
+
+	ModifyObject<QVBoxLayout>(dialogPtr, [=](QVBoxLayout *obj) {
+		if (obj->parent() != dialogPtr) {
+			return;
+		}
+
+		obj->addStretch(1);
+		obj->addLayout(buttonLay);
+	});
+
+	ModifyObject<QAbstractButton>(dialogPtr, [](QAbstractButton *obj) {
+		OBJ_NAME(obj, "secondary-button");
+	});
+
+	#define BASIC_HEADER "&Basic colors"
+	#define CUSTOM_HEADER "&Custom colors"
+
+	ModifyObject<QLabel>(dialogPtr, [](QLabel *obj) {
+		if ((obj->text() == BASIC_HEADER) || (obj->text() == CUSTOM_HEADER)) {
+			OBJ_NAME(obj, "heading-label");
+		}
+		else {
+			OBJ_PROP(OBJ_NAME(obj, "experiment-params-comment"), "comment-placement", "left");
+		}
+	});
+
+
+	ModifyObject<QFrame>(dialogPtr, [](QFrame *obj) {
+		auto objParent = qobject_cast<QWidget*>(obj->parent());
+	});
+
+	colorDialog.exec();
+
+	return ret;
+}
+bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+	
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "curve-params-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	QListView *fileList;
+
+	lay->addWidget(OBJ_NAME(LBL("Data Set List"), "heading-label"));
+	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
+
+	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+	auto adjustButtonLay = new QHBoxLayout;
+	QPushButton *changeColorPbt;
+	QPushButton *changeLinePbt;
+	adjustButtonLay->addStretch(1);
+	adjustButtonLay->addWidget(changeColorPbt = OBJ_NAME(PBT("Change Color"), "secondary-button"));
+	adjustButtonLay->addWidget(changeLinePbt = OBJ_NAME(PBT("Change Line Style"), "secondary-button"));
+	adjustButtonLay->addStretch(1);
+
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+	lay->addLayout(adjustButtonLay);
+	lay->addStretch(1);
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("OK"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	QStandardItemModel *model = new QStandardItemModel(curveParams.size(), 1);
+	int row = 0;
+	foreach(auto key, curveParams.keys()) {
+		auto *item = new QStandardItem(key);
+		model->setItem(row++, item);
+	}
+	fileList->setModel(model);
+
+	dialogConn << CONNECT(changeColorPbt, &QPushButton::clicked, [=]() {
+		QColor color = DEFAULT_MAJOR_CURVE_COLOR;
+		if (!GetColor(dialog, color)) {
+			return;
+		}
+	});
+
+	dialogConn << CONNECT(changeLinePbt, &QPushButton::clicked, [=]() {
+		;
+	});
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialog->exec();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
 QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
 	QwtPlotCurve *curve = new QwtPlotCurve("");
 
@@ -961,8 +1112,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
-	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, QColor(42, 127, 220));
-	QwtPlotCurve *curve2 = CreateCurve(QwtPlot::yRight, QColor(208, 35, 39));
+	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+	QwtPlotCurve *curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);
 	curve1->attach(plot);
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
@@ -993,11 +1144,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	settingsLay->setColumnStretch(2, 1);
 
 	QPushButton *addDataPbt;
+	QPushButton *editLinesPbt;
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add a Data File(s)"), "secondary-button"));
-	buttonLay->addWidget(OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
+	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
 	buttonLay->addStretch(1);
 
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
@@ -1039,7 +1191,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			curDataKeys.sort();
 
 			if (curDataKeys != firstDataKeys) {
-				QMessageBox::information(mw, "Parsing error", "Incompatible data sets were selected!");
+				LOG() << "Incompatible data sets were selected!";
 				return;
 			}
 		}
@@ -1048,8 +1200,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			DataMapVisualization data;
 			data.container = csvData.container;
 			data.saveFile = 0;
-			data.curve1 = CreateCurve(QwtPlot::yLeft, QColor(42, 127, 220));
-			data.curve2 = CreateCurve(QwtPlot::yRight, QColor(208, 35, 39));
+			data.curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+			data.curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);
+			data.name = csvData.fileName;
 
 			handler.data << data;
 
@@ -1060,14 +1213,31 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 			currentData.curve1->setSamples(*currentData.xData, *currentData.y1Data);
 			currentData.curve2->setSamples(*currentData.xData, *currentData.y2Data);
-		
+
+			currentData.curve1->setTitle(handler.y1VarCombo->currentText());
+			currentData.curve2->setTitle(handler.y2VarCombo->currentText());
+
 			currentData.curve1->attach(handler.plot);
 
 			if (handler.y2VarCombo->currentText() != NONE_Y_AXIS_VARIABLE) {
 				currentData.curve2->attach(handler.plot);
 			}
-			
+
 			handler.plot->replot();
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(editLinesPbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id]);
+		QMap<QString, CurveParameters> currentParams;
+
+		foreach(const DataMapVisualization &data, handler.data) {
+			currentParams[data.name].color1 = data.curve1->pen().color();
+			currentParams[data.name].color2 = data.curve2->pen().color();
+		}
+
+		if (!GetNewColors(mw, currentParams)) {
+			return;
 		}
 	});
 
@@ -1145,6 +1315,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	majorData.curve2->setSamples(*majorData.xData, *majorData.y2Data);
 	majorData.curve1->setTitle(y1Combo->currentText());
 	majorData.curve2->setTitle(NONE_Y_AXIS_VARIABLE);
+	majorData.name = expName;
 
 	QwtText title;
 	title.setFont(QFont("Segoe UI", 14));

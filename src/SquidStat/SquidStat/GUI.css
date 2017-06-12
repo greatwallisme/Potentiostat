@@ -14,12 +14,30 @@ QMainWindow {
 QWidget {
 	background-color: #ffffff;
 }
-
+QSpinBox,
 QLineEdit, QComboBox {
 	border: 1px solid #c6ccd2;
 	min-height: 30px;
 	margin-top: 20px;
 	padding-left: 15px;
+}
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right; /* position at the top right corner */
+
+    image: url(:/GUI/Resources/spin-box-up.png);
+	margin: 1px;
+	margin-right: 6px;
+	margin-top: 2px;
+}
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right; /* position at the top right corner */
+
+    image: url(:/GUI/Resources/combobox-dropdown.png);
+	margin: 1px;
+	margin-bottom: 2px;
+	margin-right: 5px;
 }
 QComboBox {
 	padding-right: 20px;
@@ -393,6 +411,50 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-right: 15px;
 	margin-top: 17px;
 	qproperty-alignment: 'AlignRight | AlignVCenter';
+}
+/*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
+#curve-params-dialog {
+	min-height: 500px;
+	max-height: 500px;
+	min-width: 450px;
+	max-width: 450px;
+	border: 1px solid #7b1a1e;
+}
+#curve-params-dialog-horizontal-spacing {
+	min-width: 25px;
+	max-width: 25px;
+	margin: 2px;
+}
+#curve-params-dialog-vertical-spacing {
+	min-height: 15px;
+	max-height: 15px;
+	margin: 2px;
+}
+#curve-params-data-set-list {
+    border: 1px solid #c6ccd2;
+	background: #ffffff;
+	outline: 0;
+}
+#curve-params-data-set-list::item {
+	border: none;
+	padding: 5px;
+	padding-left: 10px;
+}
+#curve-params-data-set-list::item:selected {
+	background-color: #ffbec0;
+	color: #7b1a1e;
+}
+QColorDialog {
+	border: 1px solid #7b1a1e;
+}
+#color-dialog-top-spacing {
+	min-height: 50px;
+	min-width: 50px;
+	border: 1px solid #7b1a1e;
+}
+QColorPicker {
+	min-height: 335px;
+	min-width: 335px;
 }
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {

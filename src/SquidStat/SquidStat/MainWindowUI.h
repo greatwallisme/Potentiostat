@@ -54,6 +54,15 @@ public:
 
 private:
 	static bool ReadCsvFile(const QString &fileName,  CsvFileData&);
+	static bool GetColor(QWidget *parent, QColor&);
+
+	struct CurveParameters {
+		QColor color1;
+		QColor color2;
+	};
+
+	static bool GetNewColors(QWidget *parent, QMap<QString, CurveParameters>&);
+
 	QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
 	void CreateCentralWidget();
@@ -102,6 +111,7 @@ private:
 		DataVector *y2Data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
+		QString name;
 	};
 	struct PlotHandler {
 		QwtPlot* plot;

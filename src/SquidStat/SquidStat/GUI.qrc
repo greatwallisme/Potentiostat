@@ -33,5 +33,6 @@
         <file>Resources/radio-selected.png</file>
         <file>Resources/search-icon.png</file>
         <file>Resources/search-clear-button.png</file>
+        <file>Resources/spin-box-up.png</file>
     </qresource>
 </RCC>
