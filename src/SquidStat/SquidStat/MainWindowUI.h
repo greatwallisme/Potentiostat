@@ -38,17 +38,17 @@ public:
 		QString notes;
 		QString refElectrode;
 		QString potential;
-		bool dialogCanceled;
 	};
 
 	struct CsvFileData {
+		QString fileName;
 		ExperimentNotes notes;
 		QStringList xAxisList;
 		QStringList yAxisList;
 		DataMap container;
 	};
 
-	static ExperimentNotes GetExperimentNotes(QWidget *parent);
+	static bool GetExperimentNotes(QWidget *parent, ExperimentNotes&);
 	static bool ReadCsvFile(QWidget *parent, CsvFileData&);
 
 private:
@@ -62,7 +62,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();

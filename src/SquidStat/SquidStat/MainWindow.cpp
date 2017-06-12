@@ -244,9 +244,9 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			auto notes = MainWindowUI::GetExperimentNotes(this);
+			MainWindowUI::ExperimentNotes notes;
 
-			if (notes.dialogCanceled) {
+			if (!MainWindowUI::GetExperimentNotes(this, notes)) {
 				return;
 			}
 

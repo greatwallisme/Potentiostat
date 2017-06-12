@@ -34,6 +34,8 @@
 
 #include <QXmlStreamReader>
 
+#include <qtcsv/reader.h>
+
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
 
@@ -328,9 +330,10 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-MainWindowUI::ExperimentNotes MainWindowUI::GetExperimentNotes(QWidget *parent) {
-	static ExperimentNotes ret;
-	ret.dialogCanceled = true;
+bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentNotes &ret) {
+	//static ExperimentNotes ret;
+	static bool dialogCanceled;
+	dialogCanceled = true;
 
 	static QMap<QString, qreal> references;
 	references["Predefined 1"] = 1.0;
@@ -429,7 +432,7 @@ MainWindowUI::ExperimentNotes MainWindowUI::GetExperimentNotes(QWidget *parent) 
 	});
 
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
-		ret.dialogCanceled = false;
+		dialogCanceled = false;
 	});
 
 	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
@@ -449,8 +452,7 @@ MainWindowUI::ExperimentNotes MainWindowUI::GetExperimentNotes(QWidget *parent) 
 
 	dialog->deleteLater();
 
-
-	return ret;
+	return !dialogCanceled;
 }
 class ExperimentFilterModel : public QSortFilterProxyModel {
 	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
@@ -684,42 +686,73 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	return w;
 }
 bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data) {
+	bool ret = false;
 	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
 	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
 
 	auto dialogRet = QFileDialog::getOpenFileName(parent, "Open experiment data", dirName, "Data files (*.csv)");
 
 	if (dialogRet.isEmpty()) {
-		return false;
+		return ret;
 	}
 
 	if (!QFileInfo(dialogRet).isReadable()) {
-		return false;
+		return ret;
 	}
 
-	QFile file(dialogRet);
+	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, ";");
 
-	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-		return false;
+	if (readData.size() < 2) {
+		return ret;
 	}
 
-	QTextStream stream(&file);
+	data.fileName = QFileInfo(dialogRet).fileName();
 
-	QString line;
+	QStringList hdrList = readData.front();
+	readData.pop_front();
+	QStringList axisList = readData.front();
+	readData.pop_front();
+	
+	int hdrListSize = hdrList.size();
 
-	if (!stream.readLineInto(&line)) {
-		return false;
+	if (hdrListSize != axisList.size()) {
+		return ret;
 	}
 
-
-
-	while (stream.readLineInto(&line)) {
-
+	for (int i = 0; i < hdrListSize; ++i) {
+		const QString &varName(hdrList.at(i));
+		
+		if (axisList.at(i).contains('X')) {
+			data.xAxisList << varName;
+		}
+		if (axisList.at(i).contains('Y')) {
+			data.yAxisList << varName;
+		}
 	}
 
-	data.xAxisList;
+	QChar systemDecimalPoint = QLocale().decimalPoint();
+	QChar cDecimalPoint = QLocale::c().decimalPoint();
 
-	return true;
+	for (auto it = readData.begin(); it != readData.end(); ++it) {
+		QStringList &list(*it);
+
+		if (hdrListSize != list.size()) {
+			return ret;
+		}
+
+		for (int i = 0; i < hdrListSize; ++i) {
+			bool ok;
+			qreal val = list[i].replace(systemDecimalPoint, cDecimalPoint).toFloat(&ok);
+			if (!ok) {
+				return ret;
+			}
+			data.container[hdrList.at(i)].append(val);
+		}
+	}
+
+	ret = true;
+
+	return ret;
 }
 QWidget* MainWindowUI::GetNewDataWindowTab() {
 	static QWidget *w = 0;
@@ -743,14 +776,15 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			return;
 		}
 		
-		static int i = 1;
-		QString tabName = QString("LinearSweep%1.csv").arg(i++);
+		CsvFileData csvData;
+		if (!ReadCsvFile(mw, csvData)) {
+			return;
+		}
+
+		QString tabName = csvData.fileName;
 		const QUuid id = QUuid::createUuid();
 
-		QStringList xAxisList = QStringList() << "x1" << "x2" << "x3";
-		QStringList yAxisList = QStringList() << "y1" << "y2" << "y3";
-
-		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, xAxisList, yAxisList);
+		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, csvData.xAxisList, csvData.yAxisList, &csvData.container);
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
 		ui.newDataTab.newDataTabButton->click();
@@ -863,7 +897,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -1006,6 +1040,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	});
 
 	dataTabs.plots[id] = plotHandler;
+	if (loadedContainerPtr) {
+		dataTabs.plots[id].data.container = *loadedContainerPtr;
+	}
 	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.container[xCombo->currentText()];
 	dataTabs.plots[id].data.y1Data = &dataTabs.plots[id].data.container[y1Combo->currentText()];
 	dataTabs.plots[id].data.y2Data = &dataTabs.plots[id].data.container[NONE_Y_AXIS_VARIABLE];

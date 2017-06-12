@@ -254,7 +254,32 @@ void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
 	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_EWE).replace("\"", "\"\""));
 	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT).replace("\"", "\"\""));
 	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_ECE).replace("\"", "\"\""));
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+	toWrite += QString("\"%1\"\n").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+
+
+	QString str;
+	toWrite.clear();
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_EWE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_EWE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_ECE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_ECE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "Y" : "";
+	toWrite += QString("\"%1\"\n").arg(str);
 
 	saveFile.write(toWrite.toLatin1());
 	saveFile.flush();
@@ -264,12 +289,12 @@ void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) cons
 	static QChar decimalPoint = QLocale().decimalPoint();
 
 	QString toWrite;
-	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last()).replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last()).replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last()).replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last()).replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last()).replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last(), 0, 'e').replace(QChar('.'), decimalPoint);
 
 	saveFile.write( toWrite.toLatin1() );
 	saveFile.flush();
