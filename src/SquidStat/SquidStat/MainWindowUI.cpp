@@ -31,6 +31,7 @@
 #include <QFileDialog>
 #include <QStringList>
 #include <QSettings>
+#include <QMessageBox>
 
 #include <QXmlStreamReader>
 
@@ -331,7 +332,6 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 	return w;
 }
 bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentNotes &ret) {
-	//static ExperimentNotes ret;
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
@@ -368,8 +368,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentN
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
-	buttonLay->addWidget(okBut = OBJ_PROP(OBJ_NAME(PBT("OK"), "secondary-button"), "notes-dialog-button", "ok-button"));
-	buttonLay->addWidget(cancelBut = OBJ_PROP(OBJ_NAME(PBT("Cancel"), "secondary-button"), "notes-dialog-button", "cancel-button"));
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("OK"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
 	buttonLay->addStretch(1);
 
 	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"), 6, 0, 1, -1);
@@ -685,21 +685,37 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	return w;
 }
-bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data) {
+bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData> &dataList) {
 	bool ret = false;
+
 	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
 	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
 
-	auto dialogRet = QFileDialog::getOpenFileName(parent, "Open experiment data", dirName, "Data files (*.csv)");
+	auto dialogRetList = QFileDialog::getOpenFileNames(parent, "Open experiment data", dirName, "Data files (*.csv)");
 
-	if (dialogRet.isEmpty()) {
-		return ret;
+	foreach(auto dialogRet, dialogRetList) {
+		if (dialogRet.isEmpty()) {
+			return ret;
+		}
+
+		if (!QFileInfo(dialogRet).isReadable()) {
+			return ret;
+		}
+
+		CsvFileData data;
+		ret = ReadCsvFile(dialogRet, data);
+
+		if (!ret) {
+			return ret;
+		}
+
+		dataList << data;
 	}
 
-	if (!QFileInfo(dialogRet).isReadable()) {
-		return ret;
-	}
-
+	return ret;
+}
+bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileData &data) {
+	bool ret = false;
 	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, ";");
 
 	if (readData.size() < 2) {
@@ -712,7 +728,7 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data)
 	readData.pop_front();
 	QStringList axisList = readData.front();
 	readData.pop_front();
-	
+
 	int hdrListSize = hdrList.size();
 
 	if (hdrListSize != axisList.size()) {
@@ -721,7 +737,7 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data)
 
 	for (int i = 0; i < hdrListSize; ++i) {
 		const QString &varName(hdrList.at(i));
-		
+
 		if (axisList.at(i).contains('X')) {
 			data.xAxisList << varName;
 		}
@@ -749,8 +765,27 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data)
 			data.container[hdrList.at(i)].append(val);
 		}
 	}
-
+	
 	ret = true;
+
+	return ret;
+}
+bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data) {
+	bool ret = false;
+	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+	auto dialogRet = QFileDialog::getOpenFileName(parent, "Open experiment data", dirName, "Data files (*.csv)");
+
+	if (dialogRet.isEmpty()) {
+		return ret;
+	}
+
+	if (!QFileInfo(dialogRet).isReadable()) {
+		return ret;
+	}
+
+	ret = ReadCsvFile(dialogRet, data);
 
 	return ret;
 }
@@ -770,7 +805,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	lay->addWidget(docTabs);
 
 	docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
-	
+
+	static QPushButton *closeTabButton = 0;
+	static QMetaObject::Connection closeTabButtonConnection;
+	static int prevCloseTabButtonPos = -1;
+
 	CONNECT(docTabs->tabBar(), &QTabBar::tabBarClicked, [=](int index) {
 		if (index != docTabs->count() - 1) {
 			return;
@@ -791,12 +830,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
 
-	static QPushButton *closeTabButton = 0;
-	static QMetaObject::Connection closeTabButtonConnection;
-	static int prevCloseTabButtonPos = -1;
-
 	CONNECT(docTabs, &QTabWidget::currentChanged, [=](int index) {
-		if ((index < 0) || (index >= docTabs->count() - 1)) {
+		if (index < 0) {
+			return;
+		}
+		if (index >= docTabs->count() - 1) {
+			docTabs->setCurrentIndex(prevCloseTabButtonPos);
 			return;
 		}
 
@@ -823,14 +862,14 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				if (0 != plot) {
 					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
 						if (it.value().plot == plot) {
-							foreach(auto conn, it.value().varComboConnection) {
+							foreach(auto conn, it.value().plotTabConnections) {
 								QObject::disconnect(conn);
 							}
 							
-							if (it.value().data.saveFile) {
-								it.value().data.saveFile->close();
-								it.value().data.saveFile->deleteLater();
-								it.value().data.saveFile = 0;
+							if (it.value().data.first().saveFile) {
+								it.value().data.first().saveFile->close();
+								it.value().data.first().saveFile->deleteLater();
+								it.value().data.first().saveFile = 0;
 							}
 
 							mw->StopExperiment(it.key());
@@ -855,8 +894,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp->GetXAxisParameters(), exp->GetYAxisParameters());
 
 		dataTabs.plots[id].exp = exp;
-		dataTabs.plots[id].data.saveFile = saveFile;
-		dataTabs.plots[id].data.cal = calData;
+		dataTabs.plots[id].data.first().saveFile = saveFile;
+		dataTabs.plots[id].data.first().cal = calData;
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
@@ -865,11 +904,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
 		PlotHandler &handler(dataTabs.plots[id]);
+		DataMapVisualization &majorData(handler.data.first());
 		
-		if (handler.data.saveFile) {
-			handler.data.saveFile->close();
-			handler.data.saveFile->deleteLater();
-			handler.data.saveFile = 0;
+		if (majorData.saveFile) {
+			majorData.saveFile->close();
+			majorData.saveFile->deleteLater();
+			majorData.saveFile = 0;
 		}
 	});
 
@@ -878,24 +918,35 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			return;
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
+		DataMapVisualization &majorData(handler.data.first());
 
-		handler.exp->PushNewData(expData, handler.data.container, handler.data.cal);
-		if (handler.data.saveFile) {
-			handler.exp->SaveData(*handler.data.saveFile, handler.data.container);
+		handler.exp->PushNewData(expData, majorData.container, majorData.cal);
+		if (majorData.saveFile) {
+			handler.exp->SaveData(*majorData.saveFile, majorData.container);
 		}
 
-		if (handler.data.xData && handler.data.y1Data) {
-			handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
+		if (majorData.xData && majorData.y1Data) {
+			majorData.curve1->setSamples(*majorData.xData, *majorData.y1Data);
 			handler.plot->replot();
 		}
 
-		if (handler.data.xData && handler.data.y2Data) {
-			handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
+		if (majorData.xData && majorData.y2Data) {
+			majorData.curve2->setSamples(*majorData.xData, *majorData.y2Data);
 			handler.plot->replot();
 		}
 	});
 
 	return w;
+}
+QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
+	QwtPlotCurve *curve = new QwtPlotCurve("");
+
+	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve->setPen(color, 1);
+	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+	curve->setYAxis(yAxisId);
+
+	return curve;
 }
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	auto w = WDG();
@@ -903,42 +954,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
-	QwtPlotCurve *curve1 = new QwtPlotCurve("");
-
 	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
 	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
 	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
-	QwtText title;
-	title.setFont(QFont("Segoe UI", 14));
-	//title.setText("Frequency (Hz)");
-	title.setText("Timestamp (s)");
-	plot->setAxisTitle(QwtPlot::xBottom, title);
-	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
-	title.setText("Ewe");
-	plot->setAxisTitle(QwtPlot::yLeft, title);
-		
-	curve1->setLegendAttribute(QwtPlotCurve::LegendShowLine);
-	curve1->setPen(QColor(42, 127, 220), 1);
-	curve1->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-	curve1->attach(plot);
-
-	//plot->enableAxis(QwtPlot::yRight);
 	//plot->setAxisAutoScale(QwtPlot::yRight);
-
-	QwtPlotCurve *curve2 = new QwtPlotCurve("");
-
-	title.setText(NONE_Y_AXIS_VARIABLE);
-	plot->setAxisTitle(QwtPlot::yRight, title);
-
-	curve2->setLegendAttribute(QwtPlotCurve::LegendShowLine);
-	curve2->setPen(QColor(208, 35, 39), 1);
-	curve2->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-	curve2->setYAxis(QwtPlot::yRight);
-	//curve2->attach(plot);
-
 
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
+	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, QColor(42, 127, 220));
+	QwtPlotCurve *curve2 = CreateCurve(QwtPlot::yRight, QColor(208, 35, 39));
+	curve1->attach(plot);
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
@@ -967,7 +992,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	settingsLay->addWidget(y2Combo, 3, 1);
 	settingsLay->setColumnStretch(2, 1);
 
-	settingsLay->setRowStretch(5, 1);
+	QPushButton *addDataPbt;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add a Data File(s)"), "secondary-button"));
+	buttonLay->addWidget(OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
+	settingsLay->addLayout(buttonLay, 5, 0, 1, -1);
+	settingsLay->setRowStretch(6, 1);
 
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
@@ -978,76 +1013,151 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
-	plotHandler.curve1 = curve1;
-	plotHandler.curve2 = curve2;
 	plotHandler.xVarCombo = xCombo;
-	plotHandler.yVarCombo = y1Combo;
+	plotHandler.y1VarCombo = y1Combo;
+	plotHandler.y2VarCombo = y2Combo;
 	plotHandler.exp = 0;
-	plotHandler.data.saveFile = 0;
+	plotHandler.data << DataMapVisualization();
+	plotHandler.data.first().saveFile = 0;
+	plotHandler.data.first().curve1 = curve1;
+	plotHandler.data.first().curve2 = curve2;
 
-	plotHandler.varComboConnection << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {
+		QList<CsvFileData> csvDataList;
+
+		if (!ReadCsvFile(mw, csvDataList)) {
+			return;
+		}
+
 		PlotHandler &handler(dataTabs.plots[id]);
+		QStringList firstDataKeys = handler.data.first().container.keys();
+		firstDataKeys.removeAll(NONE_Y_AXIS_VARIABLE);
+		firstDataKeys.sort();
+		
+		foreach(auto csvData, csvDataList) {
+			QStringList curDataKeys = csvData.container.keys();
+			curDataKeys.sort();
 
-		handler.data.xData = &handler.data.container[curText];
+			if (curDataKeys != firstDataKeys) {
+				QMessageBox::information(mw, "Parsing error", "Incompatible data sets were selected!");
+				return;
+			}
+		}
+
+		foreach(auto csvData, csvDataList) {
+			DataMapVisualization data;
+			data.container = csvData.container;
+			data.saveFile = 0;
+			data.curve1 = CreateCurve(QwtPlot::yLeft, QColor(42, 127, 220));
+			data.curve2 = CreateCurve(QwtPlot::yRight, QColor(208, 35, 39));
+
+			handler.data << data;
+
+			DataMapVisualization &currentData(handler.data.last());
+			currentData.xData = &currentData.container[handler.xVarCombo->currentText()];
+			currentData.y1Data = &currentData.container[handler.y1VarCombo->currentText()];
+			currentData.y2Data = &currentData.container[handler.y2VarCombo->currentText()];
+
+			currentData.curve1->setSamples(*currentData.xData, *currentData.y1Data);
+			currentData.curve2->setSamples(*currentData.xData, *currentData.y2Data);
+		
+			currentData.curve1->attach(handler.plot);
+
+			if (handler.y2VarCombo->currentText() != NONE_Y_AXIS_VARIABLE) {
+				currentData.curve2->attach(handler.plot);
+			}
+			
+			handler.plot->replot();
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id]);
 
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
-		
-		handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
-		handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->xData = &it->container[curText];
+			it->curve1->setSamples(*it->xData, *it->y1Data);
+			it->curve2->setSamples(*it->xData, *it->y2Data);
+		}
 		handler.plot->replot();
 	});
 
-	plotHandler.varComboConnection << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);
-		
-		handler.data.y1Data = &handler.data.container[curText];
 
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
 
-		handler.curve1->setSamples(*handler.data.xData, *handler.data.y1Data);
-		handler.curve1->setTitle(curText);
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->y1Data = &it->container[curText];
+			it->curve1->setSamples(*it->xData, *it->y1Data);
+			it->curve1->setTitle(curText);
+		}
 		handler.plot->replot();
 	});
 
-	plotHandler.varComboConnection << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);
-
-		if (curText == NONE_Y_AXIS_VARIABLE) {
-			handler.curve2->detach();
-			handler.plot->enableAxis(QwtPlot::yRight, false);
-		}
-		else {
-			handler.curve2->attach(handler.plot);
-			handler.plot->enableAxis(QwtPlot::yRight);
-		}
-
-		handler.data.y2Data = &handler.data.container[curText];
 
 		QwtText title;
 		title.setFont(QFont("Segoe UI", 14));
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::yRight, title);
 
-		handler.curve2->setSamples(*handler.data.xData, *handler.data.y2Data);
-		handler.curve2->setTitle(curText);
+		if (curText == NONE_Y_AXIS_VARIABLE) {
+			handler.plot->enableAxis(QwtPlot::yRight, false);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->detach();
+			}
+		}
+		else {
+			handler.plot->enableAxis(QwtPlot::yRight);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->attach(handler.plot);
+
+				it->y2Data = &it->container[curText];
+
+				it->curve2->setSamples(*it->xData, *it->y2Data);
+				it->curve2->setTitle(curText);
+			}
+		}
+
 		handler.plot->replot();
 	});
 
 	dataTabs.plots[id] = plotHandler;
+	DataMapVisualization &majorData(dataTabs.plots[id].data.first());
+
 	if (loadedContainerPtr) {
-		dataTabs.plots[id].data.container = *loadedContainerPtr;
+		majorData.container = *loadedContainerPtr;
 	}
-	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.container[xCombo->currentText()];
-	dataTabs.plots[id].data.y1Data = &dataTabs.plots[id].data.container[y1Combo->currentText()];
-	dataTabs.plots[id].data.y2Data = &dataTabs.plots[id].data.container[NONE_Y_AXIS_VARIABLE];
-	dataTabs.plots[id].curve1->setTitle(y1Combo->currentText());
-	dataTabs.plots[id].curve2->setTitle(NONE_Y_AXIS_VARIABLE);
+	majorData.xData = &majorData.container[xCombo->currentText()];
+	majorData.y1Data = &majorData.container[y1Combo->currentText()];
+	majorData.y2Data = &majorData.container[NONE_Y_AXIS_VARIABLE];
+	majorData.curve1->setSamples(*majorData.xData, *majorData.y1Data);
+	majorData.curve2->setSamples(*majorData.xData, *majorData.y2Data);
+	majorData.curve1->setTitle(y1Combo->currentText());
+	majorData.curve2->setTitle(NONE_Y_AXIS_VARIABLE);
+
+	QwtText title;
+	title.setFont(QFont("Segoe UI", 14));
+
+	title.setText(xCombo->currentText());
+	plot->setAxisTitle(QwtPlot::xBottom, title);
+
+	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	title.setText(y1Combo->currentText());
+	plot->setAxisTitle(QwtPlot::yLeft, title);
+
+	title.setText(NONE_Y_AXIS_VARIABLE);
+	plot->setAxisTitle(QwtPlot::yRight, title);
 	
 	return w;
 }

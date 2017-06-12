@@ -50,8 +50,12 @@ public:
 
 	static bool GetExperimentNotes(QWidget *parent, ExperimentNotes&);
 	static bool ReadCsvFile(QWidget *parent, CsvFileData&);
+	static bool ReadCsvFile(QWidget *parent, QList<CsvFileData>&);
 
 private:
+	static bool ReadCsvFile(const QString &fileName,  CsvFileData&);
+	QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
+
 	void CreateCentralWidget();
 
 	QWidget* GetApplyStyleButton();
@@ -88,24 +92,25 @@ private:
 	struct {
 		QWidget *userInputs;
 	} prebuiltExperimentData;
-
-	struct PlotHandler {
-		PlotHandler() { data.xData = 0; data.y1Data = 0; data.y2Data = 0; data.saveFile = 0; }
-		QwtPlot* plot;
+	
+	struct DataMapVisualization {
+		DataMap container;
+		QFile *saveFile;
+		CalibrationData cal;
+		DataVector *xData;
+		DataVector *y1Data;
+		DataVector *y2Data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
+	};
+	struct PlotHandler {
+		QwtPlot* plot;
 		QComboBox *xVarCombo;
-		QComboBox *yVarCombo;
-		QList<QMetaObject::Connection> varComboConnection;
+		QComboBox *y1VarCombo;
+		QComboBox *y2VarCombo;
+		QList<QMetaObject::Connection> plotTabConnections;
 		const AbstractExperiment *exp;
-		struct {
-			DataMap container;
-			QFile *saveFile;
-			CalibrationData cal;
-			DataVector *xData;
-			DataVector *y1Data;
-			DataVector *y2Data;
-		} data;
+		QList<DataMapVisualization> data;
 	};
 
 	struct {
