@@ -30,11 +30,14 @@
 #include <QTime>
 #include <QFileDialog>
 #include <QStringList>
+#include <QSettings>
 
 #include <QXmlStreamReader>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
+
+
 
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
@@ -325,6 +328,130 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
+MainWindowUI::ExperimentNotes MainWindowUI::GetExperimentNotes(QWidget *parent) {
+	static ExperimentNotes ret;
+	ret.dialogCanceled = true;
+
+	static QMap<QString, qreal> references;
+	references["Predefined 1"] = 1.0;
+	references["Predefined 2"] = 1.1;
+	references["Predefined 3"] = 1.2;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
+
+	auto electrodeCombo = CMB();
+	QRadioButton *commRefRadio;
+	QRadioButton *otherRefRadio;
+	QLineEdit *otherRefLed;
+	QLineEdit *potVsSheLed;
+	QTextEdit *notesTed;
+
+	auto lay = new QGridLayout(dialog);
+
+	lay->addWidget(OBJ_NAME(LBL("Experimantal Notes"), "heading-label"), 0, 0, 1, 2);
+	lay->addWidget(notesTed = TED(), 1, 0, 1, 2);
+
+	lay->addWidget(OBJ_NAME(LBL("Reference Electrode"), "heading-label"), 2, 0, 1, 2);
+	lay->addWidget(commRefRadio = new QRadioButton("Common reference electrode"), 3, 0);
+	lay->addWidget(otherRefRadio = new QRadioButton("Other reference electrode"), 4, 0);
+	lay->addWidget(electrodeCombo, 3, 1);
+	lay->addWidget(otherRefLed = LED(), 4, 1);
+	lay->addWidget(OBJ_NAME(LBL("Potential vs SHE (V)"), "notes-dialog-right-comment"), 5, 0);
+	lay->addWidget(potVsSheLed = LED(), 5, 1);
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-right-spacing"), 0, 2, 6, 1);
+
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_PROP(OBJ_NAME(PBT("OK"), "secondary-button"), "notes-dialog-button", "ok-button"));
+	buttonLay->addWidget(cancelBut = OBJ_PROP(OBJ_NAME(PBT("Cancel"), "secondary-button"), "notes-dialog-button", "cancel-button"));
+	buttonLay->addStretch(1);
+
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"), 6, 0, 1, -1);
+	lay->addLayout(buttonLay, 7, 0, 1, -1);
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"), 8, 0, 1, -1);
+
+	QListView *electrodeComboList = OBJ_NAME(new QListView, "combo-list");
+	electrodeCombo->setView(electrodeComboList);
+
+	QList<QMetaObject::Connection> dialogConn;
+	
+	#define COMMON_REFERENCE_ELECTRODE_NAME	"common-reference-electrode-name"
+	#define OTHER_REFERENCE_ELECTRODE_NAME	"other-reference-electrode-name"
+	#define OTHER_REFERENCE_ELECTRODE_VALUE	"other-reference-electrode-value"
+
+	dialogConn << CONNECT(commRefRadio, &QRadioButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		settings.setValue(OTHER_REFERENCE_ELECTRODE_NAME, otherRefLed->text());
+		settings.setValue(OTHER_REFERENCE_ELECTRODE_VALUE, potVsSheLed->text());
+		
+		otherRefLed->setDisabled(true);
+		otherRefLed->setPlaceholderText("");
+		otherRefLed->setText("");
+
+		potVsSheLed->setPlaceholderText("");
+		potVsSheLed->setReadOnly(true);
+		potVsSheLed->setText("");
+
+		electrodeCombo->addItems(references.keys());
+		electrodeCombo->setEnabled(true);
+
+		QString currentText = settings.value(COMMON_REFERENCE_ELECTRODE_NAME, "").toString();
+		if (!currentText.isEmpty()) {
+			electrodeCombo->setCurrentText(currentText);
+		}
+	});
+
+	dialogConn << CONNECT(otherRefRadio, &QRadioButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		settings.setValue(COMMON_REFERENCE_ELECTRODE_NAME, electrodeCombo->currentText());
+
+		electrodeCombo->setDisabled(true);
+		electrodeCombo->clear();
+
+		otherRefLed->setEnabled(true);
+		otherRefLed->setPlaceholderText("Type here electrode name");
+		otherRefLed->setText(settings.value(OTHER_REFERENCE_ELECTRODE_NAME, "").toString());
+
+		potVsSheLed->setPlaceholderText("Type here the value");
+		potVsSheLed->setReadOnly(false);
+		potVsSheLed->setText(settings.value(OTHER_REFERENCE_ELECTRODE_VALUE, "").toString());
+	});
+
+	dialogConn << CONNECT(electrodeCombo, &QComboBox::currentTextChanged, [=](const QString &key) {
+		if (key.isEmpty()) {
+			return;
+		}
+		QString text = QString("%1").arg(references[key]).replace(QChar('.'), QLocale().decimalPoint());
+		potVsSheLed->setText(text);
+	});
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		ret.dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	commRefRadio->click();
+
+	dialog->exec();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	ret.notes = notesTed->toPlainText();
+	ret.refElectrode = commRefRadio->isChecked() ? electrodeCombo->currentText() : otherRefLed->text();
+	ret.potential = potVsSheLed->text();
+
+	dialog->deleteLater();
+
+
+	return ret;
+}
 class ExperimentFilterModel : public QSortFilterProxyModel {
 	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
 		QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
@@ -556,6 +683,44 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	return w;
 }
+bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data) {
+	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+	auto dialogRet = QFileDialog::getOpenFileName(parent, "Open experiment data", dirName, "Data files (*.csv)");
+
+	if (dialogRet.isEmpty()) {
+		return false;
+	}
+
+	if (!QFileInfo(dialogRet).isReadable()) {
+		return false;
+	}
+
+	QFile file(dialogRet);
+
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+		return false;
+	}
+
+	QTextStream stream(&file);
+
+	QString line;
+
+	if (!stream.readLineInto(&line)) {
+		return false;
+	}
+
+
+
+	while (stream.readLineInto(&line)) {
+
+	}
+
+	data.xAxisList;
+
+	return true;
+}
 QWidget* MainWindowUI::GetNewDataWindowTab() {
 	static QWidget *w = 0;
 
@@ -577,8 +742,19 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		if (index != docTabs->count() - 1) {
 			return;
 		}
+		
 		static int i = 1;
-		docTabs->insertTab(docTabs->count() - 1, WDG(), QString("LinearSweep%1.csv").arg(i++));
+		QString tabName = QString("LinearSweep%1.csv").arg(i++);
+		const QUuid id = QUuid::createUuid();
+
+		QStringList xAxisList = QStringList() << "x1" << "x2" << "x3";
+		QStringList yAxisList = QStringList() << "y1" << "y2" << "y3";
+
+		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, xAxisList, yAxisList);
+
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
+		ui.newDataTab.newDataTabButton->click();
+		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
 
 	static QPushButton *closeTabButton = 0;
@@ -641,7 +817,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
 		QString expName = exp->GetShortName();
-		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp, saveFile, calData);
+
+		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp->GetXAxisParameters(), exp->GetYAxisParameters());
+
+		dataTabs.plots[id].exp = exp;
+		dataTabs.plots[id].data.saveFile = saveFile;
+		dataTabs.plots[id].data.cal = calData;
+
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
@@ -681,7 +863,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList) {
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -734,17 +916,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
-	xCombo->addItems(exp->GetXAxisParameters());
+	xCombo->addItems(xAxisList);
 
 	auto y1Combo = CMB();
 	QListView *y1ComboList = OBJ_NAME(new QListView, "combo-list");
 	y1Combo->setView(y1ComboList);
-	y1Combo->addItems(exp->GetYAxisParameters());
+	y1Combo->addItems(yAxisList);
 
 	auto y2Combo = CMB();
 	QListView *y2ComboList = OBJ_NAME(new QListView, "combo-list");
 	y2Combo->setView(y2ComboList);
-	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << exp->GetYAxisParameters());
+	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
 	settingsLay->addWidget(xCombo, 1, 1);
 	settingsLay->addWidget(y1Combo, 2, 1);
@@ -766,9 +948,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.curve2 = curve2;
 	plotHandler.xVarCombo = xCombo;
 	plotHandler.yVarCombo = y1Combo;
-	plotHandler.exp = exp;
-	plotHandler.data.saveFile = saveFile;
-	plotHandler.data.cal = calData;
+	plotHandler.exp = 0;
+	plotHandler.data.saveFile = 0;
 
 	plotHandler.varComboConnection << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
 		PlotHandler &handler(dataTabs.plots[id]);

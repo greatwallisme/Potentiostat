@@ -18,10 +18,14 @@ class QwtPlotCurve;
 #include <QObject>
 #include <QMap>
 #include <QVector>
+#include <QDialog>
 
 #include "ExternalStructures.h"
 #include "InstrumentStructures.h"
 #include "AbstractExperiment.h"
+
+#define SQUID_STAT_PARAMETERS_INI	"SquidStatParameters.ini"
+#define DATA_SAVE_PATH				"data-save-dir-name"
 
 class MainWindowUI {
 public:
@@ -29,6 +33,23 @@ public:
 	~MainWindowUI();
 
 	void CreateUI();
+
+	struct ExperimentNotes {
+		QString notes;
+		QString refElectrode;
+		QString potential;
+		bool dialogCanceled;
+	};
+
+	struct CsvFileData {
+		ExperimentNotes notes;
+		QStringList xAxisList;
+		QStringList yAxisList;
+		DataMap container;
+	};
+
+	static ExperimentNotes GetExperimentNotes(QWidget *parent);
+	static bool ReadCsvFile(QWidget *parent, CsvFileData&);
 
 private:
 	void CreateCentralWidget();
@@ -41,18 +62,12 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const AbstractExperiment*, QFile*, const CalibrationData &);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
-
-	/*
-	QWidget* PrebuiltExpCreateGroupHeader(const ExperimentNode_t*);
-	QWidget* PrebuiltExpCreateParamsInput(ExperimentNode_t*);
-	void FillNodeParameters();
-	//*/
 
 	struct {
 		struct {

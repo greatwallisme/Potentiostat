@@ -20,8 +20,6 @@
 #include <stdlib.h>
 
 #define PREBUILT_EXP_DIR			"./prebuilt/"
-#define SQUID_STAT_PARAMETERS_INI	"SquidStatParameters.ini"
-#define DATA_SAVE_PATH				"data-save-dir-name"
 
 bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.portName == a.portName) && (b.serial == a.serial));
@@ -243,6 +241,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, calData);
 			if (nodesData.isEmpty()) {
 				LOG() << "Error while getting user input";
+				return;
+			}
+
+			auto notes = MainWindowUI::GetExperimentNotes(this);
+
+			if (notes.dialogCanceled) {
 				return;
 			}
 

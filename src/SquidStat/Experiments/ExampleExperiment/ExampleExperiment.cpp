@@ -248,12 +248,16 @@ void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &co
 	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
 }
 void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
-	saveFile.write(QString("%1;%2;%3;%4;%5\n")
-		.arg(PLOT_VAR_TIMESTAMP)
-		.arg(PLOT_VAR_EWE)
-		.arg(PLOT_VAR_CURRENT)
-		.arg(PLOT_VAR_ECE)
-		.arg(PLOT_VAR_CURRENT_INTEGRAL).toLatin1());
+	QString toWrite;
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP_NORMALIZED).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_EWE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_ECE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
 }
 
 void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) const {
@@ -261,6 +265,7 @@ void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) cons
 
 	QString toWrite;
 	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last()).replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last()).replace(QChar('.'), decimalPoint);
 	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last()).replace(QChar('.'), decimalPoint);
 	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last()).replace(QChar('.'), decimalPoint);
 	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last()).replace(QChar('.'), decimalPoint);

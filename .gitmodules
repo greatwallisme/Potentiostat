@@ -6,3 +6,7 @@
 	path = Hardware_emulator
 	url = https://github.com/mdion1/Hardware_emulator.git
 	branch = master
+[submodule "3rdparty/qtcsv"]
+	path = 3rdparty/qtcsv
+	url = https://github.com/iamantony/qtcsv.git
+	branch = master
