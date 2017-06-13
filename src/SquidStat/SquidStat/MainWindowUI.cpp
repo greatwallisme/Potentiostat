@@ -954,11 +954,13 @@ void ModifyObject(QObject *parent, F &lambda) {
 }
 #include <QDialogButtonBox>
 bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
-	bool ret = false;
+	static bool ret;
+	ret = false;
 
 	QColorDialog colorDialog(DEFAULT_MAJOR_CURVE_COLOR, parent);
 	colorDialog.setWindowFlags(Qt::SplashScreen);
 	colorDialog.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
+	colorDialog.setCurrentColor(color);
 
 	QObject *dialogPtr = &colorDialog;
 
@@ -971,8 +973,12 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	buttonLay->addWidget(cancel = PBT("Cancel"));
 	buttonLay->addStretch(1);
 
-	QObject::connect(ok, SIGNAL(clicked()), &colorDialog, SLOT(accept()));
-	QObject::connect(cancel, SIGNAL(clicked()), &colorDialog, SLOT(reject()));
+	CONNECT(ok, &QPushButton::clicked, &colorDialog, &QColorDialog::accept);
+	CONNECT(cancel, &QPushButton::clicked, &colorDialog, &QColorDialog::reject);
+
+	auto okConnection = CONNECT(ok, &QPushButton::clicked, [=]() {
+		ret = true;
+	});
 
 	ModifyObject<QVBoxLayout>(dialogPtr, [=](QVBoxLayout *obj) {
 		if (obj->parent() != dialogPtr) {
@@ -1005,6 +1011,10 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	});
 
 	colorDialog.exec();
+
+	QObject::disconnect(okConnection);
+
+	color = colorDialog.selectedColor();
 
 	return ret;
 }
@@ -1061,10 +1071,23 @@ bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::Cur
 	}
 	fileList->setModel(model);
 
+	QMap<QString, CurveParameters> *curveParamsPtr = &curveParams;
+
 	dialogConn << CONNECT(changeColorPbt, &QPushButton::clicked, [=]() {
 		QColor color = DEFAULT_MAJOR_CURVE_COLOR;
-		if (!GetColor(dialog, color)) {
-			return;
+		if (GetColor(dialog, color)) {
+			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
+				QString curName = index.data(Qt::DisplayRole).toString();
+				(*curveParamsPtr)[curName].color1 = color;
+			}
+		}
+
+		color = DEFAULT_MINOR_CURVE_COLOR;
+		if (GetColor(dialog, color)) {
+			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
+				QString curName = index.data(Qt::DisplayRole).toString();
+				(*curveParamsPtr)[curName].color2 = color;
+			}
 		}
 	});
 
@@ -1236,8 +1259,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			currentParams[data.name].color2 = data.curve2->pen().color();
 		}
 
-		if (!GetNewColors(mw, currentParams)) {
-			return;
+		if (GetNewColors(mw, currentParams)) {
+			foreach(const DataMapVisualization &data, handler.data) {
+				data.curve1->setPen(currentParams[data.name].color1, 1);
+				data.curve2->setPen(currentParams[data.name].color2, 1);
+			}
+			handler.plot->replot();
 		}
 	});
 
