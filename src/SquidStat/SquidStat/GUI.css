@@ -14,14 +14,14 @@ QMainWindow {
 QWidget {
 	background-color: #ffffff;
 }
-QSpinBox,
+QAbstractSpinBox,
 QLineEdit, QComboBox {
 	border: 1px solid #c6ccd2;
 	min-height: 30px;
 	margin-top: 20px;
 	padding-left: 15px;
 }
-QSpinBox::up-button {
+QAbstractSpinBox::up-button {
     subcontrol-origin: border;
     subcontrol-position: top right; /* position at the top right corner */
 
@@ -30,7 +30,7 @@ QSpinBox::up-button {
 	margin-right: 6px;
 	margin-top: 2px;
 }
-QSpinBox::down-button {
+QAbstractSpinBox::down-button {
     subcontrol-origin: border;
     subcontrol-position: bottom right; /* position at the top right corner */
 
@@ -414,8 +414,8 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 /*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
 #curve-params-dialog {
-	min-height: 500px;
-	max-height: 500px;
+	min-height: 570px;
+	max-height: 570px;
 	min-width: 450px;
 	max-width: 450px;
 	border: 1px solid #7b1a1e;
@@ -455,6 +455,26 @@ QColorDialog {
 QColorPicker {
 	min-height: 335px;
 	min-width: 335px;
+}
+#curve-params-dialog > QAbstractSpinBox::up-button {
+	margin-right: 14px;
+}
+#curve-params-dialog > QAbstractSpinBox::down-button {
+	margin-right: 13px;
+}
+#curve-params-dialog > QLineEdit {
+	background-color: #2a89dc;
+}
+#curve-params-dialog > QwtPlot {
+	margin: 0px;
+	margin-left: 40px;
+	margin-top: 20px;
+	border-left: 1px solid #c6ccd2;
+	border-bottom: 1px solid #c6ccd2;
+	min-height: 135px;
+	max-height: 135px;
+	min-width: 135px;
+	max-width: 135px;
 }
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {

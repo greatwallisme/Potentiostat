@@ -57,13 +57,22 @@ private:
 	static bool GetColor(QWidget *parent, QColor&);
 
 	struct CurveParameters {
-		QColor color1;
-		QColor color2;
+		enum {
+			PRIMARY = 0,
+			SECONDARY,
+
+			TOTAL_CURVES
+		};
+		struct {
+			QColor color;
+			qreal width;
+			Qt::PenStyle style;
+		} pen[TOTAL_CURVES];
 	};
 
-	static bool GetNewColors(QWidget *parent, QMap<QString, CurveParameters>&);
+	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
 
-	QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
+	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
 	void CreateCentralWidget();
 

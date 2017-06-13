@@ -17,6 +17,8 @@
 #include <QListView>
 #include <QTabWidget>
 #include <QSortFilterProxyModel>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -1018,7 +1020,7 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 
 	return ret;
 }
-bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams) {
+bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 	
@@ -1040,6 +1042,46 @@ bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::Cur
 	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
+	auto optLay = new QHBoxLayout;
+	optLay->addWidget(RBT("Primary curve"));
+	optLay->addWidget(RBT("Secondary curve"));
+	lay->addLayout(optLay);
+
+	lay->addWidget(OBJ_NAME(LBL("Primary Curve"), "heading-label"));
+	{
+		QwtPlot *smallPlot;
+		QComboBox *cmb;
+		QDoubleSpinBox *spin;
+		auto paramsLay = new QGridLayout;
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(LED(), 0, 1);
+		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
+		paramsLay->addWidget(cmb = CMB(), 2, 1);
+		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 1);
+
+		spin->setValue(1.0);
+		spin->setDecimals(1);
+		spin->setSingleStep(0.1);
+
+		cmb->addItem("Solid");
+
+		smallPlot->enableAxis(QwtPlot::yLeft, false);
+		smallPlot->enableAxis(QwtPlot::xBottom, false);
+
+		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+		curve->setSamples(QVector<qreal>() << 0.0 << 1.1, QVector<qreal>() << 0.0 << 1.1);
+		curve->attach(smallPlot);
+
+		smallPlot->replot();
+
+		lay->addLayout(paramsLay);
+	}
+	lay->addSpacing(40);
+	//lay->addWidget(OBJ_NAME(LBL("Secondary curve"), "heading-label"));
+
+	/*
 	auto adjustButtonLay = new QHBoxLayout;
 	QPushButton *changeColorPbt;
 	QPushButton *changeLinePbt;
@@ -1051,12 +1093,13 @@ bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::Cur
 	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
 	lay->addLayout(adjustButtonLay);
 	lay->addStretch(1);
+	//*/
 
 	auto buttonLay = new QHBoxLayout;
 	QPushButton *okBut;
 	QPushButton *cancelBut;
 	buttonLay->addStretch(1);
-	buttonLay->addWidget(okBut = OBJ_NAME(PBT("OK"), "secondary-button"));
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Apply"), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
 	buttonLay->addStretch(1);
 
@@ -1073,6 +1116,7 @@ bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::Cur
 
 	QMap<QString, CurveParameters> *curveParamsPtr = &curveParams;
 
+	/*
 	dialogConn << CONNECT(changeColorPbt, &QPushButton::clicked, [=]() {
 		QColor color = DEFAULT_MAJOR_CURVE_COLOR;
 		if (GetColor(dialog, color)) {
@@ -1094,6 +1138,7 @@ bool MainWindowUI::GetNewColors(QWidget *parent, QMap<QString, MainWindowUI::Cur
 	dialogConn << CONNECT(changeLinePbt, &QPushButton::clicked, [=]() {
 		;
 	});
+	//*/
 
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
 		dialogCanceled = false;
@@ -1255,14 +1300,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		QMap<QString, CurveParameters> currentParams;
 
 		foreach(const DataMapVisualization &data, handler.data) {
-			currentParams[data.name].color1 = data.curve1->pen().color();
-			currentParams[data.name].color2 = data.curve2->pen().color();
+			currentParams[data.name].pen[CurveParameters::PRIMARY].color = data.curve1->pen().color();
+			currentParams[data.name].pen[CurveParameters::SECONDARY].color = data.curve2->pen().color();
 		}
 
-		if (GetNewColors(mw, currentParams)) {
+		if (GetNewPen(mw, currentParams)) {
 			foreach(const DataMapVisualization &data, handler.data) {
-				data.curve1->setPen(currentParams[data.name].color1, 1);
-				data.curve2->setPen(currentParams[data.name].color2, 1);
+				data.curve1->setPen(currentParams[data.name].pen[CurveParameters::PRIMARY].color, 2., Qt::DashDotLine);
+				data.curve2->setPen(currentParams[data.name].pen[CurveParameters::SECONDARY].color, 2., Qt::DashDotDotLine);
 			}
 			handler.plot->replot();
 		}
