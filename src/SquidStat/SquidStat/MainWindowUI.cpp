@@ -748,11 +748,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
 		if (handler.data.currentIntegral.isEmpty()) {
-			handler.data.currentIntegral.append(expData.adcData.current/timestamp);
+			handler.data.currentIntegral.append(expData.adcData.current*timestamp);
 		}
 		else {
 			qreal newVal = handler.data.currentIntegral.last();
-			newVal += (handler.data.current.last() + expData.adcData.current) * (timestamp + handler.data.timestamp.last()) / 2.;
+			newVal += (handler.data.current.last() + expData.adcData.current) * (timestamp - handler.data.timestamp.last()) / 2.;
 			handler.data.currentIntegral.append(newVal);
 		}
 

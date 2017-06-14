@@ -35,8 +35,21 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			//*/
 			break;
 
+		case EXPERIMENT_NODE_COMPLETE:
+			LOG() << "Experiment node complete";
+			break;
+
 		case EXPERIMENT_COMPLETE:
 			emit ExperimentCompleted();
+			break;
+
+		case DEBUG_LOG_MSG:
+			/*data.size();
+			data.data();
+			QChar * _qchar = (QChar*)data.data();
+			QString str;
+			str.append(_qchar, data.size());
+			LOG() << str;*/
 			break;
 
 		default:

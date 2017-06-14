@@ -45,45 +45,9 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	/*
-	_INSERT_RIGHT_ALIGN_COMMENT("Input mask ", row, 0);
-	auto test = new QLineEdit();
-	lay->addWidget(test, row, 1);
-	test->setInputMask("00:00:00");
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Input mask + blank char ", row, 0);
-	test = new QLineEdit();
-	lay->addWidget(test, row, 1);
-	test->setInputMask("00 \\d\\ays 00:00:00;_");
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("RegExp validator + placeholder ", row, 0);
-	test = new QLineEdit();
-	lay->addWidget(test, row, 1);
-	test->setPlaceholderText("hh:mm:ss");
-	test->setValidator(new QRegExpValidator(QRegExp("[0-9]{0,2}:[0-9]{0,2}:[0-9]{1,2}")));
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Int validator [0; 1024] ", row, 0);
-	test = new QLineEdit();
-	lay->addWidget(test, row, 1);
-	test->setValidator(new QIntValidator(0, 1024));
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Double validator [-1.000; 1.000] ", row, 0);
-	test = new QLineEdit();
-	lay->addWidget(test, row, 1);
-	auto validator = new QDoubleValidator(-1.0, 1.0, 3, test);
-	validator->setNotation(QDoubleValidator::StandardNotation);
-	test->setValidator(validator);
-
-	++row;
-	//*/
 	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-	_SET_ROW_STRETCH(row, 1);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
@@ -91,16 +55,14 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
-	_SET_ROW_STRETCH(row, 2);
 
-	//++row;
-	//_INSERT_RIGHT_ALIGN_COMMENT(" ", row, 0);
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Upper scan limit = ", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-	_SET_ROW_STRETCH(row, 1);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
@@ -108,16 +70,14 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
-	_SET_ROW_STRETCH(row, 2);
 
-	//++row;
-	//_INSERT_RIGHT_ALIGN_COMMENT(" ", row, 0);
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Lower scan limit = ", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-	_SET_ROW_STRETCH(row, 1);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
@@ -125,56 +85,23 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
-	_SET_ROW_STRETCH(row, 2);
 
-	//++row;
-	//_INSERT_RIGHT_ALIGN_COMMENT(" ", row, 0);
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Scan rate (dE/dt) = ", row, 0);
 	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
-	_SET_ROW_STRETCH(row, 1);
 	
-	//++row;
-	//_INSERT_RIGHT_ALIGN_COMMENT(" ", row, 0);
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
 	_INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
-	_SET_ROW_STRETCH(row, 1);
-	/*
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 1", row, 0);
-	_START_RADIO_BUTTON_GROUP("Test radio 1 id");
-	_INSERT_RADIO_BUTTON("Ref", row, 1);
-	_INSERT_RADIO_BUTTON("Open circuit", row, 2);
-	_END_RADIO_BUTTON_GROUP();
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Test radio 2", row, 0);
-	_START_RADIO_BUTTON_GROUP("Test radio 2 id");
-	_INSERT_RADIO_BUTTON("Ref", row, 1);
-	_INSERT_RADIO_BUTTON("Open circuit", row, 2);
-	_END_RADIO_BUTTON_GROUP();
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Test drop down", row, 0);
-	_START_DROP_DOWN("Test drop down id", row, 1);
-	_ADD_DROP_DOWN_ITEM("Item 1");
-	_ADD_DROP_DOWN_ITEM("Item 2");
-	_ADD_DROP_DOWN_ITEM("Item 3");
-	_END_DROP_DOWN();
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Test radio layout", row, 0);
-	_START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT("Test radio layout id", row, 1);
-	_INSERT_RADIO_BUTTON_LAYOUT("Ref");
-	_INSERT_RADIO_BUTTON_LAYOUT("Open circuit");
-	_END_RADIO_BUTTON_GROUP_LAYOUT();
-	//*/
-	//_SET_ROW_STRETCH(++row, 1);
+	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
@@ -208,58 +135,84 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT;
+	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
-	exp.tMax = LONG_MAX;
+	exp.tMax = 2e8;
 	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 15625;
-	exp.samplingParams.ADCBufferSize = 20;
-	exp.samplingParams.DACMultiplier = 20;
-	exp.DCPoint.VPoint = startVoltage;
+	exp.samplingParams.ADCTimerPeriod = 200000;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.DACMultEven = 20;
+	exp.samplingParams.DACMultOdd = 20;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.DCPoint_pot.VPointUserInput = startVoltage;
+	exp.DCPoint_pot.VPointVsOCP = false;
+	exp.DCPoint_pot.Imax = 32767;
+	exp.DCPoint_pot.IrangeMax = RANGE0;
+	exp.DCPoint_pot.Imin = 0;
+	exp.DCPoint_pot.IrangeMin = RANGE7;
+	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP;
+	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 100000;
-	exp.tMax = LONG_MAX;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 15625;
-	exp.samplingParams.ADCBufferSize = 20;
-	exp.samplingParams.DACMultiplier = 20;
-	exp.DCSweep.VStart = startVoltage;
-	exp.DCSweep.VEnd = upperVoltage;
-	exp.DCSweep.dVdt = 1;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.DCSweep_pot.VStartUserInput = startVoltage;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = upperVoltage;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = true;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP;
+	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 100000;
-	exp.tMax = LONG_MAX;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 15625;
-	exp.samplingParams.ADCBufferSize = 20;
-	exp.samplingParams.DACMultiplier = 20;
-	exp.DCSweep.VStart = upperVoltage;
-	exp.DCSweep.VEnd = lowerVoltage;
-	exp.DCSweep.dVdt = -1;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.samplingParams.PointsIgnored = 0;
+	//exp.samplingParams.isDACStatic = false;
+	exp.DCSweep_pot.VStartUserInput = upperVoltage;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = lowerVoltage;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = true;
-	exp.nodeType = DCNODE_SWEEP;
+	exp.branchHeadIndex = 2;
+	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 100000;
-	exp.tMax = LONG_MAX;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 15625;
-	exp.samplingParams.ADCBufferSize = 20;
-	exp.samplingParams.DACMultiplier = 20;
-	exp.DCSweep.VStart = lowerVoltage;
-	exp.DCSweep.VEnd = upperVoltage;
-	exp.DCSweep.dVdt = 1;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.DCSweep_pot.VStartUserInput = lowerVoltage;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = upperVoltage;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
 	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
 
