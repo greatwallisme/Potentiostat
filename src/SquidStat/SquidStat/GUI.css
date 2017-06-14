@@ -416,8 +416,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #curve-params-dialog {
 	min-height: 570px;
 	max-height: 570px;
-	min-width: 450px;
-	max-width: 450px;
+	min-width: 475px;
+	max-width: 475px;
 	border: 1px solid #7b1a1e;
 }
 #curve-params-dialog-horizontal-spacing {
@@ -456,16 +456,19 @@ QColorPicker {
 	min-height: 335px;
 	min-width: 335px;
 }
-#curve-params-dialog > QAbstractSpinBox::up-button {
+#curve-params-adjusting-owner > QAbstractSpinBox::up-button {
 	margin-right: 14px;
 }
-#curve-params-dialog > QAbstractSpinBox::down-button {
+#curve-params-adjusting-owner > QAbstractSpinBox::down-button {
 	margin-right: 13px;
 }
-#curve-params-dialog > QLineEdit {
-	background-color: #2a89dc;
+#curve-params-adjusting-owner > QPushButton {
+	border: 1px solid #c6ccd2;
+	min-height: 30px;
+	margin-top: 20px;
+	padding-left: 15px;
 }
-#curve-params-dialog > QwtPlot {
+#curve-params-adjusting-owner > QwtPlot {
 	margin: 0px;
 	margin-left: 40px;
 	margin-top: 20px;
@@ -475,6 +478,10 @@ QColorPicker {
 	max-height: 135px;
 	min-width: 135px;
 	max-width: 135px;
+}
+#curve-params-adjusting-owner > QLabel {
+	margin-left: 0px;
+	padding-left: 0px;
 }
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
