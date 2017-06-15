@@ -709,6 +709,12 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData>
 
 	auto dialogRetList = QFileDialog::getOpenFileNames(parent, "Open experiment data", dirName, "Data files (*.csv)");
 
+	if (dialogRetList.isEmpty()) {
+		return ret;
+	}
+
+	settings.setValue(DATA_SAVE_PATH, QFileInfo(dialogRetList.first()).absolutePath());
+
 	foreach(auto dialogRet, dialogRetList) {
 		if (dialogRet.isEmpty()) {
 			return ret;
@@ -727,6 +733,7 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData>
 
 		dataList << data;
 	}
+
 
 	return ret;
 }
@@ -797,9 +804,12 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data)
 		return ret;
 	}
 
+	settings.setValue(DATA_SAVE_PATH, QFileInfo(dialogRet).absolutePath());
+
 	if (!QFileInfo(dialogRet).isReadable()) {
 		return ret;
 	}
+
 
 	ret = ReadCsvFile(dialogRet, data);
 
@@ -1516,11 +1526,13 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
+	QPushButton *savePlotPbt;
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add a Data File(s)"), "secondary-button"));
 	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
+	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot"), "secondary-button"));
 	buttonLay->addStretch(1);
 
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
@@ -1688,6 +1700,23 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 					currentParams[data.name].pen[CurveParameters::SECONDARY].style);
 			}
 			handler.plot->replot();
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(savePlotPbt, &QPushButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+		QString fileName = QFileDialog::getSaveFileName(mw, "Saving plot", dirName, "Image file (*.png)");
+
+		if (fileName.isEmpty()) {
+			return;
+		}
+
+		settings.setValue(DATA_SAVE_PATH, QFileInfo(fileName).absolutePath());
+
+		if (!plot->grab().save(fileName, "PNG")) {
+			LOG() << "Error during saving plot into \"" << fileName << "\"";
 		}
 	});
 
