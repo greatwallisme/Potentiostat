@@ -4,6 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_legend.h>
+#include <qwt_scale_widget.h>
 
 #include "UIHelper.hpp"
 
@@ -12,6 +13,8 @@
 #include "ExperimentReader.h"
 
 #include <QButtonGroup>
+
+#include <QEvent>
 
 #include <QIntValidator>
 #include <QListView>
@@ -24,6 +27,7 @@
 #include <QHBoxLayout>
 #include <QStackedLayout>
 #include <QScrollArea>
+#include <QCheckBox>
 
 #include <QStandardItemModel>
 
@@ -1346,6 +1350,128 @@ QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
 
 	return curve;
 }
+
+#include <functional>
+class PlotEventFilter : public QObject {
+public:
+	PlotEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonDblClick) {
+			_lambda();
+			return true;
+		}
+		return false;
+	}
+
+private:
+	std::function<void(void)> _lambda;
+};
+class LegendEventFilter : public QObject {
+public:
+	LegendEventFilter(QObject *parent, QwtPlot *plot) : QObject(parent), _plot(plot) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonDblClick) {
+			obj->deleteLater();
+			_plot->insertLegend(0);
+			_plot->replot();
+			return true;
+		}
+		return false;
+	}
+
+private:
+	QwtPlot *_plot;
+};
+bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameters &axisParams) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "axis-params-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	lay->addWidget(OBJ_NAME(new QLabel("Axis \"" + axisParams.title + "\""), "heading-label"));
+
+	QLineEdit *minLed;
+	QLineEdit *maxLed;
+	QLineEdit *stepLed;
+	QCheckBox *autoBox;
+
+	auto paramsLay = new QGridLayout;
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Min value: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Max value: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Step size: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	paramsLay->addWidget(minLed = LED(), 1, 1);
+	paramsLay->addWidget(maxLed = LED(), 2, 1);
+	paramsLay->addWidget(stepLed = LED(), 3, 1);
+	paramsLay->addWidget(autoBox = new QCheckBox("Auto scale axis"), 4, 0, 1, -1);
+
+	lay->addLayout(paramsLay);
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Apply"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addStretch(1);
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	dialogConn << CONNECT(autoBox, &QCheckBox::stateChanged, [=](int newStateId) {
+		Qt::CheckState state = (Qt::CheckState)newStateId;
+
+		if (Qt::Checked == state) {
+			minLed->setDisabled(true);
+			maxLed->setDisabled(true);
+			stepLed->setDisabled(true);
+		}
+		else {
+			minLed->setDisabled(false);
+			maxLed->setDisabled(false);
+			stepLed->setDisabled(false);
+		}
+	});
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	minLed->setText(QString::number(axisParams.min));
+	maxLed->setText(QString::number(axisParams.max));
+	stepLed->setText(QString::number(axisParams.step));
+	if (axisParams.autoScale) {
+		autoBox->setChecked(true);
+	}
+
+	dialog->exec();
+
+	axisParams.min = minLed->text().toDouble();
+	axisParams.max = maxLed->text().toDouble();
+	axisParams.step = stepLed->text().toDouble();
+	axisParams.autoScale = autoBox->isChecked();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
@@ -1355,11 +1481,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
-	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
-	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
-	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
-	//plot->setAxisAutoScale(QwtPlot::yRight);
-
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
 	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
@@ -1423,6 +1544,73 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.data.first().saveFile = 0;
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
+
+	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
+		AxisParameters axisParams;
+
+		axisParams.autoScale = plot->axisAutoScale(QwtPlot::yLeft);
+		axisParams.min = plot->axisInterval(QwtPlot::yLeft).minValue();
+		axisParams.max = plot->axisInterval(QwtPlot::yLeft).maxValue();
+		axisParams.step = plot->axisStepSize(QwtPlot::yLeft);
+		axisParams.title = plot->axisTitle(QwtPlot::yLeft).text();
+
+
+		if (GetNewAxisParams(mw, axisParams)) {
+			plot->setAxisAutoScale(QwtPlot::yLeft, axisParams.autoScale);
+			if (!axisParams.autoScale) {
+				plot->setAxisScale(QwtPlot::yLeft, axisParams.min, axisParams.max, axisParams.step);
+			}
+			plot->replot();
+		}
+	}));
+
+	plot->axisWidget(QwtPlot::yRight)->installEventFilter(new PlotEventFilter(w, [=]() {
+		AxisParameters axisParams;
+
+		axisParams.autoScale = plot->axisAutoScale(QwtPlot::yRight);
+		axisParams.min = plot->axisInterval(QwtPlot::yRight).minValue();
+		axisParams.max = plot->axisInterval(QwtPlot::yRight).maxValue();
+		axisParams.step = plot->axisStepSize(QwtPlot::yRight);
+		axisParams.title = plot->axisTitle(QwtPlot::yRight).text();
+
+
+		if (GetNewAxisParams(mw, axisParams)) {
+			plot->setAxisAutoScale(QwtPlot::yRight, axisParams.autoScale);
+			if (!axisParams.autoScale) {
+				plot->setAxisScale(QwtPlot::yRight, axisParams.min, axisParams.max, axisParams.step);
+			}
+			plot->replot();
+		}
+	}));
+
+	plot->axisWidget(QwtPlot::xBottom)->installEventFilter(new PlotEventFilter(w, [=]() {
+		AxisParameters axisParams;
+
+		axisParams.autoScale = plot->axisAutoScale(QwtPlot::xBottom);
+		axisParams.min = plot->axisInterval(QwtPlot::xBottom).minValue();
+		axisParams.max = plot->axisInterval(QwtPlot::xBottom).maxValue();
+		axisParams.step = plot->axisStepSize(QwtPlot::xBottom);
+		axisParams.title = plot->axisTitle(QwtPlot::xBottom).text();
+
+
+		if (GetNewAxisParams(mw, axisParams)) {
+			plot->setAxisAutoScale(QwtPlot::xBottom, axisParams.autoScale);
+			if (!axisParams.autoScale) {
+				plot->setAxisScale(QwtPlot::xBottom, axisParams.min, axisParams.max, axisParams.step);
+			}
+			plot->replot();
+		}
+	}));
+
+	plot->legend()->installEventFilter(new LegendEventFilter(w, plot));
+
+	plot->canvas()->installEventFilter(new PlotEventFilter(w, [=]() {
+		if (0 == plot->legend()) {
+			plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
+			plot->legend()->installEventFilter(new LegendEventFilter(w, plot));
+			plot->replot();
+		}
+	}));
 
 	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {
 		QList<CsvFileData> csvDataList;

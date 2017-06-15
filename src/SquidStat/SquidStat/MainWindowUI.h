@@ -70,7 +70,16 @@ private:
 		} pen[TOTAL_CURVES];
 	};
 
+	struct AxisParameters {
+		bool autoScale;
+		double min;
+		double max;
+		double step;
+		QString title;
+	};
+
 	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
+	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
