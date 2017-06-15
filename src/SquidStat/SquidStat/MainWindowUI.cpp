@@ -971,6 +971,8 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	colorDialog.setWindowFlags(Qt::SplashScreen);
 	colorDialog.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
 	colorDialog.setCurrentColor(color);
+	colorDialog.setCustomColor(0, DEFAULT_MAJOR_CURVE_COLOR);
+	colorDialog.setCustomColor(1, DEFAULT_MINOR_CURVE_COLOR);
 
 	QObject *dialogPtr = &colorDialog;
 
@@ -1345,6 +1347,9 @@ QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
 	return curve;
 }
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
+	QFont axisTitleFont("Segoe UI");
+	axisTitleFont.setPixelSize(22);
+
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
@@ -1502,7 +1507,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		PlotHandler &handler(dataTabs.plots[id]);
 
 		QwtText title;
-		title.setFont(QFont("Segoe UI", 14));
+		title.setFont(axisTitleFont);
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
 
@@ -1518,7 +1523,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		PlotHandler &handler(dataTabs.plots[id]);
 
 		QwtText title;
-		title.setFont(QFont("Segoe UI", 14));
+		title.setFont(axisTitleFont);
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
 
@@ -1534,7 +1539,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		PlotHandler &handler(dataTabs.plots[id]);
 
 		QwtText title;
-		title.setFont(QFont("Segoe UI", 14));
+		title.setFont(axisTitleFont);
 		title.setText(curText);
 		handler.plot->setAxisTitle(QwtPlot::yRight, title);
 
@@ -1575,7 +1580,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	majorData.name = expName;
 
 	QwtText title;
-	title.setFont(QFont("Segoe UI", 14));
+	
+	title.setFont(axisTitleFont);
 
 	title.setText(xCombo->currentText());
 	plot->setAxisTitle(QwtPlot::xBottom, title);

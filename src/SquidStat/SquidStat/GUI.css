@@ -108,11 +108,11 @@ QPushButton#bar-button {
 	border: 1px solid #ce2026;
 	border-left: none;
 	
-	padding: 15px;
+	padding: 13px;
 	padding-right: 40px;
 	padding-left: 40px;
 	
-	font-size: 12pt;
+	font-size: 16px;
 	
 	color: #ffffff;
 	font-family: "Segoe UI Semibold";
@@ -142,7 +142,7 @@ QPushButton#bar-button:open {
 #experiment-list-owner > QListView#experiment-list {
 	border: 1px solid #d3dae2;
 	outline: 0;
-	font-size: 12pt;
+	font-size: 16px;
 	padding-top: 7px;
 }
 #experiment-list-owner > QListView#experiment-list::item {
@@ -218,7 +218,7 @@ QPushButton#bar-button:open {
 }
 #experiment-description-name {
 	font-family: "Esphimere Light";
-	font-size: 24pt;
+	font-size: 32px;
 	color: #ce2026;
 	
 	border: none;
@@ -320,7 +320,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	left: 25px;
 }
 #plot-tab QTabBar::tab {
-	padding: 8px;
+	padding-top: 0px;
 	padding-right: 15px;
 	padding-left: 20px;
 	margin-top: 10px;
@@ -331,6 +331,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	border-bottom: 1px solid #ce2026;
 	
 	color: #7b1a1e;
+	
+	min-height: 21px;
+	max-height: 21px;
+	
 }
 #plot-tab QTabBar::tab:selected {
     color: #000000;
@@ -338,19 +342,22 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 #plot-tab QTabBar::tab:last,
 #plot-tab QTabBar::tab:only-one {
-	font-size: 18pt;
 	color: #ce2026;
 	
-	padding-top: 12px;
-	padding-left: 12px;
-	padding-right: 9px;
-	margin-right: -20px;
+	padding-bottom: 6px;
+	padding-top: 10px;
+	padding-left: 13px;
+	padding-right: 1px;
+	/*margin-right: -20px;*/
+	
+	max-width: 21px;
+	min-width: 21px;
 	
 	background-color: #ffbec0;
 }
 #plot-tab QTabBar::tab:last:selected,
 #plot-tab QTabBar::tab:only-one {
-	padding-bottom: 10px;
+	/*padding-bottom: 10px;*/
 }
 #close-document-pbt {
 	qproperty-text: "";
