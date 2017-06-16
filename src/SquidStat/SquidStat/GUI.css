@@ -492,8 +492,8 @@ QColorPicker {
 }
 /*//////////////       AXIS PARAMS DIALOG     ////////////////////*/
 #axis-params-dialog {
-	min-height: 400px;
-	max-height: 400px;
+	/*min-height: 400px;
+	max-height: 400px;*/
 	border: 1px solid #7b1a1e;
 }
 #axis-params-dialog > QCheckBox {

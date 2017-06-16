@@ -42,6 +42,8 @@
 
 #include <QXmlStreamReader>
 
+#include <QEventLoop>
+
 #include <qtcsv/reader.h>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
@@ -1398,7 +1400,7 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
-	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "axis-params-dialog");
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::FramelessWindowHint | Qt::Popup), "axis-params-dialog");
 	QList<QMetaObject::Connection> dialogConn;
 	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
 
@@ -1408,12 +1410,12 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	lay->addWidget(OBJ_NAME(new QLabel("Axis \"" + axisParams.title + "\""), "heading-label"));
+	//lay->addWidget(OBJ_NAME(new QLabel("Axis \"" + axisParams.title + "\""), "heading-label"));
 
 	QLineEdit *minLed;
 	QLineEdit *maxLed;
 	QLineEdit *stepLed;
-	QCheckBox *autoBox;
+	//QCheckBox *autoBox;
 
 	auto paramsLay = new QGridLayout;
 	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Min value: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
@@ -1422,10 +1424,14 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	paramsLay->addWidget(minLed = LED(), 1, 1);
 	paramsLay->addWidget(maxLed = LED(), 2, 1);
 	paramsLay->addWidget(stepLed = LED(), 3, 1);
-	paramsLay->addWidget(autoBox = new QCheckBox("Auto scale axis"), 4, 0, 1, -1);
+	//paramsLay->addWidget(autoBox = new QCheckBox("Auto scale axis"), 4, 0, 1, -1);
+
+	minLed->setPlaceholderText("Auto");
+	maxLed->setPlaceholderText("Auto");
+	stepLed->setPlaceholderText("Auto");
 
 	lay->addLayout(paramsLay);
-
+	/*
 	auto buttonLay = new QHBoxLayout;
 	QPushButton *okBut;
 	QPushButton *cancelBut;
@@ -1436,8 +1442,10 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 
 	lay->addStretch(1);
 	lay->addLayout(buttonLay);
+	//*/
 	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
-
+	
+	/*
 	dialogConn << CONNECT(autoBox, &QCheckBox::stateChanged, [=](int newStateId) {
 		Qt::CheckState state = (Qt::CheckState)newStateId;
 
@@ -1456,23 +1464,26 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
 		dialogCanceled = false;
 	});
+	//*/
 
-	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
-	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+	//CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	//CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
 
 	minLed->setText(QString::number(axisParams.min));
 	maxLed->setText(QString::number(axisParams.max));
 	stepLed->setText(QString::number(axisParams.step));
+	/*
 	if (axisParams.autoScale) {
 		autoBox->setChecked(true);
 	}
+	//*/
 
 	dialog->exec();
 
 	axisParams.min = minLed->text().toDouble();
 	axisParams.max = maxLed->text().toDouble();
 	axisParams.step = stepLed->text().toDouble();
-	axisParams.autoScale = autoBox->isChecked();
+	//axisParams.autoScale = autoBox->isChecked();
 
 	foreach(auto conn, dialogConn) {
 		QObject::disconnect(conn);
@@ -1480,7 +1491,7 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 
 	dialog->deleteLater();
 
-	return !dialogCanceled;
+	return true;
 }
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
