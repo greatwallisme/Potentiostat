@@ -39,6 +39,10 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			emit ExperimentCompleted();
 			break;
 
+		case EXPERIMENT_NODE_COMPLETE:
+			//LOG() << "Node complete";
+			break;
+
 		default:
 			LOG() << "Unknown response";
 			break;

@@ -174,6 +174,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_TEXT_INPUT_VALUE(voltageStep, VOLTAGE_STEP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(repeats, REPEATS_OBJ_NAME);
 
+	/*
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP;
@@ -203,6 +204,84 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.MaxPlays = repeats;
 	exp.branchHeadIndex = 0;
 	PUSH_NEW_NODE_DATA();
+	//*/
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_POINT_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 2e8;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 400000;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.DACMultEven = 20;
+	exp.samplingParams.DACMultOdd = 20;
+	exp.DCPoint_pot.VPointUserInput = 200;
+	exp.DCPoint_pot.VPointVsOCP = false;
+	exp.DCPoint_pot.Imax = 32767;
+	exp.DCPoint_pot.IrangeMax = RANGE0;
+	exp.DCPoint_pot.Imin = 0;
+	exp.DCPoint_pot.IrangeMin = RANGE7;
+	//exp.samplingParams.isDACStatic = true;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 200;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 600;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = true;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 600;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 100;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = true;
+	exp.branchHeadIndex = 2;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 100;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 600;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 3;
+	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
@@ -229,18 +308,18 @@ void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &co
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
-		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.adcData.current / timestamp);
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.ADCrawData.current / timestamp);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].last();
-		newVal += (container[PLOT_VAR_CURRENT].last() + expData.adcData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
 		container[PLOT_VAR_CURRENT_INTEGRAL].append(newVal);
 	}
 
 	container[PLOT_VAR_TIMESTAMP].append(timestamp);
-	container[PLOT_VAR_EWE].append(expData.adcData.ewe);
-	container[PLOT_VAR_ECE].append(expData.adcData.ece);
-	container[PLOT_VAR_CURRENT].append(expData.adcData.current);
+	container[PLOT_VAR_EWE].append(expData.ADCrawData.ewe);
+	container[PLOT_VAR_ECE].append(expData.ADCrawData.ece);
+	container[PLOT_VAR_CURRENT].append(expData.ADCrawData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;

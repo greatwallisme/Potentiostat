@@ -30,11 +30,16 @@ NodeType_t GetNodeType(const QString &str) {
 		}
 	
 	CHECK_NODE_TYPE(DCNODE_OCP);
-	CHECK_NODE_TYPE(DCNODE_SWEEP);
-	CHECK_NODE_TYPE(DCNODE_POINT);
-	CHECK_NODE_TYPE(DCNODE_NORMALPULSE);
-	CHECK_NODE_TYPE(DCNODE_DIFFPULSE);
-	CHECK_NODE_TYPE(DCNODE_SQRWAVE);
+	CHECK_NODE_TYPE(DCNODE_SWEEP_POT);
+	CHECK_NODE_TYPE(DCNODE_SWEEP_GALV);
+	CHECK_NODE_TYPE(DCNODE_POINT_POT);
+	CHECK_NODE_TYPE(DCNODE_POINT_GALV);
+	CHECK_NODE_TYPE(DCNODE_NORMALPULSE_POT);
+	CHECK_NODE_TYPE(DCNODE_NORMALPULSE_GALV);
+	CHECK_NODE_TYPE(DCNODE_DIFFPULSE_POT);
+	CHECK_NODE_TYPE(DCNODE_DIFFPULSE_GALV);
+	CHECK_NODE_TYPE(DCNODE_SQRWAVE_POT);
+	CHECK_NODE_TYPE(DCNODE_SQRWAVE_GALV);
 	CHECK_NODE_TYPE(DCNODE_SINEWAVE);
 	CHECK_NODE_TYPE(ACNODE_POTENTIOSTATIC);
 	CHECK_NODE_TYPE(ACNODE_GALVANOSTATIC);
@@ -50,9 +55,11 @@ void ReadNodeParameters(const QJsonObject &jo, ExperimentNode_t &node) {
 	FIND_VALUE("nodeType", isString);
 	node.nodeType = GetNodeType(joIt->toString());
 
+	/*
 	FILL_VALUE_OPTIONAL("VStart", isDouble, node.DCSweep.VStart, toInt);
 	FILL_VALUE_OPTIONAL("VEnd", isDouble, node.DCSweep.VEnd, toInt);
 	FILL_VALUE_OPTIONAL("dVdt", isDouble, node.DCSweep.dVdt, toDouble);
+	//*/
 }
 
 void ReadNodes(const QJsonObject &jo, NodeContainer &nc) {
@@ -159,6 +166,7 @@ QList<ExperimentNode_t*> ExperimentReader::GetNodeListForUserInput(ExperimentCon
 }
 
 void FillDcNodeSweep(ExperimentNode_t &node) {
+	/*
 	node.isHead = false;
 	node.isTail = false;
 	node.nodeType = DCNODE_SWEEP;
@@ -168,12 +176,15 @@ void FillDcNodeSweep(ExperimentNode_t &node) {
 	node.samplingParams.ADCTimerPeriod = 15625;
 	node.samplingParams.ADCBufferSize = 20;
 	node.samplingParams.DACMultiplier = 20;
+	//*/
 }
 void FillNodeParameters(ExperimentNode_t &node) {
 	switch (node.nodeType) {
+		/*
 		case DCNODE_SWEEP:
 			FillDcNodeSweep(node);
 			break;
+		//*/
 
 		default:
 			break;
