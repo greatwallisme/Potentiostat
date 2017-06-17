@@ -95,6 +95,7 @@ mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\
 copy $(ProjectDir)\GUI.css $(OutDir)\ /Y
 copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
+copy $(SolutionDir)\..\..\3rdparty\qtcsv-out\lib-release\qtcsv.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
 copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y</Command>
     </PostBuildEvent>
