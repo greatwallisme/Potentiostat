@@ -15,6 +15,7 @@
 #include <QButtonGroup>
 
 #include <QEvent>
+#include <QKeyEvent>
 
 #include <QIntValidator>
 #include <QListView>
@@ -1401,9 +1402,24 @@ public:
 private:
 	QwtPlot *_plot;
 };
+class PopupDialogEventFilter : public QObject {
+public:
+	PopupDialogEventFilter(QObject *parent, std::function<void(QEvent*, bool&)> lambda) : QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::KeyPress) {
+			bool ret;
+			_lambda(e, ret);
+			return ret;
+		}
+		return false;
+	}
+private:
+	std::function<void(QEvent*, bool&)> _lambda;
+};
 bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameters &axisParams) {
 	static bool dialogCanceled;
-	dialogCanceled = true;
+	dialogCanceled = false;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::FramelessWindowHint | Qt::Popup), "axis-params-dialog");
 	QList<QMetaObject::Connection> dialogConn;
@@ -1415,12 +1431,9 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	//lay->addWidget(OBJ_NAME(new QLabel("Axis \"" + axisParams.title + "\""), "heading-label"));
-
 	QLineEdit *minLed;
 	QLineEdit *maxLed;
 	QLineEdit *stepLed;
-	//QCheckBox *autoBox;
 
 	auto paramsLay = new QGridLayout;
 	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Min value: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
@@ -1429,51 +1442,14 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	paramsLay->addWidget(minLed = LED(), 1, 1);
 	paramsLay->addWidget(maxLed = LED(), 2, 1);
 	paramsLay->addWidget(stepLed = LED(), 3, 1);
-	//paramsLay->addWidget(autoBox = new QCheckBox("Auto scale axis"), 4, 0, 1, -1);
 
 	minLed->setPlaceholderText("Auto");
 	maxLed->setPlaceholderText("Auto");
 	stepLed->setPlaceholderText("Auto");
 
 	lay->addLayout(paramsLay);
-	/*
-	auto buttonLay = new QHBoxLayout;
-	QPushButton *okBut;
-	QPushButton *cancelBut;
-	buttonLay->addStretch(1);
-	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Apply"), "secondary-button"));
-	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
-	buttonLay->addStretch(1);
-
-	lay->addStretch(1);
-	lay->addLayout(buttonLay);
-	//*/
 	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
 	
-	/*
-	dialogConn << CONNECT(autoBox, &QCheckBox::stateChanged, [=](int newStateId) {
-		Qt::CheckState state = (Qt::CheckState)newStateId;
-
-		if (Qt::Checked == state) {
-			minLed->setDisabled(true);
-			maxLed->setDisabled(true);
-			stepLed->setDisabled(true);
-		}
-		else {
-			minLed->setDisabled(false);
-			maxLed->setDisabled(false);
-			stepLed->setDisabled(false);
-		}
-	});
-
-	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
-		dialogCanceled = false;
-	});
-	//*/
-
-	//CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
-	//CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
-
 	if (!axisParams.min.autoScale) {
 		minLed->setText(QString::number(axisParams.min.val).replace(QChar('.'), QLocale().decimalPoint()));
 	}
@@ -1483,12 +1459,23 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	if (!axisParams.step.autoScale) {
 		stepLed->setText(QString::number(axisParams.step.val).replace(QChar('.'), QLocale().decimalPoint()));
 	}
-	
-	/*
-	if (axisParams.autoScale) {
-		autoBox->setChecked(true);
-	}
-	//*/
+
+	dialog->installEventFilter(new PopupDialogEventFilter(dialog, [=](QEvent *e, bool &ret) {
+		QKeyEvent *ke = (QKeyEvent*)e;
+
+		ret = false;
+		int key = ke->key();
+
+		if (ke->matches(QKeySequence::Cancel)) {
+			dialog->reject();
+			dialogCanceled = true;
+			ret = true;
+		}
+		if( (Qt::Key_Enter == key) || (Qt::Key_Return == key) ) {
+			dialog->accept();
+			ret = true;
+		}
+	}));
 
 	dialog->exec();
 
@@ -1503,9 +1490,11 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 			axisParams.var.autoScale = false;	\
 		}
 
-	GET_VAL(minLed, min);
-	GET_VAL(maxLed, max);
-	GET_VAL(stepLed, step);
+	if (!dialogCanceled) {
+		GET_VAL(minLed, min);
+		GET_VAL(maxLed, max);
+		GET_VAL(stepLed, step);
+	}
 
 	foreach(auto conn, dialogConn) {
 		QObject::disconnect(conn);
@@ -1513,7 +1502,7 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 
 	dialog->deleteLater();
 
-	return true;
+	return !dialogCanceled;
 }
 bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHandler &handler) {
 	bool ret = false;
