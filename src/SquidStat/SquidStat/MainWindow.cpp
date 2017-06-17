@@ -300,7 +300,6 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			emit DataArrived(handler->experiment.id, channel, expData);
 		});
 	}
-	
 
 	hardware.currentInstrument.handler->oper->RequestCalibrationData();
 }

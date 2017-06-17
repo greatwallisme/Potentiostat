@@ -12,7 +12,7 @@ class QGridLayout;
 class QStackedLayout;
 class QTabWidget;
 
-class QwtPlot;
+#include <qwt_plot.h>
 class QwtPlotCurve;
 
 #include <QObject>
@@ -71,15 +71,21 @@ private:
 	};
 
 	struct AxisParameters {
-		bool autoScale;
-		double min;
-		double max;
-		double step;
-		QString title;
+		struct Val {
+			Val() : autoScale(true) {}
+			bool autoScale;
+			double val;
+		};
+		Val min;
+		Val max;
+		Val step;
 	};
+
+	struct PlotHandler;
 
 	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
 	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
+	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
@@ -124,18 +130,15 @@ private:
 		DataMap container;
 		QFile *saveFile;
 		CalibrationData cal;
-		DataVector *xData;
-		DataVector *y1Data;
-		DataVector *y2Data;
+		QMap<QwtPlot::Axis, DataVector*> data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
 		QString name;
 	};
 	struct PlotHandler {
 		QwtPlot* plot;
-		QComboBox *xVarCombo;
-		QComboBox *y1VarCombo;
-		QComboBox *y2VarCombo;
+		QMap<QwtPlot::Axis, QComboBox*> varCombo;
+		QMap<QwtPlot::Axis, AxisParameters> axisParams;
 		QList<QMetaObject::Connection> plotTabConnections;
 		const AbstractExperiment *exp;
 		QList<DataMapVisualization> data;

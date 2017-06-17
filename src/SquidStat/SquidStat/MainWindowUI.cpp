@@ -953,15 +953,20 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.exp->SaveData(*majorData.saveFile, majorData.container);
 		}
 
-		if (majorData.xData && majorData.y1Data) {
-			majorData.curve1->setSamples(*majorData.xData, *majorData.y1Data);
-			handler.plot->replot();
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
+			majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
+			
+			ApplyNewAxisParams(QwtPlot::yLeft, handler);
 		}
 
-		if (majorData.xData && majorData.y2Data) {
-			majorData.curve2->setSamples(*majorData.xData, *majorData.y2Data);
-			handler.plot->replot();
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
+			majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
+			
+			ApplyNewAxisParams(QwtPlot::yRight, handler);
 		}
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+		handler.plot->replot();
 	});
 
 	return w;
@@ -1469,9 +1474,16 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	//CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
 	//CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
 
-	minLed->setText(QString::number(axisParams.min));
-	maxLed->setText(QString::number(axisParams.max));
-	stepLed->setText(QString::number(axisParams.step));
+	if (!axisParams.min.autoScale) {
+		minLed->setText(QString::number(axisParams.min.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+	if (!axisParams.max.autoScale) {
+		maxLed->setText(QString::number(axisParams.max.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+	if (!axisParams.step.autoScale) {
+		stepLed->setText(QString::number(axisParams.step.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+	
 	/*
 	if (axisParams.autoScale) {
 		autoBox->setChecked(true);
@@ -1480,10 +1492,20 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 
 	dialog->exec();
 
-	axisParams.min = minLed->text().toDouble();
-	axisParams.max = maxLed->text().toDouble();
-	axisParams.step = stepLed->text().toDouble();
-	//axisParams.autoScale = autoBox->isChecked();
+	QString resStr;
+	#define GET_VAL(led, var)					\
+		resStr = led->text();					\
+		if (resStr.isEmpty()) {					\
+			axisParams.var.autoScale = true;	\
+		}										\
+		else {									\
+			axisParams.var.val = resStr.replace(QLocale().decimalPoint(), QChar('.')).toDouble(); \
+			axisParams.var.autoScale = false;	\
+		}
+
+	GET_VAL(minLed, min);
+	GET_VAL(maxLed, max);
+	GET_VAL(stepLed, step);
 
 	foreach(auto conn, dialogConn) {
 		QObject::disconnect(conn);
@@ -1492,6 +1514,181 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	dialog->deleteLater();
 
 	return true;
+}
+bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHandler &handler) {
+	bool ret = false;
+	if ((axis == QwtPlot::yRight) && !handler.plot->axisEnabled(axis)) {
+		return ret;
+	}
+
+	AxisParameters &axisParams(handler.axisParams[axis]);
+	QwtPlot *plot = handler.plot;
+
+	if (axisParams.min.autoScale && axisParams.max.autoScale && axisParams.step.autoScale) {
+		if (!plot->axisAutoScale(axis)) {
+			plot->setAxisAutoScale(axis);
+			ret = true;
+		}
+	}
+	else {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min;
+		double max;
+
+		if (!axisParams.min.autoScale) {
+			min = axisParams.min.val;
+		}
+		if (!axisParams.max.autoScale) {
+			max = axisParams.max.val;
+		}
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMin;
+			double curMax;
+
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					if (handler.plot->axisEnabled(QwtPlot::yRight)) {
+						curMin = qMin(it->curve1->minXValue(), it->curve2->minXValue());
+						curMax = qMax(it->curve1->maxXValue(), it->curve2->maxXValue());
+					}
+					else {
+						curMin = it->curve1->minXValue();
+						curMax = it->curve1->maxXValue();
+					}
+					break;
+				case QwtPlot::yLeft:
+					curMin = it->curve1->minYValue();
+					curMax = it->curve1->maxYValue();
+					break;
+				case QwtPlot::yRight:
+					curMin = it->curve2->minYValue();
+					curMax = it->curve2->maxYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				if (axisParams.min.autoScale) {
+					min = curMin;
+				}
+				if (axisParams.max.autoScale) {
+					max = curMax;
+				}
+				continue;
+			}
+			if (axisParams.min.autoScale) {
+				if (curMin < min) {
+					min = curMin;
+				}
+			}
+
+			if (axisParams.max.autoScale) {
+				if (curMax > max) {
+					max = curMax;
+				}
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	/*
+	else if (!axisParams.min.autoScale && !axisParams.max.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min = axisParams.min.val;
+		double max = axisParams.max.val;
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	else if (axisParams.min.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min;
+		double max = axisParams.max.val;
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMin;
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					curMin = qMin(it->curve1->minXValue(), it->curve2->minXValue());
+					break;
+				case QwtPlot::yLeft:
+					curMin = it->curve1->minYValue();
+					break;
+				case QwtPlot::yRight:
+					curMin = it->curve2->minYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				min = curMin;
+				continue;
+			}
+
+			if (curMin < min) {
+				min = curMin;
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	else if (axisParams.max.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double max;
+		double min = axisParams.min.val;
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMax;
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					curMax = qMax(it->curve1->maxXValue(), it->curve2->maxXValue());
+					break;
+				case QwtPlot::yLeft:
+					curMax = it->curve1->maxYValue();
+					break;
+				case QwtPlot::yRight:
+					curMax = it->curve2->maxYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				max = curMax;
+				continue;
+			}
+
+			if (curMax > max) {
+				max = curMax;
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	//*/
+
+	return ret;
 }
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
@@ -1559,9 +1756,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
-	plotHandler.xVarCombo = xCombo;
-	plotHandler.y1VarCombo = y1Combo;
-	plotHandler.y2VarCombo = y2Combo;
+	plotHandler.varCombo[QwtPlot::xBottom] = xCombo;
+	plotHandler.varCombo[QwtPlot::yLeft] = y1Combo;
+	plotHandler.varCombo[QwtPlot::yRight] = y2Combo;
 	plotHandler.exp = 0;
 	plotHandler.data << DataMapVisualization();
 	plotHandler.data.first().saveFile = 0;
@@ -1569,59 +1766,32 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.data.first().curve2 = curve2;
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
-		AxisParameters axisParams;
-
-		axisParams.autoScale = plot->axisAutoScale(QwtPlot::yLeft);
-		axisParams.min = plot->axisInterval(QwtPlot::yLeft).minValue();
-		axisParams.max = plot->axisInterval(QwtPlot::yLeft).maxValue();
-		axisParams.step = plot->axisStepSize(QwtPlot::yLeft);
-		axisParams.title = plot->axisTitle(QwtPlot::yLeft).text();
-
-
-		if (GetNewAxisParams(mw, axisParams)) {
-			plot->setAxisAutoScale(QwtPlot::yLeft, axisParams.autoScale);
-			if (!axisParams.autoScale) {
-				plot->setAxisScale(QwtPlot::yLeft, axisParams.min, axisParams.max, axisParams.step);
+		PlotHandler &handler(dataTabs.plots[id]);
+		
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yLeft])) {
+			if (ApplyNewAxisParams(QwtPlot::yLeft, handler)) {
+				plot->replot();
 			}
-			plot->replot();
 		}
 	}));
 
 	plot->axisWidget(QwtPlot::yRight)->installEventFilter(new PlotEventFilter(w, [=]() {
-		AxisParameters axisParams;
+		PlotHandler &handler(dataTabs.plots[id]);
 
-		axisParams.autoScale = plot->axisAutoScale(QwtPlot::yRight);
-		axisParams.min = plot->axisInterval(QwtPlot::yRight).minValue();
-		axisParams.max = plot->axisInterval(QwtPlot::yRight).maxValue();
-		axisParams.step = plot->axisStepSize(QwtPlot::yRight);
-		axisParams.title = plot->axisTitle(QwtPlot::yRight).text();
-
-
-		if (GetNewAxisParams(mw, axisParams)) {
-			plot->setAxisAutoScale(QwtPlot::yRight, axisParams.autoScale);
-			if (!axisParams.autoScale) {
-				plot->setAxisScale(QwtPlot::yRight, axisParams.min, axisParams.max, axisParams.step);
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yRight])) {
+			if (ApplyNewAxisParams(QwtPlot::yRight, handler)) {
+				plot->replot();
 			}
-			plot->replot();
 		}
 	}));
 
 	plot->axisWidget(QwtPlot::xBottom)->installEventFilter(new PlotEventFilter(w, [=]() {
-		AxisParameters axisParams;
+		PlotHandler &handler(dataTabs.plots[id]);
 
-		axisParams.autoScale = plot->axisAutoScale(QwtPlot::xBottom);
-		axisParams.min = plot->axisInterval(QwtPlot::xBottom).minValue();
-		axisParams.max = plot->axisInterval(QwtPlot::xBottom).maxValue();
-		axisParams.step = plot->axisStepSize(QwtPlot::xBottom);
-		axisParams.title = plot->axisTitle(QwtPlot::xBottom).text();
-
-
-		if (GetNewAxisParams(mw, axisParams)) {
-			plot->setAxisAutoScale(QwtPlot::xBottom, axisParams.autoScale);
-			if (!axisParams.autoScale) {
-				plot->setAxisScale(QwtPlot::xBottom, axisParams.min, axisParams.max, axisParams.step);
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::xBottom])) {
+			if(ApplyNewAxisParams(QwtPlot::xBottom, handler)) {
+				plot->replot();
 			}
-			plot->replot();
 		}
 	}));
 
@@ -1668,19 +1838,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			handler.data << data;
 
 			DataMapVisualization &currentData(handler.data.last());
-			currentData.xData = &currentData.container[handler.xVarCombo->currentText()];
-			currentData.y1Data = &currentData.container[handler.y1VarCombo->currentText()];
-			currentData.y2Data = &currentData.container[handler.y2VarCombo->currentText()];
+			currentData.data[QwtPlot::xBottom] = &currentData.container[handler.varCombo[QwtPlot::xBottom]->currentText()];
+			currentData.data[QwtPlot::yLeft] = &currentData.container[handler.varCombo[QwtPlot::yLeft]->currentText()];
+			currentData.data[QwtPlot::yRight] = &currentData.container[handler.varCombo[QwtPlot::yRight]->currentText()];
 
-			currentData.curve1->setSamples(*currentData.xData, *currentData.y1Data);
-			currentData.curve2->setSamples(*currentData.xData, *currentData.y2Data);
+			currentData.curve1->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]);
+			currentData.curve2->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]);
 
-			currentData.curve1->setTitle(handler.y1VarCombo->currentText());
-			currentData.curve2->setTitle(handler.y2VarCombo->currentText());
+			currentData.curve1->setTitle(handler.varCombo[QwtPlot::yLeft]->currentText());
+			currentData.curve2->setTitle(handler.varCombo[QwtPlot::yRight]->currentText());
 
 			currentData.curve1->attach(handler.plot);
 
-			if (handler.y2VarCombo->currentText() != NONE_Y_AXIS_VARIABLE) {
+			if (handler.varCombo[QwtPlot::yRight]->currentText() != NONE_Y_AXIS_VARIABLE) {
 				currentData.curve2->attach(handler.plot);
 			}
 
@@ -1740,9 +1910,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
 
 		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			it->xData = &it->container[curText];
-			it->curve1->setSamples(*it->xData, *it->y1Data);
-			it->curve2->setSamples(*it->xData, *it->y2Data);
+			it->data[QwtPlot::xBottom] = &it->container[curText];
+			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
+			it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
 		}
 		handler.plot->replot();
 	});
@@ -1756,8 +1926,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
 
 		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			it->y1Data = &it->container[curText];
-			it->curve1->setSamples(*it->xData, *it->y1Data);
+			it->data[QwtPlot::yLeft] = &it->container[curText];
+			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
 			it->curve1->setTitle(curText);
 		}
 		handler.plot->replot();
@@ -1782,9 +1952,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
 				it->curve2->attach(handler.plot);
 
-				it->y2Data = &it->container[curText];
+				it->data[QwtPlot::yRight] = &it->container[curText];
 
-				it->curve2->setSamples(*it->xData, *it->y2Data);
+				it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
 				it->curve2->setTitle(curText);
 			}
 		}
@@ -1798,11 +1968,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	if (loadedContainerPtr) {
 		majorData.container = *loadedContainerPtr;
 	}
-	majorData.xData = &majorData.container[xCombo->currentText()];
-	majorData.y1Data = &majorData.container[y1Combo->currentText()];
-	majorData.y2Data = &majorData.container[NONE_Y_AXIS_VARIABLE];
-	majorData.curve1->setSamples(*majorData.xData, *majorData.y1Data);
-	majorData.curve2->setSamples(*majorData.xData, *majorData.y2Data);
+	majorData.data[QwtPlot::xBottom] = &majorData.container[xCombo->currentText()];
+	majorData.data[QwtPlot::yLeft] = &majorData.container[y1Combo->currentText()];
+	majorData.data[QwtPlot::yRight] = &majorData.container[NONE_Y_AXIS_VARIABLE];
+	majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
+	majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
 	majorData.curve1->setTitle(y1Combo->currentText());
 	majorData.curve2->setTitle(NONE_Y_AXIS_VARIABLE);
 	majorData.name = expName;
