@@ -10,3 +10,7 @@
 	path = 3rdparty/qtcsv
 	url = https://github.com/iamantony/qtcsv.git
 	branch = master
+[submodule "_arduino/retrofit_firmware"]
+	path = _arduino/retrofit_firmware
+	url = https://github.com/mdion1/retrofit_firmware.git
+	branch = master
