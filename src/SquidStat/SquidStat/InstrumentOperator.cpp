@@ -40,7 +40,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_NODE_COMPLETE:
-			//LOG() << "Node complete";
+			LOG() << "Node complete";
 			break;
 
 		default:

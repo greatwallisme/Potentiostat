@@ -175,13 +175,15 @@ private:
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
-	ExperimentNode_t exp;
+	ExperimentNode_t exp;				\
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
 
 #define NODES_DATA_END()	return ret;
 
 
 #define PUSH_NEW_NODE_DATA()		\
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t)); \
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
 
 
 #define GET_TEXT_INPUT_VALUE(var, obj_name)					\
