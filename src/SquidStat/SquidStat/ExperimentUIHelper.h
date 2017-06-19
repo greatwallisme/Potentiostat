@@ -193,6 +193,13 @@ private:
 	}						\
 	var = var ## Wdg->text().toLongLong();
 
+#define GET_TEXT_INPUT_VALUE_DOUBLE(var, obj_name)					\
+	auto var ## Wdg = wdg->findChild<QLineEdit*>(obj_name);	\
+	if(0 == var ## Wdg) {	\
+		return ret;			\
+	}						\
+	var = var ## Wdg->text().toDouble();
+
 #define GET_SELECTED_RADIO(var, obj_name)						\
 	auto var ## Grp = wdg->findChild<QButtonGroup*>(obj_name);	\
 	if(0 == var ## Grp) {	\
