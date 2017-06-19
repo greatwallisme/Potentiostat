@@ -48,7 +48,7 @@ signals:
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 
-	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*, const CalibrationData &);
+	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*, const CalibrationData &, const HardwareVersion&);
 
 private:
 	void CleanupCurrentHardware();

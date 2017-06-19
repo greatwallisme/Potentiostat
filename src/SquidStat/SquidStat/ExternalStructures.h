@@ -25,6 +25,13 @@ typedef cal_t CalibrationData;
 
 #pragma pack(push, 1)
 
+struct HardwareVersion {
+	union {
+		HardwareModel_t hwModel;
+		uint8_t rawData[HW_DATA_LENGTH];
+	};
+};
+
 //*
 typedef ExperimentalDataPoint_t ExperimentalData;
 /*/

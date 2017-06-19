@@ -15,6 +15,7 @@ public:
 
 public slots:
 	void RequestCalibrationData();
+	void RequestHardwareVersion();
 	//void StartExperiment(QVector<ExperimentNode_t>, quint8 channel = 0);
 	void StartExperiment(const QByteArray &, quint8 channel = 0);
 	void StopExperiment(quint8 channel = 0);
@@ -24,6 +25,7 @@ private slots:
 
 signals:
 	void CalibrationDataReceived(const CalibrationData&);
+	void HardwareVersionReceived(const HardwareVersion&);
 	void ExperimentalDataReceived(quint8 channel, const ExperimentalData&);
 	void ExperimentCompleted();
 
