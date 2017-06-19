@@ -917,7 +917,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData, const HardwareVersion &hwVer) {
 		QString expName = exp->GetShortName();
 
 		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp->GetXAxisParameters(), exp->GetYAxisParameters());
@@ -925,6 +925,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		dataTabs.plots[id].exp = exp;
 		dataTabs.plots[id].data.first().saveFile = saveFile;
 		dataTabs.plots[id].data.first().cal = calData;
+		dataTabs.plots[id].data.first().hwVer = hwVer;
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
@@ -949,7 +950,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id]);
 		DataMapVisualization &majorData(handler.data.first());
 
-		handler.exp->PushNewData(expData, majorData.container, majorData.cal);
+		handler.exp->PushNewData(expData, majorData.container, majorData.cal, majorData.hwVer);
 		if (majorData.saveFile) {
 			handler.exp->SaveData(*majorData.saveFile, majorData.container);
 		}

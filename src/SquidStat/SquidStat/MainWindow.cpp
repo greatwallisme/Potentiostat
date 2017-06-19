@@ -193,6 +193,8 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 	return ret;
 }
 void MainWindow::StartExperiment(QWidget *paramsWdg) {
+	static HardwareVersion lastHwVersion;
+
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
@@ -238,7 +240,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived, this, [=](const CalibrationData &calData) {
 			LOG() << "Calibration received";
 			
-			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, calData);
+			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, calData, lastHwVersion);
 			if (nodesData.isEmpty()) {
 				LOG() << "Error while getting user input";
 				return;
@@ -276,12 +278,19 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 
 			prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
 
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, calData);
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, calData, lastHwVersion);
 
 			LOG() << "Start experiment";
 			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
 		});
+		
+		hardware.currentInstrument.handler->connections <<
+		QObject::connect(instrumentOperator, &InstrumentOperator::HardwareVersionReceived, this, [=](const HardwareVersion &hwVersion) {
+			LOG() << "Hardware version received";
 
+			lastHwVersion = hwVersion;
+			hardware.currentInstrument.handler->oper->RequestCalibrationData();
+		});
 
 		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived, this, [=](quint8 channel, const ExperimentalData &expData) {
@@ -301,7 +310,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		});
 	}
 
-	hardware.currentInstrument.handler->oper->RequestCalibrationData();
+	hardware.currentInstrument.handler->oper->RequestHardwareVersion();
 }
 void MainWindow::StopExperiment(const QUuid &id) {
 	auto it = hardware.handlers.begin();

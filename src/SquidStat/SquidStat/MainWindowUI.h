@@ -130,6 +130,7 @@ private:
 		DataMap container;
 		QFile *saveFile;
 		CalibrationData cal;
+		HardwareVersion hwVer;
 		QMap<QwtPlot::Axis, DataVector*> data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;

@@ -152,9 +152,9 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 
 	USER_INPUT_END();
 }
-QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData) const {
+QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	//*
+	/*
 	QString selectedRadio1;
 	QString selectedRadio2;
 	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
@@ -165,6 +165,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
 	//*/
 
+	/*
 	qint32 startVoltage;
 	qint32 endVoltage;
 	qint32 voltageStep;
@@ -173,6 +174,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_TEXT_INPUT_VALUE(endVoltage, END_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(voltageStep, VOLTAGE_STEP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(repeats, REPEATS_OBJ_NAME);
+	//*/
 
 	/*
 	exp.isHead = true;
@@ -224,6 +226,8 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.branchHeadIndex = 0;
 	PUSH_NEW_NODE_DATA();
 	//*/
+
+	/*
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
@@ -301,6 +305,56 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.DCSweep_pot.VStep = 1;
 	exp.MaxPlays = 3;
 	PUSH_NEW_NODE_DATA();
+	//*/
+
+	exp.isHead = true;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 100000;
+	exp.tMax = 10000000000;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 15625;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.samplingParams.DACMultEven = 20;
+	exp.samplingParams.DACMultOdd = 20;
+	exp.DCSweep_pot.VStartUserInput = 0;
+	exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VEndUserInput = 1024;
+	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
+	exp.MaxPlays = 3;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = true;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 100000;
+	exp.tMax = 100000000;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 15625;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.samplingParams.DACMultEven = 20;
+	exp.samplingParams.DACMultOdd = 20;
+	exp.DCSweep_pot.VStartUserInput = 0;
+	exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VEndUserInput = 1024;
+	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
+	exp.MaxPlays = 3;
+	exp.branchHeadIndex = 0;
+	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
@@ -322,7 +376,7 @@ QStringList ExampleExperiment::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
+void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 

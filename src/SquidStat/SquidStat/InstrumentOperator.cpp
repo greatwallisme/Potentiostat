@@ -19,8 +19,9 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 	switch (resp) {
 		case CAL_DATA:
 			if (data.size() == sizeof(CalibrationData)) {
-				CalibrationData *calData = (CalibrationData*)data.data();
-				emit CalibrationDataReceived(*calData);
+				CalibrationData calData;
+				memcpy(&calData, data.data(), sizeof(CalibrationData));
+				emit CalibrationDataReceived(calData);
 			}
 			break;
 
@@ -35,20 +36,25 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			//*/
 			break;
 
-		case EXPERIMENT_NODE_COMPLETE:
-			LOG() << "Experiment node complete";
+		case HW_DATA:
+			if (data.size() == sizeof(HardwareVersion)) {
+				HardwareVersion hwVersion;
+				memcpy(&hwVersion, data.data(), sizeof(HardwareVersion));
+				emit HardwareVersionReceived(hwVersion);
+			}
+			break;
+
+		case DEBUG_LOG_MSG: {
+				QByteArray strData = data;
+				strData.push_back('\0');
+				LOG() << QString(strData.data());
+			}
 			break;
 
 		case EXPERIMENT_COMPLETE:
 			emit ExperimentCompleted();
 			break;
-		case DEBUG_LOG_MSG:
-			/*data.size();
-			data.data();
-			QChar * _qchar = (QChar*)data.data();
-			QString str;
-			str.append(_qchar, data.size());
-			LOG() << str;*/
+
 		case EXPERIMENT_NODE_COMPLETE:
 			LOG() << "Node complete";
 			break;
@@ -60,6 +66,9 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 }
 void InstrumentOperator::RequestCalibrationData() {
 	_communicator->SendCommand((CommandID)SEND_CAL_DATA);
+}
+void InstrumentOperator::RequestHardwareVersion() {
+	_communicator->SendCommand((CommandID)SEND_HW_DATA);
 }
 void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 channel) {
 	_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
