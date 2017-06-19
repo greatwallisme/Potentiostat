@@ -20,6 +20,12 @@
 #define SCAN_RATE_DEFAULT		1
 #define CYCLES_DEFAULT			3
 
+#define PLOT_VAR_TIMESTAMP				"Timestamp"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
+#define PLOT_VAR_EWE					"Ewe"
+#define PLOT_VAR_CURRENT				"Current"
+#define PLOT_VAR_ECE					"Ece"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
 QString CyclicVoltammetry::GetShortName() const {
 	return "Basic Cyclic Voltammetry";
@@ -30,8 +36,10 @@ QString CyclicVoltammetry::GetFullName() const {
 QString CyclicVoltammetry::GetDescription() const {
 	return "This experiment sweeps the potential of the working electrode back and forth between <b>upper potential</b> and <b>lower potential</b> at a constant <b>scan rate dE/dT</b> for a specified number of <b>cycles</b>.";
 }
-QString CyclicVoltammetry::GetCategory() const {
-	return "Basic voltammetry";
+QStringList CyclicVoltammetry::GetCategory() const {
+	return QStringList() <<
+		"Basic voltammetry";
+
 }
 QPixmap CyclicVoltammetry::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
@@ -137,7 +145,7 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
-	exp.tMax = 1e8;
+	exp.tMax = 2e8;
 	exp.samplingParams.ADCTimerDiv = 2;
 	exp.samplingParams.ADCTimerPeriod = 200000;
 	exp.samplingParams.ADCBufferSizeEven = 20;
@@ -157,27 +165,34 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 100000;
+	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	getSlewParameters(dEdt/1000, &exp);
 	exp.DCSweep_pot.VStartUserInput = (int)(startVoltage * 3276.8);
 	exp.DCSweep_pot.VStartVsOCP = false;
 	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
 	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 100000;
+	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	getSlewParameters(dEdt / 1000, &exp);
 	exp.DCSweep_pot.VStartUserInput = (int)(upperVoltage * 3276.8);
 	exp.DCSweep_pot.VStartVsOCP = false;
 	exp.DCSweep_pot.VEndUserInput = (int)(lowerVoltage * 3276.8);
 	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -185,13 +200,17 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.isTail = true;
 	exp.branchHeadIndex = 2;
 	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 100000;
+	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	getSlewParameters(dEdt / 1000, &exp);
 	exp.DCSweep_pot.VStartUserInput = (int)(lowerVoltage * 3276.8);
 	exp.DCSweep_pot.VStartVsOCP = false;
 	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
 	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
 	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
 
@@ -201,6 +220,95 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 	NODES_DATA_END();
 }
 
+QStringList CyclicVoltammetry::GetXAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_TIMESTAMP <<
+		PLOT_VAR_TIMESTAMP_NORMALIZED <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT;
+}
+QStringList CyclicVoltammetry::GetYAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT <<
+		PLOT_VAR_ECE <<
+		PLOT_VAR_CURRENT_INTEGRAL;
+}
+void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
+	static QMap<DataMap*, qreal> timestampOffset;
+	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+
+	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.ADCrawData.current / timestamp);
+	}
+	else {
+		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].last();
+		newVal += (container[PLOT_VAR_CURRENT].last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(newVal);
+	}
+
+	container[PLOT_VAR_TIMESTAMP].append(timestamp);
+	container[PLOT_VAR_EWE].append(expData.ADCrawData.ewe);
+	container[PLOT_VAR_ECE].append(expData.ADCrawData.ece);
+	container[PLOT_VAR_CURRENT].append(expData.ADCrawData.current);
+
+	if (!timestampOffset.contains(&container)) {
+		timestampOffset[&container] = timestamp;
+	}
+	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
+}
+void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
+	QString toWrite;
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP_NORMALIZED).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_EWE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_ECE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\"\n").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+
+
+	QString str;
+	toWrite.clear();
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_EWE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_EWE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_ECE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_ECE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "Y" : "";
+	toWrite += QString("\"%1\"\n").arg(str);
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+}
+
+void CyclicVoltammetry::SaveData(QFile &saveFile, const DataMap &container) const {
+	static QChar decimalPoint = QLocale().decimalPoint();
+
+	QString toWrite;
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+}
 void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode) const
 {
 	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
@@ -217,7 +325,6 @@ void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 		default:
 			break;
 	}
-	pNode->samplingParams.ADCTimerDiv = 1;
 	pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
 
 	/* 1) Minimize dt, maximize DACMult*/
@@ -249,7 +356,7 @@ void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 	if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
 		pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
 
-	pNode->samplingParams.ADCTimerDiv = 1;
+	pNode->samplingParams.ADCTimerDiv = 0;
 	int timerDiv = 1;
 	pNode->samplingParams.ADCTimerPeriod = dt;
 	while (pNode->samplingParams.ADCTimerPeriod > 2147483648)
