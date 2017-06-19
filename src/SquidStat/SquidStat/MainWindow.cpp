@@ -14,10 +14,12 @@
 #include <QList>
 
 #include <QPluginLoader>
+#include <QFileDialog>
+#include <QSettings>
 
 #include <stdlib.h>
 
-#define PREBUILT_EXP_DIR	"./prebuilt/"
+#define PREBUILT_EXP_DIR			"./prebuilt/"
 
 bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.portName == a.portName) && (b.serial == a.serial));
@@ -107,8 +109,6 @@ void MainWindow::LoadPrebuildExperiments() {
 		prebuiltExperiments.expLoaders << loader;
 	}
 
-	//prebuiltExperiments.expList << new ExampleExperiment;
-
 	emit PrebuiltExperimentsFound(prebuiltExperiments.expList);
 
 	/*
@@ -140,25 +140,8 @@ void MainWindow::LoadPrebuildExperiments() {
 	emit PrebuiltExperimentsFound(prebuiltExperiments.ecList);
 	//*/
 }
-//void MainWindow::PrebuiltExperimentSelected(int index) {
 void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 	prebuiltExperiments.selectedExp = exp;
-
-	/*
-	if ( (index < 0) || (index >= prebuiltExperiments.ecList.size()) ) {
-		return;
-	}
-
-	prebuiltExperiments.selectedEcIndex = index;
-	emit PrebuiltExperimentSetDescription(prebuiltExperiments.ecList.at(index));
-	try {
-		auto ecPtrList = ExperimentReader::GetNodeListForUserInput(prebuiltExperiments.ecList[index]);
-		emit PrebuiltExperimentSetParameters(ecPtrList);
-	}
-	catch (const QString &err) {
-		LOG() << err;
-	}
-	//*/
 }
 void MainWindow::SearchHwVendor() {
 	LOG() << "Search instruments by the manufacturer name";
@@ -197,57 +180,6 @@ void MainWindow::SelectHardware(const InstrumentInfo &info, quint8 channel) {
 	hardware.currentInstrument.channel = channel;
 
 	LOG() << "Start working with" << info.portName;
-	/*
-	static QMetaObject::Connection calibrationDataReceivedConnection;
-	static QMetaObject::Connection experimentalDataReceivedConnection;
-	static QMetaObject::Connection experimentComletedConnection;
-
-	currentInstrument.instrumentInfo = info;
-	currentInstrument.channel = channel;
-
-	if (instrumentOperator) {
-		disconnect(calibrationDataReceivedConnection);
-		disconnect(experimentalDataReceivedConnection);
-		disconnect(experimentComletedConnection);
-		instrumentOperator->deleteLater();
-	}
-
-	instrumentOperator = new InstrumentOperator(info);
-	experimentComletedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted,
-		[=]() {
-			LOG() << "Experiment completed";
-		}
-	);
-
-	calibrationDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived,
-		[=](const CalibrationData &calData) {
-			LOG() << "Calibration received";
-		}
-	);
-
-
-	experimentalDataReceivedConnection =
-		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
-			this, &MainWindow::DataArrived);
-	//*/
-	/*
-	experimentalDataReceivedConnection = QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived,
-		[=](quint8 channel, const ExperimentalData &expData) {
-			//LOG() << "Experimental data received";
-			emit DataArrived(channel, expData);
-		}
-	);
-	//*/
-}
-void MainWindow::RequestCalibration() {
-	/*
-	if (!instrumentOperator) {
-		return;
-	}
-
-	LOG() << "Request calibration";
-	instrumentOperator->RequestCalibrationData();
-	//*/
 }
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(InstrumentOperator *oper) {
 	QList<MainWindow::InstrumentHandler>::iterator ret = hardware.handlers.begin();
@@ -294,6 +226,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
+			emit ExperimentCompleted(handler->experiment.id);
+
 			handler->experiment.busy = false;
 			handler->experiment.id = QUuid();
 
@@ -310,11 +244,39 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
+			MainWindowUI::ExperimentNotes notes;
+
+			if (!MainWindowUI::GetExperimentNotes(this, notes)) {
+				return;
+			}
+
+			QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+
+			QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+			QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QTime::currentTime().toString("hh:mm:ss") + ")";
+			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
+			auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+
+			if (dialogRet.isEmpty()) {
+				return;
+			}
+			dirName = QFileInfo(dialogRet).absolutePath();
+			settings.setValue(DATA_SAVE_PATH, dirName);
+
+			auto saveFile = new QFile(this);
+			saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
+			if (!saveFile->open(QIODevice::WriteOnly)) {
+				saveFile->deleteLater();
+				return;
+			}
+
 			hardware.currentInstrument.handler->experiment.busy = true;
 			hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
 			hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp->GetShortName());
+			prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
+
+			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, calData);
 
 			LOG() << "Start experiment";
 			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
@@ -338,7 +300,6 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			emit DataArrived(handler->experiment.id, channel, expData);
 		});
 	}
-	
 
 	hardware.currentInstrument.handler->oper->RequestCalibrationData();
 }
@@ -359,15 +320,8 @@ void MainWindow::StopExperiment(const QUuid &id) {
 	}
 
 	it->oper->StopExperiment(it->experiment.channel);
-	/*
-	if (!instrumentOperator) {
-		return;
-	}
-
-	LOG() << "Stop experiment";
-	instrumentOperator->StopExperiment(currentInstrument.channel);
-	//*/
 }
+/*
 void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName) {
 	QFile f(fileName);
 
@@ -383,6 +337,7 @@ void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yDa
 
 	f.close();
 }
+//*/
 
 #include <QApplication>
 #include <QFile>

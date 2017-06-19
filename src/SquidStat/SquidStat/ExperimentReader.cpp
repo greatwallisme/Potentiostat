@@ -55,9 +55,11 @@ void ReadNodeParameters(const QJsonObject &jo, ExperimentNode_t &node) {
 	FIND_VALUE("nodeType", isString);
 	node.nodeType = GetNodeType(joIt->toString());
 
-	FILL_VALUE_OPTIONAL("VStart", isDouble, node.DCSweep_pot.VStart, toInt);
-	FILL_VALUE_OPTIONAL("VEnd", isDouble, node.DCSweep_pot.VEnd, toInt);
-	FILL_VALUE_OPTIONAL("dVdt", isDouble, node.DCSweep_pot.VStep, toInt);
+	/*
+	FILL_VALUE_OPTIONAL("VStart", isDouble, node.DCSweep.VStart, toInt);
+	FILL_VALUE_OPTIONAL("VEnd", isDouble, node.DCSweep.VEnd, toInt);
+	FILL_VALUE_OPTIONAL("dVdt", isDouble, node.DCSweep.dVdt, toDouble);
+	//*/
 }
 
 void ReadNodes(const QJsonObject &jo, NodeContainer &nc) {
@@ -164,6 +166,7 @@ QList<ExperimentNode_t*> ExperimentReader::GetNodeListForUserInput(ExperimentCon
 }
 
 void FillDcNodeSweep(ExperimentNode_t &node) {
+	/*
 	node.isHead = false;
 	node.isTail = false;
 	node.nodeType = DCNODE_SWEEP_POT;
@@ -171,16 +174,17 @@ void FillDcNodeSweep(ExperimentNode_t &node) {
 	node.tMax = 10000000000;
 	node.samplingParams.ADCTimerDiv = 2;
 	node.samplingParams.ADCTimerPeriod = 15625;
-	node.samplingParams.ADCBufferSizeEven = 20;
-	node.samplingParams.ADCBufferSizeOdd = 20;
-	node.samplingParams.DACMultEven = 20;
-	node.samplingParams.DACMultOdd = 20;
+	node.samplingParams.ADCBufferSize = 20;
+	node.samplingParams.DACMultiplier = 20;
+	//*/
 }
 void FillNodeParameters(ExperimentNode_t &node) {
 	switch (node.nodeType) {
-		case DCNODE_SWEEP_POT:
+		/*
+		case DCNODE_SWEEP:
 			FillDcNodeSweep(node);
 			break;
+		//*/
 
 		default:
 			break;

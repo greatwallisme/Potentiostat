@@ -8,8 +8,31 @@
 #include <QWidget>
 
 #include <QHBoxLayout>
+#include <QSettings>
+
+#include <QFile>
 
 #include <UIHelper.hpp>
+
+#define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"
+
+class Disconnector : public QObject {
+public:
+	Disconnector(QObject *parent) : QObject(parent) {}
+	~Disconnector() {
+		foreach(auto c, connections) {
+			disconnect(c);
+		}
+	}
+
+	Disconnector& operator <<(const QMetaObject::Connection &c) {
+		connections << c;
+		return *this;
+	}
+
+private:
+	QList<QMetaObject::Connection> connections;
+};
 
 #define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
 	{ \
@@ -27,17 +50,46 @@
 
 #define _INSERT_TEXT_INPUT(default_value, obj_name, row, col) \
 	{	\
-		auto led = OBJ_NAME(new QLineEdit(QString("%1").arg(default_value)), obj_name); \
+		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
+		led->setText(settings.value(obj_name, default_value).toString()); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
+		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(obj_name, str); \
+		}); \
 	}
 
-#define _START_RADIO_BUTTON_GROUP(obj_name)		\
+#define _START_RADIO_BUTTON_GROUP(obj_name)	\
 	{										\
 		auto group = new QButtonGroup(ret);	\
 		OBJ_NAME(group, obj_name);
 
-#define _END_RADIO_BUTTON_GROUP() \
+#define _END_RADIO_BUTTON_GROUP()				\
+		auto val = settings.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(group->objectName(), button->text()); \
+		});										\
+	}
+
+#define _INSERT_RADIO_BUTTON(text, row, col)	\
+	{											\
+		auto button = RBT(text);				\
+		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
+		group->addButton(button);				\
+		if(0 == group->checkedButton()) {		\
+			button->setChecked(true);			\
+		}										\
+		lay->addWidget(button, row, col);		\
 	}
 
 #define _START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT(obj_name, row, col)	\
@@ -45,8 +97,20 @@
 	auto butLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));		\
 	lay->addLayout(butLay, row, col);
 
-#define _END_RADIO_BUTTON_GROUP_LAYOUT() \
-		butLay->addStretch(1);			 \
+#define _END_RADIO_BUTTON_GROUP_LAYOUT()		\
+		butLay->addStretch(1);					\
+		auto val = settings.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(group->objectName(), button->text()); \
+		});										\
 	}
 
 #define _INSERT_RADIO_BUTTON_LAYOUT(text)	\
@@ -60,18 +124,6 @@
 		butLay->addWidget(button);				\
 	}
 
-
-#define _INSERT_RADIO_BUTTON(text, row, col)	\
-	{											\
-		auto button = RBT(text);				\
-		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
-		group->addButton(button);				\
-		if(0 == group->checkedButton()) {		\
-			button->setChecked(true);			\
-		}										\
-		lay->addWidget(button, row, col);		\
-	}
-
 #define _START_DROP_DOWN(obj_name, row, col)			\
 	{													\
 		auto combo = OBJ_NAME(CMB(), obj_name);			\
@@ -81,13 +133,25 @@
 		lay->addWidget(combo, row, col);
 
 #define _END_DROP_DOWN()								\
+		auto val = settings.value(combo->objectName(), "").toString();\
+		for(int i = 0; i < combo->count(); ++i) {		\
+			if (val == combo->itemText(i)) {			\
+				combo->setCurrentIndex(i);				\
+				break;									\
+			}											\
+		}												\
+		*diconnector << CONNECT(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
+			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+			localSettings.beginGroup(GetFullName()); \
+			localSettings.setValue(combo->objectName(), str); \
+		});												\
 	}
-
-#define _INSERT_VERTICAL_SPACING(row)					\
-	lay->addWidget(OBJ_PROP(WDG(), "experiment-params-widget", "vertical-spacing"), row, 0, 1, -1);
 
 #define _ADD_DROP_DOWN_ITEM(text)	\
 		combo->addItem(text);
+
+#define _INSERT_VERTICAL_SPACING(row)					\
+	lay->addWidget(OBJ_PROP(WDG(), "experiment-params-widget", "vertical-spacing"), row, 0, 1, -1);
 
 #define _SET_ROW_STRETCH(row, stretch)	\
 	lay->setRowStretch(row, stretch);
@@ -98,7 +162,10 @@
 #define USER_INPUT_START(name)	\
 	auto *ret = WDG();		\
 	OBJ_NAME(ret, name);	\
-	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
+	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret))); \
+	QSettings settings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
+	settings.beginGroup(GetFullName()); \
+	auto diconnector = new Disconnector(ret);
 
 #define USER_INPUT_END()	return ret;
 
@@ -108,13 +175,15 @@
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
-	ExperimentNode_t exp;
+	ExperimentNode_t exp;				\
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
 
 #define NODES_DATA_END()	return ret;
 
 
 #define PUSH_NEW_NODE_DATA()		\
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t)); \
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
 
 
 #define GET_TEXT_INPUT_VALUE(var, obj_name)					\
@@ -141,4 +210,3 @@
 		return ret;						\
 	}									\
 	var = var ## DD->currentText();
-	

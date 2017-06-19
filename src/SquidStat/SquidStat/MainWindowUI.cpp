@@ -4,6 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_legend.h>
+#include <qwt_scale_widget.h>
 
 #include "UIHelper.hpp"
 
@@ -13,15 +14,21 @@
 
 #include <QButtonGroup>
 
+#include <QEvent>
+#include <QKeyEvent>
+
 #include <QIntValidator>
 #include <QListView>
 #include <QTabWidget>
 #include <QSortFilterProxyModel>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QStackedLayout>
 #include <QScrollArea>
+#include <QCheckBox>
 
 #include <QStandardItemModel>
 
@@ -30,77 +37,30 @@
 #include <QTime>
 #include <QFileDialog>
 #include <QStringList>
+#include <QSettings>
+#include <QColorDialog>
+#include <QMessageBox>
 
 #include <QXmlStreamReader>
 
-//#define PREBUILT_EXP_DIR	"./prebuilt/"
-#define EXPERIMENT_VIEW_ALL_CATEGORY  "View All"
+#include <QEventLoop>
 
-/*
-QWidget* MainWindowUI::PrebuiltExpCreateGroupHeader(const ExperimentNode_t *node) {
-	auto ret = OBJ_NAME(LBL("Unknown node type"), "heading-label");
+#include <qtcsv/reader.h>
 
-	switch (node->nodeType) {
-		case DCNODE_SWEEP:
-			ret->setText("DC Sweep");
-			break;
-		default:
-			break;
-	}
+#define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
+#define NONE_Y_AXIS_VARIABLE			"None"
 
-	return ret;
-}
-QWidget* MainWindowUI::PrebuiltExpCreateParamsInput(ExperimentNode_t *node) {
-	auto *ret = WDG();
-	auto *lay = NO_SPACING(NO_MARGIN(new QGridLayout(ret)));
-	SavedInputs savedInputs;
-	QWidget *w;
+#define DEFAULT_MAJOR_CURVE_COLOR		QColor(42, 127, 220)
+#define DEFAULT_MINOR_CURVE_COLOR		QColor(208, 35, 39)
 
-	savedInputs.node = node;
+#define CURVE_PARAMS_PRI_COLOR	"curve-params-pri-color"
+#define CURVE_PARAMS_PRI_WIDTH	"curve-params-pri-width"
+#define CURVE_PARAMS_PRI_STYLE	"curve-params-pri-style"
+#define CURVE_PARAMS_SEC_COLOR	"curve-params-sec-color"
+#define CURVE_PARAMS_SEC_WIDTH	"curve-params-sec-width"
+#define CURVE_PARAMS_SEC_STYLE	"curve-params-sec-style"
 
-#define INSERT_LED(left_comment, right_comment, default_value, row)		\
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(left_comment), "experiment-params-comment"), "comment-placement", "left"),	row, 0);\
-	lay->addWidget(w = new QLineEdit(QString("%1").arg(default_value)),														row, 1);\
-	lay->addWidget(OBJ_PROP(OBJ_NAME(LBL(right_comment), "experiment-params-comment"), "comment-placement", "right"),				row, 2); \
-	savedInputs.input[QString(#default_value)] = w;
 
-	switch (node->nodeType) {
-		case DCNODE_SWEEP:
-			INSERT_LED("Start Voltage = ", "V", node->DCSweep.VStart, 0);
-			INSERT_LED("End Voltage = ", "V", node->DCSweep.VEnd, 1);
-			INSERT_LED("dV/dt = ", "", node->DCSweep.dVdt, 2);
-			break;
-		default:
-			break;
-	}
-
-	prebuiltExperimentData.inputsList << savedInputs;
-
-	return ret;
-}
-void MainWindowUI::FillNodeParameters() {
-	try {
-	#define GET_VALUE_FROM_LED(field, getter) \
-		field = qobject_cast<QLineEdit*>(input.input[QString(#field)])->text().getter();
-		foreach(SavedInputs input, prebuiltExperimentData.inputsList) {
-			ExperimentNode_t *node = input.node;
-			QWidget *w;
-			switch (node->nodeType) {
-			case DCNODE_SWEEP:
-				GET_VALUE_FROM_LED(node->DCSweep.VStart, toInt);
-				GET_VALUE_FROM_LED(node->DCSweep.VEnd, toInt);
-				GET_VALUE_FROM_LED(node->DCSweep.dVdt, toInt);
-				break;
-			default:
-				break;
-			}
-		}
-	}
-	catch (...) {
-		;
-	}
-}
-//*/
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
@@ -390,6 +350,129 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
+bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentNotes &ret) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+
+	static QMap<QString, qreal> references;
+	references["Predefined 1"] = 1.0;
+	references["Predefined 2"] = 1.1;
+	references["Predefined 3"] = 1.2;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
+
+	auto electrodeCombo = CMB();
+	QRadioButton *commRefRadio;
+	QRadioButton *otherRefRadio;
+	QLineEdit *otherRefLed;
+	QLineEdit *potVsSheLed;
+	QTextEdit *notesTed;
+
+	auto lay = new QGridLayout(dialog);
+
+	lay->addWidget(OBJ_NAME(LBL("Experimantal Notes"), "heading-label"), 0, 0, 1, 2);
+	lay->addWidget(notesTed = TED(), 1, 0, 1, 2);
+
+	lay->addWidget(OBJ_NAME(LBL("Reference Electrode"), "heading-label"), 2, 0, 1, 2);
+	lay->addWidget(commRefRadio = new QRadioButton("Common reference electrode"), 3, 0);
+	lay->addWidget(otherRefRadio = new QRadioButton("Other reference electrode"), 4, 0);
+	lay->addWidget(electrodeCombo, 3, 1);
+	lay->addWidget(otherRefLed = LED(), 4, 1);
+	lay->addWidget(OBJ_NAME(LBL("Potential vs SHE (V)"), "notes-dialog-right-comment"), 5, 0);
+	lay->addWidget(potVsSheLed = LED(), 5, 1);
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-right-spacing"), 0, 2, 6, 1);
+
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("OK"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"), 6, 0, 1, -1);
+	lay->addLayout(buttonLay, 7, 0, 1, -1);
+	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"), 8, 0, 1, -1);
+
+	QListView *electrodeComboList = OBJ_NAME(new QListView, "combo-list");
+	electrodeCombo->setView(electrodeComboList);
+
+	QList<QMetaObject::Connection> dialogConn;
+	
+	#define COMMON_REFERENCE_ELECTRODE_NAME	"common-reference-electrode-name"
+	#define OTHER_REFERENCE_ELECTRODE_NAME	"other-reference-electrode-name"
+	#define OTHER_REFERENCE_ELECTRODE_VALUE	"other-reference-electrode-value"
+
+	dialogConn << CONNECT(commRefRadio, &QRadioButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		settings.setValue(OTHER_REFERENCE_ELECTRODE_NAME, otherRefLed->text());
+		settings.setValue(OTHER_REFERENCE_ELECTRODE_VALUE, potVsSheLed->text());
+		
+		otherRefLed->setDisabled(true);
+		otherRefLed->setPlaceholderText("");
+		otherRefLed->setText("");
+
+		potVsSheLed->setPlaceholderText("");
+		potVsSheLed->setReadOnly(true);
+		potVsSheLed->setText("");
+
+		electrodeCombo->addItems(references.keys());
+		electrodeCombo->setEnabled(true);
+
+		QString currentText = settings.value(COMMON_REFERENCE_ELECTRODE_NAME, "").toString();
+		if (!currentText.isEmpty()) {
+			electrodeCombo->setCurrentText(currentText);
+		}
+	});
+
+	dialogConn << CONNECT(otherRefRadio, &QRadioButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		settings.setValue(COMMON_REFERENCE_ELECTRODE_NAME, electrodeCombo->currentText());
+
+		electrodeCombo->setDisabled(true);
+		electrodeCombo->clear();
+
+		otherRefLed->setEnabled(true);
+		otherRefLed->setPlaceholderText("Type here electrode name");
+		otherRefLed->setText(settings.value(OTHER_REFERENCE_ELECTRODE_NAME, "").toString());
+
+		potVsSheLed->setPlaceholderText("Type here the value");
+		potVsSheLed->setReadOnly(false);
+		potVsSheLed->setText(settings.value(OTHER_REFERENCE_ELECTRODE_VALUE, "").toString());
+	});
+
+	dialogConn << CONNECT(electrodeCombo, &QComboBox::currentTextChanged, [=](const QString &key) {
+		if (key.isEmpty()) {
+			return;
+		}
+		QString text = QString("%1").arg(references[key]).replace(QChar('.'), QLocale().decimalPoint());
+		potVsSheLed->setText(text);
+	});
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	commRefRadio->click();
+
+	dialog->exec();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	ret.notes = notesTed->toPlainText();
+	ret.refElectrode = commRefRadio->isChecked() ? electrodeCombo->currentText() : otherRefLed->text();
+	ret.potential = potVsSheLed->text();
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
 class ExperimentFilterModel : public QSortFilterProxyModel {
 	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
 		QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
@@ -399,7 +482,6 @@ class ExperimentFilterModel : public QSortFilterProxyModel {
 		}
 
 		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
-		//setFilterFixedString
 		QString pattern = filterRegExp().pattern();
 
 		QString descriptionPlain = "";
@@ -415,7 +497,7 @@ class ExperimentFilterModel : public QSortFilterProxyModel {
 			validCategory = true;
 		}
 		else {
-			validCategory = _category == exp->GetCategory();
+			validCategory = exp->GetCategory().contains(_category);
 		}
 
 		return (exp->GetShortName().contains(pattern, filterCaseSensitivity()) ||
@@ -553,7 +635,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
 
-	//CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<ExperimentContainer> &expList) {
 	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<AbstractExperiment*> &expList) {
 		QStandardItemModel *model = new QStandardItemModel(expList.size(), 1);
 
@@ -582,7 +663,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		oldModel->deleteLater();
 	});
 
-	//CONNECT(experimentList, &QListView::clicked, [=](const QModelIndex &index) {
 	CONNECT(experimentList->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &index, const QModelIndex &) {
 		if (prebuiltExperimentData.userInputs) {
 			paramsLay->removeWidget(prebuiltExperimentData.userInputs);
@@ -616,40 +696,6 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		//mw->PrebuiltExperimentSelected(index.row());
 	});
 
-	/*
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetDescription, [=](const ExperimentContainer &ec) {
-		descrName->setText(ec.name);
-		descrText->setText(ec.description);
-		descrIcon->setPixmap(QPixmap(PREBUILT_EXP_DIR + ec.imagePath));
-		startExpPbt->show();
-		paramsHeadLabel->show();
-	});
-
-	CONNECT(mw, &MainWindow::PrebuiltExperimentSetParameters, [=](const QList<ExperimentNode_t*> &nodeList) {
-		prebuiltExperimentData.inputsList.clear();
-		foreach(QWidget *wdg, prebuiltExperimentData.paramWidgets) {
-			paramsLay->removeWidget(wdg);
-			wdg->deleteLater();
-		}
-		prebuiltExperimentData.paramWidgets.clear();
-
-		int row = 0;
-		foreach(ExperimentNode_t *node, nodeList) {
-			auto header = PrebuiltExpCreateGroupHeader(node);
-			auto params = PrebuiltExpCreateParamsInput(node);
-
-			paramsLay->addWidget(header);
-			paramsLay->addWidget(params);
-
-			prebuiltExperimentData.paramWidgets << header;
-			prebuiltExperimentData.paramWidgets << params;
-		}
-		auto stretchWdg = WDG();
-		paramsLay->addWidget(stretchWdg, 1);
-		prebuiltExperimentData.paramWidgets << stretchWdg;
-	});
-	//*/
-
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
 		//FillNodeParameters();
 
@@ -657,6 +703,120 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	});
 
 	return w;
+}
+bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData> &dataList) {
+	bool ret = false;
+
+	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+	auto dialogRetList = QFileDialog::getOpenFileNames(parent, "Open experiment data", dirName, "Data files (*.csv)");
+
+	if (dialogRetList.isEmpty()) {
+		return ret;
+	}
+
+	settings.setValue(DATA_SAVE_PATH, QFileInfo(dialogRetList.first()).absolutePath());
+
+	foreach(auto dialogRet, dialogRetList) {
+		if (dialogRet.isEmpty()) {
+			return ret;
+		}
+
+		if (!QFileInfo(dialogRet).isReadable()) {
+			return ret;
+		}
+
+		CsvFileData data;
+		ret = ReadCsvFile(dialogRet, data);
+
+		if (!ret) {
+			return ret;
+		}
+
+		dataList << data;
+	}
+
+
+	return ret;
+}
+bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileData &data) {
+	bool ret = false;
+	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, ";");
+
+	if (readData.size() < 2) {
+		return ret;
+	}
+
+	data.fileName = QFileInfo(dialogRet).fileName();
+
+	QStringList hdrList = readData.front();
+	readData.pop_front();
+	QStringList axisList = readData.front();
+	readData.pop_front();
+
+	int hdrListSize = hdrList.size();
+
+	if (hdrListSize != axisList.size()) {
+		return ret;
+	}
+
+	for (int i = 0; i < hdrListSize; ++i) {
+		const QString &varName(hdrList.at(i));
+
+		if (axisList.at(i).contains('X')) {
+			data.xAxisList << varName;
+		}
+		if (axisList.at(i).contains('Y')) {
+			data.yAxisList << varName;
+		}
+	}
+
+	QChar systemDecimalPoint = QLocale().decimalPoint();
+	QChar cDecimalPoint = QLocale::c().decimalPoint();
+
+	for (auto it = readData.begin(); it != readData.end(); ++it) {
+		QStringList &list(*it);
+
+		if (hdrListSize != list.size()) {
+			return ret;
+		}
+
+		for (int i = 0; i < hdrListSize; ++i) {
+			bool ok;
+			qreal val = list[i].replace(systemDecimalPoint, cDecimalPoint).toFloat(&ok);
+			if (!ok) {
+				return ret;
+			}
+			data.container[hdrList.at(i)].append(val);
+		}
+	}
+	
+	ret = true;
+
+	return ret;
+}
+bool MainWindowUI::ReadCsvFile(QWidget *parent, MainWindowUI::CsvFileData &data) {
+	bool ret = false;
+	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+	auto dialogRet = QFileDialog::getOpenFileName(parent, "Open experiment data", dirName, "Data files (*.csv)");
+
+	if (dialogRet.isEmpty()) {
+		return ret;
+	}
+
+	settings.setValue(DATA_SAVE_PATH, QFileInfo(dialogRet).absolutePath());
+
+	if (!QFileInfo(dialogRet).isReadable()) {
+		return ret;
+	}
+
+
+	ret = ReadCsvFile(dialogRet, data);
+
+	return ret;
 }
 QWidget* MainWindowUI::GetNewDataWindowTab() {
 	static QWidget *w = 0;
@@ -674,21 +834,37 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	lay->addWidget(docTabs);
 
 	docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
-	
-	CONNECT(docTabs->tabBar(), &QTabBar::tabBarClicked, [=](int index) {
-		if (index != docTabs->count() - 1) {
-			return;
-		}
-		static int i = 1;
-		docTabs->insertTab(docTabs->count() - 1, WDG(), QString("LinearSweep%1.csv").arg(i++));
-	});
 
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
 
+	CONNECT(docTabs->tabBar(), &QTabBar::tabBarClicked, [=](int index) {
+		if (index != docTabs->count() - 1) {
+			return;
+		}
+		
+		CsvFileData csvData;
+		if (!ReadCsvFile(mw, csvData)) {
+			return;
+		}
+
+		QString tabName = csvData.fileName;
+		const QUuid id = QUuid::createUuid();
+
+		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, csvData.xAxisList, csvData.yAxisList, &csvData.container);
+
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
+		ui.newDataTab.newDataTabButton->click();
+		docTabs->setCurrentIndex(docTabs->count() - 2);
+	});
+
 	CONNECT(docTabs, &QTabWidget::currentChanged, [=](int index) {
-		if ((index < 0) || (index >= docTabs->count() - 1)) {
+		if (index < 0) {
+			return;
+		}
+		if (index >= docTabs->count() - 1) {
+			docTabs->setCurrentIndex(prevCloseTabButtonPos);
 			return;
 		}
 
@@ -715,8 +891,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				if (0 != plot) {
 					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
 						if (it.value().plot == plot) {
-							QObject::disconnect(it.value().xVarComboConnection);
-							QObject::disconnect(it.value().yVarComboConnection);
+							foreach(auto conn, it.value().plotTabConnections) {
+								QObject::disconnect(conn);
+							}
+							
+							if (it.value().data.first().saveFile) {
+								it.value().data.first().saveFile->close();
+								it.value().data.first().saveFile->deleteLater();
+								it.value().data.first().saveFile = 0;
+							}
+
 							mw->StopExperiment(it.key());
 							dataTabs.plots.remove(it.key());
 							break;
@@ -733,10 +917,29 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const QString &expName) {
-		docTabs->insertTab(docTabs->count() - 1, CreateNewDataTabWidget(id, expName), expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData) {
+		QString expName = exp->GetShortName();
+
+		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp->GetXAxisParameters(), exp->GetYAxisParameters());
+
+		dataTabs.plots[id].exp = exp;
+		dataTabs.plots[id].data.first().saveFile = saveFile;
+		dataTabs.plots[id].data.first().cal = calData;
+
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
+	});
+
+	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
+		PlotHandler &handler(dataTabs.plots[id]);
+		DataMapVisualization &majorData(handler.data.first());
+		
+		if (majorData.saveFile) {
+			majorData.saveFile->close();
+			majorData.saveFile->deleteLater();
+			majorData.saveFile = 0;
+		}
 	});
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData) {
@@ -744,112 +947,794 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			return;
 		}
 		PlotHandler &handler(dataTabs.plots[id]);
+		DataMapVisualization &majorData(handler.data.first());
 
-		qreal timestamp = (qreal)expData.timestamp / 100000000UL;
-
-		if (handler.data.currentIntegral.isEmpty()) {
-			handler.data.currentIntegral.append(expData.adcData.current*timestamp);
-		}
-		else {
-			qreal newVal = handler.data.currentIntegral.last();
-			newVal += (handler.data.current.last() + expData.adcData.current) * (timestamp - handler.data.timestamp.last()) / 2.;
-			handler.data.currentIntegral.append(newVal);
+		handler.exp->PushNewData(expData, majorData.container, majorData.cal);
+		if (majorData.saveFile) {
+			handler.exp->SaveData(*majorData.saveFile, majorData.container);
 		}
 
-		handler.data.timestamp.append(timestamp);
-		handler.data.ewe.append(expData.adcData.ewe);
-		handler.data.ece.append(expData.adcData.ece);
-		handler.data.current.append(expData.adcData.current);
-
-		/*
-		qreal x = (qreal)expData.timestamp / 100000000UL;
-		qreal y = expData.adcData.ewe;
-
-		if (handler.xData.isEmpty()) {
-			//handler.plot->setAxisScale(QwtPlot::xBottom, x, x + 150000UL);
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
+			majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
+			
+			ApplyNewAxisParams(QwtPlot::yLeft, handler);
 		}
 
-		handler.xData.append(x);
-		handler.yData.append(y);
-		//*/
-
-		if (handler.data.xData && handler.data.yData) {
-			handler.curve->setSamples(*handler.data.xData, *handler.data.yData);
-			handler.plot->replot();
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
+			majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
+			
+			ApplyNewAxisParams(QwtPlot::yRight, handler);
 		}
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+		handler.plot->replot();
 	});
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName) {
+
+template<typename T, typename F>
+void ModifyObject(QObject *parent, F &lambda) {
+	foreach(QObject* obj, parent->children()) {
+		T* objT = qobject_cast<T*>(obj);
+		if (objT) {
+			lambda(objT);
+		}
+
+		ModifyObject<T>(obj, lambda);
+	}
+}
+#include <QDialogButtonBox>
+bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
+	static bool ret;
+	ret = false;
+
+	QColorDialog colorDialog(DEFAULT_MAJOR_CURVE_COLOR, parent);
+	colorDialog.setWindowFlags(Qt::SplashScreen);
+	colorDialog.setOptions(QColorDialog::NoButtons | QColorDialog::DontUseNativeDialog);
+	colorDialog.setCurrentColor(color);
+	colorDialog.setCustomColor(0, DEFAULT_MAJOR_CURVE_COLOR);
+	colorDialog.setCustomColor(1, DEFAULT_MINOR_CURVE_COLOR);
+
+	QObject *dialogPtr = &colorDialog;
+
+	QPushButton *ok;
+	QPushButton *cancel;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(ok = PBT("Select"));
+	buttonLay->addWidget(cancel = PBT("Cancel"));
+	buttonLay->addStretch(1);
+
+	CONNECT(ok, &QPushButton::clicked, &colorDialog, &QColorDialog::accept);
+	CONNECT(cancel, &QPushButton::clicked, &colorDialog, &QColorDialog::reject);
+
+	auto okConnection = CONNECT(ok, &QPushButton::clicked, [=]() {
+		ret = true;
+	});
+
+	ModifyObject<QVBoxLayout>(dialogPtr, [=](QVBoxLayout *obj) {
+		if (obj->parent() != dialogPtr) {
+			return;
+		}
+
+		obj->addStretch(1);
+		obj->addLayout(buttonLay);
+	});
+
+	ModifyObject<QAbstractButton>(dialogPtr, [](QAbstractButton *obj) {
+		OBJ_NAME(obj, "secondary-button");
+	});
+
+	#define BASIC_HEADER "&Basic colors"
+	#define CUSTOM_HEADER "&Custom colors"
+
+	ModifyObject<QLabel>(dialogPtr, [](QLabel *obj) {
+		if ((obj->text() == BASIC_HEADER) || (obj->text() == CUSTOM_HEADER)) {
+			OBJ_NAME(obj, "heading-label");
+		}
+		else {
+			OBJ_PROP(OBJ_NAME(obj, "experiment-params-comment"), "comment-placement", "left");
+		}
+	});
+
+
+	ModifyObject<QFrame>(dialogPtr, [](QFrame *obj) {
+		auto objParent = qobject_cast<QWidget*>(obj->parent());
+	});
+
+	colorDialog.exec();
+
+	QObject::disconnect(okConnection);
+
+	color = colorDialog.selectedColor();
+
+	return ret;
+}
+bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+	
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "curve-params-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	QListView *fileList;
+
+	lay->addWidget(OBJ_NAME(LBL("Data Set List"), "heading-label"));
+	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
+
+	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
+	auto optLay = new QHBoxLayout;
+	QRadioButton *primBut;
+	QRadioButton *secBut;
+	optLay->addWidget(primBut = RBT("Primary curve"));
+	optLay->addWidget(secBut = RBT("Secondary curve"));
+	lay->addLayout(optLay);
+
+	auto stackLay = NO_SPACING(NO_MARGIN(new QStackedLayout));
+
+	QLabel *curveSettingLabel;
+	lay->addWidget(curveSettingLabel = OBJ_NAME(LBL("Primary Curve"), "heading-label"));
+
+	static CurveParameters currentParams;
+
+	QSettings squidSettings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+
+	currentParams.pen[CurveParameters::PRIMARY].color = QColor(squidSettings.value(CURVE_PARAMS_PRI_COLOR, DEFAULT_MAJOR_CURVE_COLOR.name()).toString());
+	currentParams.pen[CurveParameters::PRIMARY].width = squidSettings.value(CURVE_PARAMS_PRI_WIDTH, 1.0).toDouble();
+	currentParams.pen[CurveParameters::PRIMARY].style = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_PRI_STYLE, (int)Qt::SolidLine).toInt();
+	currentParams.pen[CurveParameters::SECONDARY].color = QColor(squidSettings.value(CURVE_PARAMS_SEC_COLOR, DEFAULT_MINOR_CURVE_COLOR.name()).toString());
+	currentParams.pen[CurveParameters::SECONDARY].width = squidSettings.value(CURVE_PARAMS_SEC_WIDTH, 1.0).toDouble();
+	currentParams.pen[CurveParameters::SECONDARY].style = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_SEC_STYLE, (int)Qt::SolidLine).toInt();
+
+	{
+		auto paramsOwner = OBJ_NAME(WDG(), "curve-params-adjusting-owner");
+
+		QwtPlot *smallPlot;
+		QComboBox *cmb;
+		QDoubleSpinBox *spin;
+		QPushButton *colorPbt;
+		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
+
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
+		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
+		paramsLay->addWidget(cmb = CMB(), 2, 1);
+		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 1);
+
+		colorPbt->setStyleSheet("background-color: " + currentParams.pen[CurveParameters::PRIMARY].color.name() + ";}");
+
+		spin->setValue(currentParams.pen[CurveParameters::PRIMARY].width);
+		spin->setDecimals(1);
+		spin->setSingleStep(0.1);
+
+		cmb->setView(OBJ_NAME(new QListView, "combo-list"));
+
+		cmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
+		cmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
+		cmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
+		cmb->addItem("Dash Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotLine));
+		cmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
+
+		for (int i = 0; i < cmb->count(); ++i) {
+			if (cmb->itemData(i).value<Qt::PenStyle>() == currentParams.pen[CurveParameters::PRIMARY].style) {
+				cmb->setCurrentIndex(i);
+				break;
+			}
+		}
+
+		smallPlot->enableAxis(QwtPlot::yLeft, false);
+		smallPlot->enableAxis(QwtPlot::xBottom, false);
+
+		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+		curve->setSamples(QVector<qreal>() << 0.0 << 1.1, QVector<qreal>() << 0.0 << 1.1);
+		curve->attach(smallPlot);
+
+		curve->setPen(currentParams.pen[CurveParameters::PRIMARY].color,
+			currentParams.pen[CurveParameters::PRIMARY].width,
+			currentParams.pen[CurveParameters::PRIMARY].style);
+
+		smallPlot->replot();
+
+		stackLay->addWidget(paramsOwner);
+
+		dialogConn << CONNECT(cmb, &QComboBox::currentTextChanged, [=]() {
+			currentParams.pen[CurveParameters::PRIMARY].style = cmb->currentData().value<Qt::PenStyle>();
+			curve->setPen(curve->pen().color(), curve->pen().width(), cmb->currentData().value<Qt::PenStyle>());
+			smallPlot->replot();
+		});
+
+		dialogConn << CONNECT(spin, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), [=](double val) {
+			currentParams.pen[CurveParameters::PRIMARY].width = val;
+			curve->setPen(curve->pen().color(), val, curve->pen().style());
+			smallPlot->replot();
+		});
+
+		dialogConn << CONNECT(colorPbt, &QPushButton::clicked, [=]() {
+			QColor color = curve->pen().color();
+			if (GetColor(dialog, color)) {
+				colorPbt->setStyleSheet("background-color: " + color.name() + ";");
+
+				currentParams.pen[CurveParameters::PRIMARY].color = color;
+
+				curve->setPen(color, curve->pen().width(), curve->pen().style());
+				smallPlot->replot();
+			}
+		});
+	}
+	{
+		auto paramsOwner = OBJ_NAME(WDG(), "curve-params-adjusting-owner");
+
+		QwtPlot *smallPlot;
+		QComboBox *cmb;
+		QDoubleSpinBox *spin;
+		QPushButton *colorPbt;
+		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
+
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
+		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
+		paramsLay->addWidget(cmb = CMB(), 2, 1);
+		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 1);
+
+		colorPbt->setStyleSheet("background-color: " + currentParams.pen[CurveParameters::SECONDARY].color.name() + ";}");
+
+		spin->setValue(currentParams.pen[CurveParameters::SECONDARY].width);
+		spin->setDecimals(1);
+		spin->setSingleStep(0.1);
+
+		cmb->setView(OBJ_NAME(new QListView, "combo-list"));
+
+		cmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
+		cmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
+		cmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
+		cmb->addItem("Dash Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotLine));
+		cmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
+
+		for (int i = 0; i < cmb->count(); ++i) {
+			if (cmb->itemData(i).value<Qt::PenStyle>() == currentParams.pen[CurveParameters::SECONDARY].style) {
+				cmb->setCurrentIndex(i);
+				break;
+			}
+		}
+
+		smallPlot->enableAxis(QwtPlot::yLeft, false);
+		smallPlot->enableAxis(QwtPlot::xBottom, false);
+
+		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+
+		curve->setSamples(QVector<qreal>() << 0.0 << 1.1, QVector<qreal>() << 0.0 << 1.1);
+		curve->attach(smallPlot);
+
+		curve->setPen(currentParams.pen[CurveParameters::SECONDARY].color,
+			currentParams.pen[CurveParameters::SECONDARY].width,
+			currentParams.pen[CurveParameters::SECONDARY].style);
+
+		smallPlot->replot();
+
+		stackLay->addWidget(paramsOwner);
+
+		dialogConn << CONNECT(cmb, &QComboBox::currentTextChanged, [=]() {
+			currentParams.pen[CurveParameters::SECONDARY].style = cmb->currentData().value<Qt::PenStyle>();
+			curve->setPen(curve->pen().color(), curve->pen().width(), cmb->currentData().value<Qt::PenStyle>());
+			smallPlot->replot();
+		});
+
+		dialogConn << CONNECT(spin, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), [=](double val) {
+			currentParams.pen[CurveParameters::SECONDARY].width = val;
+			curve->setPen(curve->pen().color(), val, curve->pen().style());
+			smallPlot->replot();
+		});
+
+		dialogConn << CONNECT(colorPbt, &QPushButton::clicked, [=]() {
+			QColor color = curve->pen().color();
+			if (GetColor(dialog, color)) {
+				colorPbt->setStyleSheet("background-color: " + color.name() + ";");
+
+				currentParams.pen[CurveParameters::SECONDARY].color = color;
+
+				curve->setPen(color, curve->pen().width(), curve->pen().style());
+				smallPlot->replot();
+			}
+		});
+	}
+
+	primBut->setChecked(true);
+
+	dialogConn << CONNECT(primBut, &QRadioButton::clicked, [=]() {
+		curveSettingLabel->setText("Primary Curve");
+		stackLay->setCurrentIndex(0);
+	});
+	dialogConn << CONNECT(secBut, &QRadioButton::clicked, [=]() {
+		curveSettingLabel->setText("Secondary Curve");
+		stackLay->setCurrentIndex(1);
+	});
+
+	lay->addLayout(stackLay);
+	lay->addSpacing(40);
+
+	/*
+	auto adjustButtonLay = new QHBoxLayout;
+	QPushButton *changeColorPbt;
+	QPushButton *changeLinePbt;
+	adjustButtonLay->addStretch(1);
+	adjustButtonLay->addWidget(changeColorPbt = OBJ_NAME(PBT("Change Color"), "secondary-button"));
+	adjustButtonLay->addWidget(changeLinePbt = OBJ_NAME(PBT("Change Line Style"), "secondary-button"));
+	adjustButtonLay->addStretch(1);
+
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+	lay->addLayout(adjustButtonLay);
+	lay->addStretch(1);
+	//*/
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Apply"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	QStandardItemModel *model = new QStandardItemModel(curveParams.size(), 1);
+	int row = 0;
+	foreach(auto key, curveParams.keys()) {
+		auto *item = new QStandardItem(key);
+		model->setItem(row++, item);
+	}
+	fileList->setModel(model);
+	
+	/*
+	QMap<QString, CurveParameters> *curveParamsPtr = &curveParams;
+
+	dialogConn << CONNECT(changeColorPbt, &QPushButton::clicked, [=]() {
+		QColor color = DEFAULT_MAJOR_CURVE_COLOR;
+		if (GetColor(dialog, color)) {
+			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
+				QString curName = index.data(Qt::DisplayRole).toString();
+				(*curveParamsPtr)[curName].color1 = color;
+			}
+		}
+
+		color = DEFAULT_MINOR_CURVE_COLOR;
+		if (GetColor(dialog, color)) {
+			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
+				QString curName = index.data(Qt::DisplayRole).toString();
+				(*curveParamsPtr)[curName].color2 = color;
+			}
+		}
+	});
+
+	dialogConn << CONNECT(changeLinePbt, &QPushButton::clicked, [=]() {
+		;
+	});
+	//*/
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialog->exec();
+
+	if (!dialogCanceled) {
+		foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
+			QString curName = index.data(Qt::DisplayRole).toString();
+			curveParams[curName].pen[CurveParameters::PRIMARY] = currentParams.pen[CurveParameters::PRIMARY];
+			curveParams[curName].pen[CurveParameters::SECONDARY] = currentParams.pen[CurveParameters::SECONDARY];
+		}
+	}
+
+	squidSettings.setValue(CURVE_PARAMS_PRI_COLOR, currentParams.pen[CurveParameters::PRIMARY].color.name());
+	squidSettings.setValue(CURVE_PARAMS_PRI_WIDTH, currentParams.pen[CurveParameters::PRIMARY].width);
+	squidSettings.setValue(CURVE_PARAMS_PRI_STYLE, (int)currentParams.pen[CurveParameters::PRIMARY].style);
+	squidSettings.setValue(CURVE_PARAMS_SEC_COLOR, currentParams.pen[CurveParameters::SECONDARY].color.name());
+	squidSettings.setValue(CURVE_PARAMS_SEC_WIDTH, currentParams.pen[CurveParameters::SECONDARY].width);
+	squidSettings.setValue(CURVE_PARAMS_SEC_STYLE, (int)currentParams.pen[CurveParameters::SECONDARY].style);
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
+QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
+	QwtPlotCurve *curve = new QwtPlotCurve("");
+
+	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
+	curve->setPen(color, 1);
+	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
+	curve->setYAxis(yAxisId);
+
+	return curve;
+}
+
+#include <functional>
+class PlotEventFilter : public QObject {
+public:
+	PlotEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonDblClick) {
+			_lambda();
+			return true;
+		}
+		return false;
+	}
+
+private:
+	std::function<void(void)> _lambda;
+};
+class LegendEventFilter : public QObject {
+public:
+	LegendEventFilter(QObject *parent, QwtPlot *plot) : QObject(parent), _plot(plot) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonDblClick) {
+			obj->deleteLater();
+			_plot->insertLegend(0);
+			_plot->replot();
+			return true;
+		}
+		return false;
+	}
+
+private:
+	QwtPlot *_plot;
+};
+class PopupDialogEventFilter : public QObject {
+public:
+	PopupDialogEventFilter(QObject *parent, std::function<void(QEvent*, bool&)> lambda) : QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::KeyPress) {
+			bool ret;
+			_lambda(e, ret);
+			return ret;
+		}
+		return false;
+	}
+private:
+	std::function<void(QEvent*, bool&)> _lambda;
+};
+bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameters &axisParams) {
+	static bool dialogCanceled;
+	dialogCanceled = false;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::FramelessWindowHint | Qt::Popup), "axis-params-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	QLineEdit *minLed;
+	QLineEdit *maxLed;
+	QLineEdit *stepLed;
+
+	auto paramsLay = new QGridLayout;
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Min value: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Max value: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Step size: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	paramsLay->addWidget(minLed = LED(), 1, 1);
+	paramsLay->addWidget(maxLed = LED(), 2, 1);
+	paramsLay->addWidget(stepLed = LED(), 3, 1);
+
+	minLed->setPlaceholderText("Auto");
+	maxLed->setPlaceholderText("Auto");
+	stepLed->setPlaceholderText("Auto");
+
+	lay->addLayout(paramsLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+	
+	if (!axisParams.min.autoScale) {
+		minLed->setText(QString::number(axisParams.min.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+	if (!axisParams.max.autoScale) {
+		maxLed->setText(QString::number(axisParams.max.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+	if (!axisParams.step.autoScale) {
+		stepLed->setText(QString::number(axisParams.step.val).replace(QChar('.'), QLocale().decimalPoint()));
+	}
+
+	dialog->installEventFilter(new PopupDialogEventFilter(dialog, [=](QEvent *e, bool &ret) {
+		QKeyEvent *ke = (QKeyEvent*)e;
+
+		ret = false;
+		int key = ke->key();
+
+		if (ke->matches(QKeySequence::Cancel)) {
+			dialog->reject();
+			dialogCanceled = true;
+			ret = true;
+		}
+		if( (Qt::Key_Enter == key) || (Qt::Key_Return == key) ) {
+			dialog->accept();
+			ret = true;
+		}
+	}));
+
+	dialog->exec();
+
+	QString resStr;
+	#define GET_VAL(led, var)					\
+		resStr = led->text();					\
+		if (resStr.isEmpty()) {					\
+			axisParams.var.autoScale = true;	\
+		}										\
+		else {									\
+			axisParams.var.val = resStr.replace(QLocale().decimalPoint(), QChar('.')).toDouble(); \
+			axisParams.var.autoScale = false;	\
+		}
+
+	if (!dialogCanceled) {
+		GET_VAL(minLed, min);
+		GET_VAL(maxLed, max);
+		GET_VAL(stepLed, step);
+	}
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
+bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHandler &handler) {
+	bool ret = false;
+	if ((axis == QwtPlot::yRight) && !handler.plot->axisEnabled(axis)) {
+		return ret;
+	}
+
+	AxisParameters &axisParams(handler.axisParams[axis]);
+	QwtPlot *plot = handler.plot;
+
+	if (axisParams.min.autoScale && axisParams.max.autoScale && axisParams.step.autoScale) {
+		if (!plot->axisAutoScale(axis)) {
+			plot->setAxisAutoScale(axis);
+			ret = true;
+		}
+	}
+	else {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min;
+		double max;
+
+		if (!axisParams.min.autoScale) {
+			min = axisParams.min.val;
+		}
+		if (!axisParams.max.autoScale) {
+			max = axisParams.max.val;
+		}
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMin;
+			double curMax;
+
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					if (handler.plot->axisEnabled(QwtPlot::yRight)) {
+						curMin = qMin(it->curve1->minXValue(), it->curve2->minXValue());
+						curMax = qMax(it->curve1->maxXValue(), it->curve2->maxXValue());
+					}
+					else {
+						curMin = it->curve1->minXValue();
+						curMax = it->curve1->maxXValue();
+					}
+					break;
+				case QwtPlot::yLeft:
+					curMin = it->curve1->minYValue();
+					curMax = it->curve1->maxYValue();
+					break;
+				case QwtPlot::yRight:
+					curMin = it->curve2->minYValue();
+					curMax = it->curve2->maxYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				if (axisParams.min.autoScale) {
+					min = curMin;
+				}
+				if (axisParams.max.autoScale) {
+					max = curMax;
+				}
+				continue;
+			}
+			if (axisParams.min.autoScale) {
+				if (curMin < min) {
+					min = curMin;
+				}
+			}
+
+			if (axisParams.max.autoScale) {
+				if (curMax > max) {
+					max = curMax;
+				}
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	/*
+	else if (!axisParams.min.autoScale && !axisParams.max.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min = axisParams.min.val;
+		double max = axisParams.max.val;
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	else if (axisParams.min.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double min;
+		double max = axisParams.max.val;
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMin;
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					curMin = qMin(it->curve1->minXValue(), it->curve2->minXValue());
+					break;
+				case QwtPlot::yLeft:
+					curMin = it->curve1->minYValue();
+					break;
+				case QwtPlot::yRight:
+					curMin = it->curve2->minYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				min = curMin;
+				continue;
+			}
+
+			if (curMin < min) {
+				min = curMin;
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	else if (axisParams.max.autoScale) {
+		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
+		double max;
+		double min = axisParams.min.val;
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			double curMax;
+			switch (axis) {
+				case QwtPlot::xBottom:
+				case QwtPlot::xTop:
+					curMax = qMax(it->curve1->maxXValue(), it->curve2->maxXValue());
+					break;
+				case QwtPlot::yLeft:
+					curMax = it->curve1->maxYValue();
+					break;
+				case QwtPlot::yRight:
+					curMax = it->curve2->maxYValue();
+					break;
+			}
+
+			if (it == handler.data.begin()) {
+				max = curMax;
+				continue;
+			}
+
+			if (curMax > max) {
+				max = curMax;
+			}
+		}
+
+		if (plot->axisAutoScale(axis) ||
+			(min != plot->axisInterval(axis).minValue()) ||
+			(max != plot->axisInterval(axis).maxValue()) ||
+			(step != plot->axisStepSize(axis))) {
+			plot->setAxisScale(axis, min, max, step);
+			ret = true;
+		}
+	}
+	//*/
+
+	return ret;
+}
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
+	QFont axisTitleFont("Segoe UI");
+	axisTitleFont.setPixelSize(22);
+
 	auto w = WDG();
 
 	auto lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
-	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
-
-	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
-	//plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
-	//plot->setAxisAutoScale(QwtPlot::xBottom, true);
-	QwtText title;
-	title.setFont(QFont("Segoe UI", 14));
-	//title.setText("Frequency (Hz)");
-	title.setText("Timestamp (s)");
-	plot->setAxisTitle(QwtPlot::xBottom, title);
-	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
-	title.setText("Ewe");
-	plot->setAxisTitle(QwtPlot::yLeft, title);
-
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
 
-	
-	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
-	curve->setPen(QColor(42, 127, 220), 1);
-	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-	curve->attach(plot);
+	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+	QwtPlotCurve *curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);
+	curve1->attach(plot);
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
 	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-
-	#define PLOT_VAR_TIMESTAMP			"Timestamp"
-	#define PLOT_VAR_EWE				"Ewe"
-	#define PLOT_VAR_CURRENT			"Current"
-	#define PLOT_VAR_ECE				"Ece"
-	#define PLOT_VAR_CURRENT_INTEGRAL	"Integral d(Current)/d(time)"
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y1 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y2 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
-	xCombo->addItem(PLOT_VAR_TIMESTAMP);
-	xCombo->addItem(PLOT_VAR_EWE);
-	xCombo->addItem(PLOT_VAR_CURRENT);
+	xCombo->addItems(xAxisList);
 
-	auto yCombo = CMB();
-	QListView *yComboList = OBJ_NAME(new QListView, "combo-list");
-	yCombo->setView(yComboList);
-	yCombo->addItem(PLOT_VAR_EWE);
-	yCombo->addItem(PLOT_VAR_CURRENT);
-	yCombo->addItem(PLOT_VAR_ECE);
-	yCombo->addItem(PLOT_VAR_CURRENT_INTEGRAL);
+	auto y1Combo = CMB();
+	QListView *y1ComboList = OBJ_NAME(new QListView, "combo-list");
+	y1Combo->setView(y1ComboList);
+	y1Combo->addItems(yAxisList);
+
+	auto y2Combo = CMB();
+	QListView *y2ComboList = OBJ_NAME(new QListView, "combo-list");
+	y2Combo->setView(y2ComboList);
+	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
 	settingsLay->addWidget(xCombo, 1, 1);
-	settingsLay->addWidget(yCombo, 2, 1);
+	settingsLay->addWidget(y1Combo, 2, 1);
+	settingsLay->addWidget(y2Combo, 3, 1);
 	settingsLay->setColumnStretch(2, 1);
 
-	/*
-	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
-	QPushButton *saveDataButton;
+	QPushButton *addDataPbt;
+	QPushButton *editLinesPbt;
+	QPushButton *savePlotPbt;
 
+	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
-	buttonLay->addWidget(saveDataButton = OBJ_NAME(PBT("Save Experiment Data"), "secondary-button"));
+	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add a Data File(s)"), "secondary-button"));
+	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
+	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot"), "secondary-button"));
 	buttonLay->addStretch(1);
-	//*/
 
-	settingsLay->setRowStretch(5, 1);
+	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
+	settingsLay->addLayout(buttonLay, 5, 0, 1, -1);
+	settingsLay->setRowStretch(6, 1);
 
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
@@ -860,104 +1745,240 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
-	plotHandler.curve = curve;
-	plotHandler.xVarCombo = xCombo;
-	plotHandler.yVarCombo = yCombo;
-	//plotHandler.data.xData = &plotHandler.data.timestamp;
-	//plotHandler.data.yData = &plotHandler.data.ewe;
+	plotHandler.varCombo[QwtPlot::xBottom] = xCombo;
+	plotHandler.varCombo[QwtPlot::yLeft] = y1Combo;
+	plotHandler.varCombo[QwtPlot::yRight] = y2Combo;
+	plotHandler.exp = 0;
+	plotHandler.data << DataMapVisualization();
+	plotHandler.data.first().saveFile = 0;
+	plotHandler.data.first().curve1 = curve1;
+	plotHandler.data.first().curve2 = curve2;
 
-	plotHandler.xVarComboConnection = CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		//*
-		QwtText title;
-		title.setFont(QFont("Segoe UI", 14));
-		if (curText == PLOT_VAR_TIMESTAMP) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-			title.setText("Timestamp (s)");
+	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
+		PlotHandler &handler(dataTabs.plots[id]);
+		
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yLeft])) {
+			if (ApplyNewAxisParams(QwtPlot::yLeft, handler)) {
+				plot->replot();
+			}
 		}
-		else if (curText == PLOT_VAR_EWE) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.ewe;
-			title.setText("Ewe");
+	}));
+
+	plot->axisWidget(QwtPlot::yRight)->installEventFilter(new PlotEventFilter(w, [=]() {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yRight])) {
+			if (ApplyNewAxisParams(QwtPlot::yRight, handler)) {
+				plot->replot();
+			}
 		}
-		else if (curText == PLOT_VAR_CURRENT) {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.current;
-			title.setText("Current");
+	}));
+
+	plot->axisWidget(QwtPlot::xBottom)->installEventFilter(new PlotEventFilter(w, [=]() {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::xBottom])) {
+			if(ApplyNewAxisParams(QwtPlot::xBottom, handler)) {
+				plot->replot();
+			}
 		}
-		else {
-			dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-			title.setText("Timestamp (s)");
+	}));
+
+	plot->legend()->installEventFilter(new LegendEventFilter(w, plot));
+
+	plot->canvas()->installEventFilter(new PlotEventFilter(w, [=]() {
+		if (0 == plot->legend()) {
+			plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
+			plot->legend()->installEventFilter(new LegendEventFilter(w, plot));
+			plot->replot();
+		}
+	}));
+
+	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {
+		QList<CsvFileData> csvDataList;
+
+		if (!ReadCsvFile(mw, csvDataList)) {
+			return;
 		}
 
-		plot->setAxisTitle(QwtPlot::xBottom, title);
-		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
-		dataTabs.plots[id].plot->replot();
-		//*/
+		PlotHandler &handler(dataTabs.plots[id]);
+		QStringList firstDataKeys = handler.data.first().container.keys();
+		firstDataKeys.removeAll(NONE_Y_AXIS_VARIABLE);
+		firstDataKeys.sort();
+		
+		foreach(auto csvData, csvDataList) {
+			QStringList curDataKeys = csvData.container.keys();
+			curDataKeys.sort();
+
+			if (curDataKeys != firstDataKeys) {
+				LOG() << "Incompatible data sets were selected!";
+				return;
+			}
+		}
+
+		foreach(auto csvData, csvDataList) {
+			DataMapVisualization data;
+			data.container = csvData.container;
+			data.saveFile = 0;
+			data.curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+			data.curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);
+			data.name = csvData.fileName;
+
+			handler.data << data;
+
+			DataMapVisualization &currentData(handler.data.last());
+			currentData.data[QwtPlot::xBottom] = &currentData.container[handler.varCombo[QwtPlot::xBottom]->currentText()];
+			currentData.data[QwtPlot::yLeft] = &currentData.container[handler.varCombo[QwtPlot::yLeft]->currentText()];
+			currentData.data[QwtPlot::yRight] = &currentData.container[handler.varCombo[QwtPlot::yRight]->currentText()];
+
+			currentData.curve1->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]);
+			currentData.curve2->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]);
+
+			currentData.curve1->setTitle(handler.varCombo[QwtPlot::yLeft]->currentText());
+			currentData.curve2->setTitle(handler.varCombo[QwtPlot::yRight]->currentText());
+
+			currentData.curve1->attach(handler.plot);
+
+			if (handler.varCombo[QwtPlot::yRight]->currentText() != NONE_Y_AXIS_VARIABLE) {
+				currentData.curve2->attach(handler.plot);
+			}
+
+			handler.plot->replot();
+		}
 	});
 
-	plotHandler.yVarComboConnection = CONNECT(yCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		//*
-		QwtText title;
-		title.setFont(QFont("Segoe UI", 14));
-		if (curText == PLOT_VAR_ECE) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ece;
-		}
-		else if (curText == PLOT_VAR_CURRENT_INTEGRAL) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.currentIntegral;
-			title.setText(PLOT_VAR_CURRENT_INTEGRAL);
-		}
-		else if (curText == PLOT_VAR_EWE) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
-			title.setText("Ewe");
-		}
-		else if (curText == PLOT_VAR_CURRENT) {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.current;
-			title.setText("Current");
-		}
-		else {
-			dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
+	plotHandler.plotTabConnections << CONNECT(editLinesPbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id]);
+		QMap<QString, CurveParameters> currentParams;
+
+		foreach(const DataMapVisualization &data, handler.data) {
+			currentParams[data.name].pen[CurveParameters::PRIMARY].color = data.curve1->pen().color();
+			currentParams[data.name].pen[CurveParameters::PRIMARY].width = data.curve1->pen().width();
+			currentParams[data.name].pen[CurveParameters::PRIMARY].style = data.curve1->pen().style();
+			currentParams[data.name].pen[CurveParameters::SECONDARY].color = data.curve2->pen().color();
+			currentParams[data.name].pen[CurveParameters::SECONDARY].width = data.curve2->pen().width();
+			currentParams[data.name].pen[CurveParameters::SECONDARY].style = data.curve2->pen().style();
 		}
 
-		plot->setAxisTitle(QwtPlot::yLeft, title);
-		dataTabs.plots[id].curve->setSamples(*dataTabs.plots[id].data.xData, *dataTabs.plots[id].data.yData);
-		dataTabs.plots[id].plot->replot();
-		//*/
+		if (GetNewPen(mw, currentParams)) {
+			foreach(const DataMapVisualization &data, handler.data) {
+				data.curve1->setPen(currentParams[data.name].pen[CurveParameters::PRIMARY].color,
+					currentParams[data.name].pen[CurveParameters::PRIMARY].width,
+					currentParams[data.name].pen[CurveParameters::PRIMARY].style);
+				data.curve2->setPen(currentParams[data.name].pen[CurveParameters::SECONDARY].color,
+					currentParams[data.name].pen[CurveParameters::SECONDARY].width,
+					currentParams[data.name].pen[CurveParameters::SECONDARY].style);
+			}
+			handler.plot->replot();
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(savePlotPbt, &QPushButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+		QString fileName = QFileDialog::getSaveFileName(mw, "Saving plot", dirName, "Image file (*.png)");
+
+		if (fileName.isEmpty()) {
+			return;
+		}
+
+		settings.setValue(DATA_SAVE_PATH, QFileInfo(fileName).absolutePath());
+
+		if (!plot->grab().save(fileName, "PNG")) {
+			LOG() << "Error during saving plot into \"" << fileName << "\"";
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::xBottom, title);
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->data[QwtPlot::xBottom] = &it->container[curText];
+			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
+			it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
+		}
+		handler.plot->replot();
+	});
+
+	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->data[QwtPlot::yLeft] = &it->container[curText];
+			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
+			it->curve1->setTitle(curText);
+		}
+		handler.plot->replot();
+	});
+
+	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yRight, title);
+
+		if (curText == NONE_Y_AXIS_VARIABLE) {
+			handler.plot->enableAxis(QwtPlot::yRight, false);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->detach();
+			}
+		}
+		else {
+			handler.plot->enableAxis(QwtPlot::yRight);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->attach(handler.plot);
+
+				it->data[QwtPlot::yRight] = &it->container[curText];
+
+				it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
+				it->curve2->setTitle(curText);
+			}
+		}
+
+		handler.plot->replot();
 	});
 
 	dataTabs.plots[id] = plotHandler;
-	dataTabs.plots[id].data.xData = &dataTabs.plots[id].data.timestamp;
-	dataTabs.plots[id].data.yData = &dataTabs.plots[id].data.ewe;
+	DataMapVisualization &majorData(dataTabs.plots[id].data.first());
 
-	/*
-	CONNECT(saveDataButton, &QPushButton::clicked, mw, [=]() {
-		auto wdg = ui.newDataTab.docTabs->currentWidget();
-		auto plot = wdg->findChild<QWidget*>("qwt-plot");
+	if (loadedContainerPtr) {
+		majorData.container = *loadedContainerPtr;
+	}
+	majorData.data[QwtPlot::xBottom] = &majorData.container[xCombo->currentText()];
+	majorData.data[QwtPlot::yLeft] = &majorData.container[y1Combo->currentText()];
+	majorData.data[QwtPlot::yRight] = &majorData.container[NONE_Y_AXIS_VARIABLE];
+	majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
+	majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
+	majorData.curve1->setTitle(y1Combo->currentText());
+	majorData.curve2->setTitle(NONE_Y_AXIS_VARIABLE);
+	majorData.name = expName;
 
-		if (0 != plot) {
-			auto it = dataTabs.plots.begin();
+	QwtText title;
+	
+	title.setFont(axisTitleFont);
 
-			for (; it != dataTabs.plots.end(); ++it) {
-				if (it.value().plot == plot) {
-					break;
-				}
-			}
+	title.setText(xCombo->currentText());
+	plot->setAxisTitle(QwtPlot::xBottom, title);
 
-			if (it == dataTabs.plots.end()) {
-				return;
-			}
+	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
+	title.setText(y1Combo->currentText());
+	plot->setAxisTitle(QwtPlot::yLeft, title);
 
-			static QString dirName;
-			QString tabName = ui.newDataTab.docTabs->tabText(ui.newDataTab.docTabs->currentIndex());
-			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
-			auto dialogRet = QFileDialog::getSaveFileName(mw, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
-
-			if (dialogRet.isEmpty()) {
-				return;
-			}
-			dirName = QFileInfo(dialogRet).absolutePath();
-
-			mw->SaveData(it->xData, it->yData, dialogRet);
-		}
-	});
-	//*/
-
+	title.setText(NONE_Y_AXIS_VARIABLE);
+	plot->setAxisTitle(QwtPlot::yRight, title);
+	
 	return w;
 }

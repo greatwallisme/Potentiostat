@@ -16,6 +16,12 @@
 #define VOLTAGE_STEP_DEFAULT	1
 #define REPEATS_DEFAULT			3
 
+#define PLOT_VAR_TIMESTAMP				"Timestamp"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
+#define PLOT_VAR_EWE					"Ewe"
+#define PLOT_VAR_CURRENT				"Current"
+#define PLOT_VAR_ECE					"Ece"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
 QString ExampleExperiment::GetShortName() const {
 	return "Example Experiment";
@@ -26,8 +32,10 @@ QString ExampleExperiment::GetFullName() const {
 QString ExampleExperiment::GetDescription() const {
 	return "This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT";
 }
-QString ExampleExperiment::GetCategory() const {
-	return "Example Category";
+QStringList ExampleExperiment::GetCategory() const {
+	return QStringList() <<
+		"Example Category" <<
+		"Example Category 2";
 }
 QPixmap ExampleExperiment::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
@@ -146,7 +154,7 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 }
 QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
+	//*
 	QString selectedRadio1;
 	QString selectedRadio2;
 	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
@@ -166,6 +174,7 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_TEXT_INPUT_VALUE(voltageStep, VOLTAGE_STEP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(repeats, REPEATS_OBJ_NAME);
 
+	/*
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_POT;
@@ -214,9 +223,177 @@ QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.MaxPlays = repeats;
 	exp.branchHeadIndex = 0;
 	PUSH_NEW_NODE_DATA();
+	//*/
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_POINT_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 2e8;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 400000;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.DACMultEven = 20;
+	exp.samplingParams.DACMultOdd = 20;
+	exp.DCPoint_pot.VPointUserInput = 200;
+	exp.DCPoint_pot.VPointVsOCP = false;
+	exp.DCPoint_pot.Imax = 32767;
+	exp.DCPoint_pot.IrangeMax = RANGE0;
+	exp.DCPoint_pot.Imin = 0;
+	exp.DCPoint_pot.IrangeMin = RANGE7;
+	//exp.samplingParams.isDACStatic = true;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 200;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 600;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = true;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 600;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 100;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = true;
+	exp.branchHeadIndex = 2;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 1e7;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 2;
+	exp.samplingParams.ADCTimerPeriod = 100000;
+	exp.samplingParams.ADCBufferSizeEven = 10;
+	exp.samplingParams.ADCBufferSizeOdd = 10;
+	exp.samplingParams.DACMultEven = 10;
+	exp.samplingParams.DACMultOdd = 10;
+	exp.DCSweep_pot.VStartUserInput = 100;
+	exp.DCSweep_pot.VStartVsOCP = false;
+	exp.DCSweep_pot.VEndUserInput = 600;
+	exp.DCSweep_pot.VEndVsOCP = false;
+	exp.DCSweep_pot.VStep = 1;
+	exp.MaxPlays = 3;
+	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
 
 	NODES_DATA_END();
+}
+
+QStringList ExampleExperiment::GetXAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_TIMESTAMP <<
+		PLOT_VAR_TIMESTAMP_NORMALIZED <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT;
+}
+QStringList ExampleExperiment::GetYAxisParameters() const {
+	return QStringList() <<
+		PLOT_VAR_EWE <<
+		PLOT_VAR_CURRENT << 
+		PLOT_VAR_ECE <<
+		PLOT_VAR_CURRENT_INTEGRAL;
+}
+void ExampleExperiment::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
+	static QMap<DataMap*, qreal> timestampOffset;
+	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+
+	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.ADCrawData.current / timestamp);
+	}
+	else {
+		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].last();
+		newVal += (container[PLOT_VAR_CURRENT].last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
+		container[PLOT_VAR_CURRENT_INTEGRAL].append(newVal);
+	}
+
+	container[PLOT_VAR_TIMESTAMP].append(timestamp);
+	container[PLOT_VAR_EWE].append(expData.ADCrawData.ewe);
+	container[PLOT_VAR_ECE].append(expData.ADCrawData.ece);
+	container[PLOT_VAR_CURRENT].append(expData.ADCrawData.current);
+
+	if (!timestampOffset.contains(&container)) {
+		timestampOffset[&container] = timestamp;
+	}
+	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
+}
+void ExampleExperiment::SaveDataHeader(QFile &saveFile) const {
+	QString toWrite;
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP_NORMALIZED).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_EWE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT).replace("\"", "\"\""));
+	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_ECE).replace("\"", "\"\""));
+	toWrite += QString("\"%1\"\n").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+
+
+	QString str;
+	toWrite.clear();
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_EWE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_EWE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_ECE) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_ECE) ? "Y" : "";
+	toWrite += QString("\"%1\";").arg(str);
+	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "X" : "";
+	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "Y" : "";
+	toWrite += QString("\"%1\"\n").arg(str);
+
+	saveFile.write(toWrite.toLatin1());
+	saveFile.flush();
+}
+
+void ExampleExperiment::SaveData(QFile &saveFile, const DataMap &container) const {
+	static QChar decimalPoint = QLocale().decimalPoint();
+
+	QString toWrite;
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+
+	saveFile.write( toWrite.toLatin1() );
+	saveFile.flush();
 }

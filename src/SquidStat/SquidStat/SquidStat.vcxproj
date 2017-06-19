@@ -33,12 +33,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\Users\Matt\Dropbox\Admiral Instruments Dropbox\retrofit_firmware;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
+    <IncludePath>.\..\..\..\_arduino\retrofit_firmware\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>.\..\..\..\Hardware_emulator\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(IncludePath)</IncludePath>
+    <IncludePath>.\..\..\..\_arduino\retrofit_firmware\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -52,9 +52,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
-      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)\..\..\3rdparty\qwt\bin\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)\..\..\3rdparty\qwt\bin\lib\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\lib-debug\%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5SerialPortd.lib;qwtd.lib;Qt5Guid.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5SerialPortd.lib;qwtd.lib;Qt5Guid.lib;Qt5Widgetsd.lib;qtcsv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy $(QTDIR)\bin\Qt5Cored.dll $(OutDir)\
@@ -79,9 +79,9 @@ mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
     <Link>
       <SubSystem>Windows</SubSystem>
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
-      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)\..\..\3rdparty\qwt\bin\lib\%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(QTDIR)\lib;$(SolutionDir)\..\..\3rdparty\qwt\bin\lib\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\lib-release\%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>qtmain.lib;Qt5Core.lib;Qt5SerialPort.lib;qwt.lib;Qt5Gui.lib;Qt5Widgets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmain.lib;Qt5Core.lib;Qt5SerialPort.lib;qwt.lib;Qt5Gui.lib;Qt5Widgets.lib;qtcsv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>copy $(QTDIR)\bin\Qt5Core.dll $(OutDir)\
@@ -95,6 +95,7 @@ mkdir $(OutDir)\platforms\
 copy $(QTDIR)\plugins\platforms\qwindows.dll $(OutDir)\platforms\
 copy $(ProjectDir)\GUI.css $(OutDir)\ /Y
 copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
+copy $(SolutionDir)\..\..\3rdparty\qtcsv-out\lib-release\qtcsv.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
 copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y</Command>
     </PostBuildEvent>

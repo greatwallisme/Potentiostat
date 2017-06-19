@@ -42,7 +42,6 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 		case EXPERIMENT_COMPLETE:
 			emit ExperimentCompleted();
 			break;
-
 		case DEBUG_LOG_MSG:
 			/*data.size();
 			data.data();
@@ -50,6 +49,8 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			QString str;
 			str.append(_qchar, data.size());
 			LOG() << str;*/
+		case EXPERIMENT_NODE_COMPLETE:
+			LOG() << "Node complete";
 			break;
 
 		default:

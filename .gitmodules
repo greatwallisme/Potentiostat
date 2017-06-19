@@ -2,7 +2,15 @@
 	path = _firmware
 	url = https://github.com/mdion1/Squidstat_firmware_2017_04_13.git
 	branch = master
-[submodule "Hardware_emulator"]
-	path = Hardware_emulator
+[submodule "3rdparty/qtcsv"]
+	path = 3rdparty/qtcsv
+	url = https://github.com/iamantony/qtcsv.git
+	branch = master
+[submodule "_arduino/retrofit_firmware"]
+	path = _arduino/retrofit_firmware
+	url = https://github.com/mdion1/retrofit_firmware.git
+	branch = master
+[submodule "_arduino/Hardware_emulator"]
+	path = _arduino/Hardware_emulator
 	url = https://github.com/mdion1/Hardware_emulator.git
 	branch = master

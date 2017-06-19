@@ -10,6 +10,7 @@
 
 #include <QList>
 #include <QUuid>
+#include <QFile>
 
 class MainWindowUI;
 class InstrumentOperator;
@@ -28,30 +29,26 @@ public slots:
     void ApplyStyle();
 	
 	void LoadPrebuildExperiments();
-	//void PrebuiltExperimentSelected(int);
 	void PrebuiltExperimentSelected(const AbstractExperiment*);
 
 	void SearchHwVendor();
 	void SearchHwHandshake();
 
 	void SelectHardware(const InstrumentInfo&, quint8 channel);
-	void RequestCalibration();
 
 	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
 
-	void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
+	//void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
 
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
+	void ExperimentCompleted(const QUuid&);
 
-	//void PrebuiltExperimentsFound(const QList<ExperimentContainer>&);
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
-	//void PrebuiltExperimentSetDescription(const ExperimentContainer&);
-	//void PrebuiltExperimentSetParameters(const QList<ExperimentNode_t*>&);
 
-	void CreateNewDataWindow(const QUuid&, const QString&);
+	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*, const CalibrationData &);
 
 private:
 	void CleanupCurrentHardware();
@@ -66,7 +63,7 @@ private:
 	struct InstrumentHandler {
 		InstrumentInfo info;
 		InstrumentOperator *oper;
-		struct {
+		struct ExpDescriptor {
 			bool busy;
 			QUuid id;
 			quint8 channel;
@@ -83,8 +80,6 @@ private:
 	} hardware;
 
 	struct {
-		//QList<ExperimentContainer> ecList;
-		//int selectedEcIndex;
 		const AbstractExperiment* selectedExp;
 		QList<AbstractExperiment*> expList;
 		QList<QPluginLoader*> expLoaders;

@@ -15,22 +15,11 @@
 #include <QFile>
 #include <ExperimentReader.h>
 
+#include <QLocale>
+
 int main(int argc, char *argv[]) {
-	/*
-	QFile f("prebuilt/experiment_example.json");
-	if (f.open(QIODevice::ReadOnly)) {
-		ExperimentContainer ec;
-		try {
-			ec = ExperimentReader::Generate(f.readAll());
-		}
-		catch (const QString &str) {
-			qDebug() << str;
-		}
-		auto nodePtrs = ExperimentReader::GetNodeListForUserInput(ec);
-		auto nodes = ExperimentReader::GetNodeArrayForInstrument(ec);
-		f.close();
-	}
-	//*/
+	QLocale::setDefault(QLocale::system());
+
 	QApplication a(argc, argv);
 	qInstallMessageHandler(LogMessageHandler);
 
