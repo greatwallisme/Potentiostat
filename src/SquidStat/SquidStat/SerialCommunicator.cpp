@@ -43,7 +43,8 @@ int SerialCommunicator::FindPacket(const char *startPtr, const char *endPtr) {
 	
 	bool foundFraiming = false;
 	const ResponsePacket *resp;
-	while ((endPtr - dataPtr) >= sizeof(ResponsePacket)) {
+	//while ((endPtr - dataPtr) >= sizeof(ResponsePacket)) {  //debugging
+	while ((endPtr - dataPtr) >= 6) {
 		resp = (const ResponsePacket*)dataPtr;
 		if (COMMAND_FRAIMING_BYTES == resp->hdr.frame) {
 			foundFraiming = true;

@@ -14,6 +14,10 @@ public:
 
 	QWidget* CreateUserInput() const;
 	QByteArray GetNodesData(QWidget*, const CalibrationData&) const;
+private:
+	int HardwareVersion; //TODO: this is a placeholder member
+	void getSlewParameters(double dVdt, ExperimentNode_t * pNode) const;
+
 };
 
 #endif // CYCLICVOLTAMMETRY_H

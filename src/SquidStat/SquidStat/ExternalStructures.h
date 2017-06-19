@@ -17,6 +17,7 @@ typedef PCcommand_t CommandID;
 typedef Notifications_t ResponseID;
 
 typedef cal_t CalibrationData;
+typedef legacy_cal_t LegacyCalibrationData;
 
 #define COMMAND_FRAIMING_BYTES	FRAMING_WORD
 

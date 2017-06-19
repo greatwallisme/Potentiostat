@@ -5,6 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_SquidStat", "SquidStat\SquidStat.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB} = {247CE7C1-34CD-4F0C-8564-95918D2F34FB}
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {30A251DE-4089-4203-9BD0-22CBDAF64A59}
 	EndProjectSection
 EndProject
@@ -13,6 +14,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Experiments", "Experiments", "{654DB27D-514D-478B-B635-296AEEB8CA89}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExampleExperiment", "Experiments\ExampleExperiment\ExampleExperiment.vcxproj", "{30A251DE-4089-4203-9BD0-22CBDAF64A59}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CyclicVoltammetry", "Experiments\CyclicVoltammetry\CyclicVoltammetry.vcxproj", "{247CE7C1-34CD-4F0C-8564-95918D2F34FB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,12 +35,17 @@ Global
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Debug|x86.Build.0 = Debug|Win32
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Release|x86.ActiveCfg = Release|Win32
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59}.Release|x86.Build.0 = Release|Win32
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Debug|x86.ActiveCfg = Debug|Win32
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Debug|x86.Build.0 = Debug|Win32
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Release|x86.ActiveCfg = Release|Win32
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {654DB27D-514D-478B-B635-296AEEB8CA89}
+		{247CE7C1-34CD-4F0C-8564-95918D2F34FB} = {654DB27D-514D-478B-B635-296AEEB8CA89}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		Qt5Version = $(DefaultQtVersion)

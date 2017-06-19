@@ -169,7 +169,7 @@ void FillDcNodeSweep(ExperimentNode_t &node) {
 	/*
 	node.isHead = false;
 	node.isTail = false;
-	node.nodeType = DCNODE_SWEEP;
+	node.nodeType = DCNODE_SWEEP_POT;
 	node.tMin = 100000;
 	node.tMax = 10000000000;
 	node.samplingParams.ADCTimerDiv = 2;
