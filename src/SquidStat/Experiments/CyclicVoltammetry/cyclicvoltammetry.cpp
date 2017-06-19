@@ -114,7 +114,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
 }
-QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData) const {
+QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;
@@ -234,7 +234,7 @@ QStringList CyclicVoltammetry::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&) const {
+void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
