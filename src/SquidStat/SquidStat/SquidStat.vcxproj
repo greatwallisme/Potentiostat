@@ -33,7 +33,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>.\..\..\..\_arduino\retrofit_firmware\;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\include\;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Matt\Dropbox\Admiral Instruments Dropbox\retrofit_firmware;$(SolutionDir)\..\..\3rdparty\qwt\bin\include\;$(SolutionDir)\..\..\3rdparty\qtcsv-out\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\$(ProjectName)\</OutDir>

@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_SquidStat", "SquidStat\SquidStat.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758} = {F3BB7E31-D22A-4BD9-B622-CB54FBD95758}
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5} = {5B18FD37-1B6D-462A-A162-FD5291C928A5}
 		{247CE7C1-34CD-4F0C-8564-95918D2F34FB} = {247CE7C1-34CD-4F0C-8564-95918D2F34FB}
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {30A251DE-4089-4203-9BD0-22CBDAF64A59}
 	EndProjectSection
@@ -16,6 +18,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExampleExperiment", "Experiments\ExampleExperiment\ExampleExperiment.vcxproj", "{30A251DE-4089-4203-9BD0-22CBDAF64A59}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CyclicVoltammetry", "Experiments\CyclicVoltammetry\CyclicVoltammetry.vcxproj", "{247CE7C1-34CD-4F0C-8564-95918D2F34FB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NormalPulseVoltammetry", "Experiments\PulseVoltammetry\PulseVoltammetry.vcxproj", "{5B18FD37-1B6D-462A-A162-FD5291C928A5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DiffPulseVoltammetry", "Experiments\DiffPulseVoltammetry\DiffPulseVoltammetry.vcxproj", "{F3BB7E31-D22A-4BD9-B622-CB54FBD95758}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +45,14 @@ Global
 		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Debug|x86.Build.0 = Debug|Win32
 		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Release|x86.ActiveCfg = Release|Win32
 		{247CE7C1-34CD-4F0C-8564-95918D2F34FB}.Release|x86.Build.0 = Release|Win32
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5}.Debug|x86.ActiveCfg = Debug|Win32
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5}.Debug|x86.Build.0 = Debug|Win32
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5}.Release|x86.ActiveCfg = Release|Win32
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5}.Release|x86.Build.0 = Release|Win32
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758}.Debug|x86.ActiveCfg = Debug|Win32
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758}.Debug|x86.Build.0 = Debug|Win32
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758}.Release|x86.ActiveCfg = Release|Win32
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +60,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{30A251DE-4089-4203-9BD0-22CBDAF64A59} = {654DB27D-514D-478B-B635-296AEEB8CA89}
 		{247CE7C1-34CD-4F0C-8564-95918D2F34FB} = {654DB27D-514D-478B-B635-296AEEB8CA89}
+		{5B18FD37-1B6D-462A-A162-FD5291C928A5} = {654DB27D-514D-478B-B635-296AEEB8CA89}
+		{F3BB7E31-D22A-4BD9-B622-CB54FBD95758} = {654DB27D-514D-478B-B635-296AEEB8CA89}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		Qt5Version = $(DefaultQtVersion)
