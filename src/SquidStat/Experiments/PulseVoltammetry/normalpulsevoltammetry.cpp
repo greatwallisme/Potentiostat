@@ -1,24 +1,23 @@
-#include "cyclicvoltammetry.h"
+#include "normalpulsevoltammetry.h"
 
 #include <ExternalStructures.h>
 #include <ExperimentUIHelper.h>
 
-#define TOP_WIDGET_NAME			"Cyclic-Voltammetry"
+#define TOP_WIDGET_NAME			"Normal-Pulse-Voltammetry"
 
 #define START_VOLTAGE_OBJ_NAME	"start-voltage"
 #define START_V_VS_OCP_OBJ_NAME	"start-voltage-vs-ocp"
-#define UPPER_VOLTAGE_OBJ_NAME	"upper-voltage"
-#define UPPER_V_VS_OCP_OBJ_NAME	"upper-voltage-vs-ocp"
-#define LOWER_VOLTAGE_OBJ_NAME  "lower-voltage"
-#define LOWER_V_VS_OCP_OBJ_NAME	"lower-voltage-vs-ocp"
-#define SCAN_RATE_OBJ_NAME		"scan-rate"
-#define CYCLES_OBJ_NAME			"cycles"
+#define FINAL_VOLTAGE_OBJ_NAME	"final-voltage"
+#define FINAL_V_VS_OCP_OBJ_NAME	"final-voltage-vs-ocp"
+#define VOLTAGE_STEP_OBJ_NAME   "voltage-step"
+#define PULSE_WIDTH_OBJ_NAME	"pulse-width"
+#define PULSE_PERIOD_OBJ_NAME	"pulse-period"
 
-#define START_VOLTAGE_DEFAULT	0
-#define UPPER_VOLTAGE_DEFAULT	0.5
-#define LOWER_VOLTAGE_DEFAULT	-0.5
-#define SCAN_RATE_DEFAULT		1
-#define CYCLES_DEFAULT			3
+#define START_VOLTAGE_DEFAULT	-0.5
+#define FINAL_VOLTAGE_DEFAULT	0.5
+#define VOLTAGE_STEP_DEFAULT	0.01
+#define PULSE_WIDTH_DEFAULT		50
+#define PULSE_PERIOD_DEFAULT	100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
@@ -27,21 +26,22 @@
 #define PLOT_VAR_ECE					"Ece"
 #define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
-QString CyclicVoltammetry::GetShortName() const {
-	return "Basic Cyclic Voltammetry";
+QString NormalPulseVoltammetry::GetShortName() const {
+	return "Normal Pulse Voltammetry";
 }
-QString CyclicVoltammetry::GetFullName() const {
-	return "Basic Cyclic Voltammetry";
+QString NormalPulseVoltammetry::GetFullName() const {
+	return "Normal Pulse Voltammetry";
 }
-QString CyclicVoltammetry::GetDescription() const {
-	return "This experiment sweeps the potential of the working electrode back and forth between <b>upper potential</b> and <b>lower potential</b> at a constant <b>scan rate dE/dT</b> for a specified number of <b>cycles</b>.";
+QString NormalPulseVoltammetry::GetDescription() const {
+	return "This experiment holds the working electrode at a <b>baseline potential</b> during the <b>quiet time</b>, then applies a train of pulses, which increase in amplitude until the <b>final potential</b> is reached. The <b>voltage step</b> is the magnitude of this incremental increase. The <b>pulse width</b> is the amount of time between the rising and falling edge of a pulse. The <b>pulse period</b> is the amount of time between the beginning of one pulse and the beginning of the next.";
 }
-QStringList CyclicVoltammetry::GetCategory() const {
+QStringList NormalPulseVoltammetry::GetCategory() const {
 	return QStringList() <<
-		"Basic voltammetry";
+		"Basic voltammetry"<<
+		"Pulse voltammetry";
 
 }
-QPixmap CyclicVoltammetry::GetImage() const {
+QPixmap NormalPulseVoltammetry::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
 /*
@@ -49,11 +49,11 @@ QPixmap CyclicVoltammetry::GetImage() const {
 #include <QDoubleValidator>
 #include <QRegExpValidator>
 //*/
-QWidget* CyclicVoltammetry::CreateUserInput() const {
+QWidget* NormalPulseVoltammetry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Baseline potential = ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
@@ -68,13 +68,18 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper scan limit = ", row, 0);
-	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
+	_INSERT_RIGHT_ALIGN_COMMENT("Voltage step = ", row, 0);
+	_INSERT_TEXT_INPUT(VOLTAGE_STEP_DEFAULT, VOLTAGE_STEP_OBJ_NAME, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Final potential = ", row, 0);
+	_INSERT_TEXT_INPUT(FINAL_VOLTAGE_DEFAULT, FINAL_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN("Upper potential reference selection id", row, 1);
+	_START_DROP_DOWN("Final potential reference selection id", row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
@@ -83,38 +88,23 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Lower scan limit = ", row, 0);
-	_INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN("Lower potential reference selection id", row, 1);
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_ADD_DROP_DOWN_ITEM("reference");
-	_END_DROP_DOWN();
-
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Scan rate (dE/dt) = ", row, 0);
-	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse width = ", row, 0);
+	_INSERT_TEXT_INPUT(PULSE_WIDTH_DEFAULT, PULSE_WIDTH_OBJ_NAME, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
 	
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
-	_INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse period = ", row, 0);
+	_INSERT_TEXT_INPUT(PULSE_PERIOD_DEFAULT, PULSE_PERIOD_OBJ_NAME, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
 }
-QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+QByteArray NormalPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;
@@ -129,29 +119,28 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 
 	double startVoltage;
 	bool startVoltageVsOCP;
-	double upperVoltage;
-	bool upperVoltageVsOCP;
-	double lowerVoltage;
-	bool lowerVoltageVsOCP;
-	double dEdt;
-	qint32 cycles;
+	double VStep;
+	double VFinal;
+	bool VFinalVsOCP;
+	double restTime = 1;
+	quint32 pulseWidth;
+	quint32 pulsePeriod;
 	GET_TEXT_INPUT_VALUE_DOUBLE(startVoltage, START_VOLTAGE_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(upperVoltage, UPPER_VOLTAGE_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(dEdt, SCAN_RATE_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(VStep, VOLTAGE_STEP_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(VFinal, FINAL_VOLTAGE_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE(pulseWidth, PULSE_WIDTH_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE(pulsePeriod, PULSE_PERIOD_OBJ_NAME);
+	if (pulseWidth >= pulsePeriod)
+		pulsePeriod += pulseWidth;
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
-	exp.tMax = 2e8;
-	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 200000;
-	exp.samplingParams.ADCBufferSizeEven = 20;
-	exp.samplingParams.ADCBufferSizeOdd = 20;
-	exp.samplingParams.DACMultEven = 20;
-	exp.samplingParams.DACMultOdd = 20;
+	exp.tMax = restTime * 1e8;
+	exp.samplingParams.ADCBufferSizeEven = exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.DACMultEven = exp.samplingParams.DACMultOdd = 20;
+	exp.samplingParams.ADCTimerPeriod = 50 * 1e5;
 	exp.samplingParams.PointsIgnored = 0;
 	exp.DCPoint_pot.VPointUserInput = (int)(startVoltage * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -164,54 +153,16 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
+	exp.nodeType = DCNODE_NORMALPULSE_POT;
+	exp.tMin = 10 * 1e5;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt/1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(startVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+	getSamplingParameters(pulsePeriod, pulseWidth, &exp);
+	exp.DCPulseNormal_pot.VBaselineUserInput = (int)(startVoltage * 3276.8);
+	exp.DCPulseNormal_pot.VBaselineVsOCP = false;
+	exp.DCPulseNormal_pot.VEndUserInput = (int)(VFinal * 3276.8);
+	exp.DCPulseNormal_pot.VEndVsOCP = false;
+	exp.DCPulseNormal_pot.VStep = (float)(VStep * 3276.8);
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
-
-	exp.isHead = true;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
-
-	exp.isHead = false;
-	exp.isTail = true;
-	exp.branchHeadIndex = 2;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
-	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
@@ -220,21 +171,21 @@ QByteArray CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &
 	NODES_DATA_END();
 }
 
-QStringList CyclicVoltammetry::GetXAxisParameters() const {
+QStringList NormalPulseVoltammetry::GetXAxisParameters() const {
 	return QStringList() <<
 		PLOT_VAR_TIMESTAMP <<
 		PLOT_VAR_TIMESTAMP_NORMALIZED <<
 		PLOT_VAR_EWE <<
 		PLOT_VAR_CURRENT;
 }
-QStringList CyclicVoltammetry::GetYAxisParameters() const {
+QStringList NormalPulseVoltammetry::GetYAxisParameters() const {
 	return QStringList() <<
 		PLOT_VAR_EWE <<
 		PLOT_VAR_CURRENT <<
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void NormalPulseVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -257,7 +208,7 @@ void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &co
 	}
 	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
 }
-void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
+void NormalPulseVoltammetry::SaveDataHeader(QFile &saveFile) const {
 	QString toWrite;
 	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP).replace("\"", "\"\""));
 	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP_NORMALIZED).replace("\"", "\"\""));
@@ -295,7 +246,7 @@ void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
 	saveFile.flush();
 }
 
-void CyclicVoltammetry::SaveData(QFile &saveFile, const DataMap &container) const {
+void NormalPulseVoltammetry::SaveData(QFile &saveFile, const DataMap &container) const {
 	static QChar decimalPoint = QLocale().decimalPoint();
 
 	QString toWrite;
@@ -309,11 +260,10 @@ void CyclicVoltammetry::SaveData(QFile &saveFile, const DataMap &container) cons
 	saveFile.write(toWrite.toLatin1());
 	saveFile.flush();
 }
-void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode) const
+void NormalPulseVoltammetry::getSamplingParameters(quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode) const
 {
-	
-	//TODO: make sure that ADCMult and DACMult aren't too big for hardware buffers
 
+	//TODO: make sure that this doesn't calculate an ADCMult or DACMult too big for the hardware buffers
 
 	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
 	int dt_min = 1;
@@ -329,45 +279,55 @@ void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 		default:
 			break;
 	}
+	pNode->samplingParams.ADCTimerDiv = 0;
 	pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
 	pNode->DCSweep_pot.VStep = 1;
 
-	/* 1) Minimize dt, maximize DACMult*/
+	/* 1) Take the lesser of (period - pulsewidth) and pulsewidth */
+	double t_pulse;
+	bool isEvenPeriodShorter;
+	if (t_period - t_pulsewidth < t_pulsewidth)
+	{
+		t_pulse = t_period - t_pulsewidth;
+		isEvenPeriodShorter = true;
+	}
+	else
+	{
+		t_pulse = t_pulsewidth;
+		isEvenPeriodShorter = false;
+	}
+	uint16_t bufMult = 1;
+
+	/* 2) Minimize dt */
 	uint32_t dt;
 	do
 	{
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven);		//3276.8 is a placeholder for cal->m_DAC,V
+		dt = t_pulse * 1e5 / bufMult;
 		if (dt / dt_min > 1)
 		{
-			pNode->samplingParams.DACMultEven <<= 1;
-			pNode->samplingParams.DACMultOdd <<= 1;
+			bufMult <<= 1;
 		}
 	} while (dt / dt_min > 1);
+	pNode->samplingParams.ADCTimerPeriod = dt;
 
-	/* 2) Increase VStep, if necessary */
-	while (dt < dt_min)
+	if (isEvenPeriodShorter)
 	{
-		pNode->DCSweep_pot.VStep++;
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
+		pNode->samplingParams.DACMultEven = bufMult;
+		pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
 	}
+	else
+	{
+		pNode->samplingParams.DACMultOdd = bufMult;
+		pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * ((t_period - t_pulsewidth) / t_pulsewidth);
+	}
+	pNode->samplingParams.PointsIgnored = bufMult / 2;
+
+	/* 3) If dt is too small, then adjust pulse width and period */
+	//TODO
+
+	
 
 	/* 3) Calculate ADCMult */
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-	while (pNode->samplingParams.ADCBufferSizeEven * dt > 1e8)
-	{
-		pNode->samplingParams.ADCBufferSizeEven >>= 1;
-		pNode->samplingParams.ADCBufferSizeOdd >>= 1;
-	}
-	if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
-		pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
-
-	pNode->samplingParams.ADCTimerDiv = 0;
-	int timerDiv = 1;
-	pNode->samplingParams.ADCTimerPeriod = dt;
-	while (pNode->samplingParams.ADCTimerPeriod > 2147483648)
-	{
-		pNode->samplingParams.ADCTimerDiv++;
-		timerDiv <<= 1;
-		pNode->samplingParams.ADCTimerPeriod = dt / timerDiv;
-	} 
+	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.DACMultEven;
+	pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultOdd;
 }
