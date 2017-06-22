@@ -194,6 +194,8 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 }
 void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	static HardwareVersion lastHwVersion;
+	static QWidget *lastParamsWidget;
+	lastParamsWidget = paramsWdg;
 
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
@@ -240,7 +242,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived, this, [=](const CalibrationData &calData) {
 			LOG() << "Calibration received";
 			
-			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, calData, lastHwVersion);
+			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(lastParamsWidget, calData, lastHwVersion);
 			if (nodesData.isEmpty()) {
 				LOG() << "Error while getting user input";
 				return;
