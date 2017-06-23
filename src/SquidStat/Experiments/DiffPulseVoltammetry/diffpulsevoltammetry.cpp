@@ -35,7 +35,7 @@ QString DiffPulseVoltammetry::GetFullName() const {
 	return "Differential Pulse Voltammetry";
 }
 QString DiffPulseVoltammetry::GetDescription() const {
-	return "In this experiment, the working electrode holds at a <b>starting potential</b> during the <b>quiet time</b>.  then applies a train of pulses, which increase in amplitude until the <b>final potential</b> is reached. The <b>voltage step</b> is the magnitude of this incremental increase. The <b>pulse width</b> is the amount of time between the rising and falling edge of a pulse. The <b>pulse period</b> is the amount of time between the beginning of one pulse and the beginning of the next.";
+	return "In this experiment, the working electrode holds at a <b>starting potential</b> during the <b>quiet time</b>. Then it applies a train of pulses superimposed on a staircase waveform, with a uniform <b>voltage step</b> size. The potential continues to step until the <b>final potential</b> is reached. The <b>pulse width</b> is the amount of time between the rising and falling edge of a pulse. The <b>pulse period</b> is the amount of time between the beginning of one pulse and the beginning of the next.";
 }
 QStringList DiffPulseVoltammetry::GetCategory() const {
 	return QStringList() <<
@@ -90,6 +90,11 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse height = ", row, 0);
+	_INSERT_TEXT_INPUT(PULSE_HEIGHT_DEFAULT, PULSE_HEIGHT_OBJ_NAME, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Pulse width = ", row, 0);
 	_INSERT_TEXT_INPUT(PULSE_WIDTH_DEFAULT, PULSE_WIDTH_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
@@ -123,6 +128,7 @@ QByteArray DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDat
 	bool startVoltageVsOCP;
 	double VStep;
 	double VFinal;
+	double PulseHeight;
 	bool VFinalVsOCP;
 	double restTime = 1;
 	quint32 pulseWidth;
@@ -130,6 +136,7 @@ QByteArray DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDat
 	GET_TEXT_INPUT_VALUE_DOUBLE(startVoltage, START_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(VStep, VOLTAGE_STEP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(VFinal, FINAL_VOLTAGE_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(PulseHeight, PULSE_HEIGHT_OBJ_NAME)
 	GET_TEXT_INPUT_VALUE(pulseWidth, PULSE_WIDTH_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(pulsePeriod, PULSE_PERIOD_OBJ_NAME);
 	if (pulseWidth >= pulsePeriod)
@@ -144,7 +151,7 @@ QByteArray DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDat
 	exp.samplingParams.DACMultEven = exp.samplingParams.DACMultOdd = 20;
 	exp.samplingParams.ADCTimerPeriod = 50 * 1e5;
 	exp.samplingParams.PointsIgnored = 0;
-	exp.DCPoint_pot.VPointUserInput = (int)(startVoltage * 3276.8);
+	exp.DCPoint_pot.VPointUserInput = (int16_t)(startVoltage * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
@@ -155,15 +162,16 @@ QByteArray DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDat
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_NORMALPULSE_POT;
+	exp.nodeType = DCNODE_DIFFPULSE_POT;
 	exp.tMin = 10 * 1e5;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	getSamplingParameters(pulsePeriod, pulseWidth, &exp);
-	exp.DCPulseNormal_pot.VBaselineUserInput = (int)(startVoltage * 3276.8);
-	exp.DCPulseNormal_pot.VBaselineVsOCP = false;
-	exp.DCPulseNormal_pot.VEndUserInput = (int)(VFinal * 3276.8);
-	exp.DCPulseNormal_pot.VEndVsOCP = false;
-	exp.DCPulseNormal_pot.VStep = (float)(VStep * 3276.8);
+	exp.DCPulseDiff_pot.VStartUserInput= (int16_t)(startVoltage * 3276.8);
+	exp.DCPulseDiff_pot.VStartVsOCP = false;
+	exp.DCPulseDiff_pot.VEndUserInput = (int16_t)(VFinal * 3276.8);
+	exp.DCPulseDiff_pot.VEndVsOCP = false;
+	exp.DCPulseDiff_pot.VStep = (float)(VStep * 3276.8);
+	exp.DCPulseDiff_pot.VHeight = (int16_t)(PulseHeight * 3276.8);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
