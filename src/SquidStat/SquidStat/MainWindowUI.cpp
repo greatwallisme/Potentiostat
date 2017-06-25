@@ -908,6 +908,10 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 					}
 				}
 
+				if( (prevCloseTabButtonPos == (docTabs->count() - 2)) && (docTabs->count() > 2) ){
+					--prevCloseTabButtonPos;
+				}
+
 				docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 				QObject::disconnect(closeTabButtonConnection);
 				closeTabButton->deleteLater();
