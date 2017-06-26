@@ -11,6 +11,9 @@
 #define MIN_DISCHG_CURRENT_OBJ_NAME	"min-discharge-current"
 #define UPPER_VOLTAGE_OBJ_NAME	"upper-voltage"
 #define LOWER_VOLTAGE_OBJ_NAME  "lower-voltage"
+#define SAMP_INTERVAL_OBJ_NAME	"sampling-interval"
+#define REST_PERIOD_OBJ			"rest_period"
+#define REST_PERIOD_INT_OBJ		"rest-period-interval"
 #define CYCLES_OBJ_NAME			"cycles"
 
 #define CHG_CURRENT_DEFAULT		100		//(in mA)
@@ -19,6 +22,9 @@
 #define MIN_DISCHG_CURRENT_DEFAULT -0.5
 #define UPPER_VOLTAGE_DEFAULT	3.6
 #define LOWER_VOLTAGE_DEFAULT	2.7
+#define SAMP_INTERVAL_DEFAULT	10
+#define REST_PERIOD_DEFAULT		120
+#define REST_PERIOD_INT_DEFAULT 1
 #define CYCLES_DEFAULT			10
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
@@ -97,9 +103,22 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_INSERT_LEFT_ALIGN_COMMENT("mA", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper scan limit = ", row, 0);
-	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
+	_INSERT_TEXT_INPUT(SAMP_INTERVAL_DEFAULT, SAMP_INTERVAL_OBJ_NAME, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+
+	++row;
+	_INSERT_VERTICAL_SPACING(row);
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Rest period duration = ", row, 0);
+	_INSERT_TEXT_INPUT(REST_PERIOD_DEFAULT, REST_PERIOD_OBJ, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+
+	++row;
+	_INSERT_RIGHT_ALIGN_COMMENT("Rest period sampling interval = ", row, 0);
+	_INSERT_TEXT_INPUT(REST_PERIOD_INT_DEFAULT, REST_PERIOD_INT_OBJ, row, 1);
+	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -136,6 +155,9 @@ QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &
 	double minChgCurrent;
 	double dischgCurrent;
 	double minDischgCurrent;
+	double sampInterval;
+	double restPeriodDuration;
+	double restPeriodInterval;
 	qint32 cycles;
 	QString firstPhase;
 	GET_SELECTED_DROP_DOWN(firstPhase, "Starting phase selection id");
@@ -145,80 +167,94 @@ QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_TEXT_INPUT_VALUE_DOUBLE(dischgCurrent, DISCHG_CURRENT_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(minChgCurrent, MIN_CHG_CURRENT_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(minDischgCurrent, MIN_DISCHG_CURRENT_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(sampInterval, SAMP_INTERVAL_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodDuration, REST_PERIOD_OBJ);
+	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodInterval, REST_PERIOD_INT_OBJ);
 	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
+	if (firstPhase.contains("Charge first"))
+	{
+		chargeFirst = true;
+	}
 
-	exp.isHead = false;
+	exp.isHead = true;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = 2e8;
-	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 200000;
-	exp.samplingParams.ADCBufferSizeEven = 20;
-	exp.samplingParams.ADCBufferSizeOdd = 20;
-	exp.samplingParams.DACMultEven = 20;
-	exp.samplingParams.DACMultOdd = 20;
-	exp.samplingParams.PointsIgnored = 0;
-	//exp.DCPoint_pot.VPointUserInput = (int)(startVoltage * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
+	exp.nodeType = DCNODE_POINT_GALV;
+	exp.tMin = 1e8;
+	exp.tMax = 0xffffffffffffffff;
+	getSamplingParameters(sampInterval, &exp);
+	exp.DCPoint_galv.Irange = chargeFirst ? getCurrentRange(chgCurrent, &calData, hwVersion.hwModel) : getCurrentRange(dischgCurrent, &calData, hwVersion.hwModel);
+	exp.DCPoint_galv.IPoint = chargeFirst ? getCurrentBinary(exp.DCPoint_galv.Irange, chgCurrent, &calData) : getCurrentBinary(exp.DCPoint_galv.Irange, dischgCurrent, &calData);
+	exp.DCPoint_galv.Vmax = upperVoltage > 0 ? upperVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : upperVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
+	exp.DCPoint_galv.Vmin = lowerVoltage > 0 ? lowerVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : lowerVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
+	exp.nodeType = DCNODE_POINT_POT;
+	exp.tMin = 1e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	//getSlewParameters(dEdt/1000, &exp);
-	//exp.DCSweep_pot.VStartUserInput = (int)(startVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+	getSamplingParameters(sampInterval, &exp);
+	exp.DCPoint_pot.IrangeMax = getCurrentRange(chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5, &calData, hwVersion.hwModel);
+	exp.DCPoint_pot.Imax = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData);
+	exp.DCPoint_pot.IrangeMin = getCurrentRange(chargeFirst ? minChgCurrent : minDischgCurrent, &calData, hwVersion.hwModel);
+	exp.DCPoint_pot.Imin = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMin, minChgCurrent, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMin, minDischgCurrent, &calData);
+	exp.DCPoint_pot.VPointUserInput = getVoltageBinary(chargeFirst ? upperVoltage : lowerVoltage, &calData);
+	exp.DCPoint_pot.VPointVsOCP = false;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = exp.isTail = false;
+	exp.nodeType = DCNODE_OCP;
+	exp.DCocp.Vmin = 0;
+	exp.DCocp.Vmax = 0x7fff;
+	exp.DCocp.dVdtMax = 0;
+	getSamplingParameters(restPeriodInterval, &exp);
+	exp.tMin = 25e6;
+	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = true;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
+	exp.nodeType = DCNODE_POINT_GALV;
+	exp.tMin = 1e8;
+	exp.tMax = 0xffffffffffffffff;
+	getSamplingParameters(sampInterval, &exp);
+	exp.DCPoint_galv.Irange = !chargeFirst ? getCurrentRange(chgCurrent, &calData, hwVersion.hwModel) : getCurrentRange(dischgCurrent, &calData, hwVersion.hwModel);
+	exp.DCPoint_galv.IPoint = !chargeFirst ? getCurrentBinary(exp.DCPoint_galv.Irange, chgCurrent, &calData) : getCurrentBinary(exp.DCPoint_galv.Irange, dischgCurrent, &calData);
+	exp.DCPoint_galv.Vmax = upperVoltage > 0 ? upperVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : upperVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
+	exp.DCPoint_galv.Vmin = lowerVoltage > 0 ? lowerVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : lowerVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_POINT_POT;
+	exp.tMin = 1e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-//	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+	getSamplingParameters(sampInterval, &exp);
+	exp.DCPoint_pot.IrangeMax = getCurrentRange(!chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5, &calData, hwVersion.hwModel);
+	exp.DCPoint_pot.Imax = !chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData);
+	exp.DCPoint_pot.IrangeMin = getCurrentRange(!chargeFirst ? minChgCurrent : minDischgCurrent, &calData, hwVersion.hwModel);
+	exp.DCPoint_pot.Imin = !chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMin, minChgCurrent, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMin, minDischgCurrent, &calData);
+	exp.DCPoint_pot.VPointUserInput = getVoltageBinary(!chargeFirst ? upperVoltage : lowerVoltage, &calData);
+	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = true;
-	exp.branchHeadIndex = 2;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 1e7;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-//	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+	exp.nodeType = DCNODE_OCP;
+	exp.DCocp.Vmin = 0;
+	exp.DCocp.Vmax = 0xffff;
+	exp.DCocp.dVdtMax = 0;
+	getSamplingParameters(restPeriodInterval, &exp);
+	exp.tMin = 25e6;
+	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
+	
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
@@ -315,7 +351,7 @@ void ChargeDischargeDC::SaveData(QFile &saveFile, const DataMap &container) cons
 	saveFile.write(toWrite.toLatin1());
 	saveFile.flush();
 }
-void ChargeDischargeDC::getSlewParameters(double dVdt, ExperimentNode_t * pNode) const
+void ChargeDischargeDC::getSamplingParameters(double sampling_interval, ExperimentNode_t * pNode) const
 {
 	
 	//TODO: make sure that ADCMult and DACMult aren't too big for hardware buffers
@@ -335,45 +371,79 @@ void ChargeDischargeDC::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 		default:
 			break;
 	}
+	pNode->samplingParams.PointsIgnored = 0;
 	pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
-	pNode->DCSweep_pot.VStep = 1;
+	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
 
 	/* 1) Minimize dt, maximize DACMult*/
-	uint32_t dt;
+	uint64_t dt;
 	do
 	{
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven);		//3276.8 is a placeholder for cal->m_DAC,V
+		dt = (uint64_t) (sampling_interval * 1e8 / pNode->samplingParams.ADCBufferSizeEven);
 		if (dt / dt_min > 1)
 		{
-			pNode->samplingParams.DACMultEven <<= 1;
-			pNode->samplingParams.DACMultOdd <<= 1;
+			if (pNode->samplingParams.ADCBufferSizeEven << 1 < DACdcBUF_SIZE)
+			{
+				pNode->samplingParams.ADCBufferSizeEven <<= 1;
+				pNode->samplingParams.ADCBufferSizeOdd <<= 1;
+			}
+			else
+			{
+				break;
+			}
 		}
 	} while (dt / dt_min > 1);
 
-	/* 2) Increase VStep, if necessary */
-	while (dt < dt_min)
-	{
-		pNode->DCSweep_pot.VStep++;
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
-	}
-
 	/* 3) Calculate ADCMult */
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-	while (pNode->samplingParams.ADCBufferSizeEven * dt > 1e8)
-	{
-		pNode->samplingParams.ADCBufferSizeEven >>= 1;
-		pNode->samplingParams.ADCBufferSizeOdd >>= 1;
-	}
-	if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
-		pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
-
 	pNode->samplingParams.ADCTimerDiv = 0;
 	int timerDiv = 1;
-	pNode->samplingParams.ADCTimerPeriod = dt;
-	while (pNode->samplingParams.ADCTimerPeriod > 2147483648)
+	
+	while (dt / timerDiv > 2147483648)
 	{
 		pNode->samplingParams.ADCTimerDiv++;
 		timerDiv <<= 1;
-		pNode->samplingParams.ADCTimerPeriod = dt / timerDiv;
 	} 
+	pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
+}
+
+currentRange_t ChargeDischargeDC::getCurrentRange(double current, const CalibrationData * cal, HardwareModel_t hwModel) const
+{
+	int MaxCurrentRange;
+	if (hwModel == PRIME || hwModel == PICO || hwModel == EDGE)
+		MaxCurrentRange = 3;
+	else
+		MaxCurrentRange = 7;
+	int range = 0;
+	int32_t currentBinary;
+
+	while (true)
+	{
+		currentBinary = current > 0 ? current * cal->m_DACdcP_I[range] + cal->b_DACdc_I[range] : current * cal->m_DACdcN_I[range] + cal->b_DACdc_I[range];
+		if (ABS(currentBinary) < UNDERCURRENT_LIMIT)
+		{
+			if (range == MaxCurrentRange)
+				break;
+			else
+			{
+				range++;
+				continue;
+			}
+		}
+		else
+			break;
+	}
+
+	return (currentRange_t)range;
+}
+
+int16_t ChargeDischargeDC::getCurrentBinary(currentRange_t range, double current, const CalibrationData * cal) const
+{
+	int16_t currentBinary = (int16_t)(current > 0 ? current * cal->m_DACdcP_I[(int)range] + cal->b_DACdc_I[(int)range] : current * cal->m_DACdcN_I[(int)range] + cal->b_DACdc_I[(int)range]);
+	return currentBinary;
+}
+
+int16_t ChargeDischargeDC::getVoltageBinary(double voltage, const CalibrationData * cal) const
+{
+	int16_t voltageBinary = (int16_t)(voltage > 0 ? voltage * cal->m_DACdcP_V + cal->b_DACdc_V : voltage * cal->m_DACdcN_V + cal->b_DACdc_V);
+	return voltageBinary;
 }

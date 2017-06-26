@@ -107,6 +107,7 @@ void SerialCommunicator::DataArrived() {
 		if (!CheckPacket(resp)) {
 			++dataPtr;
 			LOG() << "It is not a valid packet, skip one byte";
+			LOG() << "Total data" << _rawData.size();
 			continue;
 		}
 
