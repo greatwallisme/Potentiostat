@@ -1,7 +1,7 @@
 #include "Config.h"
 
 qint32 DefaultSerialPortSettings::Baudrate() {
-	return QSerialPort::Baud9600;
+	return QSerialPort::Baud57600;
 }
 QSerialPort::DataBits DefaultSerialPortSettings::DataBits() {
 	return QSerialPort::Data8;

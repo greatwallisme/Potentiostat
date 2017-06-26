@@ -26,14 +26,10 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case ADCDC_DATA:
-			//*
 			if (data.size() == sizeof(ExperimentalData)) {
 				ExperimentalData *expData = (ExperimentalData*)data.data();
 				emit ExperimentalDataReceived(channel, *expData);
 			}
-			/*/
-			emit ExperimentalDataReceived(channel, *((ExperimentalData*)data.data()));
-			//*/
 			break;
 
 		case HW_DATA:
