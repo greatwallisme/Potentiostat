@@ -99,7 +99,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
+	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0, bool showControlButtons = true);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();

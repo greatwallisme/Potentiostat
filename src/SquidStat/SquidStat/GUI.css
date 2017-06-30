@@ -619,13 +619,16 @@ QScrollBar::sub-page:horizontal {
 	background: none;
 }
 /*//////////////         CONTROL BUTTONS       ////////////////////*/
+#control-button-red,
 #control-button-blue {
 	border: none;
+	min-height: 65px;
+	margin-top: 0px;
+	font-size: 16px;
+}
+#control-button-blue {
 	border: 2px solid #d4e7ee;
 	background-color: #eef9fb;
-	min-height: 50px;
-	margin-top: 20px;
-	font-size: 16px;
 }
 #control-button-blue:hover {
 	border-color: #82b6e6;
@@ -634,12 +637,8 @@ QScrollBar::sub-page:horizontal {
 	border-color: #d4e7ee;
 }
 #control-button-red {
-	border: none;
 	border: 2px solid #e8cecf;
 	background-color: #f7edec;
-	min-height: 50px;
-	margin-top: 20px;
-	font-size: 16px;
 }
 #control-button-red:hover {
 	border-color: #d95b5f;

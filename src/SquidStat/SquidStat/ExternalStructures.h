@@ -24,7 +24,7 @@ typedef legacy_cal_t LegacyCalibrationData;
 #define MAX_CHANNEL_VALUE		4
 #define MAX_DATA_LENGTH			2048
 
-#pragma pack(push, 1)
+#pragma pack(push, 4)
 
 struct HardwareVersion {
 	union {
