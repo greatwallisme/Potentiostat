@@ -852,7 +852,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		QString tabName = csvData.fileName;
 		const QUuid id = QUuid::createUuid();
 
-		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, csvData.xAxisList, csvData.yAxisList, &csvData.container);
+		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, csvData.xAxisList, csvData.yAxisList, &csvData.container, false);
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
 		ui.newDataTab.newDataTabButton->click();
@@ -1684,7 +1684,7 @@ bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHand
 
 	return ret;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr, bool showControlButtons) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 
@@ -1744,9 +1744,27 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
 	lay->addLayout(settingsLay, 1, 1);
-	lay->addWidget(plot, 0, 2, -1, 1);
+	lay->addWidget(plot, 0, 2, 2, 1);
 	lay->setColumnStretch(1, 1);
 	lay->setColumnStretch(2, 1);
+
+	auto controlButtonLay = new QHBoxLayout;
+	QPushButton *pauseExperiment;
+	QPushButton *stopExperiment;
+
+
+	#define PAUSE_EXT_BUTTON_TEXT		"Pause Experiment"
+	#define RESUME_EXT_BUTTON_TEXT		"Resume Experiment"
+
+	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXT_BUTTON_TEXT), "control-button-blue"));
+	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
+
+	if (!showControlButtons) {
+		pauseExperiment->hide();
+		stopExperiment->hide();
+	}
+
+	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
@@ -1798,6 +1816,24 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			plot->replot();
 		}
 	}));
+	
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &extId) {
+		if(id != extId)
+			return;
+
+		pauseExperiment->hide();
+		stopExperiment->hide();
+	});
+
+
+	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
+		if (pauseExperiment->text() == PAUSE_EXT_BUTTON_TEXT) {
+			pauseExperiment->setText(RESUME_EXT_BUTTON_TEXT);
+		}
+		else {
+			pauseExperiment->setText(PAUSE_EXT_BUTTON_TEXT);
+		}
+	});
 
 	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {
 		QList<CsvFileData> csvDataList;
