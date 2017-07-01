@@ -73,3 +73,9 @@ void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 cha
 void InstrumentOperator::StopExperiment(quint8 channel) {
 	//_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
 }
+void InstrumentOperator::PauseExperiment(quint8 channel) {
+	//_communicator->SendCommand((CommandID)PAUSE_EXPERIMENT, channel);
+}
+void InstrumentOperator::ResumeExperiment(quint8 channel) {
+	//_communicator->SendCommand((CommandID)RESUME_EXPERIMENT, channel);
+}

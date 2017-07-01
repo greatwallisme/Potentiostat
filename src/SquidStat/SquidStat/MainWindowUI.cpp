@@ -1828,11 +1828,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXT_BUTTON_TEXT) {
+			mw->PauseExperiment(id);
 			pauseExperiment->setText(RESUME_EXT_BUTTON_TEXT);
 		}
 		else {
+			mw->ResumeExperiment(id);
 			pauseExperiment->setText(PAUSE_EXT_BUTTON_TEXT);
 		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(stopExperiment, &QPushButton::clicked, [=]() {
+		mw->StopExperiment(id);
 	});
 
 	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {

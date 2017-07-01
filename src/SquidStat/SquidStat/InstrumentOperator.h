@@ -19,6 +19,8 @@ public slots:
 	//void StartExperiment(QVector<ExperimentNode_t>, quint8 channel = 0);
 	void StartExperiment(const QByteArray &, quint8 channel = 0);
 	void StopExperiment(quint8 channel = 0);
+	void PauseExperiment(quint8 channel = 0);
+	void ResumeExperiment(quint8 channel = 0);
 
 private slots:
 	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);

@@ -38,6 +38,8 @@ public slots:
 
 	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
+	void PauseExperiment(const QUuid&);
+	void ResumeExperiment(const QUuid&);
 
 	//void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
 

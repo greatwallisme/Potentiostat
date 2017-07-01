@@ -314,6 +314,42 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 
 	hardware.currentInstrument.handler->oper->RequestHardwareVersion();
 }
+void MainWindow::PauseExperiment(const QUuid &id) {
+	auto it = hardware.handlers.begin();
+	for (; it != hardware.handlers.end(); ++it) {
+		if (it->experiment.id == id) {
+			break;
+		}
+	}
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	if (!it->experiment.busy) {
+		return;
+	}
+
+	it->oper->PauseExperiment(it->experiment.channel);
+}
+void MainWindow::ResumeExperiment(const QUuid &id) {
+	auto it = hardware.handlers.begin();
+	for (; it != hardware.handlers.end(); ++it) {
+		if (it->experiment.id == id) {
+			break;
+		}
+	}
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	if (!it->experiment.busy) {
+		return;
+	}
+
+	it->oper->ResumeExperiment(it->experiment.channel);
+}
 void MainWindow::StopExperiment(const QUuid &id) {
 	auto it = hardware.handlers.begin();
 	for (; it != hardware.handlers.end(); ++it) {
