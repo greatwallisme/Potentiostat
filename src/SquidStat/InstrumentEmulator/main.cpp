@@ -10,7 +10,7 @@
 
 int main(int argc, char *argv[]) {
 	QCoreApplication a(argc, argv);
-
+	 
 	static SerialCommunicator communicator;
 	static QTimer dataTimer;
 	static ExperimentalData expData;
