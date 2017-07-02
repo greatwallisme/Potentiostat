@@ -73,7 +73,7 @@ void InstrumentOperator::RequestHardwareVersion() {
 }
 //*/
 void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 channel) {
-	_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
+	//_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
 	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel);
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {
