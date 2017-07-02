@@ -239,6 +239,9 @@ QPushButton#bar-button:open {
 	font-size: 16px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
+#hw-list-combo {
+	min-width: 150px;
+}
 #experiment-params-scroll-area {
 	border: none;
 }
@@ -393,12 +396,19 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-height: 30px;
 }
 /*//////////////         NOTES DIALOG       ////////////////////*/
+#experimental-notes-scroll-area {
+	margin: 1px;
+	border: none;
+}
 #notes-dialog {
 	min-height: 600px;
 	max-height: 600px;
 	min-width: 550px;
 	max-width: 550px;
 	border: 1px solid #7b1a1e;
+}
+#experimental-notes-text-edit {
+	min-height: 150px;
 }
 #notes-dialog-right-spacing {
 	min-width: 25px;
@@ -407,6 +417,7 @@ QLabel[experiment-params-widget="low-margin"] {
 #notes-dialog-bottom-spacing {
 	min-height: 10px;
 	max-height: 10px;
+	margin: 1px;
 }
 #notes-dialog QRadioButton {
 	margin-left: 30px;
@@ -421,8 +432,8 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 /*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
 #curve-params-dialog {
-	min-height: 570px;
-	max-height: 570px;
+	min-height: 630px;
+	max-height: 630px;
 	min-width: 475px;
 	max-width: 475px;
 	border: 1px solid #7b1a1e;
@@ -660,11 +671,13 @@ QwtScaleWidget {
     color: #4d565f;
 	font-family: "Segoe UI Semibold";
 }
+/*
 QwtText {
     color: #000000;
-	font-family: "Arial";
+	font-family: "Segoe UI Semibold";
 	font-size: 20px;
 }
+*/
 /*
 QwtLegend {
     border: 1px solid white;

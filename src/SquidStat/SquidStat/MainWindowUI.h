@@ -13,7 +13,7 @@ class QStackedLayout;
 class QTabWidget;
 
 #include <qwt_plot.h>
-class QwtPlotCurve;
+#include <qwt_plot_curve.h>
 
 #include <QObject>
 #include <QMap>
@@ -66,7 +66,8 @@ private:
 		struct {
 			QColor color;
 			qreal width;
-			Qt::PenStyle style;
+			Qt::PenStyle penStyle;
+			QwtPlotCurve::CurveStyle curveStyle;
 		} pen[TOTAL_CURVES];
 	};
 
