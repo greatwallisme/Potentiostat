@@ -117,6 +117,7 @@ void MainWindow::AddInstruments(InstrumentList instruments) {
 		handler.oper = 0;
 		handler.info = instrumentToAdd;
 		handler.experiment.busy = false;
+		handler.experiment.paused = false;
 
 		hardware.handlers << handler;
 
@@ -246,18 +247,24 @@ void MainWindow::SearchHwHandshake() {
 }
 //*/
 void MainWindow::SelectHardware(const QString &name, quint8 channel) {
-	auto hwIt = hardware.handlers.begin();
-	for (; hwIt != hardware.handlers.end(); ++hwIt) {
-		if (name == hwIt->info.name) {
-			break;
-		}
-	}
+	auto hwIt = SearchForHandler(name, channel);
 	if (hwIt == hardware.handlers.end()) {
 		return;
 	}
 
 	hardware.currentInstrument.handler = hwIt;
 	hardware.currentInstrument.channel = channel;
+
+	if (hardware.currentInstrument.handler->experiment.busy) {
+		emit CurrentHardwareBusy();
+
+		if (hardware.currentInstrument.handler->experiment.paused) {
+			emit CurrentExperimentPaused();
+		}
+	}
+	else {
+		emit CurrentHardwareAvaliable();
+	}
 
 	LOG() << "Start working with" << name;
 }
@@ -312,12 +319,14 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			emit ExperimentCompleted(handler->experiment.id);
-
 			handler->experiment.busy = false;
-			handler->experiment.id = QUuid();
+			handler->experiment.paused = false;
 
 			LOG() << "Experiment completed";
+			
+			emit ExperimentCompleted(handler->experiment.id);
+			
+			handler->experiment.id = QUuid();
 		});
 
 		/*
@@ -445,13 +454,52 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	LOG() << "Start experiment";
 	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
 }
-void MainWindow::PauseExperiment(const QUuid &id) {
+QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QString &name, quint8 channel) {
+	auto hwIt = hardware.handlers.begin();
+	for (; hwIt != hardware.handlers.end(); ++hwIt) {
+		if (name == hwIt->info.name) {
+			break;
+		}
+	}
+
+	return hwIt;
+}
+QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QUuid &id) {
 	auto it = hardware.handlers.begin();
 	for (; it != hardware.handlers.end(); ++it) {
 		if (it->experiment.id == id) {
 			break;
 		}
 	}
+	return it;
+}
+void MainWindow::StopExperiment(const QString &name, quint8 channel) {
+	auto hwIt = SearchForHandler(name, channel);
+	if (hwIt == hardware.handlers.end()) {
+		return;
+	}
+
+	StopExperiment(hwIt->experiment.id);
+}
+void MainWindow::PauseExperiment(const QString &name, quint8 channel) {
+	auto hwIt = SearchForHandler(name, channel);
+	if (hwIt == hardware.handlers.end()) {
+		return;
+	}
+
+	PauseExperiment(hwIt->experiment.id);
+
+}
+void MainWindow::ResumeExperiment(const QString &name, quint8 channel) {
+	auto hwIt = SearchForHandler(name, channel);
+	if (hwIt == hardware.handlers.end()) {
+		return;
+	}
+
+	ResumeExperiment(hwIt->experiment.id);
+}
+void MainWindow::PauseExperiment(const QUuid &id) {
+	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
 		return;
@@ -460,16 +508,13 @@ void MainWindow::PauseExperiment(const QUuid &id) {
 	if (!it->experiment.busy) {
 		return;
 	}
+
+	it->experiment.paused = true;
 
 	it->oper->PauseExperiment(it->experiment.channel);
 }
 void MainWindow::ResumeExperiment(const QUuid &id) {
-	auto it = hardware.handlers.begin();
-	for (; it != hardware.handlers.end(); ++it) {
-		if (it->experiment.id == id) {
-			break;
-		}
-	}
+	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
 		return;
@@ -479,15 +524,12 @@ void MainWindow::ResumeExperiment(const QUuid &id) {
 		return;
 	}
 
+	it->experiment.paused = false;
+
 	it->oper->ResumeExperiment(it->experiment.channel);
 }
 void MainWindow::StopExperiment(const QUuid &id) {
-	auto it = hardware.handlers.begin();
-	for (; it != hardware.handlers.end(); ++it) {
-		if (it->experiment.id == id) {
-			break;
-		}
-	}
+	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
 		return;

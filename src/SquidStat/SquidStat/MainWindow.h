@@ -43,6 +43,9 @@ public slots:
 	void StopExperiment(const QUuid&);
 	void PauseExperiment(const QUuid&);
 	void ResumeExperiment(const QUuid&);
+	void StopExperiment(const QString&, quint8 channel);
+	void PauseExperiment(const QString&, quint8 channel);
+	void ResumeExperiment(const QString&, quint8 channel);
 
 	void RemoveInstruments(InstrumentList);
 	void AddInstruments(InstrumentList);
@@ -58,6 +61,10 @@ signals:
 
 	void RemoveDisconnectedInstruments(const QStringList&);
 	void AddNewInstruments(const QStringList&);
+
+	void CurrentHardwareBusy();
+	void CurrentHardwareAvaliable();
+	void CurrentExperimentPaused();
 
 private:
 	void CleanupCurrentHardware();
@@ -75,6 +82,7 @@ private:
 		InstrumentOperator *oper;
 		struct ExpDescriptor {
 			bool busy;
+			bool paused;
 			QUuid id;
 			quint8 channel;
 		} experiment;
@@ -96,6 +104,8 @@ private:
 	} prebuiltExperiments;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
 };
 
 #endif // MAINWINDOW_H
