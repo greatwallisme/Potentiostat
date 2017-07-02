@@ -14,9 +14,8 @@ public:
 	~InstrumentOperator();
 
 public slots:
-	void RequestCalibrationData();
-	void RequestHardwareVersion();
-	//void StartExperiment(QVector<ExperimentNode_t>, quint8 channel = 0);
+	//void RequestCalibrationData();
+	//void RequestHardwareVersion();
 	void StartExperiment(const QByteArray &, quint8 channel = 0);
 	void StopExperiment(quint8 channel = 0);
 	void PauseExperiment(quint8 channel = 0);

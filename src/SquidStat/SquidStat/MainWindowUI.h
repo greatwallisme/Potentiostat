@@ -117,10 +117,12 @@ private:
 		} newDataTab;
 	} ui;
 	
+	/*
 	struct {
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
+	//*/
 	
 	struct {
 		QWidget *userInputs;

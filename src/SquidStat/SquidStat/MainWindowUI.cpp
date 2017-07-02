@@ -35,6 +35,7 @@
 #include <QPixmap>
 
 #include <QTime>
+#include <QDateTime>
 #include <QFileDialog>
 #include <QStringList>
 #include <QSettings>
@@ -196,28 +197,30 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 		return w;
 	}
 
-	QPushButton *searchByVendor;
-	QPushButton *searchViaHandshake;
-	QPushButton *selectHardware;
+	//QPushButton *searchByVendor;
+	//QPushButton *searchViaHandshake;
+	//QPushButton *selectHardware;
 	//QPushButton *requestCalibration;
-	QComboBox *hwList;
-	QLineEdit *channelEdit;
+	//QComboBox *hwList;
+	//QLineEdit *channelEdit;
 
 	w = WDG();
 	QGridLayout *lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
 
-	lay->addWidget(OBJ_NAME(LBL("Select hardware"), "heading-label"), 0, 0, 1, 2);
-	lay->addWidget(OBJ_NAME(LBL("COM port:"), "regular-comment-label"), 1, 0);
-	lay->addWidget(OBJ_NAME(LBL("Channel:"), "regular-comment-label"), 2, 0);
-	lay->addWidget(hwList = CMB(), 1, 1);
-	lay->addWidget(channelEdit = LED(), 2, 1);
-	QListView *hwListComboList = OBJ_NAME(new QListView, "combo-list");
-	hwList->setView(hwListComboList);
+	//lay->addWidget(OBJ_NAME(LBL("Select hardware"), "heading-label"), 0, 0, 1, 2);
+	//lay->addWidget(OBJ_NAME(LBL("COM port:"), "regular-comment-label"), 1, 0);
+	//lay->addWidget(OBJ_NAME(LBL("Channel:"), "regular-comment-label"), 2, 0);
+	//lay->addWidget(hwList = CMB(), 1, 1);
+	//lay->addWidget(channelEdit = LED(), 2, 1);
+	//QListView *hwListComboList = OBJ_NAME(new QListView, "combo-list");
+	//hwList->setView(hwListComboList);
 
 	QGridLayout *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout));
+	/*
 	buttonLay->addWidget(searchByVendor = OBJ_NAME(PBT("Search by vendor"), "secondary-button"), 0, 1);
 	buttonLay->addWidget(searchViaHandshake = OBJ_NAME(PBT("Search via handshake"), "secondary-button"), 0, 2);
-	buttonLay->addWidget(selectHardware = OBJ_NAME(PBT("Select this hardware"), "secondary-button"), 1, 1);
+	//*/
+	//buttonLay->addWidget(selectHardware = OBJ_NAME(PBT("Select this hardware"), "secondary-button"), 1, 1);
 	//buttonLay->addWidget(requestCalibration = OBJ_NAME(PBT("Request calibration"), "secondary-button"), 1, 2);
 	buttonLay->setColumnStretch(0, 1);
 	buttonLay->setColumnStretch(3, 1);
@@ -225,18 +228,37 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	lay->addLayout(buttonLay, 3, 0, 1, 2);
 
 
-	CONNECT(searchByVendor, &QPushButton::clicked, mw, &MainWindow::SearchHwVendor);
-	CONNECT(searchViaHandshake, &QPushButton::clicked, mw, &MainWindow::SearchHwHandshake);
+	//CONNECT(searchByVendor, &QPushButton::clicked, mw, &MainWindow::SearchHwVendor);
+	//CONNECT(searchViaHandshake, &QPushButton::clicked, mw, &MainWindow::SearchHwHandshake);
 
+	/*
+	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
+		hwList->addItems(newLines);
+	});
+	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &linesToDelete) {
+		for (int i = 0; i < hwList->count();) {
+			if (linesToDelete.contains(hwList->itemText(i))) {
+				hwList->removeItem(i);
+			}
+			else {
+				++i;
+			}
+		}
+	});
+	//*/
+
+	/*
 	CONNECT(mw, &MainWindow::HardwareFound, [=](const InstrumentList &instrumentList) {
 		hwList->clear();
 
 		foreach(const InstrumentInfo &info, instrumentList) {
-			LOG() << info.portName << ": " << info.serial;
-			hwList->addItem(info.portName, QVariant::fromValue(info));
+			LOG() << info.serialPortName << ": " << info.serial;
+			hwList->addItem(info.serialPortName, QVariant::fromValue(info));
 		}
 	});
+	//*/
 
+	/*
 	CONNECT(hwList, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 		[=](int index) {
 			if (-1 != index) {
@@ -248,14 +270,16 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	CONNECT(channelEdit, &QLineEdit::textChanged, [=](const QString &str) {
 		currentInstrument.channel = str.toInt();
 	});
+	//*/
 
+	/*
 	CONNECT(selectHardware, &QPushButton::clicked, [=]() {
-		mw->SelectHardware(currentInstrument.instrumentInfo, currentInstrument.channel);
+		mw->SelectHardware(hwList->currentText(), channelEdit->text().toInt());
 	});
-	//CONNECT(requestCalibration, &QPushButton::clicked, mw, &MainWindow::RequestCalibration);
+	//*/
 
-	channelEdit->setValidator(new QIntValidator(0, MAX_CHANNEL_VALUE));
-	channelEdit->setText("0");
+	//channelEdit->setValidator(new QIntValidator(0, MAX_CHANNEL_VALUE));
+	//channelEdit->setText("0");
 
 	return w;
 }
@@ -609,14 +633,30 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addStretch(1);
 
-	auto paramsHeadLabel = OBJ_NAME(LBL("Parameters"), "heading-label");
-	paramsHeadLabel->hide();
+	auto paramsHeadWidget = WDG();
+	paramsHeadWidget->hide();
+
+	auto paramsHeadWidgetLay = new QGridLayout(paramsHeadWidget);
+
+	auto channelEdit = CMB();
+	channelEdit->setView(OBJ_NAME(new QListView, "combo-list"));
+	channelEdit->addItem("Channel 1", 0);
+	//channelEdit->addItem("Channel 2", 1);
+
+	auto hwList = CMB();
+	hwList->setView(OBJ_NAME(new QListView, "combo-list"));
+
+	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
+	paramsHeadWidgetLay->addWidget(hwList, 1, 0);
+	paramsHeadWidgetLay->addWidget(channelEdit, 1, 1);
+	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"), 2, 0, 1, 3);
+	paramsHeadWidgetLay->setColumnStretch(2, 1);
 
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
-	paramsWidgetLay->addWidget(paramsHeadLabel, 1, 1);
+	paramsWidgetLay->addWidget(paramsHeadWidget, 1, 1);
 	paramsWidgetLay->addLayout(buttonLay, 3, 1);
 	paramsWidgetLay->setRowStretch(2, 1);
 
@@ -634,6 +674,21 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
+
+	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
+		hwList->addItems(newLines);
+	});
+
+	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &linesToDelete) {
+		for (int i = 0; i < hwList->count();) {
+			if (linesToDelete.contains(hwList->itemText(i))) {
+				hwList->removeItem(i);
+			}
+			else {
+				++i;
+			}
+		}
+	});
 
 	CONNECT(mw, &MainWindow::PrebuiltExperimentsFound, [=](const QList<AbstractExperiment*> &expList) {
 		QStandardItemModel *model = new QStandardItemModel(expList.size(), 1);
@@ -687,18 +742,17 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			mw->PrebuiltExperimentSelected(exp);
 
 			startExpPbt->show();
-			paramsHeadLabel->show();
+			paramsHeadWidget->show();
 		}
 		else {
 			startExpPbt->hide();
-			paramsHeadLabel->hide();
+			paramsHeadWidget->hide();
 		}
 		//mw->PrebuiltExperimentSelected(index.row());
 	});
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
-		//FillNodeParameters();
-
+		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
 		mw->StartExperiment(prebuiltExperimentData.userInputs);
 	});
 
@@ -931,7 +985,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		dataTabs.plots[id].data.first().cal = calData;
 		dataTabs.plots[id].data.first().hwVer = hwVer;
 
-		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QTime::currentTime().toString("hh:mm:ss") + ")");
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")");
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
@@ -1380,7 +1434,7 @@ public:
 	PlotEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::MouseButtonDblClick) {
+		if ((e->type() == QEvent::MouseButtonDblClick) || (e->type() == QEvent::MouseButtonPress)) {
 			_lambda();
 			return true;
 		}

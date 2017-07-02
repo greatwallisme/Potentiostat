@@ -9,7 +9,7 @@ SerialCommunicator::SerialCommunicator(const InstrumentInfo &info, QObject *pare
 	_instrumentInfo(info)
 {
 	_serialPort = new QSerialPort(this);
-	_serialPort->setPortName(_instrumentInfo.portName);
+	_serialPort->setPortName(_instrumentInfo.port.name);
 	_serialPort->setBaudRate(DefaultSerialPortSettings::Baudrate());
 	_serialPort->setDataBits(DefaultSerialPortSettings::DataBits());
 	_serialPort->setFlowControl(DefaultSerialPortSettings::FlowControl());

@@ -28,7 +28,10 @@ typedef legacy_cal_t LegacyCalibrationData;
 
 struct HardwareVersion {
 	union {
-		HardwareModel_t hwModel;
+		struct {
+			HardwareModel_t hwModel;
+			char hwName[0];
+		};
 		uint8_t rawData[HW_DATA_LENGTH];
 	};
 };
