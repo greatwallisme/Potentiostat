@@ -501,6 +501,11 @@ QColorPicker {
 	margin-left: 0px;
 	padding-left: 0px;
 }
+/*//////////////       PLOT TITLE DIALOG     ////////////////////*/
+#plot-title-dialog {
+	border: 1px solid #7b1a1e;
+	min-width: 500px;
+}
 /*//////////////       AXIS PARAMS DIALOG     ////////////////////*/
 #axis-params-dialog {
 	/*min-height: 400px;

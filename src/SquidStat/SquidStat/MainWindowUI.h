@@ -87,6 +87,7 @@ private:
 	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
 	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
+	static QString GetNewTitle(QWidget*, const QString&);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 

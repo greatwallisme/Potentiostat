@@ -5,6 +5,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_legend.h>
 #include <qwt_scale_widget.h>
+#include <qwt_text_label.h>
 
 #include "UIHelper.hpp"
 
@@ -1552,6 +1553,61 @@ public:
 private:
 	std::function<void(QEvent*, bool&)> _lambda;
 };
+QString MainWindowUI::GetNewTitle(QWidget *parent, const QString &oldText) {
+	static bool dialogCanceled;
+	dialogCanceled = false;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::FramelessWindowHint | Qt::Popup), "plot-title-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	QLineEdit *titleLed;
+
+	auto paramsLay = new QHBoxLayout;
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Plot title: "), "experiment-params-comment"), "comment-placement", "left"));
+	paramsLay->addWidget(titleLed = new QLineEdit(oldText));
+
+	lay->addLayout(paramsLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	dialog->installEventFilter(new PopupDialogEventFilter(dialog, [=](QEvent *e, bool &ret) {
+		QKeyEvent *ke = (QKeyEvent*)e;
+
+		ret = false;
+		int key = ke->key();
+
+		if (ke->matches(QKeySequence::Cancel)) {
+			dialog->reject();
+			dialogCanceled = true;
+			ret = true;
+		}
+		if ((Qt::Key_Enter == key) || (Qt::Key_Return == key)) {
+			dialog->accept();
+			ret = true;
+		}
+	}));
+
+	dialog->exec();
+
+	QString ret;
+	if (!dialogCanceled) {
+		ret = titleLed->text();
+	}
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return ret;
+}
 bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameters &axisParams) {
 	static bool dialogCanceled;
 	dialogCanceled = false;
@@ -1817,6 +1873,7 @@ bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHand
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr, bool showControlButtons) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
+	axisTitleFont.setBold(false);
 
 	auto w = WDG();
 
@@ -1824,7 +1881,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 	QwtPlot *plot = OBJ_NAME(new QwtPlot(), "qwt-plot");
 	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
-	plot->setTitle(expName);
+
+
+	QwtText plotTitle;
+	plotTitle.setFont(axisTitleFont);
+	plotTitle.setText(expName);
+	plot->setTitle(plotTitle);
 
 	QwtPlotCurve *curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
 	QwtPlotCurve *curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);
@@ -1947,6 +2009,15 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			plot->replot();
 		}
 	}));
+
+	plot->titleLabel()->installEventFilter(new PlotEventFilter(w, [=]() {
+		QString newTitle = GetNewTitle(mw, plot->title().text());
+		if (!newTitle.isEmpty()) {
+			auto titleText = plot->title();
+			titleText.setText(newTitle);
+			plot->setTitle(titleText);
+		}
+	}));
 	
 	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &extId) {
 		if(id != extId)
@@ -1955,7 +2026,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	});
-
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXT_BUTTON_TEXT) {
