@@ -317,7 +317,7 @@ void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 
 	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
 	int dt_min = 1;
-	int HardwareVersion = 0;
+	int HardwareVersion = 1;
 	switch (HardwareVersion)
 	{
 		case 0:
@@ -339,8 +339,13 @@ void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode)
 		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven);		//3276.8 is a placeholder for cal->m_DAC,V
 		if (dt / dt_min > 1)
 		{
-			pNode->samplingParams.DACMultEven <<= 1;
-			pNode->samplingParams.DACMultOdd <<= 1;
+			if (pNode->samplingParams.DACMultEven << 1 < DACdcBUF_SIZE)
+			{
+				pNode->samplingParams.DACMultEven <<= 1;
+				pNode->samplingParams.DACMultOdd <<= 1;
+			}
+			else
+				break;
 		}
 	} while (dt / dt_min > 1);
 

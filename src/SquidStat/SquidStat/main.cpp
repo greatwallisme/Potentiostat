@@ -19,7 +19,7 @@
 
 int main(int argc, char *argv[]) {
 	QLocale::setDefault(QLocale::system());
-
+	 
 	QApplication a(argc, argv);
 	qInstallMessageHandler(LogMessageHandler);
 

@@ -4,7 +4,7 @@
 #include "ChargeDischargeDCplugin.h"
 
 
-ChargeDischargeDCPlugin::CyclicVoltammetryPlugin(QObject *parent)
+ChargeDischargeDCPlugin::ChargeDischargeDCPlugin(QObject *parent)
 	: QObject(parent)
 {
 	initialized = false;
@@ -25,7 +25,7 @@ bool ChargeDischargeDCPlugin::isInitialized() const
 
 QWidget *ChargeDischargeDCPlugin::createWidget(QWidget *parent)
 {
-	return new CyclicVoltammetry(parent);
+	return new ChargeDischargeDC(parent);
 }
 
 QString ChargeDischargeDCPlugin::name() const
