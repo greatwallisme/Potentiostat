@@ -132,7 +132,7 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
 }
-QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;

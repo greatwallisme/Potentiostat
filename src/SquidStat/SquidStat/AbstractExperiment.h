@@ -14,6 +14,7 @@ class QFile;
 
 typedef QVector<qreal> DataVector;
 typedef QMap<QString, DataVector> DataMap;
+typedef QList<QByteArray> NodesData;
 
 class AbstractExperiment {
 public:
@@ -26,7 +27,7 @@ public:
 	virtual QPixmap GetImage() const = 0;
 
 	virtual QWidget* CreateUserInput() const = 0;
-	virtual QByteArray GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const = 0;
+	virtual NodesData GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const = 0;
 
 	virtual QStringList GetXAxisParameters() const = 0;
 	virtual QStringList GetYAxisParameters() const = 0;

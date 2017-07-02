@@ -152,7 +152,7 @@ QWidget* ExampleExperiment::CreateUserInput() const {
 
 	USER_INPUT_END();
 }
-QByteArray ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+NodesData ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;

@@ -72,8 +72,15 @@ void InstrumentOperator::RequestHardwareVersion() {
 	_communicator->SendCommand((CommandID)SEND_HW_DATA);
 }
 //*/
-void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 channel) {
-	//_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
+void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 channel) {
+	uint16_t nodesCount = nodesData.count();
+
+	_communicator->SendCommand((CommandID)BEGIN_NEW_EXP_DOWNLOAD, channel, QByteArray((char*)&nodesCount, sizeof(nodesCount)));
+	foreach(auto node, nodesData) {
+		_communicator->SendCommand((CommandID)APPEND_EXP_NODE, channel, node);
+	}
+	_communicator->SendCommand((CommandID)END_NEW_EXP_DOWNLOAD, channel);
+
 	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel);
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {

@@ -401,7 +401,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	//hardware.currentInstrument.handler->oper->RequestHardwareVersion();
 
 	InstrumentInfo &instrumentInfo(hardware.currentInstrument.handler->info);
-	QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData, instrumentInfo.hwVer);
+	auto nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData, instrumentInfo.hwVer);
 	if (nodesData.isEmpty()) {
 		LOG() << "Error while getting user input";
 		return;
