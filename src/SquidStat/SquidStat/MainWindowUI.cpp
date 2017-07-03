@@ -1500,6 +1500,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
+	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
 	
 	/*
 	QMap<QString, CurveParameters> *curveParamsPtr = &curveParams;
