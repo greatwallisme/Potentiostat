@@ -74,7 +74,7 @@ void MainWindow::RemoveInstruments(InstrumentList instruments) {
 
 			if (currentInfo == instrumentToDelete) {
 				bool needToSetEnd = false;
-				if ((hardware.currentInstrument.handler->info == currentInfo) || (hardware.currentInstrument.handler == hardware.handlers.end())) {
+				if ((hardware.currentInstrument.handler == hardware.handlers.end()) || (hardware.currentInstrument.handler->info == currentInfo)) {
 					needToSetEnd = true;
 				}
 
