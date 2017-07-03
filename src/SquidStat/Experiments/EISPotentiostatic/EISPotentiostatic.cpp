@@ -25,6 +25,13 @@
 #define PLOT_VAR_ECE					"Ece"
 #define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
+#define PLOT_VAR_IMPEDANCE				"|Z|"
+#define PLOT_VAR_PHASE					"Phase"
+#define PLOT_VAR_IMP_REAL				"Z\'"
+#define PLOT_VAR_IMP_IMAG				"Z\""
+#define PLOT_VAR_NEG_IMP_IMAG			"-Z\""
+#define PLOT_VAR_FREQ					"Frequency"
+
 QString EISPotentiostatic::GetShortName() const {
 	return "EIS (Potentiostatic)";
 }
@@ -155,17 +162,16 @@ QByteArray EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &
 
 QStringList EISPotentiostatic::GetXAxisParameters() const {
 	return QStringList() <<
-		PLOT_VAR_TIMESTAMP <<
-		PLOT_VAR_TIMESTAMP_NORMALIZED <<
-		PLOT_VAR_EWE <<
-		PLOT_VAR_CURRENT;
+		PLOT_VAR_FREQ <<
+		PLOT_VAR_IMP_REAL;
 }
 QStringList EISPotentiostatic::GetYAxisParameters() const {
 	return QStringList() <<
-		PLOT_VAR_EWE <<
-		PLOT_VAR_CURRENT <<
-		PLOT_VAR_ECE <<
-		PLOT_VAR_CURRENT_INTEGRAL;
+		PLOT_VAR_IMPEDANCE <<
+		PLOT_VAR_PHASE <<
+		PLOT_VAR_IMP_REAL <<
+		PLOT_VAR_IMP_IMAG <<
+		PLOT_VAR_NEG_IMP_IMAG;
 }
 void EISPotentiostatic::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
