@@ -112,11 +112,14 @@
     <ClCompile Include="ExperimentReader.cpp">
       <Filter>_scr\ExperimentReader</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_InstrumentEnumerator.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_InstrumentEnumerator.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="InstrumentEnumerator.h">
-      <Filter>_scr\InstrumentEnumerator</Filter>
-    </ClInclude>
     <ClInclude Include="Config.h">
       <Filter>_scr\Config</Filter>
     </ClInclude>
@@ -160,6 +163,9 @@
     </CustomBuild>
     <CustomBuild Include="AbstractExperiment.h">
       <Filter>_scr\Experiments</Filter>
+    </CustomBuild>
+    <CustomBuild Include="InstrumentEnumerator.h">
+      <Filter>_scr\InstrumentEnumerator</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

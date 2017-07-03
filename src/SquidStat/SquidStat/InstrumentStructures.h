@@ -3,9 +3,16 @@
 #include <QList>
 #include <QMetaType>
 
+#include <ExternalStructures.h>
+
 struct InstrumentInfo {
-	QString portName;
-	QString serial;
+	struct {
+		QString name;
+		QString serial;
+	} port;
+	CalibrationData calData;
+	HardwareVersion hwVer;
+	QString name;
 };
 
 Q_DECLARE_METATYPE(InstrumentInfo)

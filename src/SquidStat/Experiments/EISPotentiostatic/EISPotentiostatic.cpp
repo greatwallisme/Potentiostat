@@ -95,7 +95,7 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
 }
-QByteArray EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;

@@ -171,7 +171,7 @@ private:
 
 
 #define NODES_DATA_START(widget, name)	\
-	QByteArray ret;						\
+	NodesData ret;						\
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
@@ -182,7 +182,7 @@ private:
 
 
 #define PUSH_NEW_NODE_DATA()		\
-	ret += QByteArray((char*)&exp, sizeof(ExperimentNode_t)); \
+	ret << QByteArray((char*)&exp, sizeof(ExperimentNode_t)); \
 	memset(&exp, 0x00, sizeof(ExperimentNode_t));
 
 

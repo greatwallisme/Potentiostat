@@ -132,7 +132,7 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_SET_COL_STRETCH(1, 0);
 	USER_INPUT_END();
 }
-QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 	/*
 	QString selectedRadio1;
@@ -208,7 +208,7 @@ QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.nodeType = DCNODE_OCP;
 	exp.DCocp.Vmin = 0;
 	exp.DCocp.Vmax = 0x7fff;
-	exp.DCocp.dVdtMax = 0;
+	//exp.DCocp.dVdtMax = 0;
 	getSamplingParameters(restPeriodInterval, &exp);
 	exp.tMin = 25e6;
 	exp.tMax = restPeriodDuration * 1e8;
@@ -248,7 +248,7 @@ QByteArray ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &
 	exp.nodeType = DCNODE_OCP;
 	exp.DCocp.Vmin = 0;
 	exp.DCocp.Vmax = 0xffff;
-	exp.DCocp.dVdtMax = 0;
+	//exp.DCocp.dVdtMax = 0;
 	getSamplingParameters(restPeriodInterval, &exp);
 	exp.tMin = 25e6;
 	exp.tMax = restPeriodDuration * 1e8;

@@ -17,6 +17,7 @@ InstrumentOperator::~InstrumentOperator() {
 }
 void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data) {
 	switch (resp) {
+		/*
 		case CAL_DATA:
 			if (data.size() == sizeof(CalibrationData)) {
 				CalibrationData calData;
@@ -24,6 +25,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 				emit CalibrationDataReceived(calData);
 			}
 			break;
+		//*/
 
 		case ADCDC_DATA:
 			if (data.size() == sizeof(ExperimentalData)) {
@@ -32,6 +34,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			}
 			break;
 
+		/*
 		case HW_DATA:
 			if (data.size() == sizeof(HardwareVersion)) {
 				HardwareVersion hwVersion;
@@ -39,6 +42,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 				emit HardwareVersionReceived(hwVersion);
 			}
 			break;
+		//*/
 
 		case DEBUG_LOG_MSG: {
 				QByteArray strData = data;
@@ -60,16 +64,31 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 	}
 }
+/*
 void InstrumentOperator::RequestCalibrationData() {
 	_communicator->SendCommand((CommandID)SEND_CAL_DATA);
 }
 void InstrumentOperator::RequestHardwareVersion() {
 	_communicator->SendCommand((CommandID)SEND_HW_DATA);
 }
-void InstrumentOperator::StartExperiment(const QByteArray &nodesData, quint8 channel) {
-	_communicator->SendCommand((CommandID)DOWNLOAD_EXPERIMENT, channel, nodesData);
+//*/
+void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 channel) {
+	uint16_t nodesCount = nodesData.count();
+
+	_communicator->SendCommand((CommandID)BEGIN_NEW_EXP_DOWNLOAD, channel, QByteArray((char*)&nodesCount, sizeof(nodesCount)));
+	foreach(auto node, nodesData) {
+		_communicator->SendCommand((CommandID)APPEND_EXP_NODE, channel, node);
+	}
+	_communicator->SendCommand((CommandID)END_NEW_EXP_DOWNLOAD, channel);
+
 	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel);
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {
 	//_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
+}
+void InstrumentOperator::PauseExperiment(quint8 channel) {
+	//_communicator->SendCommand((CommandID)PAUSE_EXPERIMENT, channel);
+}
+void InstrumentOperator::ResumeExperiment(quint8 channel) {
+	//_communicator->SendCommand((CommandID)RESUME_EXPERIMENT, channel);
 }

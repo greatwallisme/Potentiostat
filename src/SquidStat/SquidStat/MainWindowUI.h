@@ -13,7 +13,7 @@ class QStackedLayout;
 class QTabWidget;
 
 #include <qwt_plot.h>
-class QwtPlotCurve;
+#include <qwt_plot_curve.h>
 
 #include <QObject>
 #include <QMap>
@@ -66,7 +66,8 @@ private:
 		struct {
 			QColor color;
 			qreal width;
-			Qt::PenStyle style;
+			Qt::PenStyle penStyle;
+			QwtPlotCurve::CurveStyle curveStyle;
 		} pen[TOTAL_CURVES];
 	};
 
@@ -86,6 +87,7 @@ private:
 	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
 	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
+	static QString GetNewTitle(QWidget*, const QString&);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
@@ -117,10 +119,12 @@ private:
 		} newDataTab;
 	} ui;
 	
+	/*
 	struct {
 		InstrumentInfo instrumentInfo;
 		quint8 channel;
 	} currentInstrument;
+	//*/
 	
 	struct {
 		QWidget *userInputs;

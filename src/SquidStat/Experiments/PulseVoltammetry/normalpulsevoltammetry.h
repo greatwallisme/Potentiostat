@@ -13,7 +13,7 @@ public:
 	QPixmap GetImage() const;
 
 	QWidget* CreateUserInput() const;
-	QByteArray GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const;
+	NodesData GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const;
 	
 	QStringList GetXAxisParameters() const;
 	QStringList GetYAxisParameters() const;

@@ -12,6 +12,7 @@
 #include <QUuid>
 #include <QFile>
 
+class InstrumentEnumerator;
 class MainWindowUI;
 class InstrumentOperator;
 class ExperimentContainer;
@@ -31,15 +32,23 @@ public slots:
 	void LoadPrebuildExperiments();
 	void PrebuiltExperimentSelected(const AbstractExperiment*);
 
+	/*
 	void SearchHwVendor();
 	void SearchHwHandshake();
+	//*/
 
-	void SelectHardware(const InstrumentInfo&, quint8 channel);
+	void SelectHardware(const QString&, quint8 channel);
 
 	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
+	void PauseExperiment(const QUuid&);
+	void ResumeExperiment(const QUuid&);
+	void StopExperiment(const QString&, quint8 channel);
+	void PauseExperiment(const QString&, quint8 channel);
+	void ResumeExperiment(const QString&, quint8 channel);
 
-	//void SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName);
+	void RemoveInstruments(InstrumentList);
+	void AddInstruments(InstrumentList);
 
 signals:
 	void HardwareFound(const InstrumentList&);
@@ -50,12 +59,20 @@ signals:
 
 	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*, const CalibrationData &, const HardwareVersion&);
 
+	void RemoveDisconnectedInstruments(const QStringList&);
+	void AddNewInstruments(const QStringList&);
+
+	void CurrentHardwareBusy();
+	void CurrentHardwareAvaliable();
+	void CurrentExperimentPaused();
+
 private:
 	void CleanupCurrentHardware();
 	void CleanupExperiments();
-	void FillHardware(const InstrumentList &);
+	//void FillHardware(const InstrumentList &);
 
 	MainWindowUI *ui;
+	InstrumentEnumerator *instrumentEnumerator;
 
 	//InstrumentOperator *instrumentOperator;
 	
@@ -65,6 +82,7 @@ private:
 		InstrumentOperator *oper;
 		struct ExpDescriptor {
 			bool busy;
+			bool paused;
 			QUuid id;
 			quint8 channel;
 		} experiment;
@@ -86,6 +104,8 @@ private:
 	} prebuiltExperiments;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
 };
 
 #endif // MAINWINDOW_H
