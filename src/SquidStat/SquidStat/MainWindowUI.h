@@ -14,6 +14,7 @@ class QTabWidget;
 
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
+#include <qwt_symbol.h>
 
 #include <QObject>
 #include <QMap>
@@ -61,14 +62,23 @@ private:
 			PRIMARY = 0,
 			SECONDARY,
 
-			TOTAL_CURVES
+			TOTAL_CURVES,
+			START = PRIMARY
 		};
 		struct {
-			QColor color;
-			qreal width;
-			Qt::PenStyle penStyle;
-			QwtPlotCurve::CurveStyle curveStyle;
-		} pen[TOTAL_CURVES];
+			struct {
+				QColor color;
+				qreal width;
+				Qt::PenStyle style;
+			} pen;
+			
+			struct {
+				QwtSymbol::Style style;
+				qreal width;
+			} symbol;
+
+			QwtPlotCurve::CurveStyle style;
+		} curve[TOTAL_CURVES];
 	};
 
 	struct AxisParameters {

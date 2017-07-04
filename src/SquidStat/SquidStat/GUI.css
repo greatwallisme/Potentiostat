@@ -53,6 +53,12 @@ QComboBox::down-arrow {
 	
 	margin-right: 25px;
 }
+QComboBox:disabled {
+	background: #c6ccd2;
+}
+QComboBox::down-arrow:disabled {
+    image: url(:/GUI/Resources/combobox-dropdown-disabled.png);
+}
 #combo-list {
     border: 1px solid #c6ccd2;
 	background: #ffffff;

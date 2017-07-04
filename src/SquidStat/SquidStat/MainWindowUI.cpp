@@ -6,7 +6,6 @@
 #include <qwt_legend.h>
 #include <qwt_scale_widget.h>
 #include <qwt_text_label.h>
-#include <qwt_symbol.h>
 
 #include "UIHelper.hpp"
 
@@ -56,14 +55,19 @@
 #define DEFAULT_MAJOR_CURVE_COLOR		QColor(42, 127, 220)
 #define DEFAULT_MINOR_CURVE_COLOR		QColor(208, 35, 39)
 
-#define CURVE_PARAMS_PRI_COLOR			"curve-params-pri-color"
-#define CURVE_PARAMS_PRI_WIDTH			"curve-params-pri-width"
+#define CURVE_PARAMS_PRI_PEN_COLOR		"curve-params-pri-pen-color"
+#define CURVE_PARAMS_PRI_PEN_WIDTH		"curve-params-pri-pen-width"
 #define CURVE_PARAMS_PRI_PEN_STYLE		"curve-params-pri-pen-style"
-#define CURVE_PARAMS_PRI_CURVE_STYLE	"curve-params-pri-curve-style"
-#define CURVE_PARAMS_SEC_COLOR			"curve-params-sec-color"
-#define CURVE_PARAMS_SEC_WIDTH			"curve-params-sec-width"
+#define CURVE_PARAMS_PRI_STYLE			"curve-params-pri-style"
+#define CURVE_PARAMS_PRI_SYMBOL_WIDTH	"curve-params-pri-symbol-width"
+#define CURVE_PARAMS_PRI_SYMBOL_STYLE	"curve-params-pri-symbol-style"
+
+#define CURVE_PARAMS_SEC_PEN_COLOR		"curve-params-sec-pen-color"
+#define CURVE_PARAMS_SEC_PEN_WIDTH		"curve-params-sec-pen-width"
 #define CURVE_PARAMS_SEC_PEN_STYLE		"curve-params-sec-pen-style"
-#define CURVE_PARAMS_SEC_CURVE_STYLE	"curve-params-sec-curve-style"
+#define CURVE_PARAMS_SEC_STYLE			"curve-params-sec-style"
+#define CURVE_PARAMS_SEC_SYMBOL_WIDTH	"curve-params-sec-symbol-width"
+#define CURVE_PARAMS_SEC_SYMBOL_STYLE	"curve-params-sec-symbol-style"
 
 #define PAUSE_EXP_BUTTON_TEXT		"Pause Experiment"
 #define RESUME_EXP_BUTTON_TEXT		"Resume Experiment"
@@ -1247,16 +1251,21 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 	QSettings squidSettings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
 
-	currentParams.pen[CurveParameters::PRIMARY].color = QColor(squidSettings.value(CURVE_PARAMS_PRI_COLOR, DEFAULT_MAJOR_CURVE_COLOR.name()).toString());
-	currentParams.pen[CurveParameters::PRIMARY].width = squidSettings.value(CURVE_PARAMS_PRI_WIDTH, 1.0).toDouble();
-	currentParams.pen[CurveParameters::PRIMARY].penStyle = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_PRI_PEN_STYLE, (int)Qt::SolidLine).toInt();
-	currentParams.pen[CurveParameters::PRIMARY].curveStyle = (QwtPlotCurve::CurveStyle)squidSettings.value(CURVE_PARAMS_PRI_CURVE_STYLE, (int)QwtPlotCurve::Lines).toInt();
-	currentParams.pen[CurveParameters::SECONDARY].color = QColor(squidSettings.value(CURVE_PARAMS_SEC_COLOR, DEFAULT_MINOR_CURVE_COLOR.name()).toString());
-	currentParams.pen[CurveParameters::SECONDARY].width = squidSettings.value(CURVE_PARAMS_SEC_WIDTH, 1.0).toDouble();
-	currentParams.pen[CurveParameters::SECONDARY].penStyle = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_SEC_PEN_STYLE, (int)Qt::SolidLine).toInt();
-	currentParams.pen[CurveParameters::SECONDARY].curveStyle = (QwtPlotCurve::CurveStyle)squidSettings.value(CURVE_PARAMS_SEC_CURVE_STYLE, (int)QwtPlotCurve::Lines).toInt();
+	currentParams.curve[CurveParameters::PRIMARY].pen.color = QColor(squidSettings.value(CURVE_PARAMS_PRI_PEN_COLOR, DEFAULT_MAJOR_CURVE_COLOR.name()).toString());
+	currentParams.curve[CurveParameters::PRIMARY].pen.width = squidSettings.value(CURVE_PARAMS_PRI_PEN_WIDTH, 1.0).toDouble();
+	currentParams.curve[CurveParameters::PRIMARY].pen.style = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_PRI_PEN_STYLE, (int)Qt::SolidLine).toInt();
+	currentParams.curve[CurveParameters::PRIMARY].style = (QwtPlotCurve::CurveStyle)squidSettings.value(CURVE_PARAMS_PRI_STYLE, (int)QwtPlotCurve::Lines).toInt();
+	currentParams.curve[CurveParameters::PRIMARY].symbol.width = squidSettings.value(CURVE_PARAMS_PRI_SYMBOL_WIDTH, 8.0).toDouble();
+	currentParams.curve[CurveParameters::PRIMARY].symbol.style = (QwtSymbol::Style)squidSettings.value(CURVE_PARAMS_PRI_SYMBOL_STYLE, (int)QwtSymbol::NoSymbol).toInt();
 
-	for(int what = CurveParameters::PRIMARY; what <= CurveParameters::SECONDARY; ++what) {
+	currentParams.curve[CurveParameters::SECONDARY].pen.color = QColor(squidSettings.value(CURVE_PARAMS_SEC_PEN_COLOR, DEFAULT_MINOR_CURVE_COLOR.name()).toString());
+	currentParams.curve[CurveParameters::SECONDARY].pen.width = squidSettings.value(CURVE_PARAMS_SEC_PEN_WIDTH, 1.0).toDouble();
+	currentParams.curve[CurveParameters::SECONDARY].pen.style = (Qt::PenStyle)squidSettings.value(CURVE_PARAMS_SEC_PEN_STYLE, (int)Qt::SolidLine).toInt();
+	currentParams.curve[CurveParameters::SECONDARY].style = (QwtPlotCurve::CurveStyle)squidSettings.value(CURVE_PARAMS_SEC_STYLE, (int)QwtPlotCurve::Lines).toInt();
+	currentParams.curve[CurveParameters::SECONDARY].symbol.width = squidSettings.value(CURVE_PARAMS_SEC_SYMBOL_WIDTH, 8.0).toDouble();
+	currentParams.curve[CurveParameters::SECONDARY].symbol.style = (QwtSymbol::Style)squidSettings.value(CURVE_PARAMS_SEC_SYMBOL_STYLE, (int)QwtSymbol::NoSymbol).toInt();
+
+	for(int what = CurveParameters::START; what < CurveParameters::TOTAL_CURVES; ++what) {
 		auto paramsOwner = OBJ_NAME(WDG(), "curve-params-adjusting-owner");
 
 		QwtPlot *smallPlot;
@@ -1265,110 +1274,165 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 		QComboBox *curveSymbolCmb;
 		QDoubleSpinBox *spin;
 		QPushButton *colorPbt;
+		QLabel *penStyleLbl;
+		QLabel *widthLbl;
+		QSpinBox *widthSpin;
 		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
 
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Pen Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(penStyleLbl = OBJ_PROP(OBJ_NAME(LBL("Pen Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Curve Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Symbol Style: "), "experiment-params-comment"), "comment-placement", "left"), 4, 0);
+		paramsLay->addWidget(widthLbl = OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 4, 2);
 		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
 		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
 		paramsLay->addWidget(penStyleCmb = CMB(), 2, 1);
 		paramsLay->addWidget(curveStyleCmb = CMB(), 3, 1);
 		paramsLay->addWidget(curveSymbolCmb = CMB(), 4, 1);
-		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 1);
+		paramsLay->addWidget(widthSpin = new QSpinBox, 4, 3);
+		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 2);
 
-		colorPbt->setStyleSheet("background-color: " + currentParams.pen[what].color.name() + ";");
+		smallPlot->enableAxis(QwtPlot::yLeft, false);
+		smallPlot->enableAxis(QwtPlot::xBottom, false);
 
-		spin->setValue(currentParams.pen[what].width);
+		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
+		curve->setSamples(QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0, QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0);
+		curve->attach(smallPlot);
+
+		curve->setPen(currentParams.curve[what].pen.color,
+			currentParams.curve[what].pen.width,
+			currentParams.curve[what].pen.style);
+
+		curve->setStyle(currentParams.curve[what].style);
+
+		auto curSymbol = new QwtSymbol(currentParams.curve[what].symbol.style);
+		curSymbol->setPen(currentParams.curve[what].pen.color, 1, Qt::SolidLine);
+		curSymbol->setColor(currentParams.curve[what].pen.color);
+		curSymbol->setSize(currentParams.curve[what].symbol.width);
+		
+		curve->setSymbol(curSymbol);
+
+		smallPlot->replot();
+
+		colorPbt->setStyleSheet("background-color: " + currentParams.curve[what].pen.color.name() + ";");
+
 		spin->setDecimals(1);
 		spin->setSingleStep(0.1);
+		spin->setValue(currentParams.curve[what].pen.width);
+
+		widthSpin->setValue(currentParams.curve[what].symbol.width);
 
 		penStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-
-		penStyleCmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
-		penStyleCmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
-		penStyleCmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
-		penStyleCmb->addItem("Dash Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotLine));
-		penStyleCmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
+		{
+			penStyleCmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
+			penStyleCmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
+			penStyleCmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
+			penStyleCmb->addItem("Dash Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotLine));
+			penStyleCmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
+		}
 
 		for (int i = 0; i < penStyleCmb->count(); ++i) {
-			if (penStyleCmb->itemData(i).value<Qt::PenStyle>() == currentParams.pen[what].penStyle) {
+			if (penStyleCmb->itemData(i).value<Qt::PenStyle>() == currentParams.curve[what].pen.style) {
 				penStyleCmb->setCurrentIndex(i);
 				break;
 			}
 		}
 
 		curveSymbolCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-		curveSymbolCmb->addItem("NoSymbol", QVariant::fromValue<int>((int)QwtSymbol::NoSymbol));
-		curveSymbolCmb->addItem("Ellipse", QVariant::fromValue<int>((int)QwtSymbol::Ellipse));
-		curveSymbolCmb->addItem("Rect", QVariant::fromValue<int>((int)QwtSymbol::Rect));
-		curveSymbolCmb->addItem("Diamond", QVariant::fromValue<int>((int)QwtSymbol::Diamond));
-		curveSymbolCmb->addItem("Triangle", QVariant::fromValue<int>((int)QwtSymbol::Triangle));
-		curveSymbolCmb->addItem("DTriangle", QVariant::fromValue<int>((int)QwtSymbol::DTriangle));
-		curveSymbolCmb->addItem("UTriangle", QVariant::fromValue<int>((int)QwtSymbol::UTriangle));
-		curveSymbolCmb->addItem("LTriangle", QVariant::fromValue<int>((int)QwtSymbol::LTriangle));
-		curveSymbolCmb->addItem("RTriangle", QVariant::fromValue<int>((int)QwtSymbol::RTriangle));
-		curveSymbolCmb->addItem("Cross", QVariant::fromValue<int>((int)QwtSymbol::Cross));
-		curveSymbolCmb->addItem("XCross", QVariant::fromValue<int>((int)QwtSymbol::XCross));
-		curveSymbolCmb->addItem("HLine", QVariant::fromValue<int>((int)QwtSymbol::HLine));
-		curveSymbolCmb->addItem("VLine", QVariant::fromValue<int>((int)QwtSymbol::VLine));
-		curveSymbolCmb->addItem("Star1", QVariant::fromValue<int>((int)QwtSymbol::Star1));
-		curveSymbolCmb->addItem("Star2", QVariant::fromValue<int>((int)QwtSymbol::Star2));
-		curveSymbolCmb->addItem("Hexagon", QVariant::fromValue<int>((int)QwtSymbol::Hexagon));
-
+		{
+			curveSymbolCmb->addItem("NoSymbol", QVariant::fromValue<int>((int)QwtSymbol::NoSymbol));
+			curveSymbolCmb->addItem("Ellipse", QVariant::fromValue<int>((int)QwtSymbol::Ellipse));
+			curveSymbolCmb->addItem("Rect", QVariant::fromValue<int>((int)QwtSymbol::Rect));
+			curveSymbolCmb->addItem("Diamond", QVariant::fromValue<int>((int)QwtSymbol::Diamond));
+			curveSymbolCmb->addItem("Triangle", QVariant::fromValue<int>((int)QwtSymbol::Triangle));
+			curveSymbolCmb->addItem("DTriangle", QVariant::fromValue<int>((int)QwtSymbol::DTriangle));
+			curveSymbolCmb->addItem("UTriangle", QVariant::fromValue<int>((int)QwtSymbol::UTriangle));
+			curveSymbolCmb->addItem("LTriangle", QVariant::fromValue<int>((int)QwtSymbol::LTriangle));
+			curveSymbolCmb->addItem("RTriangle", QVariant::fromValue<int>((int)QwtSymbol::RTriangle));
+			curveSymbolCmb->addItem("Cross", QVariant::fromValue<int>((int)QwtSymbol::Cross));
+			curveSymbolCmb->addItem("XCross", QVariant::fromValue<int>((int)QwtSymbol::XCross));
+			curveSymbolCmb->addItem("HLine", QVariant::fromValue<int>((int)QwtSymbol::HLine));
+			curveSymbolCmb->addItem("VLine", QVariant::fromValue<int>((int)QwtSymbol::VLine));
+			curveSymbolCmb->addItem("Star1", QVariant::fromValue<int>((int)QwtSymbol::Star1));
+			curveSymbolCmb->addItem("Star2", QVariant::fromValue<int>((int)QwtSymbol::Star2));
+			curveSymbolCmb->addItem("Hexagon", QVariant::fromValue<int>((int)QwtSymbol::Hexagon));
+		}
+		
+		for (int i = 0; i < curveSymbolCmb->count(); ++i) {
+			if ((QwtSymbol::Style)curveSymbolCmb->itemData(i).value<int>() == currentParams.curve[what].symbol.style) {
+				curveSymbolCmb->setCurrentIndex(i);
+				break;
+			}
+		}
 
 		curveStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-		curveStyleCmb->addItem("Lines", QVariant::fromValue<int>((int)QwtPlotCurve::Lines));
-		curveStyleCmb->addItem("Dots", QVariant::fromValue<int>((int)QwtPlotCurve::Dots));
+		{
+			curveStyleCmb->addItem("Lines", QVariant::fromValue<int>((int)QwtPlotCurve::Lines));
+			curveStyleCmb->addItem("Dots", QVariant::fromValue<int>((int)QwtPlotCurve::Dots));
+		}
 
 		for (int i = 0; i < curveStyleCmb->count(); ++i) {
-			if ((QwtPlotCurve::CurveStyle)curveStyleCmb->itemData(i).value<int>() == currentParams.pen[what].curveStyle) {
+			if ((QwtPlotCurve::CurveStyle)curveStyleCmb->itemData(i).value<int>() == currentParams.curve[what].style) {
 				curveStyleCmb->setCurrentIndex(i);
 				break;
 			}
 		}
 
-		smallPlot->enableAxis(QwtPlot::yLeft, false);
-		smallPlot->enableAxis(QwtPlot::xBottom, false);
-
-		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
-		curve->setSamples(QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0, QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0);
-		curve->attach(smallPlot);
-
-		curve->setPen(currentParams.pen[what].color,
-			currentParams.pen[what].width,
-			currentParams.pen[what].penStyle);
-
-		curve->setStyle(currentParams.pen[what].curveStyle);
-
-		smallPlot->replot();
+		penStyleCmb->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
+		penStyleLbl->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
 
 		stackLay->addWidget(paramsOwner);
 
 		dialogConn << CONNECT(curveSymbolCmb, &QComboBox::currentTextChanged, [=]() {
-			auto symbol = new QwtSymbol((QwtSymbol::Style)curveSymbolCmb->currentData().value<int>());
-			symbol->setPen(curve->pen().color(), curve->pen().width(), curve->pen().style());
-			symbol->setSize(10);
+			auto symbolStyle = (QwtSymbol::Style)curveSymbolCmb->currentData().value<int>();
+			auto symbol = new QwtSymbol(symbolStyle);
+
+			widthSpin->setHidden(QwtSymbol::NoSymbol == symbolStyle);
+			widthLbl->setHidden(QwtSymbol::NoSymbol == symbolStyle);
+
+			currentParams.curve[what].symbol.style = symbolStyle;
+
+			symbol->setPen(currentParams.curve[what].pen.color, 1, Qt::SolidLine);
+			symbol->setColor(currentParams.curve[what].pen.color);
+			symbol->setSize(currentParams.curve[what].symbol.width);
+
 			curve->setSymbol(symbol);
 			smallPlot->replot();
 		});
 
 		dialogConn << CONNECT(curveStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.pen[what].curveStyle = (QwtPlotCurve::CurveStyle)curveStyleCmb->currentData().value<int>();
-			curve->setStyle(currentParams.pen[what].curveStyle);
+			currentParams.curve[what].style = (QwtPlotCurve::CurveStyle)curveStyleCmb->currentData().value<int>();
+
+			penStyleCmb->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
+			penStyleLbl->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
+
+			curve->setStyle(currentParams.curve[what].style);
 			smallPlot->replot();
 		});
 
 		dialogConn << CONNECT(penStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.pen[what].penStyle = penStyleCmb->currentData().value<Qt::PenStyle>();
+			currentParams.curve[what].pen.style = penStyleCmb->currentData().value<Qt::PenStyle>();
 			curve->setPen(curve->pen().color(), curve->pen().width(), penStyleCmb->currentData().value<Qt::PenStyle>());
 			smallPlot->replot();
 		});
 
 		dialogConn << CONNECT(spin, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), [=](double val) {
-			currentParams.pen[what].width = val;
+			currentParams.curve[what].pen.width = val;
 			curve->setPen(curve->pen().color(), val, curve->pen().style());
+			smallPlot->replot();
+		});
+
+		dialogConn << CONNECT(widthSpin, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), [=](int val) {
+			currentParams.curve[what].symbol.width = val;
+
+			auto symbol = new QwtSymbol(currentParams.curve[what].symbol.style);
+			symbol->setPen(currentParams.curve[what].pen.color, 1, Qt::SolidLine);
+			symbol->setColor(currentParams.curve[what].pen.color);
+			symbol->setSize(currentParams.curve[what].symbol.width);
+
+			curve->setSymbol(symbol);
+
 			smallPlot->replot();
 		});
 
@@ -1377,114 +1441,21 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 			if (GetColor(dialog, color)) {
 				colorPbt->setStyleSheet("background-color: " + color.name() + ";");
 
-				currentParams.pen[what].color = color;
+				currentParams.curve[what].pen.color = color;
 
 				curve->setPen(color, curve->pen().width(), curve->pen().style());
+
+				auto symbol = new QwtSymbol(currentParams.curve[what].symbol.style);
+				symbol->setPen(currentParams.curve[what].pen.color, 1, Qt::SolidLine);
+				symbol->setColor(currentParams.curve[what].pen.color);
+				symbol->setSize(currentParams.curve[what].symbol.width);
+
+				curve->setSymbol(symbol);
+
 				smallPlot->replot();
 			}
 		});
 	}
-	/*
-	{
-		auto paramsOwner = OBJ_NAME(WDG(), "curve-params-adjusting-owner");
-
-		QwtPlot *smallPlot;
-		QComboBox *penStyleCmb;
-		QComboBox *curveStyleCmb;
-		QDoubleSpinBox *spin;
-		QPushButton *colorPbt;
-		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
-
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Pen Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Curve Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
-		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
-		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
-		paramsLay->addWidget(penStyleCmb = CMB(), 2, 1);
-		paramsLay->addWidget(curveStyleCmb = CMB(), 3, 1);
-		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 1);
-
-		colorPbt->setStyleSheet("background-color: " + currentParams.pen[CurveParameters::SECONDARY].color.name() + ";");
-
-		spin->setValue(currentParams.pen[CurveParameters::SECONDARY].width);
-		spin->setDecimals(1);
-		spin->setSingleStep(0.1);
-
-		penStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-
-		penStyleCmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
-		penStyleCmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
-		penStyleCmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
-		penStyleCmb->addItem("Dash Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotLine));
-		penStyleCmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
-
-		for (int i = 0; i < penStyleCmb->count(); ++i) {
-			if (penStyleCmb->itemData(i).value<Qt::PenStyle>() == currentParams.pen[CurveParameters::SECONDARY].penStyle) {
-				penStyleCmb->setCurrentIndex(i);
-				break;
-			}
-		}
-
-		curveStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-		curveStyleCmb->addItem("Lines", QVariant::fromValue<int>((int)QwtPlotCurve::Lines));
-		curveStyleCmb->addItem("Dots", QVariant::fromValue<int>((int)QwtPlotCurve::Dots));
-
-		for (int i = 0; i < curveStyleCmb->count(); ++i) {
-			if ((QwtPlotCurve::CurveStyle)curveStyleCmb->itemData(i).value<int>() == currentParams.pen[CurveParameters::SECONDARY].curveStyle) {
-				curveStyleCmb->setCurrentIndex(i);
-				break;
-			}
-		}
-
-		smallPlot->enableAxis(QwtPlot::yLeft, false);
-		smallPlot->enableAxis(QwtPlot::xBottom, false);
-
-		auto curve = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);
-		curve->setSamples(QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0, QVector<qreal>() << 0.0 << 0.25 << 0.5 << 0.75 << 1.0);
-		curve->attach(smallPlot);
-
-		curve->setPen(currentParams.pen[CurveParameters::SECONDARY].color,
-			currentParams.pen[CurveParameters::SECONDARY].width,
-			currentParams.pen[CurveParameters::SECONDARY].penStyle);
-
-		curve->setStyle(currentParams.pen[CurveParameters::SECONDARY].curveStyle);
-
-		smallPlot->replot();
-
-		stackLay->addWidget(paramsOwner);
-
-		dialogConn << CONNECT(curveStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.pen[CurveParameters::SECONDARY].curveStyle = (QwtPlotCurve::CurveStyle)curveStyleCmb->currentData().value<int>();
-			curve->setStyle(currentParams.pen[CurveParameters::SECONDARY].curveStyle);
-			smallPlot->replot();
-		});
-
-		dialogConn << CONNECT(penStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.pen[CurveParameters::SECONDARY].penStyle = penStyleCmb->currentData().value<Qt::PenStyle>();
-			curve->setPen(curve->pen().color(), curve->pen().width(), penStyleCmb->currentData().value<Qt::PenStyle>());
-			smallPlot->replot();
-		});
-
-		dialogConn << CONNECT(spin, static_cast<void(QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged), [=](double val) {
-			currentParams.pen[CurveParameters::SECONDARY].width = val;
-			curve->setPen(curve->pen().color(), val, curve->pen().style());
-			smallPlot->replot();
-		});
-
-		dialogConn << CONNECT(colorPbt, &QPushButton::clicked, [=]() {
-			QColor color = curve->pen().color();
-			if (GetColor(dialog, color)) {
-				colorPbt->setStyleSheet("background-color: " + color.name() + ";");
-
-				currentParams.pen[CurveParameters::SECONDARY].color = color;
-
-				curve->setPen(color, curve->pen().width(), curve->pen().style());
-				smallPlot->replot();
-			}
-		});
-	}
-	//*/
 
 	primBut->setChecked(true);
 
@@ -1572,19 +1543,24 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	if (!dialogCanceled) {
 		foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
 			QString curName = index.data(Qt::DisplayRole).toString();
-			curveParams[curName].pen[CurveParameters::PRIMARY] = currentParams.pen[CurveParameters::PRIMARY];
-			curveParams[curName].pen[CurveParameters::SECONDARY] = currentParams.pen[CurveParameters::SECONDARY];
+			curveParams[curName].curve[CurveParameters::PRIMARY] = currentParams.curve[CurveParameters::PRIMARY];
+			curveParams[curName].curve[CurveParameters::SECONDARY] = currentParams.curve[CurveParameters::SECONDARY];
 		}
 	}
 
-	squidSettings.setValue(CURVE_PARAMS_PRI_COLOR, currentParams.pen[CurveParameters::PRIMARY].color.name());
-	squidSettings.setValue(CURVE_PARAMS_PRI_WIDTH, currentParams.pen[CurveParameters::PRIMARY].width);
-	squidSettings.setValue(CURVE_PARAMS_PRI_PEN_STYLE, (int)currentParams.pen[CurveParameters::PRIMARY].penStyle);
-	squidSettings.setValue(CURVE_PARAMS_PRI_CURVE_STYLE, (int)currentParams.pen[CurveParameters::PRIMARY].curveStyle);
-	squidSettings.setValue(CURVE_PARAMS_SEC_COLOR, currentParams.pen[CurveParameters::SECONDARY].color.name());
-	squidSettings.setValue(CURVE_PARAMS_SEC_WIDTH, currentParams.pen[CurveParameters::SECONDARY].width);
-	squidSettings.setValue(CURVE_PARAMS_SEC_PEN_STYLE, (int)currentParams.pen[CurveParameters::SECONDARY].penStyle);
-	squidSettings.setValue(CURVE_PARAMS_SEC_CURVE_STYLE, (int)currentParams.pen[CurveParameters::SECONDARY].curveStyle);
+	squidSettings.setValue(CURVE_PARAMS_PRI_PEN_COLOR, currentParams.curve[CurveParameters::PRIMARY].pen.color.name());
+	squidSettings.setValue(CURVE_PARAMS_PRI_PEN_WIDTH, currentParams.curve[CurveParameters::PRIMARY].pen.width);
+	squidSettings.setValue(CURVE_PARAMS_PRI_PEN_STYLE, (int)currentParams.curve[CurveParameters::PRIMARY].pen.style);
+	squidSettings.setValue(CURVE_PARAMS_PRI_STYLE, (int)currentParams.curve[CurveParameters::PRIMARY].style);
+	squidSettings.setValue(CURVE_PARAMS_PRI_SYMBOL_WIDTH, currentParams.curve[CurveParameters::PRIMARY].symbol.width);
+	squidSettings.setValue(CURVE_PARAMS_PRI_SYMBOL_STYLE, (int)currentParams.curve[CurveParameters::PRIMARY].symbol.style);
+
+	squidSettings.setValue(CURVE_PARAMS_SEC_PEN_COLOR, currentParams.curve[CurveParameters::SECONDARY].pen.color.name());
+	squidSettings.setValue(CURVE_PARAMS_SEC_PEN_WIDTH, currentParams.curve[CurveParameters::SECONDARY].pen.width);
+	squidSettings.setValue(CURVE_PARAMS_SEC_PEN_STYLE, (int)currentParams.curve[CurveParameters::SECONDARY].pen.style);
+	squidSettings.setValue(CURVE_PARAMS_SEC_STYLE, (int)currentParams.curve[CurveParameters::SECONDARY].style);
+	squidSettings.setValue(CURVE_PARAMS_SEC_SYMBOL_WIDTH, currentParams.curve[CurveParameters::SECONDARY].symbol.width);
+	squidSettings.setValue(CURVE_PARAMS_SEC_SYMBOL_STYLE, (int)currentParams.curve[CurveParameters::SECONDARY].symbol.style);
 
 	foreach(auto conn, dialogConn) {
 		QObject::disconnect(conn);
@@ -2196,26 +2172,55 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		QMap<QString, CurveParameters> currentParams;
 
 		foreach(const DataMapVisualization &data, handler.data) {
-			currentParams[data.name].pen[CurveParameters::PRIMARY].color = data.curve1->pen().color();
-			currentParams[data.name].pen[CurveParameters::PRIMARY].width = data.curve1->pen().width();
-			currentParams[data.name].pen[CurveParameters::PRIMARY].penStyle = data.curve1->pen().style();
-			currentParams[data.name].pen[CurveParameters::PRIMARY].curveStyle = data.curve1->style();
-			currentParams[data.name].pen[CurveParameters::SECONDARY].color = data.curve2->pen().color();
-			currentParams[data.name].pen[CurveParameters::SECONDARY].width = data.curve2->pen().width();
-			currentParams[data.name].pen[CurveParameters::SECONDARY].penStyle = data.curve2->pen().style();
-			currentParams[data.name].pen[CurveParameters::SECONDARY].curveStyle = data.curve2->style();
+			currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color = data.curve1->pen().color();
+			currentParams[data.name].curve[CurveParameters::PRIMARY].pen.width = data.curve1->pen().width();
+			currentParams[data.name].curve[CurveParameters::PRIMARY].pen.style = data.curve1->pen().style();
+			currentParams[data.name].curve[CurveParameters::PRIMARY].style = data.curve1->style();
+			if (data.curve1->symbol()) {
+				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.width = data.curve1->symbol()->size().width();
+				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.style = data.curve1->symbol()->style();
+			}
+			else {
+				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.width = 10;
+				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.style = QwtSymbol::NoSymbol;
+			}
+
+			currentParams[data.name].curve[CurveParameters::SECONDARY].pen.color = data.curve2->pen().color();
+			currentParams[data.name].curve[CurveParameters::SECONDARY].pen.width = data.curve2->pen().width();
+			currentParams[data.name].curve[CurveParameters::SECONDARY].pen.style = data.curve2->pen().style();
+			currentParams[data.name].curve[CurveParameters::SECONDARY].style = data.curve2->style();
+			if (data.curve2->symbol()) {
+				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.width = data.curve2->symbol()->size().width();
+				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.style = data.curve2->symbol()->style();
+			}
+			else {
+				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.width = 10;
+				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.style = QwtSymbol::NoSymbol;
+			}
 		}
 
 		if (GetNewPen(mw, currentParams)) {
 			foreach(const DataMapVisualization &data, handler.data) {
-				data.curve1->setPen(currentParams[data.name].pen[CurveParameters::PRIMARY].color,
-					currentParams[data.name].pen[CurveParameters::PRIMARY].width,
-					currentParams[data.name].pen[CurveParameters::PRIMARY].penStyle);
-				data.curve2->setPen(currentParams[data.name].pen[CurveParameters::SECONDARY].color,
-					currentParams[data.name].pen[CurveParameters::SECONDARY].width,
-					currentParams[data.name].pen[CurveParameters::SECONDARY].penStyle);
-				data.curve1->setStyle(currentParams[data.name].pen[CurveParameters::PRIMARY].curveStyle);
-				data.curve2->setStyle(currentParams[data.name].pen[CurveParameters::SECONDARY].curveStyle);
+				data.curve1->setPen(currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color,
+					currentParams[data.name].curve[CurveParameters::PRIMARY].pen.width,
+					currentParams[data.name].curve[CurveParameters::PRIMARY].pen.style);
+				data.curve2->setPen(currentParams[data.name].curve[CurveParameters::SECONDARY].pen.color,
+					currentParams[data.name].curve[CurveParameters::SECONDARY].pen.width,
+					currentParams[data.name].curve[CurveParameters::SECONDARY].pen.style);
+				data.curve1->setStyle(currentParams[data.name].curve[CurveParameters::PRIMARY].style);
+				data.curve2->setStyle(currentParams[data.name].curve[CurveParameters::SECONDARY].style);
+
+				auto symbol = new QwtSymbol(currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.style);
+				symbol->setPen(currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color, 1, Qt::SolidLine);
+				symbol->setColor(currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color);
+				symbol->setSize(currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.width);
+				data.curve1->setSymbol(symbol);
+
+				symbol = new QwtSymbol(currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.style);
+				symbol->setPen(currentParams[data.name].curve[CurveParameters::SECONDARY].pen.color, 1, Qt::SolidLine);
+				symbol->setColor(currentParams[data.name].curve[CurveParameters::SECONDARY].pen.color);
+				symbol->setSize(currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.width);
+				data.curve2->setSymbol(symbol);
 			}
 			handler.plot->replot();
 		}
