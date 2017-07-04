@@ -53,12 +53,6 @@ QComboBox::down-arrow {
 	
 	margin-right: 25px;
 }
-QComboBox:disabled {
-	background: #c6ccd2;
-}
-QComboBox::down-arrow:disabled {
-    image: url(:/GUI/Resources/combobox-dropdown-disabled.png);
-}
 #combo-list {
     border: 1px solid #c6ccd2;
 	background: #ffffff;
@@ -438,8 +432,8 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 /*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
 #curve-params-dialog {
-	min-height: 630px;
-	max-height: 630px;
+	min-height: 670px;
+	max-height: 670px;
 	min-width: 475px;
 	max-width: 475px;
 	border: 1px solid #7b1a1e;

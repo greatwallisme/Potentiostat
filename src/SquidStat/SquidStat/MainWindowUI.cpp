@@ -1270,27 +1270,23 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 		QwtPlot *smallPlot;
 		QComboBox *penStyleCmb;
-		QComboBox *curveStyleCmb;
 		QComboBox *curveSymbolCmb;
 		QDoubleSpinBox *spin;
 		QPushButton *colorPbt;
-		QLabel *penStyleLbl;
 		QLabel *widthLbl;
 		QSpinBox *widthSpin;
 		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
 
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-		paramsLay->addWidget(penStyleLbl = OBJ_PROP(OBJ_NAME(LBL("Pen Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Curve Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Symbol Style: "), "experiment-params-comment"), "comment-placement", "left"), 4, 0);
-		paramsLay->addWidget(widthLbl = OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 4, 2);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Line Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Dot Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+		paramsLay->addWidget(widthLbl = OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 3, 2);
 		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
 		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
 		paramsLay->addWidget(penStyleCmb = CMB(), 2, 1);
-		paramsLay->addWidget(curveStyleCmb = CMB(), 3, 1);
-		paramsLay->addWidget(curveSymbolCmb = CMB(), 4, 1);
-		paramsLay->addWidget(widthSpin = new QSpinBox, 4, 3);
+		paramsLay->addWidget(curveSymbolCmb = CMB(), 3, 1);
+		paramsLay->addWidget(widthSpin = new QSpinBox, 3, 3);
 		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 2);
 
 		smallPlot->enableAxis(QwtPlot::yLeft, false);
@@ -1325,6 +1321,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 		penStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
 		{
+			penStyleCmb->addItem("No Line", QVariant::fromValue<Qt::PenStyle>(Qt::NoPen));
 			penStyleCmb->addItem("Solid", QVariant::fromValue<Qt::PenStyle>(Qt::SolidLine));
 			penStyleCmb->addItem("Dash", QVariant::fromValue<Qt::PenStyle>(Qt::DashLine));
 			penStyleCmb->addItem("Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DotLine));
@@ -1332,10 +1329,15 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 			penStyleCmb->addItem("Dash Dot Dot", QVariant::fromValue<Qt::PenStyle>(Qt::DashDotDotLine));
 		}
 
-		for (int i = 0; i < penStyleCmb->count(); ++i) {
-			if (penStyleCmb->itemData(i).value<Qt::PenStyle>() == currentParams.curve[what].pen.style) {
-				penStyleCmb->setCurrentIndex(i);
-				break;
+		if (QwtPlotCurve::Dots == currentParams.curve[what].style) {
+			penStyleCmb->setCurrentIndex(0);
+		}
+		else {
+			for (int i = 0; i < penStyleCmb->count(); ++i) {
+				if (penStyleCmb->itemData(i).value<Qt::PenStyle>() == currentParams.curve[what].pen.style) {
+					penStyleCmb->setCurrentIndex(i);
+					break;
+				}
 			}
 		}
 
@@ -1365,23 +1367,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 				break;
 			}
 		}
-
-		curveStyleCmb->setView(OBJ_NAME(new QListView, "combo-list"));
-		{
-			curveStyleCmb->addItem("Lines", QVariant::fromValue<int>((int)QwtPlotCurve::Lines));
-			curveStyleCmb->addItem("Dots", QVariant::fromValue<int>((int)QwtPlotCurve::Dots));
-		}
-
-		for (int i = 0; i < curveStyleCmb->count(); ++i) {
-			if ((QwtPlotCurve::CurveStyle)curveStyleCmb->itemData(i).value<int>() == currentParams.curve[what].style) {
-				curveStyleCmb->setCurrentIndex(i);
-				break;
-			}
-		}
-
-		penStyleCmb->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
-		penStyleLbl->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
-
+				
 		stackLay->addWidget(paramsOwner);
 
 		dialogConn << CONNECT(curveSymbolCmb, &QComboBox::currentTextChanged, [=]() {
@@ -1400,20 +1386,18 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 			curve->setSymbol(symbol);
 			smallPlot->replot();
 		});
-
-		dialogConn << CONNECT(curveStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.curve[what].style = (QwtPlotCurve::CurveStyle)curveStyleCmb->currentData().value<int>();
-
-			penStyleCmb->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
-			penStyleLbl->setDisabled(currentParams.curve[what].style == QwtPlotCurve::Dots);
-
-			curve->setStyle(currentParams.curve[what].style);
-			smallPlot->replot();
-		});
-
+		
 		dialogConn << CONNECT(penStyleCmb, &QComboBox::currentTextChanged, [=]() {
-			currentParams.curve[what].pen.style = penStyleCmb->currentData().value<Qt::PenStyle>();
-			curve->setPen(curve->pen().color(), curve->pen().width(), penStyleCmb->currentData().value<Qt::PenStyle>());
+			auto penStyle = penStyleCmb->currentData().value<Qt::PenStyle>();
+			if (Qt::NoPen == penStyle) {
+				currentParams.curve[what].style = QwtPlotCurve::Dots;
+			}
+			else {
+				currentParams.curve[what].style = QwtPlotCurve::Lines;
+				currentParams.curve[what].pen.style = penStyle;
+				curve->setPen(curve->pen().color(), curve->pen().width(), penStyleCmb->currentData().value<Qt::PenStyle>());
+			}
+			curve->setStyle(currentParams.curve[what].style);
 			smallPlot->replot();
 		});
 
