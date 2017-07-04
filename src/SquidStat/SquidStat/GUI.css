@@ -13,6 +13,7 @@ QMainWindow {
 
 QWidget {
 	background-color: #ffffff;
+	qproperty-contextMenuPolicy: NoContextMenu;
 }
 QAbstractSpinBox,
 QLineEdit, QComboBox {
