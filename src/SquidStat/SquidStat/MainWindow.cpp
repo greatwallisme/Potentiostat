@@ -319,6 +319,10 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
+			foreach(auto conn, handler->connections) {
+				QObject::disconnect(conn);
+			}
+
 			handler->experiment.busy = false;
 			handler->experiment.paused = false;
 
