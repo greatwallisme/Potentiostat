@@ -383,7 +383,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			emit DataArrived(handler->experiment.id, channel, expData);
+			emit DataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
 		});
 	}
 

@@ -54,7 +54,7 @@ public slots:
 
 signals:
 	void HardwareFound(const InstrumentList&);
-	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
+	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData, bool paused);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 

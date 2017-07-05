@@ -814,16 +814,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
 		mw->UpdateCurrentExperimentState();
 	});
-
-	/*
-	CONNECT(mw, &MainWindow::ExperimentCompleted, [=]() {
-		if (!experimentList->selectionModel()->currentIndex().isValid()) {
-			return;
-		}
-		mw->UpdateExperimentsStates();
-	});
-	//*/
-
+	
 	CONNECT(pauseExpPbt, &QPushButton::clicked, [=]() {
 		if (pauseExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
 			mw->PauseExperiment(hwList->currentText(), channelEdit->currentData().toInt());
@@ -1107,10 +1098,15 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData) {
+	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
+
+		if (paused) {
+			return;
+		}
+
 		PlotHandler &handler(dataTabs.plots[id]);
 		DataMapVisualization &majorData(handler.data.first());
 
