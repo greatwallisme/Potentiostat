@@ -50,12 +50,11 @@ public slots:
 	void RemoveInstruments(InstrumentList);
 	void AddInstruments(InstrumentList);
 
-	void UpdateExperimentsStates();
+	void UpdateCurrentExperimentState();
 
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
-	void ExperimentCompleted(const QUuid&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 
@@ -64,11 +63,12 @@ signals:
 	void RemoveDisconnectedInstruments(const QStringList&);
 	void AddNewInstruments(const QStringList&);
 
-	void CurrentHardwareBusy();
-	void CurrentHardwareAvaliable();
+	void CurrentExperimentCompleted();
+	void CurrentExperimentResumed();
 	void CurrentExperimentPaused();
-	void HardwareBusy(const QUuid&);
-	void HardwareAvaliable(const QUuid&);
+	void CurrentHardwareBusy();
+	void ExperimentCompleted(const QUuid&);
+	void ExperimentResumed(const QUuid&);
 	void ExperimentPaused(const QUuid&);
 
 private:

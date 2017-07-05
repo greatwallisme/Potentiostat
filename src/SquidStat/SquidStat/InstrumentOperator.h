@@ -30,6 +30,8 @@ signals:
 	void HardwareVersionReceived(const HardwareVersion&);
 	void ExperimentalDataReceived(quint8 channel, const ExperimentalData&);
 	void ExperimentCompleted();
+	void ExperimentPaused();
+	void ExperimentResumed();
 
 private:
 	SerialCommunicator *_communicator;

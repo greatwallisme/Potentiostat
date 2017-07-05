@@ -147,20 +147,6 @@ void MainWindow::CleanupCurrentHardware() {
 
 	hardware.handlers.clear();
 }
-/*
-void MainWindow::FillHardware(const InstrumentList &instrumentList) {
-	for (auto it = instrumentList.constBegin(); it != instrumentList.constEnd(); ++it) {
-		InstrumentHandler handler;
-		handler.oper = 0;
-		handler.info = *it;
-		handler.experiment.busy = false;
-
-		hardware.handlers << handler;
-	}
-
-	hardware.currentInstrument.handler = hardware.handlers.end();
-}
-//*/
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
@@ -222,31 +208,22 @@ void MainWindow::LoadPrebuildExperiments() {
 void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 	prebuiltExperiments.selectedExp = exp;
 }
-/*
-void MainWindow::SearchHwVendor() {
-	LOG() << "Search instruments by the manufacturer name";
-	
-	auto instrumentList = InstrumentEnumerator().FindInstruments();
-	LOG() << "Found" << instrumentList.size() << "instruments";
+void MainWindow::UpdateCurrentExperimentState() {
+	auto &currentHandler(hardware.currentInstrument.handler);
+	if (currentHandler->experiment.busy) {
+		emit CurrentHardwareBusy();
 
-	CleanupCurrentHardware();
-	FillHardware(instrumentList);
-
-	emit HardwareFound(instrumentList);
-}
-void MainWindow::SearchHwHandshake() {
-	LOG() << "Search instruments via HANDSHAKE request";
-
-	auto instrumentList = InstrumentEnumerator().FindInstrumentsActive();
-	LOG() << "Found" << instrumentList.size() << "instruments";
-
-	CleanupCurrentHardware();
-	FillHardware(instrumentList);
-
-	emit HardwareFound(instrumentList);
-}
-//*/
-void MainWindow::UpdateExperimentsStates() {
+		if (currentHandler->experiment.paused) {
+			emit CurrentExperimentPaused();
+		}
+		else {
+			emit CurrentExperimentResumed();
+		}
+	}
+	else {
+		emit CurrentExperimentCompleted();
+	}
+	/*
 	auto &currentHandler(hardware.currentInstrument.handler);
 	for(auto it = hardware.handlers.begin(); it != hardware.handlers.end(); ++it) {
 		if (it->experiment.busy) {
@@ -269,6 +246,7 @@ void MainWindow::UpdateExperimentsStates() {
 			}
 		}
 	}
+	//*/
 }
 void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 	auto hwIt = SearchForHandler(name, channel);
@@ -293,12 +271,6 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 	return ret;
 }
 void MainWindow::StartExperiment(QWidget *paramsWdg) {
-	/*
-	static HardwareVersion lastHwVersion;
-	static QWidget *lastParamsWidget;
-	lastParamsWidget = paramsWdg;
-	//*/
-
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
@@ -317,6 +289,54 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	if (0 == hardware.currentInstrument.handler->oper) {
 		InstrumentOperator *instrumentOperator = new InstrumentOperator(hardware.currentInstrument.handler->info);
 		hardware.currentInstrument.handler->oper = instrumentOperator;
+
+		hardware.currentInstrument.handler->connections <<
+		connect(instrumentOperator, &InstrumentOperator::ExperimentPaused, this, [=]() {
+			auto oper = qobject_cast<InstrumentOperator*>(sender());
+			if (0 == oper) {
+				LOG() << "Unexpected InstrumentOperator pointer";
+				return;
+			}
+
+			auto handler = SearchForHandler(oper);
+			if (handler == hardware.handlers.end()) {
+				LOG() << "Hardware handler not found";
+				return;
+			}
+
+			handler->experiment.paused = true;
+
+			LOG() << "Experiment paused";
+
+			emit ExperimentPaused(handler->experiment.id);
+			if (handler == hardware.currentInstrument.handler) {
+				emit CurrentExperimentPaused();
+			}
+		});
+
+		hardware.currentInstrument.handler->connections <<
+		connect(instrumentOperator, &InstrumentOperator::ExperimentResumed, this, [=]() {
+			auto oper = qobject_cast<InstrumentOperator*>(sender());
+			if (0 == oper) {
+				LOG() << "Unexpected InstrumentOperator pointer";
+				return;
+			}
+
+			auto handler = SearchForHandler(oper);
+			if (handler == hardware.handlers.end()) {
+				LOG() << "Hardware handler not found";
+				return;
+			}
+
+			handler->experiment.paused = false;
+
+			LOG() << "Experiment resumed";
+
+			emit ExperimentResumed(handler->experiment.id);
+			if (handler == hardware.currentInstrument.handler) {
+				emit CurrentExperimentResumed();
+			}
+		});
 
 		hardware.currentInstrument.handler->connections <<
 		connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted, this, [=]() {
@@ -342,69 +362,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			LOG() << "Experiment completed";
 			
 			emit ExperimentCompleted(handler->experiment.id);
+			if (handler == hardware.currentInstrument.handler) {
+				emit CurrentExperimentCompleted();
+			}
 			
 			handler->experiment.id = QUuid();
 		});
-
-		/*
-		hardware.currentInstrument.handler->connections <<
-		QObject::connect(instrumentOperator, &InstrumentOperator::CalibrationDataReceived, this, [=](const CalibrationData &calData) {
-			LOG() << "Calibration received";
-			
-			QByteArray nodesData = prebuiltExperiments.selectedExp->GetNodesData(lastParamsWidget, calData, lastHwVersion);
-			if (nodesData.isEmpty()) {
-				LOG() << "Error while getting user input";
-				return;
-			}
-
-			MainWindowUI::ExperimentNotes notes;
-
-			if (!MainWindowUI::GetExperimentNotes(this, notes)) {
-				return;
-			}
-
-			QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
-
-			QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
-			QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QTime::currentTime().toString("hh:mm:ss") + ")";
-			tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|]"), "_");
-			auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
-
-			if (dialogRet.isEmpty()) {
-				return;
-			}
-			dirName = QFileInfo(dialogRet).absolutePath();
-			settings.setValue(DATA_SAVE_PATH, dirName);
-
-			auto saveFile = new QFile(this);
-			saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
-			if (!saveFile->open(QIODevice::WriteOnly)) {
-				saveFile->deleteLater();
-				return;
-			}
-
-			hardware.currentInstrument.handler->experiment.busy = true;
-			hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
-			hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
-
-			prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
-
-			emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, calData, lastHwVersion);
-
-			LOG() << "Start experiment";
-			hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
-		});
-		//*/
-
-		/*
-		hardware.currentInstrument.handler->connections <<
-		QObject::connect(instrumentOperator, &InstrumentOperator::HardwareVersionReceived, this, [=](const HardwareVersion &hwVersion) {
-			LOG() << "Hardware version received";
-
-			lastHwVersion = hwVersion;
-			hardware.currentInstrument.handler->oper->RequestCalibrationData();
-		});
-		//*/
 
 		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived, this, [=](quint8 channel, const ExperimentalData &expData) {
@@ -423,8 +386,6 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			emit DataArrived(handler->experiment.id, channel, expData);
 		});
 	}
-
-	//hardware.currentInstrument.handler->oper->RequestHardwareVersion();
 
 	InstrumentInfo &instrumentInfo(hardware.currentInstrument.handler->info);
 	auto nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData, instrumentInfo.hwVer);
@@ -526,8 +487,6 @@ void MainWindow::PauseExperiment(const QUuid &id) {
 		return;
 	}
 
-	it->experiment.paused = true;
-
 	it->oper->PauseExperiment(it->experiment.channel);
 }
 void MainWindow::ResumeExperiment(const QUuid &id) {
@@ -540,8 +499,6 @@ void MainWindow::ResumeExperiment(const QUuid &id) {
 	if (!it->experiment.busy) {
 		return;
 	}
-
-	it->experiment.paused = false;
 
 	it->oper->ResumeExperiment(it->experiment.channel);
 }

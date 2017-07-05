@@ -176,7 +176,7 @@ void InstrumentEnumerator::run() {
 
 		if (instrumentsToDelete.count()) {
 			foreach(auto instrument, instrumentsToDelete) {
-				LOG() << "Instrument \"" << instrument.name << "\" disconnected";
+				LOG() << "Instrument" << instrument.name << "disconnected";
 			}
 			emit RemoveDisconnectedInstruments(instrumentsToDelete);
 		}
@@ -188,7 +188,7 @@ void InstrumentEnumerator::run() {
 			if (instrumentsToAdd.count()) {
 				instruments << instrumentsToAdd;
 				foreach(auto instrument, instrumentsToAdd) {
-					LOG() << "Instrument \"" << instrument.name << "\" connected";
+					LOG() << "Instrument" << instrument.name << "connected";
 				}
 				emit AddNewInstruments(instrumentsToAdd);
 			}

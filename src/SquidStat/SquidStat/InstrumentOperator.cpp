@@ -54,6 +54,14 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 		case EXPERIMENT_COMPLETE:
 			emit ExperimentCompleted();
 			break;
+		
+		case EXPERIMENT_PAUSED:
+			emit ExperimentPaused();
+			break;
+		
+		case EXPERIMENT_RESUMED:
+			emit ExperimentResumed();
+			break;
 
 		case EXPERIMENT_NODE_COMPLETE:
 			LOG() << "Node complete";
@@ -84,11 +92,11 @@ void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 chan
 	_communicator->SendCommand((CommandID)RUN_EXPERIMENT, channel);
 }
 void InstrumentOperator::StopExperiment(quint8 channel) {
-	//_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
+	_communicator->SendCommand((CommandID)STOP_EXPERIMENT, channel);
 }
 void InstrumentOperator::PauseExperiment(quint8 channel) {
-	//_communicator->SendCommand((CommandID)PAUSE_EXPERIMENT, channel);
+	_communicator->SendCommand((CommandID)PAUSE_EXPERIMENT, channel);
 }
 void InstrumentOperator::ResumeExperiment(quint8 channel) {
-	//_communicator->SendCommand((CommandID)RESUME_EXPERIMENT, channel);
+	_communicator->SendCommand((CommandID)RESUME_EXPERIMENT, channel);
 }
