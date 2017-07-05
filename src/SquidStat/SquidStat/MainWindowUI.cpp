@@ -787,9 +787,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 				
 			mw->PrebuiltExperimentSelected(exp);
 
-			//startExpPbt->show();
 			paramsHeadWidget->show();
 			mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+			mw->UpdateExperimentsStates();
 		}
 		else {
 			startExpPbt->hide();
@@ -804,6 +804,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			return;
 		}
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(channelEdit, &QComboBox::currentTextChanged, [=](const QString &channelName) {
@@ -811,34 +812,34 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			return;
 		}
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(mw, &MainWindow::ExperimentCompleted, [=]() {
 		if (!experimentList->selectionModel()->currentIndex().isValid()) {
 			return;
 		}
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(pauseExpPbt, &QPushButton::clicked, [=]() {
 		if (pauseExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
 			mw->PauseExperiment(hwList->currentText(), channelEdit->currentData().toInt());
-			pauseExpPbt->setText(RESUME_EXP_BUTTON_TEXT);
 		}
 		else {
 			mw->ResumeExperiment(hwList->currentText(), channelEdit->currentData().toInt());
-			pauseExpPbt->setText(PAUSE_EXP_BUTTON_TEXT);
 		}
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(stopExpPbt, &QPushButton::clicked, [=]() {
 		mw->StopExperiment(hwList->currentText(), channelEdit->currentData().toInt());
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
 		mw->StartExperiment(prebuiltExperimentData.userInputs);
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateExperimentsStates();
 	});
 
 	CONNECT(mw, &MainWindow::CurrentHardwareBusy, [=]() {
@@ -2074,28 +2075,42 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			plot->setTitle(titleText);
 		}
 	}));
-	
-	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &extId) {
-		if(id != extId)
-			return;
-
-		pauseExperiment->hide();
-		stopExperiment->hide();
-	});
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {
 			mw->PauseExperiment(id);
-			pauseExperiment->setText(RESUME_EXP_BUTTON_TEXT);
 		}
 		else {
 			mw->ResumeExperiment(id);
-			pauseExperiment->setText(PAUSE_EXP_BUTTON_TEXT);
 		}
+		mw->UpdateExperimentsStates();
 	});
 
 	plotHandler.plotTabConnections << CONNECT(stopExperiment, &QPushButton::clicked, [=]() {
 		mw->StopExperiment(id);
+		mw->UpdateExperimentsStates();
+	});
+
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::HardwareBusy, [=](const QUuid &extId) {
+		if (id != extId)
+			return;
+
+		pauseExperiment->setText(PAUSE_EXP_BUTTON_TEXT);
+	});
+
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::ExperimentPaused, [=](const QUuid &extId) {
+		if (id != extId)
+			return;
+
+		pauseExperiment->setText(RESUME_EXP_BUTTON_TEXT);
+	});
+
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::HardwareAvaliable, [=](const QUuid &extId) {
+		if (id != extId)
+			return;
+
+		pauseExperiment->hide();
+		stopExperiment->hide();
 	});
 
 	plotHandler.plotTabConnections << CONNECT(addDataPbt, &QPushButton::clicked, [=]() {

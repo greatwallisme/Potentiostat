@@ -246,6 +246,30 @@ void MainWindow::SearchHwHandshake() {
 	emit HardwareFound(instrumentList);
 }
 //*/
+void MainWindow::UpdateExperimentsStates() {
+	auto &currentHandler(hardware.currentInstrument.handler);
+	for(auto it = hardware.handlers.begin(); it != hardware.handlers.end(); ++it) {
+		if (it->experiment.busy) {
+			emit HardwareBusy(it->experiment.id);
+			if (it == currentHandler) {
+				emit CurrentHardwareBusy();
+			}
+
+			if (it->experiment.paused) {
+				emit ExperimentPaused(it->experiment.id);
+				if (it == currentHandler) {
+					emit CurrentExperimentPaused();
+				}
+			}
+		}
+		else {
+			emit HardwareAvaliable(it->experiment.id);
+			if (it == currentHandler) {
+				emit CurrentHardwareAvaliable();
+			}
+		}
+	}
+}
 void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 	auto hwIt = SearchForHandler(name, channel);
 	if (hwIt == hardware.handlers.end()) {
@@ -254,17 +278,6 @@ void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 
 	hardware.currentInstrument.handler = hwIt;
 	hardware.currentInstrument.channel = channel;
-
-	if (hardware.currentInstrument.handler->experiment.busy) {
-		emit CurrentHardwareBusy();
-
-		if (hardware.currentInstrument.handler->experiment.paused) {
-			emit CurrentExperimentPaused();
-		}
-	}
-	else {
-		emit CurrentHardwareAvaliable();
-	}
 
 	LOG() << "Start working with" << name;
 }

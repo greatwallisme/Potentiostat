@@ -50,6 +50,8 @@ public slots:
 	void RemoveInstruments(InstrumentList);
 	void AddInstruments(InstrumentList);
 
+	void UpdateExperimentsStates();
+
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData);
@@ -65,6 +67,9 @@ signals:
 	void CurrentHardwareBusy();
 	void CurrentHardwareAvaliable();
 	void CurrentExperimentPaused();
+	void HardwareBusy(const QUuid&);
+	void HardwareAvaliable(const QUuid&);
+	void ExperimentPaused(const QUuid&);
 
 private:
 	void CleanupCurrentHardware();
