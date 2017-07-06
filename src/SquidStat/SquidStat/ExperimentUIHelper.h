@@ -34,6 +34,58 @@ private:
 	QList<QMetaObject::Connection> connections;
 };
 
+#define PUSH_BACK_DATA(store, val) {		\
+	if (container[store].data.isEmpty()) {	\
+		container[store].min = val;			\
+		container[store].max = val;			\
+	}										\
+	else {									\
+		if (val > container[store].max) {	\
+			container[store].max = val;		\
+		}									\
+		if (val < container[store].min) {	\
+			container[store].min = val;		\
+		}									\
+	}										\
+	container[store].data.push_back(val);	\
+}
+
+#define SAVE_DATA_HEADER_START()	\
+	QString headers;				\
+	QString axes;					\
+	QString prevChar = "";			\
+	QString str;
+
+#define SAVE_DATA_HEADER(varName)	\
+	headers += prevChar;			\
+	axes += prevChar;				\
+	headers += QString("\"%1\"").arg(QString(varName).replace("\"", "\"\""));	\
+	str = GetXAxisParameters().contains(varName) ? "X" : "";					\
+	str += GetYAxisParameters().contains(varName) ? "Y" : "";					\
+	axes += QString("\"%1\"").arg(str);											\
+	prevChar = ";";
+
+#define SAVE_DATA_HEADER_END()			\
+	saveFile.write(headers.toLatin1()); \
+	saveFile.write("\n");				\
+	saveFile.write(axes.toLatin1());	\
+	saveFile.write("\n");				\
+	saveFile.flush();
+
+
+#define SAVE_DATA_START() \
+	static QChar decimalPoint = QLocale().decimalPoint(); \
+	QString prevChar = "";
+
+#define SAVE_DATA(varName)	\
+	saveFile.write(prevChar.toLatin1()); \
+	saveFile.write(QString("%1").arg(container[varName].data.last(), 0, 'e').replace(QChar('.'), decimalPoint).toLatin1()); \
+	prevChar = ";";
+
+#define SAVE_DATA_END() \
+	saveFile.write("\n"); \
+	saveFile.flush();
+
 #define _INSERT_RIGHT_ALIGN_COMMENT(text, row, col) \
 	{ \
 		auto lbl = OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "left"); \

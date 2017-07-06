@@ -118,6 +118,18 @@
     <ClCompile Include="GeneratedFiles\Release\moc_InstrumentEnumerator.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_SerialThread.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_SerialThread.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="SerialThread.cpp">
+      <Filter>_scr\SerialCommunicator</Filter>
+    </ClCompile>
+    <ClCompile Include="ListSeriesData.cpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -137,6 +149,9 @@
     </ClInclude>
     <ClInclude Include="ExperimentFactoryInterface.h">
       <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="ListSeriesData.h">
+      <Filter>_scr\MainWindow</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +181,9 @@
     </CustomBuild>
     <CustomBuild Include="InstrumentEnumerator.h">
       <Filter>_scr\InstrumentEnumerator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="SerialThread.h">
+      <Filter>_scr\SerialCommunicator</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

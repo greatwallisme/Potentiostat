@@ -12,8 +12,16 @@ class QFile;
 #include <QMap>
 #include <QVector>
 
-typedef QVector<qreal> DataVector;
-typedef QMap<QString, DataVector> DataMap;
+typedef QList<qreal> DataList;
+//typedef QVector<qreal> DataVector;
+//typedef QMap<QString, DataVector> DataMap;
+struct DataStore {
+	DataStore() : min(0), max(0) {}
+	DataList data;
+	qreal min;
+	qreal max;
+};
+typedef QMap<QString, DataStore> DataMap;
 typedef QList<QByteArray> NodesData;
 
 class AbstractExperiment {

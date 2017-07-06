@@ -238,76 +238,49 @@ void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &co
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
-	if (container[PLOT_VAR_CURRENT_INTEGRAL].isEmpty()) {
-		container[PLOT_VAR_CURRENT_INTEGRAL].append(expData.ADCrawData.current / timestamp);
+	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
 	}
 	else {
-		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].last();
-		newVal += (container[PLOT_VAR_CURRENT].last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].last()) / 2.;
-		container[PLOT_VAR_CURRENT_INTEGRAL].append(newVal);
+		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
-	container[PLOT_VAR_TIMESTAMP].append(timestamp);
-	container[PLOT_VAR_EWE].append(expData.ADCrawData.ewe);
-	container[PLOT_VAR_ECE].append(expData.ADCrawData.ece);
-	container[PLOT_VAR_CURRENT].append(expData.ADCrawData.current);
+	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
+	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;
 	}
-	container[PLOT_VAR_TIMESTAMP_NORMALIZED].append(timestamp - timestampOffset[&container]);
+	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
 void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
-	QString toWrite;
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP).replace("\"", "\"\""));
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_TIMESTAMP_NORMALIZED).replace("\"", "\"\""));
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_EWE).replace("\"", "\"\""));
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_CURRENT).replace("\"", "\"\""));
-	toWrite += QString("\"%1\";").arg(QString(PLOT_VAR_ECE).replace("\"", "\"\""));
-	toWrite += QString("\"%1\"\n").arg(QString(PLOT_VAR_CURRENT_INTEGRAL).replace("\"", "\"\""));
+	SAVE_DATA_HEADER_START();
 
-	saveFile.write(toWrite.toLatin1());
-	saveFile.flush();
+	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
+	SAVE_DATA_HEADER(PLOT_VAR_EWE);
+	SAVE_DATA_HEADER(PLOT_VAR_CURRENT);
+	SAVE_DATA_HEADER(PLOT_VAR_ECE);
+	SAVE_DATA_HEADER(PLOT_VAR_CURRENT_INTEGRAL);
 
-
-	QString str;
-	toWrite.clear();
-	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP) ? "Y" : "";
-	toWrite += QString("\"%1\";").arg(str);
-	str = GetXAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_TIMESTAMP_NORMALIZED) ? "Y" : "";
-	toWrite += QString("\"%1\";").arg(str);
-	str = GetXAxisParameters().contains(PLOT_VAR_EWE) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_EWE) ? "Y" : "";
-	toWrite += QString("\"%1\";").arg(str);
-	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT) ? "Y" : "";
-	toWrite += QString("\"%1\";").arg(str);
-	str = GetXAxisParameters().contains(PLOT_VAR_ECE) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_ECE) ? "Y" : "";
-	toWrite += QString("\"%1\";").arg(str);
-	str = GetXAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "X" : "";
-	str += GetYAxisParameters().contains(PLOT_VAR_CURRENT_INTEGRAL) ? "Y" : "";
-	toWrite += QString("\"%1\"\n").arg(str);
-
-	saveFile.write(toWrite.toLatin1());
-	saveFile.flush();
+	SAVE_DATA_HEADER_END();
 }
 
 void CyclicVoltammetry::SaveData(QFile &saveFile, const DataMap &container) const {
-	static QChar decimalPoint = QLocale().decimalPoint();
+	SAVE_DATA_START();
 
-	QString toWrite;
-	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP].last(), 0, 'e').replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_TIMESTAMP_NORMALIZED].last(), 0, 'e').replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_EWE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_CURRENT].last(), 0, 'e').replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1;").arg(container[PLOT_VAR_ECE].last(), 0, 'e').replace(QChar('.'), decimalPoint);
-	toWrite += QString("%1\n").arg(container[PLOT_VAR_CURRENT_INTEGRAL].last(), 0, 'e').replace(QChar('.'), decimalPoint);
+	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
+	SAVE_DATA(PLOT_VAR_EWE);
+	SAVE_DATA(PLOT_VAR_CURRENT);
+	SAVE_DATA(PLOT_VAR_ECE);
+	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
 
-	saveFile.write(toWrite.toLatin1());
-	saveFile.flush();
+	SAVE_DATA_END();
 }
 void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode) const
 {

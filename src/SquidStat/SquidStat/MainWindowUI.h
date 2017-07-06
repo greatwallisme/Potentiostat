@@ -128,14 +128,7 @@ private:
 			QTabWidget *docTabs;
 		} newDataTab;
 	} ui;
-	
-	/*
-	struct {
-		InstrumentInfo instrumentInfo;
-		quint8 channel;
-	} currentInstrument;
-	//*/
-	
+		
 	struct {
 		QWidget *userInputs;
 	} prebuiltExperimentData;
@@ -145,7 +138,7 @@ private:
 		QFile *saveFile;
 		CalibrationData cal;
 		HardwareVersion hwVer;
-		QMap<QwtPlot::Axis, DataVector*> data;
+		QMap<QwtPlot::Axis, DataStore*> data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
 		QString name;
