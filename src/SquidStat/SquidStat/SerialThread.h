@@ -17,10 +17,10 @@ protected:
 signals:
 	void NewData(const QByteArray&);
 
-	public slots:
+public slots:
 	void DataToSend(const QByteArray&);
 
-	private slots:
+private slots:
 	void DataArrived();
 	void ErrorOnSerial(QSerialPort::SerialPortError);
 

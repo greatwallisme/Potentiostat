@@ -150,6 +150,9 @@ private:
 		QList<QMetaObject::Connection> plotTabConnections;
 		const AbstractExperiment *exp;
 		QList<DataMapVisualization> data;
+		struct {
+			quint64 stamp;
+		} plotCounter;
 	};
 
 	struct {

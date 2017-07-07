@@ -1117,6 +1117,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			majorData.saveFile->deleteLater();
 			majorData.saveFile = 0;
 		}
+
+		handler.plot->replot();
 	});
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData, bool paused) {
@@ -1149,7 +1151,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 
 		ApplyNewAxisParams(QwtPlot::xBottom, handler);
-		handler.plot->replot();
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			handler.plot->replot();
+			LOG() << "Replot";
+			handler.plotCounter.stamp = curStamp + 200;
+		}
 	});
 
 	return w;
@@ -2046,6 +2054,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.data.first().saveFile = 0;
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
+	plotHandler.plotCounter.stamp = 0;
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
 		PlotHandler &handler(dataTabs.plots[id]);
