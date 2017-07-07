@@ -65,9 +65,12 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 		instrumentsCandidates.removeFirst();
 
 		SerialCommunicator communicator(instrumentInfo);
+		communicator.Start();
+		/*
 		if (!communicator.Start()) {
 			continue;
 		}
+		//*/
 		
 		static QEventLoop eventLoop;
 		static CalibrationData calData;

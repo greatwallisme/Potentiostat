@@ -80,9 +80,11 @@ void MainWindow::RemoveInstruments(InstrumentList instruments) {
 
 				InstrumentHandler &currentHandler(hardware.handlers[i]);
 
-				if (currentHandler.oper) {
-					emit currentHandler.oper->ExperimentCompleted();
+				if (currentHandler.experiment.busy) {
+					emit ExperimentCompleted(currentHandler.experiment.id);
+				}
 
+				if (currentHandler.oper) {
 					foreach(const QMetaObject::Connection &conn, currentHandler.connections) {
 						disconnect(conn);
 					}
@@ -210,6 +212,11 @@ void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 }
 void MainWindow::UpdateCurrentExperimentState() {
 	auto &currentHandler(hardware.currentInstrument.handler);
+	
+	if (currentHandler == hardware.handlers.end()) {
+		return;
+	}
+
 	if (currentHandler->experiment.busy) {
 		emit CurrentHardwareBusy();
 
@@ -367,6 +374,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			}
 			
 			handler->experiment.id = QUuid();
+			handler->oper->deleteLater();
+			handler->oper = 0;
 		});
 
 		hardware.currentInstrument.handler->connections <<

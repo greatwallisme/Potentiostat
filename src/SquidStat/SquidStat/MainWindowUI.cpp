@@ -11,7 +11,7 @@
 
 #include "Log.h"
 
-#include "ExperimentReader.h"
+#include "ListSeriesData.h"
 
 #include <QButtonGroup>
 
@@ -788,8 +788,11 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			mw->PrebuiltExperimentSelected(exp);
 
 			paramsHeadWidget->show();
-			mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
-			mw->UpdateCurrentExperimentState();
+
+			if (hwList->count()) {
+				mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+				mw->UpdateCurrentExperimentState();
+			}
 		}
 		else {
 			startExpPbt->hide();
@@ -803,6 +806,10 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		if (!experimentList->selectionModel()->currentIndex().isValid()) {
 			return;
 		}
+		if (hwName.isEmpty()) {
+			return;
+		}
+
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
 		mw->UpdateCurrentExperimentState();
 	});
@@ -939,7 +946,21 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 			if (!ok) {
 				return ret;
 			}
-			data.container[hdrList.at(i)].append(val);
+
+			if (data.container[hdrList.at(i)].data.isEmpty()) {
+				data.container[hdrList.at(i)].max = val;
+				data.container[hdrList.at(i)].min = val;
+			}
+			else {
+				if (val > data.container[hdrList.at(i)].max) {
+					data.container[hdrList.at(i)].max = val;
+				}
+				if (val < data.container[hdrList.at(i)].min) {
+					data.container[hdrList.at(i)].min = val;
+				}
+			}
+
+			data.container[hdrList.at(i)].data.push_back(val);
 		}
 	}
 	
@@ -1096,6 +1117,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			majorData.saveFile->deleteLater();
 			majorData.saveFile = 0;
 		}
+
+		handler.plot->replot();
 	});
 
 	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData, bool paused) {
@@ -1116,19 +1139,25 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
-			majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
+			majorData.curve1->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]));
 			
 			ApplyNewAxisParams(QwtPlot::yLeft, handler);
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
-			majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
+			majorData.curve2->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]));
 			
 			ApplyNewAxisParams(QwtPlot::yRight, handler);
 		}
 
 		ApplyNewAxisParams(QwtPlot::xBottom, handler);
-		handler.plot->replot();
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			handler.plot->replot();
+			//LOG() << "Replot";
+			handler.plotCounter.stamp = curStamp + 50;
+		}
 	});
 
 	return w;
@@ -2025,6 +2054,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.data.first().saveFile = 0;
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
+	plotHandler.plotCounter.stamp = 0;
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
 		PlotHandler &handler(dataTabs.plots[id]);
@@ -2147,8 +2177,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			currentData.data[QwtPlot::yLeft] = &currentData.container[handler.varCombo[QwtPlot::yLeft]->currentText()];
 			currentData.data[QwtPlot::yRight] = &currentData.container[handler.varCombo[QwtPlot::yRight]->currentText()];
 
-			currentData.curve1->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]);
-			currentData.curve2->setSamples(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]);
+			currentData.curve1->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]));
+			currentData.curve2->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]));
 
 			currentData.curve1->setTitle(handler.varCombo[QwtPlot::yLeft]->currentText());
 			currentData.curve2->setTitle(handler.varCombo[QwtPlot::yRight]->currentText());
@@ -2249,8 +2279,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
 			it->data[QwtPlot::xBottom] = &it->container[curText];
-			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
-			it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
+			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
+			it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
 		}
 		handler.plot->replot();
 	});
@@ -2265,7 +2295,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
 			it->data[QwtPlot::yLeft] = &it->container[curText];
-			it->curve1->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]);
+			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
 			it->curve1->setTitle(curText);
 		}
 		handler.plot->replot();
@@ -2292,7 +2322,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 
 				it->data[QwtPlot::yRight] = &it->container[curText];
 
-				it->curve2->setSamples(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]);
+				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
 				it->curve2->setTitle(curText);
 			}
 		}
@@ -2309,8 +2339,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	majorData.data[QwtPlot::xBottom] = &majorData.container[xCombo->currentText()];
 	majorData.data[QwtPlot::yLeft] = &majorData.container[y1Combo->currentText()];
 	majorData.data[QwtPlot::yRight] = &majorData.container[NONE_Y_AXIS_VARIABLE];
-	majorData.curve1->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]);
-	majorData.curve2->setSamples(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]);
+	majorData.curve1->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]));
+	majorData.curve2->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]));
 	majorData.curve1->setTitle(y1Combo->currentText());
 	majorData.curve2->setTitle(NONE_Y_AXIS_VARIABLE);
 	majorData.name = expName;

@@ -1,29 +1,32 @@
 #include "SerialCommunicator.h"
-
-#include "Config.h"
+#include "SerialThread.h"
 
 #include "Log.h"
 
-SerialCommunicator::SerialCommunicator(const InstrumentInfo &info, QObject *parent) :
-	QObject(parent),
-	_instrumentInfo(info)
-{
-	_serialPort = new QSerialPort(this);
-	_serialPort->setPortName(_instrumentInfo.port.name);
-	_serialPort->setBaudRate(DefaultSerialPortSettings::Baudrate());
-	_serialPort->setDataBits(DefaultSerialPortSettings::DataBits());
-	_serialPort->setFlowControl(DefaultSerialPortSettings::FlowControl());
-	_serialPort->setParity(DefaultSerialPortSettings::Parity());
-	_serialPort->setStopBits(DefaultSerialPortSettings::StopBits());
+#include <QFile>
 
-	connect(_serialPort, &QSerialPort::readyRead,
-		this, &SerialCommunicator::DataArrived);
+SerialCommunicator::SerialCommunicator(const InstrumentInfo &info, QObject *parent) :
+	QObject(parent)
+{
+	_rawData.reserve(1024*1024);
+
+	_serialThread = new SerialThread(info);
+
+	connect(_serialThread, &SerialThread::NewData, this, &SerialCommunicator::DataArrived, Qt::QueuedConnection);
+	connect(this, &SerialCommunicator::SendData, _serialThread, &SerialThread::DataToSend, Qt::QueuedConnection);
 }
-bool SerialCommunicator::Start() {
-	return _serialPort->open(QIODevice::ReadWrite);
+SerialCommunicator::~SerialCommunicator() {
+	if (_serialThread->isRunning()) {
+		_serialThread->quit();
+		_serialThread->wait();
+	}
+	_serialThread->deleteLater();
+}
+void SerialCommunicator::Start() {
+	_serialThread->start();
 }
 void SerialCommunicator::Stop() {
-	_serialPort->close();
+	_serialThread->quit();
 }
 void SerialCommunicator::SendCommand(CommandID comm, quint8 channel, const QByteArray &data) {
 	QByteArray toSend(sizeof(CommandPacket) + data.size(), 0x00);
@@ -35,16 +38,14 @@ void SerialCommunicator::SendCommand(CommandID comm, quint8 channel, const QByte
 	pack->hdr.dataLength = data.size();
 	memcpy(pack->data, data.data(), data.size());
 
-	_serialPort->write(toSend);
-	_serialPort->flush();
+	emit SendData(toSend);
 }
 int SerialCommunicator::FindPacket(const char *startPtr, const char *endPtr) {
 	const char *dataPtr = startPtr;
 	
 	bool foundFraiming = false;
 	const ResponsePacket *resp;
-	//while ((endPtr - dataPtr) >= sizeof(ResponsePacket)) {  //debugging
-	while ((endPtr - dataPtr) >= 6) {
+	while ((endPtr - dataPtr) >= sizeof(ResponsePacket)) {
 		resp = (const ResponsePacket*)dataPtr;
 		if (COMMAND_FRAIMING_BYTES == resp->hdr.frame) {
 			foundFraiming = true;
@@ -83,9 +84,7 @@ bool SerialCommunicator::CheckPacket(const ResponsePacket *resp) {
 
 	return true;
 }
-void SerialCommunicator::DataArrived() {
-	QByteArray newData = _serialPort->readAll();
-	
+void SerialCommunicator::DataArrived(const QByteArray &newData) {
 	_rawData += newData;
 
 	if (_rawData.size() < sizeof(ResponsePacket)) {
@@ -107,7 +106,6 @@ void SerialCommunicator::DataArrived() {
 		if (!CheckPacket(resp)) {
 			++dataPtr;
 			LOG() << "It is not a valid packet, skip one byte";
-			LOG() << "Total data" << _rawData.size();
 			continue;
 		}
 
