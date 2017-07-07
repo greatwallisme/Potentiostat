@@ -262,7 +262,7 @@ void NormalPulseVoltammetry::SaveData(QFile &saveFile, const DataMap &container)
 }
 void NormalPulseVoltammetry::getSamplingParameters(quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode) const
 {
-
+	//debugging: this algorithm doesn't work...
 	//TODO: make sure that this doesn't calculate an ADCMult or DACMult too big for the hardware buffers
 
 	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
@@ -313,12 +313,12 @@ void NormalPulseVoltammetry::getSamplingParameters(quint32 t_period, quint32 t_p
 	if (isEvenPeriodShorter)
 	{
 		pNode->samplingParams.DACMultEven = bufMult;
-		pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
+		pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * ((double)t_pulsewidth / (t_period - t_pulsewidth));
 	}
 	else
 	{
 		pNode->samplingParams.DACMultOdd = bufMult;
-		pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * ((t_period - t_pulsewidth) / t_pulsewidth);
+		pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * ((double)(t_period - t_pulsewidth) / t_pulsewidth);
 	}
 	pNode->samplingParams.PointsIgnored = bufMult / 2;
 

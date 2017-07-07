@@ -1,16 +1,16 @@
-#ifndef NORMALPULSEVOLTAMMETRYPLUGIN_H
-#define NORMALPULSEVOLTAMMETRYPLUGIN_H
+#ifndef CHRONOAMPEROMETRYPLUGIN_H
+#define CHRONOAMPEROMETRYPLUGIN_H
 
 #include <QtDesigner/QDesignerCustomWidgetInterface>
 
-class NormalPulseVoltammetryPlugin : public QObject, public QDesignerCustomWidgetInterface
+class ChronoamperometryPlugin : public QObject, public QDesignerCustomWidgetInterface
 {
 	Q_OBJECT
 	Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QDesignerCustomWidgetInterface" FILE "cyclicvoltammetryplugin.json")
 	Q_INTERFACES(QDesignerCustomWidgetInterface)
 
 public:
-	NormalPulseVoltammetryPlugin(QObject *parent = 0);
+	ChronoamperometryPlugin(QObject *parent = 0);
 
 	bool isContainer() const;
 	bool isInitialized() const;
@@ -28,4 +28,4 @@ private:
 	bool initialized;
 };
 
-#endif // NORMALPULSEVOLTAMMETRYPLUGIN_H
+#endif // CHRONOAMPEROMETRYPLUGIN_H
