@@ -1155,8 +1155,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		auto curStamp = QDateTime::currentMSecsSinceEpoch();
 		if (curStamp > handler.plotCounter.stamp) {
 			handler.plot->replot();
-			LOG() << "Replot";
-			handler.plotCounter.stamp = curStamp + 200;
+			//LOG() << "Replot";
+			handler.plotCounter.stamp = curStamp + 50;
 		}
 	});
 
