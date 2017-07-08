@@ -1,3 +1,5 @@
+#define _USE_MATH_DEFINES
+
 #include "ExperimentCalcHelper.h"
 
 void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, double t_sample_period)
@@ -170,7 +172,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 
 	for (int i = 0; i < len; i++)
 	{
-		double arg = (double)i / (double)len * 2 * PI;
+		double arg = (double)i / (double)len * 2 * M_PI;
 		I_RealSum += bufCurrent[i] * cos(arg);
 		I_ImagSum += bufCurrent[i] * sin(arg);
 		WE_RealSum += bufEWE[i] * cos(arg);

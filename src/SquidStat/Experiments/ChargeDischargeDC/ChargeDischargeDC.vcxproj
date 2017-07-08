@@ -80,6 +80,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\SquidStat\ExperimentCalcHelper.cpp" />
     <ClCompile Include="ChargeDischargeDC.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Factory.cpp">
