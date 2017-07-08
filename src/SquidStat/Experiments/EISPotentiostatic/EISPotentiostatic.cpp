@@ -177,7 +177,7 @@ QStringList EISPotentiostatic::GetYAxisParameters() const {
 		PLOT_VAR_NEG_IMP_IMAG;
 }
 void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
-	auto expData = GET_DATA_PTR(expDataRaw);
+	ExperimentalAcData *expData = GET_DATA_PTR(expDataRaw);
 	uint16_t expDataArraySize = GET_DATA_ARRAY_SIZE(expDataRaw);
 	
 	/*
