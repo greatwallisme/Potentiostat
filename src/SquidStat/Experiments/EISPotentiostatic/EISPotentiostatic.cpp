@@ -46,6 +46,9 @@ QStringList EISPotentiostatic::GetCategory() const {
 		"Impedance spectroscopy";
 
 }
+ExperimentTypeList EISPotentiostatic::GetTypes() const {
+	return ExperimentTypeList() << ET_DC;
+}
 QPixmap EISPotentiostatic::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
@@ -173,7 +176,7 @@ QStringList EISPotentiostatic::GetYAxisParameters() const {
 		PLOT_VAR_IMP_IMAG <<
 		PLOT_VAR_NEG_IMP_IMAG;
 }
-void EISPotentiostatic::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void EISPotentiostatic::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -196,7 +199,7 @@ void EISPotentiostatic::PushNewData(const ExperimentalData &expData, DataMap &co
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void EISPotentiostatic::SaveDataHeader(QFile &saveFile) const {
+void EISPotentiostatic::SaveDcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
@@ -209,7 +212,7 @@ void EISPotentiostatic::SaveDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_END();
 }
 
-void EISPotentiostatic::SaveData(QFile &saveFile, const DataMap &container) const {
+void EISPotentiostatic::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
 	SAVE_DATA(PLOT_VAR_TIMESTAMP);

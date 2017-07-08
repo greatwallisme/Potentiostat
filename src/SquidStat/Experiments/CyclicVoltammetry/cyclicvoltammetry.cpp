@@ -41,6 +41,9 @@ QStringList CyclicVoltammetry::GetCategory() const {
 		"Basic voltammetry";
 
 }
+ExperimentTypeList CyclicVoltammetry::GetTypes() const {
+	return ExperimentTypeList() << ET_DC;
+}
 QPixmap CyclicVoltammetry::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
@@ -234,7 +237,7 @@ QStringList CyclicVoltammetry::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -257,7 +260,7 @@ void CyclicVoltammetry::PushNewData(const ExperimentalData &expData, DataMap &co
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
+void CyclicVoltammetry::SaveDcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
@@ -270,7 +273,7 @@ void CyclicVoltammetry::SaveDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_END();
 }
 
-void CyclicVoltammetry::SaveData(QFile &saveFile, const DataMap &container) const {
+void CyclicVoltammetry::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
 	SAVE_DATA(PLOT_VAR_TIMESTAMP);

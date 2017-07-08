@@ -17,32 +17,16 @@ InstrumentOperator::~InstrumentOperator() {
 }
 void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data) {
 	switch (resp) {
-		/*
-		case CAL_DATA:
-			if (data.size() == sizeof(CalibrationData)) {
-				CalibrationData calData;
-				memcpy(&calData, data.data(), sizeof(CalibrationData));
-				emit CalibrationDataReceived(calData);
-			}
-			break;
-		//*/
-
 		case ADCDC_DATA:
-			if (data.size() == sizeof(ExperimentalData)) {
-				ExperimentalData *expData = (ExperimentalData*)data.data();
-				emit ExperimentalDataReceived(channel, *expData);
+			if (data.size() == sizeof(ExperimentalDcData)) {
+				ExperimentalDcData *expData = (ExperimentalDcData*)data.data();
+				emit ExperimentalDcDataReceived(channel, *expData);
 			}
 			break;
 
-		/*
-		case HW_DATA:
-			if (data.size() == sizeof(HardwareVersion)) {
-				HardwareVersion hwVersion;
-				memcpy(&hwVersion, data.data(), sizeof(HardwareVersion));
-				emit HardwareVersionReceived(hwVersion);
-			}
+		case ADCAC_DATA:
+			emit ExperimentalAcDataReceived(channel, 0);
 			break;
-		//*/
 
 		case DEBUG_LOG_MSG: {
 				QByteArray strData = data;
@@ -72,14 +56,6 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 	}
 }
-/*
-void InstrumentOperator::RequestCalibrationData() {
-	_communicator->SendCommand((CommandID)SEND_CAL_DATA);
-}
-void InstrumentOperator::RequestHardwareVersion() {
-	_communicator->SendCommand((CommandID)SEND_HW_DATA);
-}
-//*/
 void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 channel) {
 	uint16_t nodesCount = nodesData.count();
 

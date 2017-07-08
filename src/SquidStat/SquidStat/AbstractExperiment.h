@@ -13,8 +13,6 @@ class QFile;
 #include <QVector>
 
 typedef QList<qreal> DataList;
-//typedef QVector<qreal> DataVector;
-//typedef QMap<QString, DataVector> DataMap;
 struct DataStore {
 	DataStore() : min(0), max(0) {}
 	DataList data;
@@ -24,6 +22,13 @@ struct DataStore {
 typedef QMap<QString, DataStore> DataMap;
 typedef QList<QByteArray> NodesData;
 
+enum ExperimentType : uint8_t {
+	ET_AC,
+	ET_DC,
+	ET_SAVED
+};
+typedef QList<ExperimentType> ExperimentTypeList;
+
 class AbstractExperiment {
 public:
 	AbstractExperiment() {};
@@ -32,6 +37,7 @@ public:
 	virtual QString GetFullName() const = 0;
 	virtual QString GetDescription() const = 0;
 	virtual QStringList GetCategory() const = 0;
+	virtual ExperimentTypeList GetTypes() const = 0;
 	virtual QPixmap GetImage() const = 0;
 
 	virtual QWidget* CreateUserInput() const = 0;
@@ -39,10 +45,14 @@ public:
 
 	virtual QStringList GetXAxisParameters() const = 0;
 	virtual QStringList GetYAxisParameters() const = 0;
-	virtual void PushNewData(const ExperimentalData&, DataMap &, const CalibrationData&, const HardwareVersion&) const = 0;
 	
-	virtual void SaveDataHeader(QFile&) const = 0;
-	virtual void SaveData(QFile&, const DataMap&) const = 0;
+	virtual void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
+	virtual void SaveDcDataHeader(QFile&) const {};
+	virtual void SaveDcData(QFile&, const DataMap&) const {};
+
+	virtual void PushNewAcData(const ExperimentalAcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
+	virtual void SaveAcDataHeader(QFile&) const {};
+	virtual void SaveAcData(QFile&, const DataMap&) const {};
 };
 
 Q_DECLARE_METATYPE(AbstractExperiment*)

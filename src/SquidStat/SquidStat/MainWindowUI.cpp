@@ -1024,7 +1024,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		QString tabName = csvData.fileName;
 		const QUuid id = QUuid::createUuid();
 
-		auto dataTabWidget = CreateNewDataTabWidget(id, tabName, csvData.xAxisList, csvData.yAxisList, &csvData.container, false);
+		auto dataTabWidget = CreateNewDataTabWidget(id,
+			ET_SAVED,
+			tabName,
+			csvData.xAxisList,
+			csvData.yAxisList,
+			&csvData.container);
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
 		ui.newDataTab.newDataTabButton->click();
@@ -1061,20 +1066,35 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 				if (0 != plot) {
-					for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
-						if (it.value().plot == plot) {
+					for (auto itId = dataTabs.plots.begin(); itId != dataTabs.plots.end(); ++itId) {
+						bool found = false;
+						for (auto it = itId.value().begin(); it != itId.value().end(); ++it) {
+							if (it.value().plot != plot) {
+								break;
+							}
+
 							foreach(auto conn, it.value().plotTabConnections) {
 								QObject::disconnect(conn);
 							}
-							
+
 							if (it.value().data.first().saveFile) {
 								it.value().data.first().saveFile->close();
 								it.value().data.first().saveFile->deleteLater();
 								it.value().data.first().saveFile = 0;
 							}
 
-							mw->StopExperiment(it.key());
-							dataTabs.plots.remove(it.key());
+							mw->StopExperiment(itId.key());
+
+							itId.value().remove(it.key());
+							if (0 == itId.value().count()) {
+								dataTabs.plots.remove(itId.key());
+							}
+
+							found = true;
+							break;
+						}
+
+						if (found) {
 							break;
 						}
 					}
@@ -1093,36 +1113,49 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			});
 	});
 
-	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const QUuid &id, const AbstractExperiment *exp, QFile *saveFile, const CalibrationData &calData, const HardwareVersion &hwVer) {
-		QString expName = exp->GetShortName();
+	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const StartExperimentParameters &startParams) {
+		//QString expName = exp->GetShortName();
 
-		auto dataTabWidget = CreateNewDataTabWidget(id, expName, exp->GetXAxisParameters(), exp->GetYAxisParameters());
+		auto dataTabWidget = CreateNewDataTabWidget(startParams.id,
+			startParams.type,
+			startParams.exp->GetShortName(),
+			startParams.exp->GetXAxisParameters(),
+			startParams.exp->GetYAxisParameters());
 
-		dataTabs.plots[id].exp = exp;
-		dataTabs.plots[id].data.first().saveFile = saveFile;
-		dataTabs.plots[id].data.first().cal = calData;
-		dataTabs.plots[id].data.first().hwVer = hwVer;
+		auto &handler(dataTabs.plots[startParams.id][startParams.type]);
 
-		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, expName + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")");
+		handler.exp = startParams.exp;
+		handler.data.first().saveFile = startParams.file;
+		handler.data.first().cal = startParams.cal;
+		handler.data.first().hwVer = startParams.hwVer;
+
+		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, startParams.name);
+
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
 	});
 
 	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
-		PlotHandler &handler(dataTabs.plots[id]);
-		DataMapVisualization &majorData(handler.data.first());
-		
-		if (majorData.saveFile) {
-			majorData.saveFile->close();
-			majorData.saveFile->deleteLater();
-			majorData.saveFile = 0;
-		}
+		for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it) {
+			PlotHandler &handler(it.value());
+			DataMapVisualization &majorData(handler.data.first());
 
-		handler.plot->replot();
+			if (majorData.saveFile) {
+				majorData.saveFile->close();
+				majorData.saveFile->deleteLater();
+				majorData.saveFile = 0;
+			}
+
+			handler.plot->replot();
+		}
 	});
 
-	CONNECT(mw, &MainWindow::DataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalData &expData, bool paused) {
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_DC)) {
 			return;
 		}
 
@@ -1130,12 +1163,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			return;
 		}
 
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
 		DataMapVisualization &majorData(handler.data.first());
 
-		handler.exp->PushNewData(expData, majorData.container, majorData.cal, majorData.hwVer);
+		handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer);
 		if (majorData.saveFile) {
-			handler.exp->SaveData(*majorData.saveFile, majorData.container);
+			handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -1155,7 +1188,48 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		auto curStamp = QDateTime::currentMSecsSinceEpoch();
 		if (curStamp > handler.plotCounter.stamp) {
 			handler.plot->replot();
-			//LOG() << "Replot";
+			handler.plotCounter.stamp = curStamp + 50;
+		}
+	});
+
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalAcData &expData, bool paused) {
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_AC)) {
+			return;
+		}
+
+		if (paused) {
+			return;
+		}
+
+		PlotHandler &handler(dataTabs.plots[id][ET_AC]);
+		DataMapVisualization &majorData(handler.data.first());
+
+		handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+		if (majorData.saveFile) {
+			handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
+			majorData.curve1->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]));
+
+			ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
+			majorData.curve2->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]));
+
+			ApplyNewAxisParams(QwtPlot::yRight, handler);
+		}
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			handler.plot->replot();
 			handler.plotCounter.stamp = curStamp + 50;
 		}
 	});
@@ -1959,7 +2033,7 @@ bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHand
 
 	return ret;
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr, bool showControlButtons) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -2037,7 +2111,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXP_BUTTON_TEXT), "control-button-blue"));
 	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
-	if (!showControlButtons) {
+	if (type == ET_SAVED) {
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
@@ -2057,7 +2131,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	plotHandler.plotCounter.stamp = 0;
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 		
 		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yLeft])) {
 			if (ApplyNewAxisParams(QwtPlot::yLeft, handler)) {
@@ -2067,7 +2141,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	}));
 
 	plot->axisWidget(QwtPlot::yRight)->installEventFilter(new PlotEventFilter(w, [=]() {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 
 		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::yRight])) {
 			if (ApplyNewAxisParams(QwtPlot::yRight, handler)) {
@@ -2077,7 +2151,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	}));
 
 	plot->axisWidget(QwtPlot::xBottom)->installEventFilter(new PlotEventFilter(w, [=]() {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 
 		if (GetNewAxisParams(mw, handler.axisParams[QwtPlot::xBottom])) {
 			if(ApplyNewAxisParams(QwtPlot::xBottom, handler)) {
@@ -2147,7 +2221,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 			return;
 		}
 
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 		QStringList firstDataKeys = handler.data.first().container.keys();
 		firstDataKeys.removeAll(NONE_Y_AXIS_VARIABLE);
 		firstDataKeys.sort();
@@ -2194,7 +2268,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	});
 
 	plotHandler.plotTabConnections << CONNECT(editLinesPbt, &QPushButton::clicked, [=]() {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 		QMap<QString, CurveParameters> currentParams;
 
 		foreach(const DataMapVisualization &data, handler.data) {
@@ -2270,7 +2344,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	});
 
 	plotHandler.plotTabConnections << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 
 		QwtText title;
 		title.setFont(axisTitleFont);
@@ -2286,7 +2360,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	});
 
 	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 
 		QwtText title;
 		title.setFont(axisTitleFont);
@@ -2302,7 +2376,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 	});
 
 	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id]);
+		PlotHandler &handler(dataTabs.plots[id][type]);
 
 		QwtText title;
 		title.setFont(axisTitleFont);
@@ -2330,8 +2404,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, const QString &ex
 		handler.plot->replot();
 	});
 
-	dataTabs.plots[id] = plotHandler;
-	DataMapVisualization &majorData(dataTabs.plots[id].data.first());
+	dataTabs.plots[id][type] = plotHandler;
+	DataMapVisualization &majorData(dataTabs.plots[id][type].data.first());
 
 	if (loadedContainerPtr) {
 		majorData.container = *loadedContainerPtr;

@@ -15,8 +15,6 @@ public:
 	~InstrumentOperator();
 
 public slots:
-	//void RequestCalibrationData();
-	//void RequestHardwareVersion();
 	void StartExperiment(const NodesData&, quint8 channel = 0);
 	void StopExperiment(quint8 channel = 0);
 	void PauseExperiment(quint8 channel = 0);
@@ -28,7 +26,8 @@ private slots:
 signals:
 	void CalibrationDataReceived(const CalibrationData&);
 	void HardwareVersionReceived(const HardwareVersion&);
-	void ExperimentalDataReceived(quint8 channel, const ExperimentalData&);
+	void ExperimentalDcDataReceived(quint8 channel, const ExperimentalDcData&);
+	void ExperimentalAcDataReceived(quint8 channel, const ExperimentalAcData&);
 	void ExperimentCompleted();
 	void ExperimentPaused();
 	void ExperimentResumed();
