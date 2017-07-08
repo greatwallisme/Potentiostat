@@ -196,7 +196,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t1 * 1e8;
-	getSamplingParameters(dt, &exp);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = (int)(v1 * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
@@ -211,7 +211,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t2 * 1e8;
-	getSamplingParameters(dt, &exp);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = (int)(v2 * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
@@ -226,7 +226,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t3 * 1e8;
-	getSamplingParameters(dt, &exp);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = (int)(v3 * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
@@ -241,7 +241,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t4 * 1e8;
-	getSamplingParameters(dt, &exp);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = (int)(v4 * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
@@ -318,41 +318,4 @@ void Chronoamperometry::SaveData(QFile &saveFile, const DataMap &container) cons
 	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
 
 	SAVE_DATA_END();
-}
-void Chronoamperometry::getSamplingParameters(double t_sample, ExperimentNode_t * pNode) const
-{
-	//debugging: this algorithm doesn't work...
-	//TODO: make sure that this doesn't calculate an ADCMult or DACMult too big for the hardware buffers
-
-	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
-	int dt_min = 1;
-	int HardwareVersion = 0;
-	switch (HardwareVersion)
-	{
-		case 0:
-			dt_min = 50000; //500 microseconds * 100 ticks/microsecond
-			break;
-		case 1:
-			dt_min = 500;	//5 microseconds * 100 ticks/microsecond
-			break;
-		default:
-			break;
-	}
-	pNode->samplingParams.ADCTimerDiv = 0;
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
-	pNode->DCSweep_pot.VStep = 1;
-
-	/* Minimize dt */		//todo: account for dt overflows
-	uint32_t dt;
-	do
-	{
-		dt = (uint32_t)(t_sample * 1.0e8 / pNode->samplingParams.ADCBufferSizeEven);
-		if (dt / dt_min > 1)
-		{
-			pNode->samplingParams.ADCBufferSizeEven <<= 1;
-		}
-	} while (dt / dt_min > 1);
-	pNode->samplingParams.ADCTimerPeriod = dt;
-	pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.ADCBufferSizeEven;
-	pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
 }

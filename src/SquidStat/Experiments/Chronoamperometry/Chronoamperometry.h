@@ -3,6 +3,7 @@
 
 #include <AbstractExperiment.h>
 #include <QtWidgets/QWidget>
+#include <ExperimentCalcHelper.h>
 
 class Chronoamperometry : public AbstractExperiment {
 public:
@@ -23,7 +24,6 @@ public:
 	void SaveData(QFile&, const DataMap&) const;
 private:
 	int hardwareVersion; //TODO: this is a placeholder member
-	void getSamplingParameters(double t_period, ExperimentNode_t * pNode) const;
 
 };
 

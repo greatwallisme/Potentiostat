@@ -147,6 +147,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 
 	//TODO: what to do about cells hooked up backwards?
 	//TODO: incorporate max charge/discharge capacity? Or incorporate this into another experiment?
+	//TODO: make a const. power discharge node type
+	//TODO: is there a constant voltage phase during discharge?
 
 	bool chargeFirst;
 	double upperVoltage;
@@ -181,11 +183,11 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_GALV;
 	exp.tMin = 1e8;
 	exp.tMax = 0xffffffffffffffff;
-	getSamplingParameters(sampInterval, &exp);
-	exp.DCPoint_galv.Irange = chargeFirst ? getCurrentRange(chgCurrent, &calData, hwVersion.hwModel) : getCurrentRange(dischgCurrent, &calData, hwVersion.hwModel);
-	exp.DCPoint_galv.IPoint = chargeFirst ? getCurrentBinary(exp.DCPoint_galv.Irange, chgCurrent, &calData) : getCurrentBinary(exp.DCPoint_galv.Irange, dischgCurrent, &calData);
-	exp.DCPoint_galv.Vmax = upperVoltage > 0 ? upperVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : upperVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
-	exp.DCPoint_galv.Vmin = lowerVoltage > 0 ? lowerVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : lowerVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
+	exp.DCPoint_galv.Irange = chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
+	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
+	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetVoltage(&calData, upperVoltage);
+	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetVoltage(&calData, lowerVoltage);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -194,12 +196,12 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSamplingParameters(sampInterval, &exp);
-	exp.DCPoint_pot.IrangeMax = getCurrentRange(chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5, &calData, hwVersion.hwModel);
-	exp.DCPoint_pot.Imax = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData);
-	exp.DCPoint_pot.IrangeMin = getCurrentRange(chargeFirst ? minChgCurrent : minDischgCurrent, &calData, hwVersion.hwModel);
-	exp.DCPoint_pot.Imin = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMin, minChgCurrent, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMin, minDischgCurrent, &calData);
-	exp.DCPoint_pot.VPointUserInput = getVoltageBinary(chargeFirst ? upperVoltage : lowerVoltage, &calData);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
+	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
+	exp.DCPoint_pot.Imax = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? minChgCurrent : minDischgCurrent);
+	exp.DCPoint_pot.Imin = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetVoltage(&calData, chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -208,8 +210,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_OCP;
 	exp.DCocp.Vmin = 0;
 	exp.DCocp.Vmax = 0x7fff;
-	//exp.DCocp.dVdtMax = 0;
-	getSamplingParameters(restPeriodInterval, &exp);
+	//TODO exp.DCocp.dVdtMax = 0;
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
 	exp.tMin = 25e6;
 	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = 1;
@@ -220,11 +222,11 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_GALV;
 	exp.tMin = 1e8;
 	exp.tMax = 0xffffffffffffffff;
-	getSamplingParameters(sampInterval, &exp);
-	exp.DCPoint_galv.Irange = !chargeFirst ? getCurrentRange(chgCurrent, &calData, hwVersion.hwModel) : getCurrentRange(dischgCurrent, &calData, hwVersion.hwModel);
-	exp.DCPoint_galv.IPoint = !chargeFirst ? getCurrentBinary(exp.DCPoint_galv.Irange, chgCurrent, &calData) : getCurrentBinary(exp.DCPoint_galv.Irange, dischgCurrent, &calData);
-	exp.DCPoint_galv.Vmax = upperVoltage > 0 ? upperVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : upperVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
-	exp.DCPoint_galv.Vmin = lowerVoltage > 0 ? lowerVoltage * calData.m_DACdcP_V + calData.b_DACdc_V : lowerVoltage * calData.m_DACdcN_V + calData.b_DACdc_V;
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
+	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
+	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
+	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetVoltage(&calData, upperVoltage);
+	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetVoltage(&calData, lowerVoltage);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -233,12 +235,12 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSamplingParameters(sampInterval, &exp);
-	exp.DCPoint_pot.IrangeMax = getCurrentRange(!chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5, &calData, hwVersion.hwModel);
-	exp.DCPoint_pot.Imax = !chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData);
-	exp.DCPoint_pot.IrangeMin = getCurrentRange(!chargeFirst ? minChgCurrent : minDischgCurrent, &calData, hwVersion.hwModel);
-	exp.DCPoint_pot.Imin = !chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMin, minChgCurrent, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMin, minDischgCurrent, &calData);
-	exp.DCPoint_pot.VPointUserInput = getVoltageBinary(!chargeFirst ? upperVoltage : lowerVoltage, &calData);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
+	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
+	exp.DCPoint_pot.Imax = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? minChgCurrent : minDischgCurrent);
+	exp.DCPoint_pot.Imin = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetVoltage(&calData,!chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -249,7 +251,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCocp.Vmin = 0;
 	exp.DCocp.Vmax = 0xffff;
 	//exp.DCocp.dVdtMax = 0;
-	getSamplingParameters(restPeriodInterval, &exp);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
 	exp.tMin = 25e6;
 	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = cycles;
@@ -323,100 +325,4 @@ void ChargeDischargeDC::SaveData(QFile &saveFile, const DataMap &container) cons
 	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
 
 	SAVE_DATA_END();
-}
-void ChargeDischargeDC::getSamplingParameters(double sampling_interval, ExperimentNode_t * pNode) const
-{
-	
-	//TODO: make sure that ADCMult and DACMult aren't too big for hardware buffers
-
-
-	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
-	int dt_min = 1;
-	int HardwareVersion = 0;
-	switch (HardwareVersion)
-	{
-		case 0:
-			dt_min = 50000; //500 microseconds * 100 ticks/microsecond
-			break;
-		case 1:
-			dt_min = 500;	//5 microseconds * 100 ticks/microsecond
-			break;
-		default:
-			break;
-	}
-	pNode->samplingParams.PointsIgnored = 0;
-	pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
-
-	/* 1) Minimize dt, maximize DACMult*/
-	uint64_t dt;
-	do
-	{
-		dt = (uint64_t) (sampling_interval * 1e8 / pNode->samplingParams.ADCBufferSizeEven);
-		if (dt / dt_min > 1)
-		{
-			if (pNode->samplingParams.ADCBufferSizeEven << 1 < DACdcBUF_SIZE)
-			{
-				pNode->samplingParams.ADCBufferSizeEven <<= 1;
-				pNode->samplingParams.ADCBufferSizeOdd <<= 1;
-			}
-			else
-			{
-				break;
-			}
-		}
-	} while (dt / dt_min > 1);
-
-	/* 3) Calculate ADCMult */
-	pNode->samplingParams.ADCTimerDiv = 0;
-	int timerDiv = 1;
-	
-	while (dt / timerDiv > 2147483648)
-	{
-		pNode->samplingParams.ADCTimerDiv++;
-		timerDiv <<= 1;
-	} 
-	pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
-}
-
-currentRange_t ChargeDischargeDC::getCurrentRange(double current, const CalibrationData * cal, HardwareModel_t hwModel) const
-{
-	int MaxCurrentRange;
-	if (hwModel == PRIME || hwModel == PICO || hwModel == EDGE)
-		MaxCurrentRange = 3;
-	else
-		MaxCurrentRange = 7;
-	int range = 0;
-	int32_t currentBinary;
-
-	while (true)
-	{
-		currentBinary = current > 0 ? current * cal->m_DACdcP_I[range] + cal->b_DACdc_I[range] : current * cal->m_DACdcN_I[range] + cal->b_DACdc_I[range];
-		if (ABS(currentBinary) < UNDERCURRENT_LIMIT)
-		{
-			if (range == MaxCurrentRange)
-				break;
-			else
-			{
-				range++;
-				continue;
-			}
-		}
-		else
-			break;
-	}
-
-	return (currentRange_t)range;
-}
-
-int16_t ChargeDischargeDC::getCurrentBinary(currentRange_t range, double current, const CalibrationData * cal) const
-{
-	int16_t currentBinary = (int16_t)(current > 0 ? current * cal->m_DACdcP_I[(int)range] + cal->b_DACdc_I[(int)range] : current * cal->m_DACdcN_I[(int)range] + cal->b_DACdc_I[(int)range]);
-	return currentBinary;
-}
-
-int16_t ChargeDischargeDC::getVoltageBinary(double voltage, const CalibrationData * cal) const
-{
-	int16_t voltageBinary = (int16_t)(voltage > 0 ? voltage * cal->m_DACdcP_V + cal->b_DACdc_V : voltage * cal->m_DACdcN_V + cal->b_DACdc_V);
-	return voltageBinary;
 }
