@@ -3,6 +3,8 @@
 #include <ExternalStructures.h>
 #include <ExperimentUIHelper.h>
 
+#include <ExperimentCalcHelper.h>
+
 #define TOP_WIDGET_NAME			"EIS-Potentiostatic"
 
 #define UPPER_FREQ_OBJ_NAME		"upper-frequency"
@@ -47,7 +49,7 @@ QStringList EISPotentiostatic::GetCategory() const {
 
 }
 ExperimentTypeList EISPotentiostatic::GetTypes() const {
-	return ExperimentTypeList() << ET_DC;
+	return ExperimentTypeList() << ET_AC;
 }
 QPixmap EISPotentiostatic::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
@@ -177,59 +179,38 @@ QStringList EISPotentiostatic::GetYAxisParameters() const {
 		PLOT_VAR_NEG_IMP_IMAG;
 }
 void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
-	ExperimentalAcData *expData = GET_DATA_PTR(expDataRaw);
-	uint16_t expDataArraySize = GET_DATA_ARRAY_SIZE(expDataRaw);
+	ComplexDataPoint_t dataPoint;
+	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
 	
-	/*
-	static QMap<DataMap*, qreal> timestampOffset;
-	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
-
-	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
-	}
-	else {
-		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
-	}
-
-	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
-
-	if (!timestampOffset.contains(&container)) {
-		timestampOffset[&container] = timestamp;
-	}
-	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
-	//*/
+	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
+	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
+	PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
+	PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
+	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
+	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
 }
 void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
-	/*
-	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
-	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
-	SAVE_DATA_HEADER(PLOT_VAR_EWE);
-	SAVE_DATA_HEADER(PLOT_VAR_CURRENT);
-	SAVE_DATA_HEADER(PLOT_VAR_ECE);
-	SAVE_DATA_HEADER(PLOT_VAR_CURRENT_INTEGRAL);
-	//*/
-
+	SAVE_DATA_HEADER(PLOT_VAR_FREQ);
+	SAVE_DATA_HEADER(PLOT_VAR_IMPEDANCE);
+	SAVE_DATA_HEADER(PLOT_VAR_PHASE);
+	SAVE_DATA_HEADER(PLOT_VAR_IMP_REAL);
+	SAVE_DATA_HEADER(PLOT_VAR_IMP_IMAG);
+	SAVE_DATA_HEADER(PLOT_VAR_NEG_IMP_IMAG);
+	
 	SAVE_DATA_HEADER_END();
 }
 
 void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	/*
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
-	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
-	SAVE_DATA(PLOT_VAR_EWE);
-	SAVE_DATA(PLOT_VAR_CURRENT);
-	SAVE_DATA(PLOT_VAR_ECE);
-	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
-	//*/
+	SAVE_DATA(PLOT_VAR_FREQ);
+	SAVE_DATA(PLOT_VAR_IMPEDANCE);
+	SAVE_DATA(PLOT_VAR_PHASE);
+	SAVE_DATA(PLOT_VAR_IMP_REAL);
+	SAVE_DATA(PLOT_VAR_IMP_IMAG);
+	SAVE_DATA(PLOT_VAR_NEG_IMP_IMAG);
 
 	SAVE_DATA_END();
 }

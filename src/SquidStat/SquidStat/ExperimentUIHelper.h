@@ -39,6 +39,17 @@ private:
 #define GET_DATA_ARRAY_SIZE(expDataRaw) \
 	(expDataRaw.size() - sizeof(ExperimentalAcData)) / sizeof(int16_t)
 
+#define GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw)				\
+	ExperimentalAcData *expData = GET_DATA_PTR(expDataRaw);			\
+	uint16_t expDataArraySize = GET_DATA_ARRAY_SIZE(expDataRaw);	\
+	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
+		expData->frequency,											\
+		expData->data,												\
+		expData->data + (expDataArraySize / 2),						\
+		expData->gainVoltage,										\
+		expData->gainCurrent,										\
+		expDataArraySize / 2);
+
 #define PUSH_BACK_DATA(store, val) {		\
 	if (container[store].data.isEmpty()) {	\
 		container[store].min = val;			\

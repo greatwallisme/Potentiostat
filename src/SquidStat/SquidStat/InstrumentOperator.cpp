@@ -24,9 +24,11 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			}
 			break;
 
-		case ADCAC_DATA:
-			if ( ((data.size() - sizeof(ExperimentalAcData)) % sizeof(int16_t)) == 0) {
-				emit ExperimentalAcDataReceived(channel, data);
+		case ADCAC_DATA: {
+				int arrayDataLen = data.size() - sizeof(ExperimentalAcData);
+				if( ((arrayDataLen % sizeof(int16_t)) == 0) && ((arrayDataLen / sizeof(int16_t)) % 2 == 0) ){
+					emit ExperimentalAcDataReceived(channel, data);
+				}
 			}
 			break;
 
