@@ -111,7 +111,7 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0, bool showControlButtons = true);
+	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -156,7 +156,7 @@ private:
 	};
 
 	struct {
-		QMap<QUuid, PlotHandler> plots;
+		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
 	} dataTabs;
 
 	MainWindow *mw;

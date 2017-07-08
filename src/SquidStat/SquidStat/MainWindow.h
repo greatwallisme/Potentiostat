@@ -18,6 +18,16 @@ class InstrumentOperator;
 class ExperimentContainer;
 class QPluginLoader;
 
+struct StartExperimentParameters {
+	QString name;
+	QUuid id;
+	ExperimentType type;
+	QFile *file;
+	const AbstractExperiment *exp;
+	CalibrationData cal;
+	HardwareVersion hwVer;
+};
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -54,11 +64,12 @@ public slots:
 
 signals:
 	void HardwareFound(const InstrumentList&);
-	void DataArrived(const QUuid&, quint8 channel, const ExperimentalData &expData, bool paused);
+	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, bool paused);
+	void AcDataArrived(const QUuid&, quint8 channel, const ExperimentalAcData &expData, bool paused);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 
-	void CreateNewDataWindow(const QUuid&, const AbstractExperiment*, QFile*, const CalibrationData &, const HardwareVersion&);
+	void CreateNewDataWindow(const StartExperimentParameters&);
 
 	void RemoveDisconnectedInstruments(const QStringList&);
 	void AddNewInstruments(const QStringList&);

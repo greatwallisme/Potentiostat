@@ -379,7 +379,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		});
 
 		hardware.currentInstrument.handler->connections <<
-		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDataReceived, this, [=](quint8 channel, const ExperimentalData &expData) {
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDcDataReceived, this, [=](quint8 channel, const ExperimentalDcData &expData) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {
 				LOG() << "Unexpected InstrumentOperator pointer";
@@ -392,7 +392,23 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			emit DataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
+			emit DcDataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
+		});
+		hardware.currentInstrument.handler->connections <<
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalAcDataReceived, this, [=](quint8 channel, const ExperimentalAcData &expData) {
+			auto oper = qobject_cast<InstrumentOperator*>(sender());
+			if (0 == oper) {
+				LOG() << "Unexpected InstrumentOperator pointer";
+				return;
+			}
+
+			auto handler = SearchForHandler(oper);
+			if (handler == hardware.handlers.end()) {
+				LOG() << "Hardware handler not found";
+				return;
+			}
+			
+			emit AcDataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
 		});
 	}
 
@@ -410,33 +426,82 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	}
 
 	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
-
 	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
 
-	QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
-	tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|\\.]"), "_");
-	auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+	auto types = prebuiltExperiments.selectedExp->GetTypes();
 
-	if (dialogRet.isEmpty()) {
-		return;
+	QList<StartExperimentParameters> startParams;
+
+	QUuid newId = QUuid::createUuid();
+	bool ok = true;
+	foreach(auto type, types) {
+		StartExperimentParameters curParam;
+		curParam.id = newId;
+		curParam.type = type;
+		curParam.exp = prebuiltExperiments.selectedExp;
+		curParam.cal = instrumentInfo.calData;
+		curParam.hwVer = instrumentInfo.hwVer;
+
+		QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
+		if (types.count() > 1) {
+			switch (type) {
+				case ET_DC:
+					tabName = "DC - " + tabName;
+					break;
+				case ET_AC:
+					tabName = "AC - " + tabName;
+					break;
+			}
+		}
+		curParam.name = tabName;
+		tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|\\.]"), "_");
+
+		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+
+		if (dialogRet.isEmpty()) {
+			ok = false;
+			break;
+		}
+
+		dirName = QFileInfo(dialogRet).absolutePath();
+		settings.setValue(DATA_SAVE_PATH, dirName);
+	
+		auto saveFile = new QFile(this);
+		saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
+		if (!saveFile->open(QIODevice::WriteOnly)) {
+			saveFile->deleteLater();
+			ok = false;
+			break;
+		}
+		curParam.file = saveFile;
+
+		startParams << curParam;
 	}
-	dirName = QFileInfo(dialogRet).absolutePath();
-	settings.setValue(DATA_SAVE_PATH, dirName);
 
-	auto saveFile = new QFile(this);
-	saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
-	if (!saveFile->open(QIODevice::WriteOnly)) {
-		saveFile->deleteLater();
-		return;
+	if (!ok) {
+		foreach(auto &param, startParams) {
+			param.file->close();
+			param.file->deleteLater();
+			return;
+		}
 	}
-
+	
 	hardware.currentInstrument.handler->experiment.busy = true;
-	hardware.currentInstrument.handler->experiment.id = QUuid::createUuid();
+	hardware.currentInstrument.handler->experiment.id = newId;
 	hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
-	prebuiltExperiments.selectedExp->SaveDataHeader(*saveFile);
+	foreach(auto &param, startParams) {
+		switch (param.type) {
+			case ET_DC:
+				prebuiltExperiments.selectedExp->SaveDcDataHeader(*param.file);
+				break;
+			case ET_AC:
+				prebuiltExperiments.selectedExp->SaveAcDataHeader(*param.file);
+				break;
+		}
 
-	emit CreateNewDataWindow(hardware.currentInstrument.handler->experiment.id, prebuiltExperiments.selectedExp, saveFile, instrumentInfo.calData, instrumentInfo.hwVer);
+		emit CreateNewDataWindow(param);
+	}
 
 	LOG() << "Start experiment";
 	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);

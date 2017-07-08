@@ -36,15 +36,9 @@ struct HardwareVersion {
 	};
 };
 
-//*
-typedef ExperimentalDataPoint_t ExperimentalData;
-/*/
-struct ExperimentalData {
-	ADCdc_datastruct_t ADCrawData;
-	currentRange_t currentRange;
-	uint64_t timestamp;
-};
-//*/
+typedef uint8_t			ExperimentalAcData;
+
+typedef ExperimentalDataPoint_t ExperimentalDcData;
 
 struct CommandPacket {
 	quint16 frame;

@@ -50,6 +50,9 @@ QStringList Chronopotentiometry::GetCategory() const {
 		"Basic voltammetry";
 
 }
+ExperimentTypeList Chronopotentiometry::GetTypes() const {
+	return ExperimentTypeList() << ET_DC;
+}
 QPixmap Chronopotentiometry::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
@@ -271,7 +274,7 @@ QStringList Chronopotentiometry::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void Chronopotentiometry::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void Chronopotentiometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -294,7 +297,7 @@ void Chronopotentiometry::PushNewData(const ExperimentalData &expData, DataMap &
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void Chronopotentiometry::SaveDataHeader(QFile &saveFile) const {
+void Chronopotentiometry::SaveDcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
@@ -307,7 +310,7 @@ void Chronopotentiometry::SaveDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_END();
 }
 
-void Chronopotentiometry::SaveData(QFile &saveFile, const DataMap &container) const {
+void Chronopotentiometry::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
 	SAVE_DATA(PLOT_VAR_TIMESTAMP);

@@ -10,6 +10,7 @@ public:
 	QString GetFullName() const;
 	QString GetDescription() const;
 	QStringList GetCategory() const;
+	ExperimentTypeList GetTypes() const;
 	QPixmap GetImage() const;
 
 	QWidget* CreateUserInput() const;
@@ -17,10 +18,10 @@ public:
 	
 	QStringList GetXAxisParameters() const;
 	QStringList GetYAxisParameters() const;
-	void PushNewData(const ExperimentalData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
+	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 
-	void SaveDataHeader(QFile&) const;
-	void SaveData(QFile&, const DataMap&) const;
+	void SaveDcDataHeader(QFile&) const;
+	void SaveDcData(QFile&, const DataMap&) const;
 private:
 	int hardwareVersion; //TODO: this is a placeholder member
 };

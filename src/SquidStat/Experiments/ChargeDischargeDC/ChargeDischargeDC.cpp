@@ -48,6 +48,9 @@ QStringList ChargeDischargeDC::GetCategory() const {
 		"Energy storage";
 
 }
+ExperimentTypeList ChargeDischargeDC::GetTypes() const {
+	return ExperimentTypeList() << ET_DC;
+}
 QPixmap ChargeDischargeDC::GetImage() const {
 	return QPixmap(":/GUI/Resources/experiment.png");
 }
@@ -276,7 +279,7 @@ QStringList ChargeDischargeDC::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void ChargeDischargeDC::PushNewData(const ExperimentalData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void ChargeDischargeDC::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -299,7 +302,7 @@ void ChargeDischargeDC::PushNewData(const ExperimentalData &expData, DataMap &co
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void ChargeDischargeDC::SaveDataHeader(QFile &saveFile) const {
+void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
@@ -312,7 +315,7 @@ void ChargeDischargeDC::SaveDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_END();
 }
 
-void ChargeDischargeDC::SaveData(QFile &saveFile, const DataMap &container) const {
+void ChargeDischargeDC::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
 	SAVE_DATA(PLOT_VAR_TIMESTAMP);
