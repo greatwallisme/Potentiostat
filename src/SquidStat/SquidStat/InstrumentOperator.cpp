@@ -25,7 +25,9 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case ADCAC_DATA:
-			emit ExperimentalAcDataReceived(channel, 0);
+			if ( ((data.size() - sizeof(ExperimentalAcData)) % sizeof(int16_t)) == 0) {
+				emit ExperimentalAcDataReceived(channel, data);
+			}
 			break;
 
 		case DEBUG_LOG_MSG: {

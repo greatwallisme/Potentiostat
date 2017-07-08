@@ -36,7 +36,12 @@ struct HardwareVersion {
 	};
 };
 
-typedef uint8_t			ExperimentalAcData;
+typedef struct {
+	float frequency;
+	uint8_t gainVoltage;
+	uint8_t gainCurrent;
+	int16_t data[0];
+} ExperimentalAcData;
 
 typedef ExperimentalDataPoint_t ExperimentalDcData;
 

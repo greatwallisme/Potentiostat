@@ -34,6 +34,11 @@ private:
 	QList<QMetaObject::Connection> connections;
 };
 
+#define GET_DATA_PTR(expDataRaw) \
+	(ExperimentalAcData*)expDataRaw.data()
+#define GET_DATA_ARRAY_SIZE(expDataRaw) \
+	(expDataRaw.size() - sizeof(ExperimentalAcData)) / sizeof(int16_t)
+
 #define PUSH_BACK_DATA(store, val) {		\
 	if (container[store].data.isEmpty()) {	\
 		container[store].min = val;			\

@@ -395,7 +395,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			emit DcDataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
 		});
 		hardware.currentInstrument.handler->connections <<
-		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalAcDataReceived, this, [=](quint8 channel, const ExperimentalAcData &expData) {
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalAcDataReceived, this, [=](quint8 channel, const QByteArray &expData) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {
 				LOG() << "Unexpected InstrumentOperator pointer";

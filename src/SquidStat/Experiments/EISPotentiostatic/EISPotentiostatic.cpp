@@ -176,7 +176,11 @@ QStringList EISPotentiostatic::GetYAxisParameters() const {
 		PLOT_VAR_IMP_IMAG <<
 		PLOT_VAR_NEG_IMP_IMAG;
 }
-void EISPotentiostatic::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+	auto expData = GET_DATA_PTR(expDataRaw);
+	uint16_t expDataArraySize = GET_DATA_ARRAY_SIZE(expDataRaw);
+	
+	/*
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -198,29 +202,34 @@ void EISPotentiostatic::PushNewDcData(const ExperimentalDcData &expData, DataMap
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+	//*/
 }
-void EISPotentiostatic::SaveDcDataHeader(QFile &saveFile) const {
+void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
+	/*
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
 	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DATA_HEADER(PLOT_VAR_CURRENT);
 	SAVE_DATA_HEADER(PLOT_VAR_ECE);
 	SAVE_DATA_HEADER(PLOT_VAR_CURRENT_INTEGRAL);
+	//*/
 
 	SAVE_DATA_HEADER_END();
 }
 
-void EISPotentiostatic::SaveDcData(QFile &saveFile, const DataMap &container) const {
+void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
+	/*
 	SAVE_DATA(PLOT_VAR_TIMESTAMP);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);
 	SAVE_DATA(PLOT_VAR_ECE);
 	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
+	//*/
 
 	SAVE_DATA_END();
 }

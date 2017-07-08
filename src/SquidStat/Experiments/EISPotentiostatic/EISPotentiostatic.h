@@ -18,10 +18,10 @@ public:
 	
 	QStringList GetXAxisParameters() const;
 	QStringList GetYAxisParameters() const;
-	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
+	void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 
-	void SaveDcDataHeader(QFile&) const;
-	void SaveDcData(QFile&, const DataMap&) const;
+	void SaveAcDataHeader(QFile&) const;
+	void SaveAcData(QFile&, const DataMap&) const;
 private:
 	int hardwareVersion; //TODO: this is a placeholder member
 };

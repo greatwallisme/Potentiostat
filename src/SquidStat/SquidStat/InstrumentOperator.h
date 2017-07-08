@@ -27,7 +27,7 @@ signals:
 	void CalibrationDataReceived(const CalibrationData&);
 	void HardwareVersionReceived(const HardwareVersion&);
 	void ExperimentalDcDataReceived(quint8 channel, const ExperimentalDcData&);
-	void ExperimentalAcDataReceived(quint8 channel, const ExperimentalAcData&);
+	void ExperimentalAcDataReceived(quint8 channel, const QByteArray&);
 	void ExperimentCompleted();
 	void ExperimentPaused();
 	void ExperimentResumed();

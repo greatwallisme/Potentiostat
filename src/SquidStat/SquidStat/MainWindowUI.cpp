@@ -1192,7 +1192,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalAcData &expData, bool paused) {
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}

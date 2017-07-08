@@ -50,7 +50,7 @@ public:
 	virtual void SaveDcDataHeader(QFile&) const {};
 	virtual void SaveDcData(QFile&, const DataMap&) const {};
 
-	virtual void PushNewAcData(const ExperimentalAcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
+	virtual void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
 	virtual void SaveAcDataHeader(QFile&) const {};
 	virtual void SaveAcData(QFile&, const DataMap&) const {};
 };
