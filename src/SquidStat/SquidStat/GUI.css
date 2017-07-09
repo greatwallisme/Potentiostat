@@ -307,6 +307,110 @@ QLabel[experiment-params-widget="low-margin"] {
 #primary-button[button-type="experiment-start-pbt"] {
 
 }
+/*//////////////       BUILD AN EXPERIMENT     ////////////////////*/
+#node-list-owner {
+	max-width: 300px;
+	min-width: 300px;
+}
+#experiment-builder-owner {
+	border: none;
+	border-right: 1px solid #cbe6f1;
+	background-color: #e9f6fc;
+	max-width: 730px;
+	min-width: 730px;
+}
+/*//////////////       EXPERIMENT BUILDER      ////////////////////*/
+#exp-builder-top-buttons-replacement {
+	margin: 1px;
+	min-height: 70px;
+	max-height: 70px;
+	background-color: #e9f6fc;
+}
+#exp-builder-right-buttons-replacement {
+	margin: 1px;
+	min-width: 68px;
+	max-width: 68px;
+	background-color: #e9f6fc;
+}
+#exp-builder-left-spacer {
+	margin: 1px;
+	min-width: 56px;
+	max-width: 56px;
+	background-color: #e9f6fc;
+}
+#exp-builder-bottom-spacer {
+	margin: 1px;
+	min-height: 15px;
+	max-height: 15px;
+	background-color: #e9f6fc;
+}
+#exp-builder-scroll-area {
+	background-color: #e9f6fc;
+	border: 1px solid #9ecfd3;
+	border-bottom: none;
+	margin: 0px;
+}
+#exp-builder-global-multiplier {
+	background-color: #ffffff;
+	border: 1px solid #9ecfd3;
+	margin: 0px;
+	font-size: 22px;
+	padding-bottom: 4px;
+}
+#build-exp-holder {
+	background-color: #e9f6fc;
+	border: none;
+	margin: 1px;
+	margin-top: 20px;
+}
+#node-builder-owner {
+	border: none;
+	background-color: #ffffff;
+	margin: 20px;
+}
+#node-builder-container {
+	border: 1px solid #9ecfd3;
+	background-color: #c3dff5;
+}
+#node-builder-label {
+	min-width: 100px;
+	max-width: 100px;
+	min-height: 70px;
+	max-height: 70px;
+	
+	background-color: #ffffff;
+	border: 1px solid #9ecfd3;
+	border-bottom: none;
+	
+	margin: 0px;
+}
+#node-builder-multiplier-single {
+	min-width: 92px;
+	max-width: 92px;
+	min-height: 30px;
+	max-height: 30px;
+
+	background-color: #ffffff;
+	border: 1px solid #9ecfd3;
+	
+	margin: 0px;
+	padding: 0px;
+	
+	padding-left: 8px;
+}
+#node-builder-multiplier-container {
+	border: none;
+	border-top: 1px solid #9ecfd3;
+	
+	font-size: 18px;
+	padding-left: 8px;
+	padding-bottom: 4px;
+	
+	max-width: 134px;
+}
+#build-exp-connections {
+	border: 1px solid #80939a;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #new-data-window-owner {
 	border: none;

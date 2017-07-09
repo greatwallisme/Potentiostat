@@ -110,6 +110,9 @@ private:
 	QWidget* GetOldSearchHardwareTab();
 	QWidget* GetRunExperimentTab();
 
+	QWidget* GetBuildExperimentTab();
+	QWidget* CreateNodeBuilderWidget();
+
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
 

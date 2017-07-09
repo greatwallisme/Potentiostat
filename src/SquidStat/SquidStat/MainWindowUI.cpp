@@ -34,6 +34,7 @@
 #include <QStandardItemModel>
 
 #include <QPixmap>
+#include <QLine>
 
 #include <QTime>
 #include <QDateTime>
@@ -131,6 +132,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 	widgetsLayout->addWidget(GetRunExperimentTab());
+	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
@@ -160,6 +162,19 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		}
 
 		widgetsLayout->setCurrentWidget(GetRunExperimentTab());
+	});
+
+	pbt = OBJ_NAME(PBT("Build an Experiment"), "bar-button");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetBuildExperimentTab());
 	});
 
 	pbt = OBJ_PROP(OBJ_NAME(PBT("New Data Window"), "bar-button"), "order", "last");
@@ -381,6 +396,145 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	//CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
 	//CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
+
+	return w;
+}
+QWidget* MainWindowUI::CreateNodeBuilderWidget() {
+	auto *w = OBJ_NAME(new QFrame(), "node-builder-owner");
+
+	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+
+	lay->addWidget(OBJ_NAME(new QLabel, "node-builder-label"));
+	lay->addWidget(OBJ_NAME(LED(), "node-builder-multiplier-single"));
+
+	return w;
+}
+#include <functional>
+class BuilderEventFilter : public QObject {
+public:
+	BuilderEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if ( (e->type() == QEvent::Resize) || (e->type() == QEvent::Move) ) {
+			_lambda();
+			return true;
+		}
+		return false;
+	}
+
+private:
+	std::function<void(void)> _lambda;
+};
+QWidget* MainWindowUI::GetBuildExperimentTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
+
+	auto *nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
+	
+	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
+	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
+
+	QScrollArea *buildExpHolder;
+
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"), 0, 0, 1, 3);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
+	expBuilderOwnerLay->addWidget(buildExpHolder = OBJ_NAME(new QScrollArea, "exp-builder-scroll-area"), 1, 1);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(LED(), "exp-builder-global-multiplier"), 2, 1);
+
+	auto buildExpHolderOwner = OBJ_NAME(new QFrame(), "build-exp-holder");
+	auto buildExpHolderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(buildExpHolderOwner)));
+
+	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	buildExpHolder->setWidgetResizable(true);
+	buildExpHolder->setWidget(buildExpHolderOwner);
+
+	static QList<QWidget*> nodes;
+	static QList<QWidget*> lines;
+	static QList<QWidget*> verticalLines;
+	nodes << CreateNodeBuilderWidget();
+	nodes << CreateNodeBuilderWidget();
+	nodes << CreateNodeBuilderWidget();
+	nodes << CreateNodeBuilderWidget();
+	nodes << CreateNodeBuilderWidget();
+
+	auto containerWdg = OBJ_NAME(new QFrame(), "node-builder-container");
+	auto containerWdgLay = NO_MARGIN(NO_SPACING(new QVBoxLayout(containerWdg)));
+
+	containerWdgLay->addWidget(nodes.at(2));
+	containerWdgLay->addWidget(nodes.at(3));
+	containerWdgLay->addWidget(nodes.at(4));
+	containerWdgLay->addWidget(OBJ_NAME(LED(), "node-builder-multiplier-container"));
+
+	buildExpHolderOwnerLay->addWidget(nodes.at(0), 0, 0);
+	buildExpHolderOwnerLay->addWidget(nodes.at(1), 0, 1);
+	buildExpHolderOwnerLay->addWidget(containerWdg, 0, 2, 4, 1);
+
+	buildExpHolderOwnerLay->setRowStretch(5, 1);
+	buildExpHolderOwnerLay->setColumnStretch(3, 1);
+
+	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
+
+	lay->addWidget(nodeListOwner);
+	lay->addWidget(expBuilderOwner);
+	lay->addWidget(nodeParamsOwner);
+
+	buildExpHolderOwner->installEventFilter(new BuilderEventFilter(buildExpHolderOwner, [=]() {
+		foreach(auto line, lines) {
+			line->deleteLater();
+		}
+		lines.clear();
+		for (int i = 0; i < 2; ++i) {
+			auto rect = nodes.at(i)->geometry();
+			auto margins = nodes.at(i)->contentsMargins();
+
+			auto startPoint = nodes.at(i)->pos();
+			startPoint.setY(startPoint.y() + rect.height() / 2);
+			startPoint.setX(startPoint.x() + rect.width() - margins.right());
+
+			auto endPoint = startPoint;
+			endPoint.setY(endPoint.y() + 1);
+			endPoint.setX(endPoint.x() + margins.right() * 2);
+
+			auto line = OBJ_NAME(new QFrame(buildExpHolderOwner), "build-exp-connections");
+			line->setGeometry(QRect(startPoint, endPoint));
+			line->raise();
+
+			lines << line;
+		}
+	}));
+
+	containerWdg->installEventFilter(new BuilderEventFilter(containerWdg, [=]() {
+		foreach(auto line, verticalLines) {
+			line->deleteLater();
+		}
+		verticalLines.clear();
+		for (int i = 2; i < 4; ++i) {
+			auto rect = nodes.at(i)->geometry();
+			auto margins = nodes.at(i)->contentsMargins();
+
+			auto startPoint = nodes.at(i)->pos();
+			startPoint.setY(startPoint.y() + rect.height() - margins.bottom());
+			startPoint.setX(startPoint.x() + rect.width() / 2);
+
+			auto endPoint = startPoint;
+			endPoint.setY(endPoint.y() + margins.bottom() * 2);
+			endPoint.setX(endPoint.x() + 1);
+
+			auto line = OBJ_NAME(new QFrame(containerWdg), "build-exp-connections");
+			line->setGeometry(QRect(startPoint, endPoint));
+			line->raise();
+
+			verticalLines << line;
+		}
+	}));
 
 	return w;
 }
@@ -1668,7 +1822,6 @@ QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
 	return curve;
 }
 
-#include <functional>
 class PlotEventFilter : public QObject {
 public:
 	PlotEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
