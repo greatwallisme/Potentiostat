@@ -399,13 +399,48 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateNodeBuilderWidget() {
+QWidget* MainWindowUI::CreateBuildExpContainerWidget(const MainWindowUI::BuilderContainer &bc) {
+	if (bc.type != BuilderContainer::SET) {
+		LOG() << "It is not a SET!";
+		return 0;
+	}
+
+	auto containerWdg = OBJ_NAME(new QFrame(mw), "node-builder-container");
+	auto containerWdgLay = NO_MARGIN(NO_SPACING(new QVBoxLayout(containerWdg)));
+
+	for (auto it = bc.elements.begin(); it != bc.elements.end(); ++it) {
+		if (!it->w) {
+			return 0;
+		}
+
+		containerWdgLay->addWidget(it->w);
+	}
+	QSpinBox *mult;
+	containerWdgLay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-container"));
+
+	mult->setMinimum(1);
+	mult->setMaximum(99999);
+	mult->setValue(bc.repetition);
+
+	return containerWdg;
+}
+QWidget* MainWindowUI::CreateBuildExpElementWidget(const MainWindowUI::BuilderContainer &bc) {
+	if (bc.type != BuilderContainer::ELEMENT) {
+		LOG() << "It is not an ELEMENT!";
+		return 0;
+	}
+
 	auto *w = OBJ_NAME(new QFrame(), "node-builder-owner");
 
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+	QSpinBox *mult;
 
 	lay->addWidget(OBJ_NAME(new QLabel, "node-builder-label"));
-	lay->addWidget(OBJ_NAME(LED(), "node-builder-multiplier-single"));
+	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-single"));
+
+	mult->setMinimum(1);
+	mult->setMaximum(99999);
+	mult->setValue(bc.repetition);
 
 	return w;
 }
@@ -415,9 +450,8 @@ public:
 	BuilderEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		if ( (e->type() == QEvent::Resize) || (e->type() == QEvent::Move) ) {
+		if ( (e->type() == QEvent::Resize) || (e->type() == QEvent::Move) || (e->type() == QEvent::Paint) ) {
 			_lambda();
-			return true;
 		}
 		return false;
 	}
@@ -425,29 +459,57 @@ public:
 private:
 	std::function<void(void)> _lambda;
 };
-QWidget* MainWindowUI::GetBuildExperimentTab() {
+QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	static QWidget *w = 0;
 
 	if (w) {
 		return w;
 	}
 
-	w = WDG();
-	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
+	builder.container.repetition = 20;
+	builder.container.elements
+		<< BuilderContainer(1)
+		<< BuilderContainer(2)
+		<< BuilderContainer(10, BuilderContainer::SET)
+		<< BuilderContainer(15, BuilderContainer::SET)
+		<< BuilderContainer(8)
+		<< BuilderContainer(9)
+		<< BuilderContainer(10);
 
-	auto *nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
-	
-	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
-	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
+	builder.container.elements[2].elements
+		<< BuilderContainer(3)
+		<< BuilderContainer(4)
+		<< BuilderContainer(5);
+
+	builder.container.elements[3].elements
+		<< BuilderContainer(6)
+		<< BuilderContainer(7);
+
+	for (auto it = builder.container.elements.begin(); it != builder.container.elements.end(); ++it) {
+		switch (it->type) {
+			case BuilderContainer::ELEMENT:
+				it->w = CreateBuildExpElementWidget(*it);
+				break;
+			case BuilderContainer::SET:
+				for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+					cIt->w = CreateBuildExpElementWidget(*cIt);
+				}
+				it->w = CreateBuildExpContainerWidget(*it);
+				break;
+		}
+	}
+
+	w = WDG();
+	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
 	QScrollArea *buildExpHolder;
+	QSpinBox *mult;
+	lay->addWidget(buildExpHolder = OBJ_NAME(new QScrollArea, "exp-builder-scroll-area"));
+	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "exp-builder-global-multiplier"));
 
-	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"), 0, 0, 1, 3);
-	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
-	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
-	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
-	expBuilderOwnerLay->addWidget(buildExpHolder = OBJ_NAME(new QScrollArea, "exp-builder-scroll-area"), 1, 1);
-	expBuilderOwnerLay->addWidget(OBJ_NAME(LED(), "exp-builder-global-multiplier"), 2, 1);
+	mult->setMinimum(1);
+	mult->setMaximum(99999);
+	mult->setValue(builder.container.repetition);
 
 	auto buildExpHolderOwner = OBJ_NAME(new QFrame(), "build-exp-holder");
 	auto buildExpHolderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(buildExpHolderOwner)));
@@ -456,61 +518,86 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	buildExpHolder->setWidgetResizable(true);
 	buildExpHolder->setWidget(buildExpHolderOwner);
 
-	static QList<QWidget*> nodes;
-	static QList<QWidget*> lines;
-	static QList<QWidget*> verticalLines;
-	nodes << CreateNodeBuilderWidget();
-	nodes << CreateNodeBuilderWidget();
-	nodes << CreateNodeBuilderWidget();
-	nodes << CreateNodeBuilderWidget();
-	nodes << CreateNodeBuilderWidget();
+	int column = 0;
+	int maxRowSpan = 0;
+	foreach(auto &elem, builder.container.elements) {
+		int rowSpan = (elem.type == BuilderContainer::ELEMENT) ? 1 : (elem.elements.size() + 1);
+		if (rowSpan > maxRowSpan) {
+			maxRowSpan = rowSpan;
+		}
 
-	auto containerWdg = OBJ_NAME(new QFrame(), "node-builder-container");
-	auto containerWdgLay = NO_MARGIN(NO_SPACING(new QVBoxLayout(containerWdg)));
-
-	containerWdgLay->addWidget(nodes.at(2));
-	containerWdgLay->addWidget(nodes.at(3));
-	containerWdgLay->addWidget(nodes.at(4));
-	containerWdgLay->addWidget(OBJ_NAME(LED(), "node-builder-multiplier-container"));
-
-	buildExpHolderOwnerLay->addWidget(nodes.at(0), 0, 0);
-	buildExpHolderOwnerLay->addWidget(nodes.at(1), 0, 1);
-	buildExpHolderOwnerLay->addWidget(containerWdg, 0, 2, 4, 1);
-
-	buildExpHolderOwnerLay->setRowStretch(5, 1);
-	buildExpHolderOwnerLay->setColumnStretch(3, 1);
-
-	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
-
-	lay->addWidget(nodeListOwner);
-	lay->addWidget(expBuilderOwner);
-	lay->addWidget(nodeParamsOwner);
-
+		buildExpHolderOwnerLay->addWidget(elem.w, 0, column++, rowSpan, 1);
+	}
+	buildExpHolderOwnerLay->setRowStretch(maxRowSpan, 1);
+	buildExpHolderOwnerLay->setColumnStretch(column, 1);
+	
 	buildExpHolderOwner->installEventFilter(new BuilderEventFilter(buildExpHolderOwner, [=]() {
-		foreach(auto line, lines) {
+		/*
+		foreach(auto &lines, builder.lines) {
+			foreach(auto line, lines) {
+				line->deleteLater();
+			}
+		}
+		builder.lines.clear();
+		//*/
+		foreach(auto &line, builder.lines) {
 			line->deleteLater();
 		}
-		lines.clear();
-		for (int i = 0; i < 2; ++i) {
-			auto rect = nodes.at(i)->geometry();
-			auto margins = nodes.at(i)->contentsMargins();
+		builder.lines.clear();
 
-			auto startPoint = nodes.at(i)->pos();
-			startPoint.setY(startPoint.y() + rect.height() / 2);
-			startPoint.setX(startPoint.x() + rect.width() - margins.right());
+		int topMargins = buildExpHolderOwner->contentsMargins().top();
+		for (int i = 1; i < builder.container.elements.count(); ++i) {
+			auto container(builder.container.elements.at(i));
 
-			auto endPoint = startPoint;
-			endPoint.setY(endPoint.y() + 1);
-			endPoint.setX(endPoint.x() + margins.right() * 2);
+			QWidget *w = 0;
+
+			if (container.type == BuilderContainer::SET) {
+				if (container.elements.count()) {
+					w = container.elements.at(0).w;
+				}
+
+				for (int j = 1; j < container.elements.count(); ++j) {
+					auto vContainer(container.elements.at(j));
+
+					auto rect = vContainer.w->geometry();
+					auto top = vContainer.w->contentsMargins().top();
+
+					QPoint startPoint;
+					startPoint.setX(i*rect.width() + rect.width()/2);
+					startPoint.setY(topMargins + j*rect.height() - top);
+
+					QPoint endPoint;
+					endPoint.setX(i*rect.width() + rect.width() / 2 + 1);
+					endPoint.setY(topMargins + j*rect.height() + top - 1);
+
+					auto line = OBJ_NAME(new QFrame(buildExpHolderOwner), "build-exp-connections");
+					line->setGeometry(QRect(startPoint, endPoint));
+					line->raise();
+					builder.lines << line;
+				}
+			}
+			else {
+				w = container.w;
+			}
+			
+			auto rect = w->geometry();
+			auto left = w->contentsMargins().left();
+
+			QPoint startPoint;
+			startPoint.setX(i*rect.width() - left + 3);
+			startPoint.setY(topMargins + rect.height()/2);
+
+			QPoint endPoint;
+			endPoint.setX(i*rect.width() + left);
+			endPoint.setY(topMargins + rect.height() / 2 + 1);
 
 			auto line = OBJ_NAME(new QFrame(buildExpHolderOwner), "build-exp-connections");
 			line->setGeometry(QRect(startPoint, endPoint));
 			line->raise();
-
-			lines << line;
+			builder.lines << line;
 		}
 	}));
-
+	/*
 	containerWdg->installEventFilter(new BuilderEventFilter(containerWdg, [=]() {
 		foreach(auto line, verticalLines) {
 			line->deleteLater();
@@ -535,6 +622,41 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			verticalLines << line;
 		}
 	}));
+	//*/
+
+	return w;
+}
+QWidget* MainWindowUI::GetBuildExperimentTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
+
+	auto *nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
+	
+	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
+	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
+
+	QScrollArea *buildExpHolder;
+
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"), 0, 0, 1, 3);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
+	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
+	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(), 1, 1);
+
+	auto buildExpHolderOwner = CreateBuildExpHolderWidget();
+
+
+	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
+
+	lay->addWidget(nodeListOwner);
+	lay->addWidget(expBuilderOwner);
+	lay->addWidget(nodeParamsOwner);
 
 	return w;
 }
