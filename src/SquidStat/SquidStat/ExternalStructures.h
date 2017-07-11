@@ -36,14 +36,13 @@ struct HardwareVersion {
 	};
 };
 
-typedef struct {
-	float frequency;
-	uint8_t gainVoltage;
-	uint8_t gainCurrent;
-	int16_t data[0];
-} ExperimentalAcData;
-
 typedef ExperimentalDataPoint_t ExperimentalDcData;
+
+struct ProcessedDCData {
+  double EWE;
+  double ECE;
+  double current;
+};
 
 struct CommandPacket {
 	quint16 frame;
@@ -63,5 +62,16 @@ struct ResponsePacket {
 	FramedComPacketHeader_t hdr;
 	char data[0];
 };
+
+#pragma pack(pop)
+
+#pragma pack(push,1)
+
+typedef struct {
+  float frequency;
+  int16_t gainVoltage;
+  int16_t gainCurrent;
+  int16_t data[0];
+} ExperimentalAcData;
 
 #pragma pack(pop)

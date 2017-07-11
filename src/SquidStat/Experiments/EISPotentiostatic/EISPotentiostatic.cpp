@@ -119,46 +119,48 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
 	double VBias;
 	bool VBiasVsOCP = false;
 	QString VBiasVsOCPStr;
+  double amplitude;
 	
 	GET_SELECTED_DROP_DOWN(VBiasVsOCPStr, "DC bias reference selection id");
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperFreq, UPPER_FREQ_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerFreq, LOWER_FREQ_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(stepsPerDecade, STEPS_PER_DEC_OBJ_NAME);
+  GET_TEXT_INPUT_VALUE_DOUBLE(amplitude, AC_AMP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(VBias, DC_BIAS_OBJ_NAME);
 	if (VBiasVsOCPStr.contains("open circuit"))
 	{
 		VBiasVsOCP = true;
 	}
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e8;
-			//exp.tMax = 0xffffffffffffffff;
-	exp.tMax = 2e8;		//debugging
-	exp.DCPoint_pot.Imax = 0xffff;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
-	//TODO exp.DCPoint_pot.dVdtMax = 0.1;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDecade);
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e8;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	//getSamplingParameters(sampInterval, &exp);
-	//exp.DCPoint_pot.IrangeMax = getCurrentRange(chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5, &calData, hwVersion.hwModel);
-	//exp.DCPoint_pot.Imax = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5, &calData);
-	//exp.DCPoint_pot.IrangeMin = getCurrentRange(chargeFirst ? minChgCurrent : minDischgCurrent, &calData, hwVersion.hwModel);
-	//exp.DCPoint_pot.Imin = chargeFirst ? getCurrentBinary(exp.DCPoint_pot.IrangeMin, minChgCurrent, &calData) : getCurrentBinary(exp.DCPoint_pot.IrangeMin, minDischgCurrent, &calData);
-	//exp.DCPoint_pot.VPointUserInput = getVoltageBinary(chargeFirst ? upperVoltage : lowerVoltage, &calData);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
-	
+	//exp.isHead = false;
+	//exp.isTail = false;
+	//exp.nodeType = DCNODE_POINT_POT;
+	//exp.tMin = 1e8;
+	//		//exp.tMax = 0xffffffffffffffff;
+	//exp.tMax = 2e8;		//debugging
+	//exp.DCPoint_pot.Imax = 0xffff;
+	//exp.DCPoint_pot.Imin = 0;
+	//exp.DCPoint_pot.IrangeMax = RANGE0;
+	//exp.DCPoint_pot.IrangeMin = RANGE7;
+	////TODO exp.DCPoint_pot.dVdtMax = 0.1;
+	//exp.MaxPlays = 1;
+ // ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 1);
+	//PUSH_NEW_NODE_DATA();
+
+  for (int i = 0; i < frequencyList.length(); i++)
+  {
+    exp.isHead = false;
+    exp.isTail = false;
+    exp.nodeType = FRA_NODE_POT;
+    exp.FRA_pot_node.frequency = (float)frequencyList[i];
+    exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VBias);
+    exp.FRA_pot_node.VBiasVsOCP = VBiasVsOCP;
+    ExperimentCalcHelperClass::calcACSamplingParams(&exp, amplitude);
+    PUSH_NEW_NODE_DATA();
+  }
+
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
 
