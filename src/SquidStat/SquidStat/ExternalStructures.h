@@ -7,6 +7,8 @@ typedef enum {
 	PERIODIC_SAMPLING_STATIC_DAC
 } DCSamplingMode_t;
 
+#include <qglobal.h>
+
 #include <global_typedefs.h>
 #include <cal.h>
 #include <ExperimentNode.h>
