@@ -307,10 +307,10 @@ QLabel[experiment-params-widget="low-margin"] {
 #primary-button[button-type="experiment-start-pbt"] {
 
 }
-/*//////////////       BUILD AN EXPERIMENT     ////////////////////*/
+/*//////////////     BUILD AN EXPERIMENT TAB   ////////////////////*/
 #node-list-owner {
-	max-width: 300px;
-	min-width: 300px;
+	max-width: 270px;
+	min-width: 270px;
 }
 #experiment-builder-owner {
 	border: none;
@@ -319,7 +319,31 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 730px;
 	min-width: 730px;
 }
+/*//////////////          ELEMENTS LIST        ////////////////////*/
+#elements-list-holder {
+	border: none;
+	background-color: #f8f9fb;
+}
+#elements-list-descr-label {
+	background-color: #f8f9fb;
+	color: #3a5159;
+	font-size: 12px;
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+}
+#element-builder {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	
+	min-width: 100px;
+	max-width: 100px;
+	min-height: 100px;
+	max-height: 100px;
+	
+	border: 1px solid #9ecfd3;
+}
 /*//////////////       EXPERIMENT BUILDER      ////////////////////*/
+#node-builder-label {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+}
 #exp-builder-top-buttons-replacement {
 	margin: 1px;
 	min-height: 70px;
@@ -417,9 +441,6 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	max-width: 122px;
 	max-height: 30px;
-}
-#build-exp-connections {
-	border: 1px solid #80939a;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #new-data-window-owner {

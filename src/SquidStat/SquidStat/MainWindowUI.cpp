@@ -433,10 +433,14 @@ QWidget* MainWindowUI::CreateBuildExpElementWidget(const MainWindowUI::BuilderCo
 	auto *w = OBJ_NAME(new QFrame(), "node-builder-owner");
 
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+	
 	QSpinBox *mult;
+	QLabel *label;
 
-	lay->addWidget(OBJ_NAME(new QLabel, "node-builder-label"));
+	lay->addWidget(label = OBJ_NAME(new QLabel, "node-builder-label"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-single"));
+
+	label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
@@ -637,21 +641,36 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	w = WDG();
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
 
-	auto *nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
+	auto nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
+	auto nodeListOwnerLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(nodeListOwner)));
+
+	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
+	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
+	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
+	int i = 0;
+	for (; i < 9; ++i) {
+		auto label = OBJ_NAME(new QLabel, "element-builder");
+		label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
+
+		elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
+	}
+	elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+
+	QScrollArea *elementsListArea = new QScrollArea();
+	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	elementsListArea->setWidgetResizable(true);
+	elementsListArea->setWidget(elementsListHolder);
+
+	nodeListOwnerLay->addWidget(elementsListArea);
 	
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
-
-	QScrollArea *buildExpHolder;
 
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"), 0, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(), 1, 1);
-
-	auto buildExpHolderOwner = CreateBuildExpHolderWidget();
-
 
 	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
 
