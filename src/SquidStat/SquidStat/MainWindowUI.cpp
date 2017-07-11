@@ -445,19 +445,92 @@ QWidget* MainWindowUI::CreateBuildExpElementWidget(const MainWindowUI::BuilderCo
 	return w;
 }
 #include <functional>
-class BuilderEventFilter : public QObject {
+#include <QPainter>
+class ElementEventFiler : public QObject {
 public:
-	BuilderEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
+	ElementEventFiler(QObject *parent, quint8 ld, std::function<void(QWidget*, quint8)> lambda) :
+		QObject(parent), _lambda(lambda), _ld(ld) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		if ( (e->type() == QEvent::Resize) || (e->type() == QEvent::Move) || (e->type() == QEvent::Paint) ) {
-			_lambda();
+		if (e->type() == QEvent::Paint) {
+			QWidget *w = qobject_cast<QWidget*>(obj);
+			if (w) {
+				_lambda(w, _ld);
+				return true;
+			}
 		}
 		return false;
 	}
 
 private:
-	std::function<void(void)> _lambda;
+	std::function<void(QWidget*, quint8)> _lambda;
+	quint8 _ld;
+};
+QLine GetTopLine(const QRect &rect, const QMargins &margins) {
+	QPoint startPoint;
+	startPoint.setX(rect.width() / 2);
+	startPoint.setY(-margins.top());
+
+	QPoint endPoint;
+	endPoint.setX(rect.width() / 2);
+	endPoint.setY(margins.top());
+
+	return QLine(startPoint, endPoint);
+}
+QLine GetBottomLine(const QRect &rect, const QMargins &margins) {
+	QPoint startPoint;
+	startPoint.setX(rect.width() / 2);
+	startPoint.setY(rect.height() - margins.bottom());
+
+	QPoint endPoint;
+	endPoint.setX(rect.width() / 2);
+	endPoint.setY(rect.height() + margins.bottom());
+
+	return QLine(startPoint, endPoint);
+}
+QLine GetLeftLine(const QRect &rect, const QMargins &margins) {
+	QPoint startPoint;
+	startPoint.setX(-margins.left());
+	startPoint.setY(rect.height() / 2);
+
+	QPoint endPoint;
+	endPoint.setX(margins.left());
+	endPoint.setY(rect.height() / 2);
+
+	return QLine(startPoint, endPoint);
+}
+QLine GetRightLine(const QRect &rect, const QMargins &margins) {
+	QPoint startPoint;
+	startPoint.setX(rect.width() - margins.right());
+	startPoint.setY(rect.height() / 2);
+
+	QPoint endPoint;
+	endPoint.setX(rect.width() + margins.right());
+	endPoint.setY(rect.height() / 2);
+
+	return QLine(startPoint, endPoint);
+}
+enum LineDirection : quint8 {
+	LD_NONE = 0,
+	LD_LEFT = 1,
+	LD_RIGHT = 2,
+	LD_TOP = 4,
+	LD_BOTTOM = 8
+};
+auto LineDrawer = [](QWidget *w, quint8 ld) {
+	QRect rect = w->geometry();
+	QMargins margins = w->contentsMargins();
+
+	QPainter painter(w);
+	painter.setPen(QPen(QColor("#80939a"), 2));
+	if (ld & LD_LEFT)
+		painter.drawLine(GetLeftLine(rect, margins));
+	if (ld & LD_RIGHT)
+		painter.drawLine(GetRightLine(rect, margins));
+	if (ld & LD_TOP)
+		painter.drawLine(GetTopLine(rect, margins));
+	if (ld & LD_BOTTOM)
+		painter.drawLine(GetBottomLine(rect, margins));
 };
 QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	static QWidget *w = 0;
@@ -486,13 +559,34 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 		<< BuilderContainer(7);
 
 	for (auto it = builder.container.elements.begin(); it != builder.container.elements.end(); ++it) {
+		quint8 ld = LD_NONE;
+		if (it != builder.container.elements.begin()) {
+			ld |= LD_LEFT;
+		}
+		if (it != (--builder.container.elements.end())) {
+			ld |= LD_RIGHT;
+		}
+
 		switch (it->type) {
 			case BuilderContainer::ELEMENT:
 				it->w = CreateBuildExpElementWidget(*it);
+				it->w->installEventFilter(new ElementEventFiler(it->w, ld, LineDrawer));
 				break;
 			case BuilderContainer::SET:
 				for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+					quint8 vld = LD_NONE;
+					if (cIt == it->elements.begin()) {
+						vld = ld;
+					}
+					if (cIt != it->elements.begin()) {
+						vld |= LD_TOP;
+					}
+					if (cIt != (--it->elements.end())) {
+						vld |= LD_BOTTOM;
+					}
+
 					cIt->w = CreateBuildExpElementWidget(*cIt);
+					cIt->w->installEventFilter(new ElementEventFiler(cIt->w, vld, LineDrawer));
 				}
 				it->w = CreateBuildExpContainerWidget(*it);
 				break;
@@ -531,99 +625,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	buildExpHolderOwnerLay->setRowStretch(maxRowSpan, 1);
 	buildExpHolderOwnerLay->setColumnStretch(column, 1);
 	
-	buildExpHolderOwner->installEventFilter(new BuilderEventFilter(buildExpHolderOwner, [=]() {
-		/*
-		foreach(auto &lines, builder.lines) {
-			foreach(auto line, lines) {
-				line->deleteLater();
-			}
-		}
-		builder.lines.clear();
-		//*/
-		foreach(auto &line, builder.lines) {
-			line->deleteLater();
-		}
-		builder.lines.clear();
-
-		int topMargins = buildExpHolderOwner->contentsMargins().top();
-		for (int i = 1; i < builder.container.elements.count(); ++i) {
-			auto container(builder.container.elements.at(i));
-
-			QWidget *w = 0;
-
-			if (container.type == BuilderContainer::SET) {
-				if (container.elements.count()) {
-					w = container.elements.at(0).w;
-				}
-
-				for (int j = 1; j < container.elements.count(); ++j) {
-					auto vContainer(container.elements.at(j));
-
-					auto rect = vContainer.w->geometry();
-					auto top = vContainer.w->contentsMargins().top();
-
-					QPoint startPoint;
-					startPoint.setX(i*rect.width() + rect.width()/2);
-					startPoint.setY(topMargins + j*rect.height() - top);
-
-					QPoint endPoint;
-					endPoint.setX(i*rect.width() + rect.width() / 2 + 1);
-					endPoint.setY(topMargins + j*rect.height() + top - 1);
-
-					auto line = OBJ_NAME(new QFrame(buildExpHolderOwner), "build-exp-connections");
-					line->setGeometry(QRect(startPoint, endPoint));
-					line->raise();
-					builder.lines << line;
-				}
-			}
-			else {
-				w = container.w;
-			}
-			
-			auto rect = w->geometry();
-			auto left = w->contentsMargins().left();
-
-			QPoint startPoint;
-			startPoint.setX(i*rect.width() - left + 3);
-			startPoint.setY(topMargins + rect.height()/2);
-
-			QPoint endPoint;
-			endPoint.setX(i*rect.width() + left);
-			endPoint.setY(topMargins + rect.height() / 2 + 1);
-
-			auto line = OBJ_NAME(new QFrame(buildExpHolderOwner), "build-exp-connections");
-			line->setGeometry(QRect(startPoint, endPoint));
-			line->raise();
-			builder.lines << line;
-		}
-	}));
-	/*
-	containerWdg->installEventFilter(new BuilderEventFilter(containerWdg, [=]() {
-		foreach(auto line, verticalLines) {
-			line->deleteLater();
-		}
-		verticalLines.clear();
-		for (int i = 2; i < 4; ++i) {
-			auto rect = nodes.at(i)->geometry();
-			auto margins = nodes.at(i)->contentsMargins();
-
-			auto startPoint = nodes.at(i)->pos();
-			startPoint.setY(startPoint.y() + rect.height() - margins.bottom());
-			startPoint.setX(startPoint.x() + rect.width() / 2);
-
-			auto endPoint = startPoint;
-			endPoint.setY(endPoint.y() + margins.bottom() * 2);
-			endPoint.setX(endPoint.x() + 1);
-
-			auto line = OBJ_NAME(new QFrame(containerWdg), "build-exp-connections");
-			line->setGeometry(QRect(startPoint, endPoint));
-			line->raise();
-
-			verticalLines << line;
-		}
-	}));
-	//*/
-
 	return w;
 }
 QWidget* MainWindowUI::GetBuildExperimentTab() {
