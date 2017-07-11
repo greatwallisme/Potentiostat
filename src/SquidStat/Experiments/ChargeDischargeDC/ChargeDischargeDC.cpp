@@ -188,9 +188,9 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_galv.Irange = chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
-	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
-	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetVoltage(&calData, upperVoltage);
-	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetVoltage(&calData, lowerVoltage);
+	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
+	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -201,10 +201,10 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
-	exp.DCPoint_pot.Imax = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+	exp.DCPoint_pot.Imax = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
 	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? minChgCurrent : minDischgCurrent);
-	exp.DCPoint_pot.Imin = chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetVoltage(&calData, chargeFirst ? upperVoltage : lowerVoltage);
+	exp.DCPoint_pot.Imin = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -227,9 +227,9 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
-	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
-	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetVoltage(&calData, upperVoltage);
-	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetVoltage(&calData, lowerVoltage);
+	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
+	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -240,10 +240,10 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
-	exp.DCPoint_pot.Imax = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+	exp.DCPoint_pot.Imax = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
 	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? minChgCurrent : minDischgCurrent);
-	exp.DCPoint_pot.Imin = !chargeFirst ? ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetVoltage(&calData,!chargeFirst ? upperVoltage : lowerVoltage);
+	exp.DCPoint_pot.Imin = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData,!chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();

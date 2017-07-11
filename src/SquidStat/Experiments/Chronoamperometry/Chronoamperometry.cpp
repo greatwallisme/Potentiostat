@@ -37,7 +37,7 @@
 #define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
 QString Chronoamperometry::GetShortName() const {
-	return "Chronoamperometry/Chronocoulometry";
+	return "Chronoamperometry";
 }
 QString Chronoamperometry::GetFullName() const {
 	return "Chronoamperometry/Chronocoulometry";
@@ -200,8 +200,8 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = t1 * 1e8;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = (int)(v1 * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
+  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v1);
+	exp.DCPoint_pot.VPointVsOCP = _ocp1;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
@@ -215,7 +215,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = t2 * 1e8;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = (int)(v2 * 3276.8);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v2);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
@@ -230,7 +230,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = t3 * 1e8;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = (int)(v3 * 3276.8);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v3);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
@@ -245,7 +245,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = t4 * 1e8;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = (int)(v4 * 3276.8);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v4);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
@@ -274,7 +274,7 @@ QStringList Chronoamperometry::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void Chronoamperometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void Chronoamperometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 
@@ -287,10 +287,12 @@ void Chronoamperometry::PushNewDcData(const ExperimentalDcData &expData, DataMap
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
+  ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
+  
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
+	PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, processedData.ECE);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;
