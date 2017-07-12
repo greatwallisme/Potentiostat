@@ -631,6 +631,77 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	
 	return w;
 }
+#include <QDrag>
+#include <QMimeData>
+class ElementListEventFiler : public QObject {
+public:
+	ElementListEventFiler(QObject *parent) : QObject(parent) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonPress) {
+			QWidget *w = qobject_cast<QWidget*>(obj);
+			if (!w) {
+				return false;
+			}
+
+			QMouseEvent *me = (QMouseEvent*)e;
+
+			if (me->button() == Qt::LeftButton) {
+				auto margins = w->contentsMargins();
+				auto rect = w->rect();
+
+				QPoint startPoint;
+				startPoint.setX(margins.left() - 1);
+				startPoint.setY(margins.top() - 1);
+				QPoint endPoint;
+				endPoint.setX(rect.width() - margins.right());
+				endPoint.setY(rect.height() - margins.bottom());
+
+				QDrag *drag = new QDrag(obj);
+				drag->setMimeData(new QMimeData());
+				drag->setPixmap(w->grab(QRect(startPoint, endPoint)));
+				drag->setHotSpot(me->pos() - QPoint(margins.left(), margins.top()));
+
+				Qt::DropAction dropAction = drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
+			}
+
+			return false;
+		}
+		return false;
+	}
+};
+QWidget* MainWindowUI::CreateElementsListWidget() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+	w = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
+	auto nodeListOwnerLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+
+	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
+	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
+	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
+	int i = 0;
+	for (; i < 9; ++i) {
+		auto label = OBJ_NAME(new QLabel, "element-builder");
+		label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
+
+		label->installEventFilter(new ElementListEventFiler(label));
+
+		elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
+	}
+	elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+
+	QScrollArea *elementsListArea = OBJ_NAME(new QScrollArea(), "node-list-scroll-area");
+	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	elementsListArea->setWidgetResizable(true);
+	elementsListArea->setWidget(elementsListHolder);
+
+	nodeListOwnerLay->addWidget(elementsListArea);
+
+	return w;
+}
 QWidget* MainWindowUI::GetBuildExperimentTab() {
 	static QWidget *w = 0;
 
@@ -641,27 +712,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	w = WDG();
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
 
-	auto nodeListOwner = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
-	auto nodeListOwnerLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(nodeListOwner)));
-
-	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
-	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
-	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
-	int i = 0;
-	for (; i < 9; ++i) {
-		auto label = OBJ_NAME(new QLabel, "element-builder");
-		label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
-
-		elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
-	}
-	elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
-
-	QScrollArea *elementsListArea = new QScrollArea();
-	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-	elementsListArea->setWidgetResizable(true);
-	elementsListArea->setWidget(elementsListHolder);
-
-	nodeListOwnerLay->addWidget(elementsListArea);
+	auto nodeListOwner = CreateElementsListWidget();
 	
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));

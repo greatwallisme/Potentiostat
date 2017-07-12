@@ -324,6 +324,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	background-color: #f8f9fb;
 }
+#node-list-scroll-area {
+	border: none;
+	margin-right: 1px;
+}
 #elements-list-descr-label {
 	background-color: #f8f9fb;
 	color: #3a5159;
@@ -406,8 +410,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #node-builder-label {
 	min-width: 100px;
 	max-width: 100px;
-	min-height: 70px;
-	max-height: 70px;
+	min-height: 75px;
+	max-height: 75px;
 	
 	background-color: #ffffff;
 	border: 1px solid #9ecfd3;
@@ -418,8 +422,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #node-builder-multiplier-single {
 	min-width: 92px;
 	max-width: 92px;
-	min-height: 30px;
-	max-height: 30px;
+	min-height: 25px;
+	max-height: 25px;
 
 	background-color: #ffffff;
 	border: 1px solid #9ecfd3;

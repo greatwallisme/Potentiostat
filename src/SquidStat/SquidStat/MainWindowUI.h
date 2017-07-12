@@ -115,6 +115,7 @@ private:
 	QWidget* CreateBuildExpElementWidget(const BuilderContainer&);
 	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&);
 	QWidget* CreateBuildExpHolderWidget();
+	QWidget* CreateElementsListWidget();
 
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
