@@ -50,6 +50,11 @@
 
 #include <qtcsv/reader.h>
 
+#include <QDrag>
+#include <QMimeData>
+
+#define ELEMENT_MIME_TYPE	"image/element"
+
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
 
@@ -450,25 +455,130 @@ QWidget* MainWindowUI::CreateBuildExpElementWidget(const MainWindowUI::BuilderCo
 }
 #include <functional>
 #include <QPainter>
+enum LineDirection : quint8 {
+	LD_NONE = 0,
+	LD_LEFT = 1,
+	LD_RIGHT = 2,
+	LD_TOP = 4,
+	LD_BOTTOM = 8
+};
 class ElementEventFiler : public QObject {
 public:
-	ElementEventFiler(QObject *parent, quint8 ld, std::function<void(QWidget*, quint8)> lambda) :
-		QObject(parent), _lambda(lambda), _ld(ld) {}
+	ElementEventFiler(QObject *parent, quint8 ld, std::function<void(QWidget*, quint8, quint8)> lineDrawer) :
+		QObject(parent), _lineDrawer(lineDrawer), _lineDirection(ld), _dropDirection(LD_NONE) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::Paint) {
-			QWidget *w = qobject_cast<QWidget*>(obj);
-			if (w) {
-				_lambda(w, _ld);
+		switch(e->type()) {
+			case QEvent::Paint: {
+				QWidget *w = qobject_cast<QWidget*>(obj);
+				if (w) {
+					_lineDrawer(w, _lineDirection, _dropDirection);
+					return true;
+				}
+			} break;
+
+			case QEvent::DragEnter: {
+				auto de = (QDragEnterEvent*)e;
+				if (de->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
+					de->accept();
+				}
+				else {
+					de->ignore();
+				}
 				return true;
-			}
+			} break;
+			
+			case QEvent::DragMove: {
+				auto dm = (QDragMoveEvent*)e;
+				auto w = qobject_cast<QWidget*>(obj);
+
+				if (!w) {
+					dm->ignore();
+					return false;
+				}
+
+				if (dm->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
+					_dropDirection = FindDirection(w, dm->pos());
+
+					if (0 == (_lineDirection & _dropDirection)) {
+						dm->ignore();
+					}
+					else {
+						dm->setDropAction(Qt::MoveAction);
+						dm->accept();
+					}
+
+					w->update();
+				}
+				else {
+					dm->ignore();
+				}
+				return true;
+			} break;
+
+			case QEvent::DragLeave: {
+				_dropDirection = LD_NONE;
+				auto w = qobject_cast<QWidget*>(obj);
+
+				if (w) {
+					w->update();
+				}
+
+			} break;
 		}
 		return false;
 	}
 
 private:
-	std::function<void(QWidget*, quint8)> _lambda;
-	quint8 _ld;
+	quint8 FindDirection(QWidget *w, const QPoint &pos) {
+		if (!w) {
+			return LD_NONE;
+		}
+
+		auto m = w->contentsMargins();
+		auto r = w->rect();
+		
+		Qt::Alignment align;
+
+		if (pos.x() < m.left()) {
+			align |= Qt::AlignLeft;
+		}
+		else if (pos.x() < (r.width() - m.right())) {
+			align |= Qt::AlignHCenter;
+		}
+		else {
+			align |= Qt::AlignRight;
+		}
+
+		if (pos.y() < m.top()) {
+			align |= Qt::AlignTop;
+		}
+		else if (pos.y() < (r.height() - m.bottom())) {
+			align |= Qt::AlignVCenter;
+		}
+		else {
+			align |= Qt::AlignBottom;
+		}
+
+		if (align.testFlag(Qt::AlignTop) && align.testFlag(Qt::AlignHCenter)) {
+			return LD_TOP;
+		}
+		if (align.testFlag(Qt::AlignBottom) && align.testFlag(Qt::AlignHCenter)) {
+			return LD_BOTTOM;
+		}
+		if (align.testFlag(Qt::AlignLeft) && align.testFlag(Qt::AlignVCenter)) {
+			return LD_LEFT;
+		}
+		if (align.testFlag(Qt::AlignRight) && align.testFlag(Qt::AlignVCenter)) {
+			return LD_RIGHT;
+		}
+
+		return LD_NONE;
+	}
+
+	std::function<void(QWidget*, quint8, quint8)> _lineDrawer;
+	quint8 _lineDirection;
+	quint8 _dropDirection;
 };
 QLine GetTopLine(const QRect &rect, const QMargins &margins) {
 	QPoint startPoint;
@@ -514,27 +624,32 @@ QLine GetRightLine(const QRect &rect, const QMargins &margins) {
 
 	return QLine(startPoint, endPoint);
 }
-enum LineDirection : quint8 {
-	LD_NONE = 0,
-	LD_LEFT = 1,
-	LD_RIGHT = 2,
-	LD_TOP = 4,
-	LD_BOTTOM = 8
-};
-auto LineDrawer = [](QWidget *w, quint8 ld) {
+auto LineDrawer = [](QWidget *w, quint8 lineDirection, quint8 dropDirection) {
 	QRect rect = w->geometry();
 	QMargins margins = w->contentsMargins();
 
 	QPainter painter(w);
 	painter.setPen(QPen(QColor("#80939a"), 2));
-	if (ld & LD_LEFT)
+	if (lineDirection & LD_LEFT)
 		painter.drawLine(GetLeftLine(rect, margins));
-	if (ld & LD_RIGHT)
+	if (lineDirection & LD_RIGHT)
 		painter.drawLine(GetRightLine(rect, margins));
-	if (ld & LD_TOP)
+	if (lineDirection & LD_TOP)
 		painter.drawLine(GetTopLine(rect, margins));
-	if (ld & LD_BOTTOM)
+	if (lineDirection & LD_BOTTOM)
 		painter.drawLine(GetBottomLine(rect, margins));
+
+	if (0 != (lineDirection & dropDirection)) {
+		painter.setPen(QPen(QColor("#7b1a1e"), 2));
+		if (dropDirection & LD_LEFT)
+			painter.drawLine(QLine(0, 0, 0, rect.height()));
+		if (dropDirection & LD_RIGHT)
+			painter.drawLine(QLine(rect.width(), 0, rect.width(), rect.height()));
+		if (dropDirection & LD_TOP)
+			painter.drawLine(QLine(0, 0, rect.width(), 0));
+		if (dropDirection & LD_BOTTOM)
+			painter.drawLine(QLine(0, rect.height(), rect.width(), rect.height()));
+	}
 };
 QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	static QWidget *w = 0;
@@ -574,8 +689,10 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 		switch (it->type) {
 			case BuilderContainer::ELEMENT:
 				it->w = CreateBuildExpElementWidget(*it);
+				it->w->setAcceptDrops(true);
 				it->w->installEventFilter(new ElementEventFiler(it->w, ld, LineDrawer));
 				break;
+
 			case BuilderContainer::SET:
 				for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
 					quint8 vld = LD_NONE;
@@ -590,6 +707,7 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 					}
 
 					cIt->w = CreateBuildExpElementWidget(*cIt);
+					cIt->w->setAcceptDrops(true);
 					cIt->w->installEventFilter(new ElementEventFiler(cIt->w, vld, LineDrawer));
 				}
 				it->w = CreateBuildExpContainerWidget(*it);
@@ -631,8 +749,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	
 	return w;
 }
-#include <QDrag>
-#include <QMimeData>
 class ElementListEventFiler : public QObject {
 public:
 	ElementListEventFiler(QObject *parent) : QObject(parent) {}
@@ -657,8 +773,11 @@ public:
 				endPoint.setX(rect.width() - margins.right());
 				endPoint.setY(rect.height() - margins.bottom());
 
+				auto mime = new QMimeData;
+				mime->setData(ELEMENT_MIME_TYPE, QByteArray());
+
 				QDrag *drag = new QDrag(obj);
-				drag->setMimeData(new QMimeData());
+				drag->setMimeData(mime);
 				drag->setPixmap(w->grab(QRect(startPoint, endPoint)));
 				drag->setHotSpot(me->pos() - QPoint(margins.left(), margins.top()));
 
