@@ -130,6 +130,15 @@
     <ClCompile Include="ListSeriesData.cpp">
       <Filter>_scr\MainWindow</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_BuilderWidget.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_BuilderWidget.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="BuilderWidget.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -184,6 +193,9 @@
     </CustomBuild>
     <CustomBuild Include="SerialThread.h">
       <Filter>_scr\SerialCommunicator</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BuilderWidget.h">
+      <Filter>_scr\MainWindow</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

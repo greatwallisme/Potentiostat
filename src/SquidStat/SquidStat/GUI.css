@@ -389,7 +389,9 @@ QLabel[experiment-params-widget="low-margin"] {
 	background-color: #e9f6fc;
 	border: none;
 	margin: 1px;
-	margin-top: 12px;
+	margin-top: 9px;
+	margin-left: 9px;
+	margin-right: 9px;
 }
 #node-builder-owner {
 	border: none;

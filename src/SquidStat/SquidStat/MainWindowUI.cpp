@@ -404,79 +404,15 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateBuildExpContainerWidget(const MainWindowUI::BuilderContainer &bc) {
-	if (bc.type != BuilderContainer::SET) {
-		LOG() << "It is not a SET!";
-		return 0;
-	}
-
-	auto containerWdg = OBJ_NAME(new QFrame(mw), "node-builder-container");
-	auto containerWdgLay = NO_MARGIN(NO_SPACING(new QVBoxLayout(containerWdg)));
-
-	for (auto it = bc.elements.begin(); it != bc.elements.end(); ++it) {
-		if (!it->w) {
-			return 0;
-		}
-
-		containerWdgLay->addWidget(it->w);
-	}
-	QSpinBox *mult;
-	containerWdgLay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-container"));
-
-	mult->setMinimum(1);
-	mult->setMaximum(99999);
-	mult->setValue(bc.repetition);
-
-	return containerWdg;
-}
-QWidget* MainWindowUI::CreateBuildExpElementWidget(const MainWindowUI::BuilderContainer &bc) {
-	if (bc.type != BuilderContainer::ELEMENT) {
-		LOG() << "It is not an ELEMENT!";
-		return 0;
-	}
-
-	auto *w = OBJ_NAME(new QFrame(), "node-builder-owner");
-
-	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
-	
-	QSpinBox *mult;
-	QLabel *label;
-
-	lay->addWidget(label = OBJ_NAME(new QLabel, "node-builder-label"));
-	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-single"));
-
-	label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
-
-	mult->setMinimum(1);
-	mult->setMaximum(99999);
-	mult->setValue(bc.repetition);
-
-	return w;
-}
 #include <functional>
-#include <QPainter>
-enum LineDirection : quint8 {
-	LD_NONE = 0,
-	LD_LEFT = 1,
-	LD_RIGHT = 2,
-	LD_TOP = 4,
-	LD_BOTTOM = 8
-};
-class ElementEventFiler : public QObject {
+
+class BuilderEventFilter : public QObject {
 public:
-	ElementEventFiler(QObject *parent, quint8 ld, std::function<void(QWidget*, quint8, quint8)> lineDrawer) :
-		QObject(parent), _lineDrawer(lineDrawer), _lineDirection(ld), _dropDirection(LD_NONE) {}
+	BuilderEventFilter(QObject *parent, std::function<void(void)> lambda) :
+		QObject(parent), _lambda(lambda) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		switch(e->type()) {
-			case QEvent::Paint: {
-				QWidget *w = qobject_cast<QWidget*>(obj);
-				if (w) {
-					_lineDrawer(w, _lineDirection, _dropDirection);
-					return true;
-				}
-			} break;
-
+		switch (e->type()) {
 			case QEvent::DragEnter: {
 				auto de = (QDragEnterEvent*)e;
 				if (de->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
@@ -487,143 +423,12 @@ public:
 				}
 				return true;
 			} break;
-			
-			case QEvent::DragMove: {
-				auto dm = (QDragMoveEvent*)e;
-				auto w = qobject_cast<QWidget*>(obj);
-
-				if (!w) {
-					dm->ignore();
-					return false;
-				}
-
-				if (dm->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
-					_dropDirection = FindDirection(w, dm->pos());
-
-					if (0 == (_lineDirection & _dropDirection)) {
-						dm->ignore();
-					}
-					else {
-						dm->setDropAction(Qt::MoveAction);
-						dm->accept();
-					}
-
-					w->update();
-				}
-				else {
-					dm->ignore();
-				}
-				return true;
-			} break;
-
-			case QEvent::DragLeave: {
-				_dropDirection = LD_NONE;
-				auto w = qobject_cast<QWidget*>(obj);
-
-				if (w) {
-					w->update();
-				}
-
-			} break;
 		}
-		return false;
 	}
-
 private:
-	quint8 FindDirection(QWidget *w, const QPoint &pos) {
-		if (!w) {
-			return LD_NONE;
-		}
-
-		auto m = w->contentsMargins();
-		auto r = w->rect();
-		
-		Qt::Alignment align;
-
-		if (pos.x() < m.left()) {
-			align |= Qt::AlignLeft;
-		}
-		else if (pos.x() < (r.width() - m.right())) {
-			align |= Qt::AlignHCenter;
-		}
-		else {
-			align |= Qt::AlignRight;
-		}
-
-		if (pos.y() < m.top()) {
-			align |= Qt::AlignTop;
-		}
-		else if (pos.y() < (r.height() - m.bottom())) {
-			align |= Qt::AlignVCenter;
-		}
-		else {
-			align |= Qt::AlignBottom;
-		}
-
-		if (align.testFlag(Qt::AlignTop) && align.testFlag(Qt::AlignHCenter)) {
-			return LD_TOP;
-		}
-		if (align.testFlag(Qt::AlignBottom) && align.testFlag(Qt::AlignHCenter)) {
-			return LD_BOTTOM;
-		}
-		if (align.testFlag(Qt::AlignLeft) && align.testFlag(Qt::AlignVCenter)) {
-			return LD_LEFT;
-		}
-		if (align.testFlag(Qt::AlignRight) && align.testFlag(Qt::AlignVCenter)) {
-			return LD_RIGHT;
-		}
-
-		return LD_NONE;
-	}
-
-	std::function<void(QWidget*, quint8, quint8)> _lineDrawer;
-	quint8 _lineDirection;
-	quint8 _dropDirection;
+	std::function<void(void)> _lambda;
 };
-QLine GetTopLine(const QRect &rect, const QMargins &margins) {
-	QPoint startPoint;
-	startPoint.setX(rect.width() / 2);
-	startPoint.setY(-margins.top());
-
-	QPoint endPoint;
-	endPoint.setX(rect.width() / 2);
-	endPoint.setY(margins.top());
-
-	return QLine(startPoint, endPoint);
-}
-QLine GetBottomLine(const QRect &rect, const QMargins &margins) {
-	QPoint startPoint;
-	startPoint.setX(rect.width() / 2);
-	startPoint.setY(rect.height() - margins.bottom());
-
-	QPoint endPoint;
-	endPoint.setX(rect.width() / 2);
-	endPoint.setY(rect.height() + margins.bottom());
-
-	return QLine(startPoint, endPoint);
-}
-QLine GetLeftLine(const QRect &rect, const QMargins &margins) {
-	QPoint startPoint;
-	startPoint.setX(-margins.left());
-	startPoint.setY(rect.height() / 2);
-
-	QPoint endPoint;
-	endPoint.setX(margins.left());
-	endPoint.setY(rect.height() / 2);
-
-	return QLine(startPoint, endPoint);
-}
-QLine GetRightLine(const QRect &rect, const QMargins &margins) {
-	QPoint startPoint;
-	startPoint.setX(rect.width() - margins.right());
-	startPoint.setY(rect.height() / 2);
-
-	QPoint endPoint;
-	endPoint.setX(rect.width() + margins.right());
-	endPoint.setY(rect.height() / 2);
-
-	return QLine(startPoint, endPoint);
-}
+/*
 auto LineDrawer = [](QWidget *w, quint8 lineDirection, quint8 dropDirection) {
 	QRect rect = w->geometry();
 	QMargins margins = w->contentsMargins();
@@ -651,6 +456,7 @@ auto LineDrawer = [](QWidget *w, quint8 lineDirection, quint8 dropDirection) {
 			painter.drawLine(QLine(0, rect.height(), rect.width(), rect.height()));
 	}
 };
+//*/
 QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	static QWidget *w = 0;
 
@@ -658,62 +464,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 		return w;
 	}
 
-	builder.container.repetition = 20;
-	builder.container.elements
-		<< BuilderContainer(1)
-		<< BuilderContainer(2)
-		<< BuilderContainer(10, BuilderContainer::SET)
-		<< BuilderContainer(15, BuilderContainer::SET)
-		<< BuilderContainer(8)
-		<< BuilderContainer(9)
-		<< BuilderContainer(10);
-
-	builder.container.elements[2].elements
-		<< BuilderContainer(3)
-		<< BuilderContainer(4)
-		<< BuilderContainer(5);
-
-	builder.container.elements[3].elements
-		<< BuilderContainer(6)
-		<< BuilderContainer(7);
-
-	for (auto it = builder.container.elements.begin(); it != builder.container.elements.end(); ++it) {
-		quint8 ld = LD_NONE;
-		if (it != builder.container.elements.begin()) {
-			ld |= LD_LEFT;
-		}
-		if (it != (--builder.container.elements.end())) {
-			ld |= LD_RIGHT;
-		}
-
-		switch (it->type) {
-			case BuilderContainer::ELEMENT:
-				it->w = CreateBuildExpElementWidget(*it);
-				it->w->setAcceptDrops(true);
-				it->w->installEventFilter(new ElementEventFiler(it->w, ld, LineDrawer));
-				break;
-
-			case BuilderContainer::SET:
-				for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
-					quint8 vld = LD_NONE;
-					if (cIt == it->elements.begin()) {
-						vld = ld;
-					}
-					if (cIt != it->elements.begin()) {
-						vld |= LD_TOP;
-					}
-					if (cIt != (--it->elements.end())) {
-						vld |= LD_BOTTOM;
-					}
-
-					cIt->w = CreateBuildExpElementWidget(*cIt);
-					cIt->w->setAcceptDrops(true);
-					cIt->w->installEventFilter(new ElementEventFiler(cIt->w, vld, LineDrawer));
-				}
-				it->w = CreateBuildExpContainerWidget(*it);
-				break;
-		}
-	}
 
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
@@ -725,27 +475,13 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
-	mult->setValue(builder.container.repetition);
+	//mult->setValue(builder.container.repetition);
 
-	auto buildExpHolderOwner = OBJ_NAME(new QFrame(), "build-exp-holder");
-	auto buildExpHolderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(buildExpHolderOwner)));
+	auto buildExpHolderOwner = new BuilderWidget(mw);
 
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
 	buildExpHolder->setWidget(buildExpHolderOwner);
-
-	int column = 0;
-	int maxRowSpan = 0;
-	foreach(auto &elem, builder.container.elements) {
-		int rowSpan = (elem.type == BuilderContainer::ELEMENT) ? 1 : (elem.elements.size() + 1);
-		if (rowSpan > maxRowSpan) {
-			maxRowSpan = rowSpan;
-		}
-
-		buildExpHolderOwnerLay->addWidget(elem.w, 0, column++, rowSpan, 1);
-	}
-	buildExpHolderOwnerLay->setRowStretch(maxRowSpan, 1);
-	buildExpHolderOwnerLay->setColumnStretch(column, 1);
 	
 	return w;
 }
