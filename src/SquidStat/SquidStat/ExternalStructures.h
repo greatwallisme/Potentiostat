@@ -7,10 +7,11 @@ typedef enum {
 	PERIODIC_SAMPLING_STATIC_DAC
 } DCSamplingMode_t;
 
+#include <qglobal.h>
+
 #include <global_typedefs.h>
 #include <cal.h>
 #include <ExperimentNode.h>
-//#include <ComPacket.h>
 #include <DAC_ADC_Buffer_types.h>
 
 typedef PCcommand_t CommandID;

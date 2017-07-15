@@ -25,6 +25,8 @@ class QTabWidget;
 #include "InstrumentStructures.h"
 #include "AbstractExperiment.h"
 
+#include "BuilderWidget.h"
+
 #define SQUID_STAT_PARAMETERS_INI	"SquidStatParameters.ini"
 #define DATA_SAVE_PATH				"data-save-dir-name"
 
@@ -110,11 +112,9 @@ private:
 	QWidget* GetOldSearchHardwareTab();
 	QWidget* GetRunExperimentTab();
 
-	struct BuilderContainer;
 	QWidget* GetBuildExperimentTab();
-	QWidget* CreateBuildExpElementWidget(const BuilderContainer&);
-	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&);
 	QWidget* CreateBuildExpHolderWidget();
+	QWidget* CreateElementsListWidget();
 
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
@@ -164,30 +164,6 @@ private:
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
 	} dataTabs;
-
-	typedef uint8_t BuilderElement;
-
-	struct BuilderContainer {
-		enum Type : qint32 {
-			ELEMENT,
-			SET
-		};
-		
-		BuilderContainer(qint32 rep = 1, Type t = ELEMENT) : repetition(rep), type(t), ptr(0), w(0) {}
-
-		qint32 repetition;
-		Type type;
-
-		QList<BuilderContainer> elements;
-		BuilderElement *ptr;
-		QWidget *w;
-	};
-
-	struct {
-		BuilderContainer container;
-		//QMap<Qt::Orientation, QList<QWidget*>> lines;
-		QList<QWidget*> lines;
-	} builder;
 
 	MainWindow *mw;
 };
