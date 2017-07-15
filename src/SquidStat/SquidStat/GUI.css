@@ -404,8 +404,9 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 #node-builder-container {
 	border: 1px solid #9ecfd3;
-	background-color: #c3dff5;
-	margin-bottom: 96px;
+	/*background-color: #c3dff5;*/
+	background-color: #00000000;
+	margin-bottom: 97px;
 	padding: -1px;
 	padding-bottom: 0px;
 }

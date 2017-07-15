@@ -7,6 +7,18 @@
 
 #include <QFlags>
 
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QResizeEvent>
+
+#include <QColor>
+
+#include <QMap>
+
+#define ELEMENT_MIME_TYPE	"image/element"
+
 enum LineDirection_e : quint8 {
 	LD_NONE = 0,
 	LD_LEFT = 1,
@@ -37,11 +49,23 @@ class BuildExpContainer : public QFrame {
 public:
 	BuildExpContainer(QWidget *parent, const BuilderContainer &cont);
 
+signals:
+	void UpdateBackgroundMap();
+
+public slots:
+	void PlaceWidgets();
+
 protected:
 	void paintEvent(QPaintEvent *e);
+	void resizeEvent(QResizeEvent *e);
 
 private:
 	const BuilderContainer &bc;
+
+	struct {
+		QVBoxLayout *elementsLay;
+		QVBoxLayout *containerWdgLay;
+	} ui;
 };
 
 class BuilderWidget : public QFrame {
@@ -51,16 +75,50 @@ public:
 
 protected:
 	void paintEvent(QPaintEvent *e);
+	void dragEnterEvent(QDragEnterEvent *e);
+	void dragLeaveEvent(QDragLeaveEvent *e);
+	void dragMoveEvent(QDragMoveEvent *e);
+	void dropEvent(QDropEvent *e);
+	void resizeEvent(QResizeEvent *e);
+
+signals:
+	void RequestPlaceWidgets();
+	void EnqueueUpdateBackgroundMap();
+
+private slots:
+	void UpdateBackgroundMap();
 
 private:
 	void InitContainer();
+	void InitWidgets();
 	void PlaceWidgets();
 	void UpdateLines();
-
 	QWidget* CreateBuildExpElementWidget(const BuilderContainer&);
 	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&);
 	
 	BuilderContainer container;
+	struct BackgroundDescriptor {
+		enum DragMoveAction : quint8 {
+			ACCEPT,
+			IGNORE
+		};
+		enum DropAction : quint8 {
+			BEFORE,
+			AFTER
+		};
+		struct DropArea {
+			DragMoveAction dragMoveAction;
+			QLine dropLine;
+			QList<BuilderContainer>::iterator before;
+			QList<BuilderContainer> *list;
+			DropAction dropAction;
+		};
+		QMap<QColor, DropArea> areas;
+		QImage map;
+		
+		DropArea *currentArea;
+	} background;
+	
 
 	struct {
 		QGridLayout *elementsLay;

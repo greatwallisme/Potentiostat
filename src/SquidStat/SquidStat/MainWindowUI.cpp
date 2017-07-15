@@ -53,7 +53,7 @@
 #include <QDrag>
 #include <QMimeData>
 
-#define ELEMENT_MIME_TYPE	"image/element"
+#include <functional>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -404,59 +404,6 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-#include <functional>
-
-class BuilderEventFilter : public QObject {
-public:
-	BuilderEventFilter(QObject *parent, std::function<void(void)> lambda) :
-		QObject(parent), _lambda(lambda) {}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		switch (e->type()) {
-			case QEvent::DragEnter: {
-				auto de = (QDragEnterEvent*)e;
-				if (de->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
-					de->accept();
-				}
-				else {
-					de->ignore();
-				}
-				return true;
-			} break;
-		}
-	}
-private:
-	std::function<void(void)> _lambda;
-};
-/*
-auto LineDrawer = [](QWidget *w, quint8 lineDirection, quint8 dropDirection) {
-	QRect rect = w->geometry();
-	QMargins margins = w->contentsMargins();
-
-	QPainter painter(w);
-	painter.setPen(QPen(QColor("#80939a"), 2));
-	if (lineDirection & LD_LEFT)
-		painter.drawLine(GetLeftLine(rect, margins));
-	if (lineDirection & LD_RIGHT)
-		painter.drawLine(GetRightLine(rect, margins));
-	if (lineDirection & LD_TOP)
-		painter.drawLine(GetTopLine(rect, margins));
-	if (lineDirection & LD_BOTTOM)
-		painter.drawLine(GetBottomLine(rect, margins));
-
-	if (0 != (lineDirection & dropDirection)) {
-		painter.setPen(QPen(QColor("#7b1a1e"), 2));
-		if (dropDirection & LD_LEFT)
-			painter.drawLine(QLine(0, 0, 0, rect.height()));
-		if (dropDirection & LD_RIGHT)
-			painter.drawLine(QLine(rect.width(), 0, rect.width(), rect.height()));
-		if (dropDirection & LD_TOP)
-			painter.drawLine(QLine(0, 0, rect.width(), 0));
-		if (dropDirection & LD_BOTTOM)
-			painter.drawLine(QLine(0, rect.height(), rect.width(), rect.height()));
-	}
-};
-//*/
 QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	static QWidget *w = 0;
 
@@ -514,8 +461,10 @@ public:
 
 				QDrag *drag = new QDrag(obj);
 				drag->setMimeData(mime);
-				drag->setPixmap(w->grab(QRect(startPoint, endPoint)));
-				drag->setHotSpot(me->pos() - QPoint(margins.left(), margins.top()));
+				auto pixmap = w->grab(QRect(startPoint, endPoint));
+				pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
+				drag->setPixmap(pixmap);
+				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
 
 				Qt::DropAction dropAction = drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
 			}
