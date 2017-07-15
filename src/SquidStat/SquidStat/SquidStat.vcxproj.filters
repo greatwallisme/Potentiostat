@@ -130,6 +130,9 @@
     <ClCompile Include="ListSeriesData.cpp">
       <Filter>_scr\MainWindow</Filter>
     </ClCompile>
+    <ClCompile Include="ExperimentCalcHelper.cpp">
+      <Filter>_scr</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -152,6 +155,9 @@
     </ClInclude>
     <ClInclude Include="ListSeriesData.h">
       <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperimentCalcHelper.h">
+      <Filter>_scr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

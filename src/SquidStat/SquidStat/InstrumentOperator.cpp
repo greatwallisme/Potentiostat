@@ -55,6 +55,10 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			LOG() << "Node complete";
 			break;
 
+    case OVERCURRENT_WARNING:
+      LOG() << "Overcurrent warning, channel stopped";
+        break;
+
 		default:
 			LOG() << "Unknown response";
 			break;

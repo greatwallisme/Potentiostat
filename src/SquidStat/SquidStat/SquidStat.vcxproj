@@ -106,6 +106,7 @@ mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="ExperimentCalcHelper.cpp" />
     <ClCompile Include="ExperimentReader.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_InstrumentEnumerator.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -176,6 +177,7 @@ mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
       </Command>
     </CustomBuild>
     <CustomBuild Include="AbstractExperiment.h" />
+    <ClInclude Include="ExperimentCalcHelper.h" />
     <ClInclude Include="ExperimentUIHelper.h" />
     <ClInclude Include="ExternalStructures.h" />
     <ClInclude Include="ExperimentFactoryInterface.h" />

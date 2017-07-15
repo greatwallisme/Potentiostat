@@ -18,16 +18,17 @@
 #define V4_VS_OCP_OBJ_NAME		"voltage-4-vs-ocp"
 #define T4_OBJECT_NAME			"voltage-4-time"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
+#define CURRENT_RANGE_OBJ_NAME  "current-range"
 
 #define V1_DEFAULT				0.1
-#define T1_DEFAULT				0
+#define T1_DEFAULT				10
 #define V2_DEFAULT				0.2
 #define T2_DEFAULT				0
 #define V3_DEFAULT				0.3
 #define T3_DEFAULT				0
 #define V4_DEFAULT				0.4
 #define T4_DEFAULT				0
-#define SAMPLING_INT_DEFAULT	1
+#define SAMPLING_INT_DEFAULT	0.25
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
@@ -43,7 +44,7 @@ QString Chronoamperometry::GetFullName() const {
 	return "Chronoamperometry/Chronocoulometry";
 }
 QString Chronoamperometry::GetDescription() const {
-	return "This experiment holds the working electrode at a constant potential while recording the current and charge passed. The working electrode is sequentially poised at up to four potentials for the specified duration of time";
+	return "This experiment holds the working electrode at a constant potential for a specified amount of time while recording the current and charge passed. Up to four potentials can be used sequentially.";
 }
 QStringList Chronoamperometry::GetCategory() const {
 	return QStringList() <<
@@ -65,6 +66,14 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
+
+  //TODO: add current ranging options
+  /*_INSERT_LEFT_ALIGN_COMMENT("Current range: ", row, 0);
+  _START_DROP_DOWN(CURRENT_RANGE_OBJ_NAME, row, 1);
+  _ADD_DROP_DOWN_ITEM("Autorange");
+  for (int i=0; i< )
+  _ADD_DROP_DOWN_ITEM("")*/
+
 	_INSERT_RIGHT_ALIGN_COMMENT("Potential 1 = ", row, 0);
 	_INSERT_TEXT_INPUT(V1_DEFAULT, V1_OBJECT_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
@@ -199,6 +208,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t1 * 1e8;
+  exp.currentRangeMode = AUTORANGE; //placeholder
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v1);
 	exp.DCPoint_pot.VPointVsOCP = _ocp1;
@@ -214,6 +224,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t2 * 1e8;
+  exp.currentRangeMode = AUTORANGE; //placeholder
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v2);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -229,6 +240,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t3 * 1e8;
+  exp.currentRangeMode = AUTORANGE; //placeholder
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v3);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -244,6 +256,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = t4 * 1e8;
+  exp.currentRangeMode = AUTORANGE; //placeholder
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v4);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -277,17 +290,16 @@ QStringList Chronoamperometry::GetYAxisParameters() const {
 void Chronoamperometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+  ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
-
-  ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
   
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
 	PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);

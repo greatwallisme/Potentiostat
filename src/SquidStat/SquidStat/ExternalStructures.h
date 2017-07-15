@@ -45,7 +45,7 @@ struct ProcessedDCData {
 };
 
 struct CommandPacket {
-	quint16 frame;
+	uint16_t frame;
 	FramelessComPacketHeader_t hdr;
 	char data[0];
 };
