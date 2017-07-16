@@ -202,7 +202,11 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
       </Command>
     </CustomBuild>
     <CustomBuild Include="AbstractExperiment.h" />
+<<<<<<< HEAD
+    <ClInclude Include="Disconnector.h" />
+=======
     <ClInclude Include="ExperimentCalcHelper.h" />
+>>>>>>> 2e4f23a431a5a5213d789d95209445bc341cae38
     <ClInclude Include="ExperimentUIHelper.h" />
     <ClInclude Include="ExternalStructures.h" />
     <ClInclude Include="ExperimentFactoryInterface.h" />

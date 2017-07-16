@@ -153,7 +153,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	//TODO: make a const. power discharge node type
 	//TODO: is there a constant voltage phase during discharge?
 
-	bool chargeFirst;
+	bool chargeFirst= false;
 	double upperVoltage;
 	double lowerVoltage;
 	double chgCurrent;
@@ -176,7 +176,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodDuration, REST_PERIOD_OBJ);
 	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodInterval, REST_PERIOD_INT_OBJ);
 	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
-	if (firstPhase.contains("Charge first"))
+	if (!firstPhase.contains("Discharge first"))
 	{
 		chargeFirst = true;
 	}
@@ -191,6 +191,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
 	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
+  exp.currentRangeMode = exp.DCPoint_galv.Irange;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -199,6 +200,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
 	exp.DCPoint_pot.Imax = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
@@ -212,10 +214,10 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = exp.isTail = false;
 	exp.nodeType = DCNODE_OCP;
 	exp.DCocp.Vmin = 0;
-	exp.DCocp.Vmax = 0x7fff;
+	exp.DCocp.Vmax = 0x7FFF;
 	//TODO exp.DCocp.dVdtMax = 0;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
-	exp.tMin = 25e6;
+	exp.tMin = restPeriodDuration * 1e8;
 	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -223,7 +225,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_GALV;
-	exp.tMin = 1e8;
+	exp.tMin = 3e8;
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
@@ -231,13 +233,15 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
 	exp.MaxPlays = 1;
+  exp.currentRangeMode = exp.DCPoint_galv.Irange;
 	PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e8;
+	exp.tMin = 3e8;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
 	exp.DCPoint_pot.Imax = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
@@ -251,11 +255,11 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = false;
 	exp.isTail = true;
 	exp.nodeType = DCNODE_OCP;
-	exp.DCocp.Vmin = 0;
-	exp.DCocp.Vmax = 0xffff;
+  exp.DCocp.Vmin = 0;
+  exp.DCocp.Vmax = 0x7FFF;
 	//exp.DCocp.dVdtMax = 0;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
-	exp.tMin = 25e6;
+	exp.tMin = restPeriodDuration * 1e8;
 	exp.tMax = restPeriodDuration * 1e8;
 	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
@@ -281,23 +285,24 @@ QStringList ChargeDischargeDC::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void ChargeDischargeDC::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void ChargeDischargeDC::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+  ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 2. / 3600.0;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
+  PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, processedData.ECE);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;

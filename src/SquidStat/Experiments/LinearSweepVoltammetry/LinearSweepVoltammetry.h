@@ -1,11 +1,9 @@
-#ifndef CYCLICVOLTAMMETRY_H
-#define CYCLICVOLTAMMETRY_H
+#pragma once
 
 #include <AbstractExperiment.h>
-#include <QtWidgets/QWidget>
 #include <ExperimentCalcHelper.h>
 
-class CyclicVoltammetry : public AbstractExperiment {
+class LinearSweepVoltammetry : public AbstractExperiment {
 public:
 	QString GetShortName() const;
 	QString GetFullName() const;
@@ -16,14 +14,11 @@ public:
 
 	QWidget* CreateUserInput() const;
 	NodesData GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const;
-	
+
 	QStringList GetXAxisParameters() const;
 	QStringList GetYAxisParameters() const;
-	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 
+	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 	void SaveDcDataHeader(QFile&) const;
 	void SaveDcData(QFile&, const DataMap&) const;
-private:
 };
-
-#endif // CYCLICVOLTAMMETRY_H

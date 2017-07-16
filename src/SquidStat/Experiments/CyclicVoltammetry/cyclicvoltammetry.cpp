@@ -28,10 +28,10 @@
 #define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
 
 QString CyclicVoltammetry::GetShortName() const {
-	return "Basic Cyclic Voltammetry";
+	return "Cyclic Voltammetry";
 }
 QString CyclicVoltammetry::GetFullName() const {
-	return "Basic Cyclic Voltammetry";
+	return "Cyclic Voltammetry (Basic)";
 }
 QString CyclicVoltammetry::GetDescription() const {
 	return "This experiment sweeps the potential of the working electrode back and forth between <b>upper potential</b> and <b>lower potential</b> at a constant <b>scan rate dE/dT</b> for a specified number of <b>cycles</b>.";
@@ -56,13 +56,16 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
+
+  //TODO: add current ranging input
+
 	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-	_START_DROP_DOWN("Starting potential reference selection id", row, 1);
+	_START_DROP_DOWN(START_V_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
@@ -77,7 +80,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN("Upper potential reference selection id", row, 1);
+	_START_DROP_DOWN(UPPER_V_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
@@ -92,7 +95,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN("Lower potential reference selection id", row, 1);
+	_START_DROP_DOWN(LOWER_V_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
@@ -131,10 +134,13 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	//*/
 
 	double startVoltage;
+  QString startVoltageVsOCP_str;
 	bool startVoltageVsOCP;
 	double upperVoltage;
+  QString upperVoltageVsOCP_str;
 	bool upperVoltageVsOCP;
 	double lowerVoltage;
+  QString lowerVoltageVsOCP_str;
 	bool lowerVoltageVsOCP;
 	double dEdt;
 	qint32 cycles;
@@ -143,21 +149,22 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(dEdt, SCAN_RATE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(startVoltageVsOCP_str, START_V_VS_OCP_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(upperVoltageVsOCP_str, UPPER_V_VS_OCP_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(lowerVoltageVsOCP_str, LOWER_V_VS_OCP_OBJ_NAME);
+  startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
+  upperVoltageVsOCP = upperVoltageVsOCP_str.contains("open circuit");
+  lowerVoltageVsOCP = lowerVoltageVsOCP_str.contains("open circuit");
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 2e8;
-	exp.samplingParams.ADCTimerDiv = 2;
-	exp.samplingParams.ADCTimerPeriod = 200000;
-	exp.samplingParams.ADCBufferSizeEven = 20;
-	exp.samplingParams.ADCBufferSizeOdd = 20;
-	exp.samplingParams.DACMultEven = 20;
-	exp.samplingParams.DACMultOdd = 20;
-	exp.samplingParams.PointsIgnored = 0;
-	exp.DCPoint_pot.VPointUserInput = (int)(startVoltage * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
+  exp.currentRangeMode = AUTORANGE; //placeholder
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.25);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+	exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP;
 	exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
@@ -170,11 +177,12 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt/1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(startVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
+  exp.currentRangeMode = AUTORANGE; //placeholder
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+	exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
+	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
 	exp.DCSweep_pot.Imax = 32767;
 	exp.DCSweep_pot.IRangeMax = RANGE0;
 	exp.DCSweep_pot.Imin = 0;
@@ -187,11 +195,12 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
+  exp.currentRangeMode = AUTORANGE; //placeholder
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCSweep_pot.VStartVsOCP = upperVoltageVsOCP;
+	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
+	exp.DCSweep_pot.VEndVsOCP = lowerVoltageVsOCP;
 	exp.DCSweep_pot.Imax = 32767;
 	exp.DCSweep_pot.IRangeMax = RANGE0;
 	exp.DCSweep_pot.Imin = 0;
@@ -205,11 +214,12 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	getSlewParameters(dEdt / 1000, &exp);
-	exp.DCSweep_pot.VStartUserInput = (int)(lowerVoltage * 3276.8);
-	exp.DCSweep_pot.VStartVsOCP = false;
-	exp.DCSweep_pot.VEndUserInput = (int)(upperVoltage * 3276.8);
-	exp.DCSweep_pot.VEndVsOCP = false;
+  exp.currentRangeMode = AUTORANGE; //placeholder
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+  exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
+	exp.DCSweep_pot.VStartVsOCP = lowerVoltageVsOCP;
+  exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
 	exp.DCSweep_pot.Imax = 32767;
 	exp.DCSweep_pot.IRangeMax = RANGE0;
 	exp.DCSweep_pot.Imin = 0;
@@ -237,23 +247,24 @@ QStringList CyclicVoltammetry::GetYAxisParameters() const {
 		PLOT_VAR_ECE <<
 		PLOT_VAR_CURRENT_INTEGRAL;
 }
-void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+  ProcessedDCData processedDCData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, processedDCData.current / timestamp / 3600.0);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
+	PUSH_BACK_DATA(PLOT_VAR_EWE, processedDCData.EWE);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, processedDCData.ECE);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedDCData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;
@@ -284,71 +295,4 @@ void CyclicVoltammetry::SaveDcData(QFile &saveFile, const DataMap &container) co
 	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
 
 	SAVE_DATA_END();
-}
-void CyclicVoltammetry::getSlewParameters(double dVdt, ExperimentNode_t * pNode) const
-{
-	
-	//TODO: make sure that ADCMult and DACMult aren't too big for hardware buffers
-
-
-	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
-	int dt_min = 1;
-	int HardwareVersion = 1;
-	switch (HardwareVersion)
-	{
-		case 0:
-			dt_min = 50000; //500 microseconds * 100 ticks/microsecond
-			break;
-		case 1:
-			dt_min = 500;	//5 microseconds * 100 ticks/microsecond
-			break;
-		default:
-			break;
-	}
-	pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
-	pNode->DCSweep_pot.VStep = 1;
-
-	/* 1) Minimize dt, maximize DACMult*/
-	uint32_t dt;
-	do
-	{
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven);		//3276.8 is a placeholder for cal->m_DAC,V
-		if (dt / dt_min > 1)
-		{
-			if (pNode->samplingParams.DACMultEven << 1 < DACdcBUF_SIZE)
-			{
-				pNode->samplingParams.DACMultEven <<= 1;
-				pNode->samplingParams.DACMultOdd <<= 1;
-			}
-			else
-				break;
-		}
-	} while (dt / dt_min > 1);
-
-	/* 2) Increase VStep, if necessary */
-	while (dt < dt_min)
-	{
-		pNode->DCSweep_pot.VStep++;
-		dt = (uint32_t)(1 / dVdt * 1e8 / 3276.8 / pNode->samplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
-	}
-
-	/* 3) Calculate ADCMult */
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-	while (pNode->samplingParams.ADCBufferSizeEven * dt > 1e8)
-	{
-		pNode->samplingParams.ADCBufferSizeEven >>= 1;
-		pNode->samplingParams.ADCBufferSizeOdd >>= 1;
-	}
-	if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
-		pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
-
-	pNode->samplingParams.ADCTimerDiv = 0;
-	int timerDiv = 1;
-	pNode->samplingParams.ADCTimerPeriod = dt;
-	while (pNode->samplingParams.ADCTimerPeriod > 2147483648)
-	{
-		pNode->samplingParams.ADCTimerDiv++;
-		timerDiv <<= 1;
-		pNode->samplingParams.ADCTimerPeriod = dt / timerDiv;
-	} 
 }
