@@ -13,5 +13,7 @@ moc/
 UpgradeLog.htm
 GeneratedFiles/
 src/SquidStat/SquidStat/prebuilt/*
+src/SquidStat/SquidStat/elements/*
+src/SquidStat/SquidStat/custom/*
 src/SquidStat/SquidStat/ExperimentValues.ini
 src/SquidStat/SquidStat/SquidStatParameters.ini

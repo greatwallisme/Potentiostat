@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ExampleExperiment.cpp" />
+    <ClCompile Include="ExampleElement.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Factory.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -29,7 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\SquidStat\AbstractExperiment.h" />
     <ClInclude Include="..\..\SquidStat\ExperimentFactoryInterface.h" />
-    <ClInclude Include="ExampleExperiment.h" />
+    <ClInclude Include="ExampleElement.h" />
     <CustomBuild Include="Factory.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing Factory.h...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
@@ -54,7 +54,7 @@
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{30A251DE-4089-4203-9BD0-22CBDAF64A59}</ProjectGuid>
+    <ProjectGuid>{E66B58BC-DB4D-4EF5-8A0B-D56A1E80510B}</ProjectGuid>
     <Keyword>Qt4VSv1.0</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -73,12 +73,12 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\prebuilt\</OutDir>
+    <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\elements\</OutDir>
     <IncludePath>.\..\..\..\_arduino\retrofit_firmware\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\prebuilt\</OutDir>
+    <OutDir>$(SolutionDir)\..\..\out\$(Configuration)\elements\</OutDir>
     <IncludePath>.\..\..\..\_arduino\retrofit_firmware\;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <IntDir>$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>

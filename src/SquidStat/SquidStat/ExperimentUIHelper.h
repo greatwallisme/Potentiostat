@@ -13,26 +13,10 @@
 #include <QFile>
 
 #include <UIHelper.hpp>
+#include <Disconnector.h>
 
 #define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"
 
-class Disconnector : public QObject {
-public:
-	Disconnector(QObject *parent) : QObject(parent) {}
-	~Disconnector() {
-		foreach(auto c, connections) {
-			disconnect(c);
-		}
-	}
-
-	Disconnector& operator <<(const QMetaObject::Connection &c) {
-		connections << c;
-		return *this;
-	}
-
-private:
-	QList<QMetaObject::Connection> connections;
-};
 
 #define GET_DATA_PTR(expDataRaw) \
 	(ExperimentalAcData*)expDataRaw.data()
@@ -116,7 +100,22 @@ private:
 		lay->addWidget(lbl, row, col); \
 	}
 
-#define _INSERT_TEXT_INPUT(default_value, obj_name, row, col) \
+#define _INSERT_TEXT_INPUT_ELEMENT(default_value, obj_name, row, col) \
+	{	\
+		auto inputsPtr = &inputs; \
+		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
+		if(!inputs.contains(obj_name)) {		\
+			inputs[obj_name] = default_value;	\
+		}										\
+		led->setText(inputs.value(obj_name, default_value).toString()); \
+		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
+		lay->addWidget(led, row, col); \
+		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
+			(*inputsPtr)[obj_name] = str; \
+		}); \
+	}
+
+#define _INSERT_TEXT_INPUT_EXPERIMENT(default_value, obj_name, row, col) \
 	{	\
 		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
 		led->setText(settings.value(obj_name, default_value).toString()); \
@@ -129,12 +128,35 @@ private:
 		}); \
 	}
 
+#ifdef BUILDER_ELEMENTS_USER_INPUTS
+	#define _INSERT_TEXT_INPUT _INSERT_TEXT_INPUT_ELEMENT
+#else
+	#define _INSERT_TEXT_INPUT _INSERT_TEXT_INPUT_EXPERIMENT
+#endif
+
 #define _START_RADIO_BUTTON_GROUP(obj_name)	\
 	{										\
 		auto group = new QButtonGroup(ret);	\
 		OBJ_NAME(group, obj_name);
 
-#define _END_RADIO_BUTTON_GROUP()				\
+#define _END_RADIO_BUTTON_GROUP_ELEMENTS()		\
+		if(!inputs.contains(group->objectName())) {	\
+			inputs[group->objectName()] = group->checkedButton()->text(); \
+		}										\
+		auto val = inputs.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
+		auto inputsPtr = &inputs;				\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			(*inputsPtr)[group->objectName()] = button->text(); \
+		});										\
+	}
+
+#define _END_RADIO_BUTTON_GROUP_EXPERIMENT()				\
 		auto val = settings.value(group->objectName(), "").toString();\
 		foreach(auto rbt, group->buttons()) {	\
 			if(rbt->text() == val)	{			\
@@ -148,6 +170,13 @@ private:
 			localSettings.setValue(group->objectName(), button->text()); \
 		});										\
 	}
+
+
+#ifdef BUILDER_ELEMENTS_USER_INPUTS
+	#define _END_RADIO_BUTTON_GROUP _END_RADIO_BUTTON_GROUP_ELEMENTS
+#else
+	#define _END_RADIO_BUTTON_GROUP _END_RADIO_BUTTON_GROUP_EXPERIMENT
+#endif
 
 #define _INSERT_RADIO_BUTTON(text, row, col)	\
 	{											\
@@ -165,7 +194,7 @@ private:
 	auto butLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));		\
 	lay->addLayout(butLay, row, col);
 
-#define _END_RADIO_BUTTON_GROUP_LAYOUT()		\
+#define _END_RADIO_BUTTON_GROUP_LAYOUT_EXPERIMENT()		\
 		butLay->addStretch(1);					\
 		auto val = settings.value(group->objectName(), "").toString();\
 		foreach(auto rbt, group->buttons()) {	\
@@ -180,6 +209,31 @@ private:
 			localSettings.setValue(group->objectName(), button->text()); \
 		});										\
 	}
+
+#define _END_RADIO_BUTTON_GROUP_LAYOUT_ELEMENTS()		\
+		butLay->addStretch(1);					\
+		if(!inputs.contains(group->objectName())) {		\
+			inputs[group->objectName()] = group->checkedButton()->text(); \
+		}										\
+		auto val = inputs.value(group->objectName(), "").toString();\
+		foreach(auto rbt, group->buttons()) {	\
+			if(rbt->text() == val)	{			\
+				rbt->setChecked(true);			\
+				break;							\
+			}									\
+		}										\
+		auto inputsPtr = &inputs;				\
+		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+			(*inputsPtr)[group->objectName()] = button->text(); \
+		});										\
+	}
+
+
+#ifdef BUILDER_ELEMENTS_USER_INPUTS
+	#define _END_RADIO_BUTTON_GROUP_LAYOUT _END_RADIO_BUTTON_GROUP_LAYOUT_ELEMENTS
+#else
+	#define _END_RADIO_BUTTON_GROUP_LAYOUT _END_RADIO_BUTTON_GROUP_LAYOUT_EXPERIMENT
+#endif
 
 #define _INSERT_RADIO_BUTTON_LAYOUT(text)	\
 	{											\
@@ -200,7 +254,7 @@ private:
 		combo->setView(comboList);						\
 		lay->addWidget(combo, row, col);
 
-#define _END_DROP_DOWN()								\
+#define _END_DROP_DOWN_EXPERIMENT()								\
 		auto val = settings.value(combo->objectName(), "").toString();\
 		for(int i = 0; i < combo->count(); ++i) {		\
 			if (val == combo->itemText(i)) {			\
@@ -214,6 +268,29 @@ private:
 			localSettings.setValue(combo->objectName(), str); \
 		});												\
 	}
+
+#define _END_DROP_DOWN_ELEMENTS()						\
+		if(!inputs.contains(combo->objectName())) {		\
+			inputs[combo->objectName()] = combo->currentText(); \
+		}												\
+		auto val = inputs.value(combo->objectName(), "").toString();\
+		for(int i = 0; i < combo->count(); ++i) {		\
+			if (val == combo->itemText(i)) {			\
+				combo->setCurrentIndex(i);				\
+				break;									\
+			}											\
+		}												\
+		auto inputsPtr = &inputs;						\
+		*diconnector << CONNECT(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
+			(*inputsPtr)[combo->objectName()] = str; \
+		});												\
+	}
+
+#ifdef BUILDER_ELEMENTS_USER_INPUTS
+	#define _END_DROP_DOWN _END_DROP_DOWN_ELEMENTS
+#else
+	#define _END_DROP_DOWN _END_DROP_DOWN_EXPERIMENT
+#endif
 
 #define _ADD_DROP_DOWN_ITEM(text)	\
 		combo->addItem(text);

@@ -7,6 +7,8 @@
 #include "ExternalStructures.h"
 
 #include <AbstractExperiment.h>
+#include <AbstractBuilderElement.h>
+#include <BuilderWidget.h>
 
 #include <QList>
 #include <QUuid>
@@ -40,13 +42,9 @@ public slots:
     void ApplyStyle();
 	
 	void LoadPrebuildExperiments();
+	void LoadBuilderElements();
 	void PrebuiltExperimentSelected(const AbstractExperiment*);
-
-	/*
-	void SearchHwVendor();
-	void SearchHwHandshake();
-	//*/
-
+	
 	void SelectHardware(const QString&, quint8 channel);
 
 	void StartExperiment(QWidget*);
@@ -62,12 +60,15 @@ public slots:
 
 	void UpdateCurrentExperimentState();
 
+	void SaveCustomExperiment(const QString&, const BuilderContainer&, const QString &fileName);
+
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, bool paused);
 	void AcDataArrived(const QUuid&, quint8 channel, const QByteArray &expData, bool paused);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
+	void BuilderElementsFound(const QList<AbstractBuilderElement*>&);
 
 	void CreateNewDataWindow(const StartExperimentParameters&);
 
@@ -85,13 +86,10 @@ signals:
 private:
 	void CleanupCurrentHardware();
 	void CleanupExperiments();
-	//void FillHardware(const InstrumentList &);
+	void CleanupBuilderElements();
 
 	MainWindowUI *ui;
 	InstrumentEnumerator *instrumentEnumerator;
-
-	//InstrumentOperator *instrumentOperator;
-	
 
 	struct InstrumentHandler {
 		InstrumentInfo info;
@@ -118,6 +116,11 @@ private:
 		QList<AbstractExperiment*> expList;
 		QList<QPluginLoader*> expLoaders;
 	} prebuiltExperiments;
+
+	struct {
+		QList<AbstractBuilderElement*> elements;
+		QList<QPluginLoader*> loaders;
+	} builderElements;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);

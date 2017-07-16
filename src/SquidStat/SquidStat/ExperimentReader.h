@@ -6,6 +6,7 @@
 #include <QVector>
 
 #include "ExternalStructures.h"
+#include "BuilderWidget.h"
 
 struct NodeContainer {
 	enum Type : qint32 {
@@ -32,4 +33,8 @@ namespace ExperimentReader {
 	ExperimentContainer GenerateExperimentContainer(const QByteArray &jsonData);
 	QList<ExperimentNode_t*> GetNodeListForUserInput(ExperimentContainer&);
 	QVector<ExperimentNode_t> GetNodeArrayForInstrument(ExperimentContainer&);
+};
+
+namespace ExperimentWriter {
+	QByteArray GenerateJsonObject(const QString&, const BuilderContainer&);
 };

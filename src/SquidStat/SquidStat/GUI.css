@@ -348,11 +348,60 @@ QLabel[experiment-params-widget="low-margin"] {
 #node-builder-label {
 	qproperty-alignment: "AlignHCenter | AlignVCenter";
 }
+#builder-top-button-owner {
+	border: none;
+	background-color: #00000000;
+	
+	margin-top: 13px;
+	margin-bottom: 13px;
+	margin-right: 15px;
+	margin-left: 30px;
+}
 #exp-builder-top-buttons-replacement {
-	margin: 1px;
-	min-height: 70px;
-	max-height: 70px;
-	background-color: #e9f6fc;
+	background-color: #00000000;
+	border: none;
+	
+	min-width: 100px;
+	max-width: 100px;
+}
+#builder-duplicate-button {
+	qproperty-icon: url(:/GUI/Resources/builder-duplicate.png);
+}
+#builder-delete-button {
+	qproperty-icon: url(:/GUI/Resources/builder-delete.png);
+}
+#builder-select-all-button {
+	qproperty-icon: url(:/GUI/Resources/builder-select-all.png);
+}
+#builder-duplicate-button,
+#builder-select-all-button,
+#builder-delete-button {
+	border: 2px solid #00000000;
+	background-color: #00000000;
+	
+	margin-right: 5px;
+	margin-left: 5px;
+	padding: 7px;
+	
+	qproperty-iconSize: 21px 21px;
+}
+#builder-duplicate-button:hover,
+#builder-select-all-button:hover,
+#builder-delete-button:hover {
+	border-bottom: 2px solid #9ecfd3;
+}
+#builder-save-file-button {
+	qproperty-icon: url(:/GUI/Resources/builder-save-file.png);
+}
+#builder-open-file-button {
+	qproperty-icon: url(:/GUI/Resources/builder-open-file.png);
+}
+#builder-save-file-button,
+#builder-open-file-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-iconSize: 40px 40px;
 }
 #exp-builder-right-buttons-replacement {
 	margin: 1px;
@@ -393,7 +442,35 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-left: 9px;
 	margin-right: 9px;
 }
-#node-builder-owner {
+#select-element-overlay-icon {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-pixmap: url(:/GUI/Resources/builder-element-selected.png);
+	qproperty-alignment: "AlignRight | AlignTop";
+	
+	margin: 0px;
+	padding-right: 10px;
+	padding-top: 10px;
+}
+#select-element-overlay-name {
+	border: none;
+	background-color: #00000000;
+	color: #ffffff;
+	font-size: 14px;
+	padding-left: 10px;
+	padding-bottom: 10px;
+	
+	qproperty-wordWrap: true;
+}
+#select-element-overlay {
+	border: 3px solid #54c08a;
+	border-radius: 3px;
+	
+	background-color: #e02f3c41;
+	qproperty-frameShadow: Sunken;	
+}
+#node-builder-element {
 	border: none;
 	background-color: #ffffff;
 	margin: 16px;
@@ -448,6 +525,11 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	max-width: 122px;
 	max-height: 30px;
+}
+#custom-exp-name-dialog {
+	border: 1px solid #7b1a1e;
+	min-width: 500px;
+	max-width: 500px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #new-data-window-owner {

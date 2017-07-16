@@ -34,6 +34,13 @@
         <file>Resources/search-icon.png</file>
         <file>Resources/search-clear-button.png</file>
         <file>Resources/spin-box-up.png</file>
-        <file>Resources/node-pic-example.png</file>
+        <file>Resources/builder-element-selected.png</file>
+        <file>Resources/builder-delete.png</file>
+        <file>Resources/builder-duplicate.png</file>
+        <file>Resources/builder-open-file.png</file>
+        <file>Resources/builder-save-file.png</file>
+        <file>Resources/builder-select-all.png</file>
+        <file>Resources/zoom-in.png</file>
+        <file>Resources/zoom-out.png</file>
     </qresource>
 </RCC>

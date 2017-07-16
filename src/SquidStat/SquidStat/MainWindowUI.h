@@ -100,6 +100,7 @@ private:
 	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
 	static QString GetNewTitle(QWidget*, const QString&);
+	static QString GetCustomExperimentName(QWidget*, const QString &);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
@@ -160,6 +161,14 @@ private:
 			quint64 stamp;
 		} plotCounter;
 	};
+
+	struct BuilderHandler {
+		QList<QMetaObject::Connection> connections;
+		BuilderWidget *builder;
+		QWidget *userInputs;
+		QString fileName;
+		QString name;
+	} builderTabs;
 
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;

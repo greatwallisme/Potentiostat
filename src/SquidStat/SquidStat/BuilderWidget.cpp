@@ -2,6 +2,7 @@
 
 #include "Log.h"
 #include "UIHelper.hpp"
+#include "Disconnector.h"
 
 #include <QSpinBox>
 #include <QPainter>
@@ -74,9 +75,43 @@ QList<QLine> GetLines(QWidget *w, const LineDirection &ld) {
 	return ret;
 }
 
+class ElementEventFilter : public QObject {
+public:
+	ElementEventFilter(QObject *parent, BuilderWidget *bw) :
+		QObject(parent), _bw(bw) {}
 
-BuildExpContainer::BuildExpContainer(QWidget *parent, const BuilderContainer &cont) :
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::MouseButtonPress) {
+			auto w = qobject_cast<QWidget*>(obj);
+			if (!w) {
+				return false;
+			}
+
+			auto me = (QMouseEvent*)e;
+
+			auto marg = w->contentsMargins();
+			QPoint bottomRight = QPoint(w->width(), w->height());
+			bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
+
+			QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
+
+			if (!QRect(topLeft, bottomRight).contains(me->pos())) {
+				return false;
+			}
+
+			emit _bw->ElementSelected(w);
+			return true;
+		}
+		return false;
+	}
+
+private:
+	BuilderWidget *_bw;
+};
+
+BuildExpContainer::BuildExpContainer(BuilderWidget *parent, const BuilderContainer &cont, QUuid id) :
 	QFrame(parent),
+	_bw(parent),
 	bc(cont)
 {
 	OBJ_NAME(this, "node-builder-container");
@@ -90,6 +125,13 @@ BuildExpContainer::BuildExpContainer(QWidget *parent, const BuilderContainer &co
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(bc.repetition);
+
+	auto disconnector = new Disconnector(mult);
+
+	*disconnector <<
+	connect(mult, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), [=](int val) {
+		_bw->SetRepeats(id, val);
+	});
 }
 void BuildExpContainer::PlaceWidgets() {
 	if (!ui.elementsLay) {
@@ -131,14 +173,35 @@ void BuildExpContainer::paintEvent(QPaintEvent *e) {
 void BuildExpContainer::resizeEvent(QResizeEvent *e) {
 	emit UpdateBackgroundMap();
 }
+void BuildExpContainer::mousePressEvent(QMouseEvent *me) {
+	auto w = this;
+
+	auto marg = w->contentsMargins();
+	QPoint bottomRight = QPoint(w->width(), w->height());
+	bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
+
+	QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
+
+	if (!QRect(topLeft, bottomRight).contains(me->pos())) {
+		me->ignore();
+		return;
+	}
+
+	emit _bw->ElementSelected(w);
+	me->accept();
+}
 
 BuilderWidget::BuilderWidget(QWidget *parent) :
 	QFrame(parent)
 {
 	background.currentArea = 0;
+	ui.selectOverlay = 0;
+	selectedBc = 0;
 
 	connect(this, &BuilderWidget::EnqueueUpdateBackgroundMap,
 		this, &BuilderWidget::UpdateBackgroundMap, Qt::QueuedConnection);
+	connect(this, &BuilderWidget::ElementSelected,
+		this, &BuilderWidget::HandleSelection, Qt::QueuedConnection);
 
 	OBJ_NAME(this, "build-exp-holder");
 	this->setAcceptDrops(true);
@@ -151,7 +214,14 @@ BuilderWidget::BuilderWidget(QWidget *parent) :
 	PlaceWidgets();
 	emit EnqueueUpdateBackgroundMap();
 }
+const BuilderContainer& BuilderWidget::GetContainer() {
+	return container;
+}
 void BuilderWidget::InitContainer() {
+	container.type = BuilderContainer::SET;
+	container.repetition = 1;
+	container.w = 0;
+	container.elem.ptr = 0;
 	/*/
 	container.repetition = 20;
 	container.elements
@@ -217,7 +287,7 @@ void BuilderWidget::InitWidgets() {
 		switch (it->type) {
 			case BuilderContainer::ELEMENT:
 				if (!it->w) {
-					it->w = CreateBuildExpElementWidget(*it);
+					it->w = CreateBuildExpElementWidget(*it, it->id);
 					it->w->hide();
 				}
 				break;
@@ -225,11 +295,11 @@ void BuilderWidget::InitWidgets() {
 			case BuilderContainer::SET:
 				for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
 					if (!cIt->w) {
-						cIt->w = CreateBuildExpElementWidget(*cIt);
+						cIt->w = CreateBuildExpElementWidget(*cIt, cIt->id);
 					}
 				}
 				if (!it->w) {
-					it->w = CreateBuildExpContainerWidget(*it);
+					it->w = CreateBuildExpContainerWidget(*it, it->id);
 				}
 				break;
 		}
@@ -266,13 +336,14 @@ void BuilderWidget::UpdateLines() {
 		}
 	}
 }
-QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc) {
+QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc, QUuid id) {
 	if (bc.type != BuilderContainer::ELEMENT) {
 		LOG() << "It is not an ELEMENT!";
 		return 0;
 	}
 
-	auto *w = OBJ_NAME(new QFrame(this), "node-builder-owner");
+	auto *w = OBJ_NAME(new QFrame(this), "node-builder-element");
+	w->installEventFilter(new ElementEventFilter(w, this));
 
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
@@ -282,21 +353,28 @@ QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc) 
 	lay->addWidget(label = OBJ_NAME(new QLabel, "node-builder-label"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-single"));
 
-	label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
+	label->setPixmap(bc.elem.ptr->GetImage());
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(bc.repetition);
 
+	auto disconnector = new Disconnector(mult);
+	
+	*disconnector <<
+	connect(mult, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged), [=](int val) {
+		SetRepeats(id, val);
+	});
+
 	return w;
 }
-QWidget* BuilderWidget::CreateBuildExpContainerWidget(const BuilderContainer &bc) {
+QWidget* BuilderWidget::CreateBuildExpContainerWidget(const BuilderContainer &bc, QUuid id) {
 	if (bc.type != BuilderContainer::SET) {
 		LOG() << "It is not a SET!";
 		return 0;
 	}
 
-	auto cont = new BuildExpContainer(this, bc);
+	auto cont = new BuildExpContainer(this, bc, id);
 
 	connect(cont, &BuildExpContainer::UpdateBackgroundMap,
 		this, &BuilderWidget::UpdateBackgroundMap, Qt::QueuedConnection);
@@ -397,28 +475,39 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 		}
 
 		auto area = background.currentArea;
-		
-		static int i = 100;
+		auto byteArray = e->mimeData()->data(ELEMENT_MIME_TYPE);
+		auto emd = (ElementMimeData*)byteArray.data();
+
 		if (area->list) {
 			BuilderContainer bc;
 			bc.type = BuilderContainer::ELEMENT;
-			bc.repetition = i++;
+			bc.repetition = 1;
+			bc.id = QUuid::createUuid();
 			bc.w = 0;
+			bc.elem.ptr = emd->elem;
+			bc.elem.name = emd->elem->GetFullName();
+			bc.elem.ptr->CreateUserInput(bc.elem.input)->deleteLater();
 
 			area->list->insert(area->before, bc);
 		}
 		else {
 			BuilderContainer bc;
 			bc.type = BuilderContainer::ELEMENT;
-			bc.repetition = i++;
+			bc.repetition = 1;
+			bc.id = QUuid::createUuid();
 			bc.w = 0;
+			bc.elem.ptr = emd->elem;
+			bc.elem.name = emd->elem->GetFullName();
+			bc.elem.ptr->CreateUserInput(bc.elem.input)->deleteLater();
 
 			BuilderContainer oldBc = *area->before;
 
 			BuilderContainer newCont;
 			newCont.type = BuilderContainer::SET;
 			newCont.repetition = 1;
+			bc.id = QUuid::createUuid();
 			newCont.w = 0;
+			newCont.elem.ptr = 0;
 			
 			if (area->dropAction == BackgroundDescriptor::BEFORE) {
 				newCont.elements << bc;
@@ -445,7 +534,170 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 void BuilderWidget::resizeEvent(QResizeEvent *e) {
 	emit EnqueueUpdateBackgroundMap();
 }
+void BuilderWidget::mousePressEvent(QMouseEvent *e) {
+	HandleSelection(0);
+}
+void BuilderWidget::HandleSelection(QWidget *w) {
+	if (ui.selectOverlay) {
+		ui.selectOverlay->deleteLater();
+		ui.selectOverlay = 0;
 
+		selectedBc = 0;
+	}
+
+	if (!w) {
+		emit BuilderContainerSelected(selectedBc);
+		return;
+	}
+
+	auto &bc(selectedBc);
+
+	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
+		if (it->w == w) {
+			bc = &(*it);
+			break;
+		}
+
+		if (it->type == BuilderContainer::SET) {
+			for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+				if (cIt->w == w) {
+					bc = &(*cIt);
+					break;
+				}
+			}
+			if (bc) {
+				break;
+			}
+		}
+	}
+
+	if (!bc) {
+		emit BuilderContainerSelected(selectedBc);
+		return;
+	}
+
+	int overlayPadding = 0;
+	if (bc->type == BuilderContainer::SET) {
+		overlayPadding = 1;
+	}
+
+	auto marg = w->contentsMargins();
+	QPoint bottomRight = QPoint(w->width(), w->height());
+	bottomRight -= QPoint(marg.right() + overlayPadding, marg.bottom());
+
+	QPoint topLeft = QPoint(marg.left(), marg.top());
+	
+	ui.selectOverlay = OBJ_NAME(new QFrame(w), "select-element-overlay");
+	ui.selectOverlay->setGeometry(QRect(topLeft, bottomRight));
+
+	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(ui.selectOverlay)));
+	lay->addWidget(OBJ_NAME(new QLabel(), "select-element-overlay-icon"));
+	lay->addWidget(OBJ_NAME(new QLabel(bc->elem.name), "select-element-overlay-name"));
+
+	ui.selectOverlay->show();
+	ui.selectOverlay->raise();
+	
+	emit BuilderContainerSelected(selectedBc);
+}
+void BuilderWidget::DeleteSelected() {
+	if (!selectedBc) {
+		return;
+	}
+
+	auto toDeleteBc = selectedBc;
+
+	HandleSelection(0);
+
+	for (int i = 0; i < container.elements.count(); ++i) {
+		auto &currentBc(container.elements[i]);
+
+		if (&currentBc == toDeleteBc) {
+			auto contW = qobject_cast<BuildExpContainer*>(currentBc.w);
+			if (contW) {
+				disconnect(contW, &BuildExpContainer::UpdateBackgroundMap,
+					this, &BuilderWidget::UpdateBackgroundMap);
+				disconnect(this, &BuilderWidget::RequestPlaceWidgets,
+					contW, &BuildExpContainer::PlaceWidgets);
+			}
+			currentBc.w->deleteLater();
+			container.elements.removeAt(i);
+
+			break;
+		}
+
+		if (BuilderContainer::SET != currentBc.type) {
+			continue;
+		}
+
+		bool found = false;
+		
+		for (int j = 0; j < currentBc.elements.count(); ++j) {
+			auto &currentSubBc(currentBc.elements[j]);
+			
+			if (&currentSubBc == toDeleteBc) {
+				auto contW = qobject_cast<BuildExpContainer*>(currentSubBc.w);
+				if (contW) {
+					disconnect(contW, &BuildExpContainer::UpdateBackgroundMap,
+						this, &BuilderWidget::UpdateBackgroundMap);
+					disconnect(this, &BuilderWidget::RequestPlaceWidgets,
+						contW, &BuildExpContainer::PlaceWidgets);
+				}
+				currentSubBc.w->deleteLater();
+				currentBc.elements.removeAt(j);
+
+				if (currentBc.elements.count() == 1) {
+					auto it = currentBc.elements.begin();
+
+					auto backup = *it;
+					backup.w->setParent(currentBc.w->parentWidget());
+
+					currentBc.w->deleteLater();
+					currentBc = backup;
+				}
+
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			break;
+		}
+	}
+
+	UpdateLines();
+	PlaceWidgets();
+	emit EnqueueUpdateBackgroundMap();
+}
+void BuilderWidget::SetTotalRepeats(int val) {
+	container.repetition = val;
+}
+void BuilderWidget::SetRepeats(QUuid id, int val) {
+	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
+		if (id == it->id) {
+			it->repetition = val;
+			break;
+		}
+
+		if (BuilderContainer::SET != it->type) {
+			continue;
+		}
+
+		bool found = false;
+
+		for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+			if (id == cIt->id) {
+				cIt->repetition = val;
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			break;
+		}
+	}
+}
 QColor GetColor(quint32 id) {
 	QString colorName = QString("#%1").arg(0x00ffffff & id, 6, 0x10, QChar('0')).toUpper();
 	return QColor(colorName);
@@ -455,7 +707,6 @@ quint32 GetNexColorId(quint32 id) {
 	//id *= 123;
 	return id;
 }
-
 bool operator < (const QColor &a, const QColor &b) {
 	return a.name() < b.name();
 }

@@ -65,7 +65,9 @@ copy $(ProjectDir)\GUI.css $(OutDir)\</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rmdir prebuilt
-mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+mklink /D /J prebuilt $(OutDir)\..\prebuilt
+rmdir elements
+mklink /D /J elements $(OutDir)\..\elements</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -97,11 +99,15 @@ copy $(ProjectDir)\GUI.css $(OutDir)\ /Y
 copy $(SolutionDir)\..\..\3rdparty\qwt\bin\lib\qwt.dll $(OutDir)\
 copy $(SolutionDir)\..\..\3rdparty\qtcsv-out\lib-release\qtcsv.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
-copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y</Command>
+copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y
+mkdir $(OutDir)\elements\
+copy $(ProjectDir)\elements\*.dll $(OutDir)\elements\ /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rmdir prebuilt
-mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
+mklink /D /J prebuilt $(OutDir)\..\prebuilt
+rmdir elements
+mklink /D /J elements $(OutDir)\..\elements</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -177,6 +183,8 @@ mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DWIN64 -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_SERIALPORT_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtSerialPort" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets" "-I.\..\..\..\..\_arduino\retrofit_firmware"</Command>
     </CustomBuild>
+    <ClInclude Include="AbstractBuilderElement.h" />
+    <ClInclude Include="BuilderElementFactoryInterface.h" />
     <ClInclude Include="Config.h" />
     <CustomBuild Include="ExperimentReader.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -193,6 +201,7 @@ mklink /D /J prebuilt $(OutDir)\..\prebuilt</Command>
       </Command>
     </CustomBuild>
     <CustomBuild Include="AbstractExperiment.h" />
+    <ClInclude Include="Disconnector.h" />
     <ClInclude Include="ExperimentUIHelper.h" />
     <ClInclude Include="ExternalStructures.h" />
     <ClInclude Include="ExperimentFactoryInterface.h" />

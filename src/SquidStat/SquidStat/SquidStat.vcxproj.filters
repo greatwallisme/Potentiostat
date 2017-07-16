@@ -56,6 +56,9 @@
     <Filter Include="_scr\Experiments">
       <UniqueIdentifier>{8289f32b-cdfb-4ee4-9fea-0673be5b2c79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\BuilderElements">
+      <UniqueIdentifier>{086f936d-75b4-45bc-962f-69bc72677a14}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -160,6 +163,15 @@
       <Filter>_scr\Experiments</Filter>
     </ClInclude>
     <ClInclude Include="ListSeriesData.h">
+      <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="AbstractBuilderElement.h">
+      <Filter>_scr\BuilderElements</Filter>
+    </ClInclude>
+    <ClInclude Include="BuilderElementFactoryInterface.h">
+      <Filter>_scr\BuilderElements</Filter>
+    </ClInclude>
+    <ClInclude Include="Disconnector.h">
       <Filter>_scr\MainWindow</Filter>
     </ClInclude>
   </ItemGroup>

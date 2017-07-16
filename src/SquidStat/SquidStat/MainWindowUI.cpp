@@ -82,6 +82,7 @@ MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
 	prebuiltExperimentData.userInputs = 0;
+	builderTabs.userInputs = 0;
 
 	mw->setObjectName("mainUI");
 	mw->ApplyStyle();
@@ -411,7 +412,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 		return w;
 	}
 
-
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
@@ -422,19 +422,25 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
-	//mult->setValue(builder.container.repetition);
+	mult->setValue(1);
 
 	auto buildExpHolderOwner = new BuilderWidget(mw);
+
+	builderTabs.builder = buildExpHolderOwner;
 
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
 	buildExpHolder->setWidget(buildExpHolderOwner);
 	
+	CONNECT(mult, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+		buildExpHolderOwner, &BuilderWidget::SetTotalRepeats);
+
 	return w;
 }
 class ElementListEventFiler : public QObject {
 public:
-	ElementListEventFiler(QObject *parent) : QObject(parent) {}
+	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
+		QObject(parent), _elem(elem) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
 		if (e->type() == QEvent::MouseButtonPress) {
@@ -456,13 +462,17 @@ public:
 				endPoint.setX(rect.width() - margins.right());
 				endPoint.setY(rect.height() - margins.bottom());
 
+				ElementMimeData emd;
+				emd.elem = _elem;
+
 				auto mime = new QMimeData;
-				mime->setData(ELEMENT_MIME_TYPE, QByteArray());
+				mime->setData(ELEMENT_MIME_TYPE, QByteArray((char*)&emd, sizeof(ElementMimeData)));
+
+				auto pixmap = w->grab(QRect(startPoint, endPoint));
+				pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
 
 				QDrag *drag = new QDrag(obj);
 				drag->setMimeData(mime);
-				auto pixmap = w->grab(QRect(startPoint, endPoint));
-				pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
 				drag->setPixmap(pixmap);
 				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
 
@@ -473,6 +483,9 @@ public:
 		}
 		return false;
 	}
+
+private:
+	AbstractBuilderElement *_elem;
 };
 QWidget* MainWindowUI::CreateElementsListWidget() {
 	static QWidget *w = 0;
@@ -486,16 +499,6 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
 	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
 	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
-	int i = 0;
-	for (; i < 9; ++i) {
-		auto label = OBJ_NAME(new QLabel, "element-builder");
-		label->setPixmap(QPixmap(":/GUI/Resources/node-pic-example.png"));
-
-		label->installEventFilter(new ElementListEventFiler(label));
-
-		elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
-	}
-	elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
 
 	QScrollArea *elementsListArea = OBJ_NAME(new QScrollArea(), "node-list-scroll-area");
 	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
@@ -504,7 +507,77 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 
 	nodeListOwnerLay->addWidget(elementsListArea);
 
+	CONNECT(mw, &MainWindow::BuilderElementsFound, [=](const QList<AbstractBuilderElement*> &elements) {
+		int i = 0;
+		foreach(auto elem, elements) {
+			auto label = OBJ_NAME(new QLabel, "element-builder");
+			label->setPixmap(elem->GetImage());
+
+			label->installEventFilter(new ElementListEventFiler(label, elem));
+
+			elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
+			++i;
+		}
+		elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+	});
+
 	return w;
+}
+QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &name) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+	
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-name-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	QLineEdit *titleLed;
+
+	auto paramsLay = new QHBoxLayout;
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("New Experiment Name: "), "experiment-params-comment"), "comment-placement", "left"));
+	paramsLay->addWidget(titleLed = new QLineEdit(name));
+
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Save"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(paramsLay);
+	lay->addSpacing(40);
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialog->exec();
+
+	QString ret;
+	if (!dialogCanceled) {
+		ret = titleLed->text();
+	}
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return ret;
 }
 QWidget* MainWindowUI::GetBuildExperimentTab() {
 	static QWidget *w = 0;
@@ -518,20 +591,108 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	auto nodeListOwner = CreateElementsListWidget();
 	
+	QPushButton *deletePbt;
+	QPushButton *savePbt;
+
+	auto topButtonOwner = OBJ_NAME(new QFrame, "builder-top-button-owner");
+	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
+	topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
+	topButtonOwnerLay->addStretch(1);
+	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
+	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
+	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
+	topButtonOwnerLay->addStretch(1);
+	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT(""), "builder-save-file-button"));
+	topButtonOwnerLay->addWidget(OBJ_NAME(PBT(""), "builder-open-file-button"));
+
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
 
-	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"), 0, 0, 1, 3);
+	expBuilderOwnerLay->addWidget(topButtonOwner, 0, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(), 1, 1);
 
 	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
+	auto *nodeParamsOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(nodeParamsOwner)));
 
 	lay->addWidget(nodeListOwner);
 	lay->addWidget(expBuilderOwner);
 	lay->addWidget(nodeParamsOwner);
+
+
+
+	auto paramsHeadWidget = WDG();
+	auto paramsHeadWidgetLay = new QGridLayout(paramsHeadWidget);
+	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"), 2, 0, 1, 3);
+	paramsHeadWidgetLay->setColumnStretch(2, 1);
+	
+	paramsHeadWidget->hide();
+
+	auto *scrollAreaWidget = WDG();
+	QVBoxLayout *paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
+
+	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");
+	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(scrollAreaWidget);
+	
+	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
+	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
+	//nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
+	//nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
+	nodeParamsOwnerLay->addWidget(paramsHeadWidget, 1, 1);
+	nodeParamsOwnerLay->addWidget(scrollArea, 2, 1);
+	//nodeParamsOwnerLay->addLayout(buttonLay, 3, 1);
+	nodeParamsOwnerLay->setRowStretch(2, 1);
+
+
+	builderTabs.connections << 
+	CONNECT(builderTabs.builder, &BuilderWidget::BuilderContainerSelected, [=](BuilderContainer *bc) {
+		if (builderTabs.userInputs) {
+			paramsLay->removeWidget(builderTabs.userInputs);
+			builderTabs.userInputs->deleteLater();
+			builderTabs.userInputs = 0;
+		}
+
+		if (bc && (bc->type == BuilderContainer::ELEMENT)) {
+			auto elem = bc->elem.ptr;
+
+			builderTabs.userInputs = elem->CreateUserInput(bc->elem.input);
+			paramsLay->addWidget(builderTabs.userInputs);
+
+			paramsHeadWidget->show();
+		}
+		else {
+			paramsHeadWidget->hide();
+		}
+	});
+
+	builderTabs.connections <<
+	CONNECT(savePbt, &QPushButton::clicked, [=]() {
+		auto &container(builderTabs.builder->GetContainer());
+
+		if (!container.elements.count()) {
+			return;
+		}
+
+		QString name = GetCustomExperimentName(mw, builderTabs.name);
+
+		if (name.isEmpty()) {
+			return;
+		}
+
+		builderTabs.name = name;
+
+		if (builderTabs.fileName.isEmpty()) {
+			builderTabs.fileName = QUuid::createUuid().toString() + ".json";
+		}
+
+		mw->SaveCustomExperiment(name, container, builderTabs.fileName);
+	});
+
+	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builder, &BuilderWidget::DeleteSelected);
 
 	return w;
 }
@@ -1708,21 +1869,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 	lay->addLayout(stackLay);
 	lay->addSpacing(40);
-
-	/*
-	auto adjustButtonLay = new QHBoxLayout;
-	QPushButton *changeColorPbt;
-	QPushButton *changeLinePbt;
-	adjustButtonLay->addStretch(1);
-	adjustButtonLay->addWidget(changeColorPbt = OBJ_NAME(PBT("Change Color"), "secondary-button"));
-	adjustButtonLay->addWidget(changeLinePbt = OBJ_NAME(PBT("Change Line Style"), "secondary-button"));
-	adjustButtonLay->addStretch(1);
-
-	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
-	lay->addLayout(adjustButtonLay);
-	lay->addStretch(1);
-	//*/
-
+	
 	auto buttonLay = new QHBoxLayout;
 	QPushButton *okBut;
 	QPushButton *cancelBut;
@@ -1743,32 +1890,6 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	fileList->setModel(model);
 	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
 	
-	/*
-	QMap<QString, CurveParameters> *curveParamsPtr = &curveParams;
-
-	dialogConn << CONNECT(changeColorPbt, &QPushButton::clicked, [=]() {
-		QColor color = DEFAULT_MAJOR_CURVE_COLOR;
-		if (GetColor(dialog, color)) {
-			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
-				QString curName = index.data(Qt::DisplayRole).toString();
-				(*curveParamsPtr)[curName].color1 = color;
-			}
-		}
-
-		color = DEFAULT_MINOR_CURVE_COLOR;
-		if (GetColor(dialog, color)) {
-			foreach(const QModelIndex &index, fileList->selectionModel()->selectedIndexes()) {
-				QString curName = index.data(Qt::DisplayRole).toString();
-				(*curveParamsPtr)[curName].color2 = color;
-			}
-		}
-	});
-
-	dialogConn << CONNECT(changeLinePbt, &QPushButton::clicked, [=]() {
-		;
-	});
-	//*/
-
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
 		dialogCanceled = false;
 	});

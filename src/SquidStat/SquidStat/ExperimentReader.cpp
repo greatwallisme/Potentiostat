@@ -7,6 +7,9 @@
 #define NODE_CONTAINER_SET		"set"
 #define NODE_CONTAINER_NODE		"node"
 
+#define BUILDER_CONTAINER_SET		"set"
+#define BUILDER_CONTAINER_ELEMENT	"element"
+
 #define FIND_VALUE(name, check)													\
 	if (joEnd == (joIt = jo.constFind(name))) {									\
 		throw QString("There is no required field \"" name "\"");				\
@@ -222,4 +225,69 @@ QVector<ExperimentNode_t> ExperimentReader::GetNodeArrayForInstrument(Experiment
 	ret << endNode;
 
 	return ret;
+}
+
+QJsonObject GenerateObjectForUserInput(const UserInput &inputs) {
+	QJsonObject ret;
+	
+	for (auto it = inputs.begin(); it != inputs.end(); ++it) {
+		switch (it.value().type()) {
+			case QVariant::Bool:
+				ret.insert(it.key(), it.value().toBool());
+				break;
+
+			case QVariant::String:
+				ret.insert(it.key(), it.value().toString());
+				break;
+
+			case QVariant::Int:
+				ret.insert(it.key(), it.value().toInt());
+				break;
+
+			case QVariant::Double:
+				ret.insert(it.key(), it.value().toDouble());
+				break;
+
+			default:
+				break;
+		}
+	}
+	
+	return ret;
+}
+QJsonObject GenerateObjectForContainer(const BuilderContainer &bc) {
+	QJsonObject ret;
+
+	ret.insert("repeats", bc.repetition);
+
+	switch (bc.type) {
+		case BuilderContainer::ELEMENT:
+			ret.insert("type", BUILDER_CONTAINER_ELEMENT);
+			ret.insert("plugin-name", bc.elem.name);
+			ret.insert("user-input", GenerateObjectForUserInput(bc.elem.input));
+			break;
+	
+		case BuilderContainer::SET: {
+			ret.insert("type", BUILDER_CONTAINER_SET);
+			QJsonArray jArray;
+			for (auto it = bc.elements.begin(); it != bc.elements.end(); ++it) {
+				jArray.append(GenerateObjectForContainer(*it));
+			}
+			ret.insert("elements", jArray);
+		} break;
+	}
+
+	return ret;
+}
+QByteArray ExperimentWriter::GenerateJsonObject(const QString &name, const BuilderContainer &bc) {
+	QJsonDocument jDoc;
+
+	QJsonObject joExp;
+
+	joExp.insert("name", name);
+	joExp.insert("elements", GenerateObjectForContainer(bc));
+
+	jDoc.setObject(joExp);
+
+	return jDoc.toJson();
 }

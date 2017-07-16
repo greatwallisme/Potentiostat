@@ -7,6 +7,7 @@
 #include "ExperimentReader.h"
 
 #include <ExperimentFactoryInterface.h>
+#include <BuilderElementFactoryInterface.h>
 
 #include "Log.h"
 
@@ -19,7 +20,9 @@
 
 #include <stdlib.h>
 
-#define PREBUILT_EXP_DIR			"./prebuilt/"
+#define PREBUILT_EXP_DIR		"./prebuilt/"
+#define ELEMENTS_DIR			"./elements/"
+#define CUSTOM_EXP_DIR			"./custom/"
 
 bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.port.name == a.port.name) && (b.port.serial == a.port.serial));
@@ -36,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->CreateUI();
 
 	LoadPrebuildExperiments();
+	LoadBuilderElements();
 
 	instrumentEnumerator = new InstrumentEnumerator;
 
@@ -54,6 +58,7 @@ MainWindow::~MainWindow() {
     delete ui;
 
 	CleanupExperiments();
+	CleanupBuilderElements();
 }
 void MainWindow::CleanupExperiments() {
 	foreach(auto exp, prebuiltExperiments.expList) {
@@ -61,6 +66,16 @@ void MainWindow::CleanupExperiments() {
 	}
 
 	foreach(auto loader, prebuiltExperiments.expLoaders) {
+		loader->unload();
+		loader->deleteLater();
+	}
+}
+void MainWindow::CleanupBuilderElements() {
+	foreach(auto elem, builderElements.elements) {
+		delete elem;
+	}
+
+	foreach(auto loader, builderElements.loaders) {
 		loader->unload();
 		loader->deleteLater();
 	}
@@ -148,6 +163,35 @@ void MainWindow::CleanupCurrentHardware() {
 	}
 
 	hardware.handlers.clear();
+}
+void MainWindow::LoadBuilderElements() {
+	LOG() << "Loading builder elements";
+
+	auto expFileInfos = QDir(ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+
+	foreach(const QFileInfo &expFileInfo, expFileInfos) {
+		auto filePath = expFileInfo.absoluteFilePath();
+
+		auto loader = new QPluginLoader(filePath, this);
+
+		if (!loader->load()) {
+			loader->deleteLater();
+			continue;
+		}
+
+		auto instance = qobject_cast<BuilderElementFactoryInterface*>(loader->instance());
+
+		if (0 == instance) {
+			loader->unload();
+			loader->deleteLater();
+			continue;
+		}
+
+		builderElements.elements << instance->CreateElement();
+		builderElements.loaders << loader;
+	}
+
+	emit BuilderElementsFound(builderElements.elements);
 }
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
@@ -589,23 +633,27 @@ void MainWindow::StopExperiment(const QUuid &id) {
 
 	it->oper->StopExperiment(it->experiment.channel);
 }
-/*
-void MainWindow::SaveData(const QVector<qreal> &xData, const QVector<qreal> &yData, const QString &fileName) {
-	QFile f(fileName);
+void MainWindow::SaveCustomExperiment(const QString &name, const BuilderContainer &bc, const QString &fileName) {
+	auto data = ExperimentWriter::GenerateJsonObject(name, bc);
 
-	if (!f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+	QDir dir(CUSTOM_EXP_DIR);
+	if (!dir.exists()) {
+		if (!QDir("./").mkdir(CUSTOM_EXP_DIR)) {
+			LOG() << "Unable to create path (" << CUSTOM_EXP_DIR << ").";
+		}
+	}
+
+	QFile file(CUSTOM_EXP_DIR + fileName);
+
+	if (!file.open(QIODevice::WriteOnly)) {
+		LOG() << "Unable to write experiment" << name << "into file.";
 		return;
 	}
 
-	int minCount = qMin(xData.size(), yData.size());
-
-	for (quint64 i = 0; i < minCount; ++i) {
-		f.write(QString("%1;%2\n").arg(xData[i]).arg(yData[i]).toLatin1());
-	}
-
-	f.close();
+	file.write(data);
+	file.flush();
+	file.close();
 }
-//*/
 
 #include <QApplication>
 #include <QFile>

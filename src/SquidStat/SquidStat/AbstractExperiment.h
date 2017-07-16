@@ -20,7 +20,6 @@ struct DataStore {
 	qreal max;
 };
 typedef QMap<QString, DataStore> DataMap;
-typedef QList<QByteArray> NodesData;
 
 enum ExperimentType : uint8_t {
 	ET_AC,

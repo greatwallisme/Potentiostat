@@ -34,9 +34,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ExampleExperiment.cpp">
-      <Filter>_src</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\qrc_recources.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
@@ -49,16 +46,19 @@
     <ClCompile Include="GeneratedFiles\Release\moc_Factory.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="ExampleElement.cpp">
+      <Filter>_src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ExampleExperiment.h">
-      <Filter>_src</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\SquidStat\AbstractExperiment.h">
       <Filter>_src\Interfaces</Filter>
     </ClInclude>
     <ClInclude Include="..\..\SquidStat\ExperimentFactoryInterface.h">
       <Filter>_src\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="ExampleElement.h">
+      <Filter>_src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

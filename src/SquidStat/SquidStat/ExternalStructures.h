@@ -20,6 +20,8 @@ typedef Notifications_t ResponseID;
 typedef cal_t CalibrationData;
 typedef legacy_cal_t LegacyCalibrationData;
 
+typedef QList<QByteArray> NodesData;
+
 #define COMMAND_FRAIMING_BYTES	FRAMING_WORD
 
 #define MAX_CHANNEL_VALUE		4

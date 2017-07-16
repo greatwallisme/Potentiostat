@@ -16,8 +16,15 @@
 #include <QColor>
 
 #include <QMap>
+#include <QUuid>
+
+#include "AbstractBuilderElement.h"
 
 #define ELEMENT_MIME_TYPE	"image/element"
+
+struct ElementMimeData {
+	AbstractBuilderElement *elem;
+};
 
 enum LineDirection_e : quint8 {
 	LD_NONE = 0,
@@ -38,16 +45,24 @@ struct BuilderContainer {
 
 	qint32 repetition;
 	Type type;
+	QUuid id;
 
 	QList<BuilderContainer> elements;
 	LineDirection ld;
 	QWidget *w;
+	struct {
+		AbstractBuilderElement *ptr;
+		QString name;
+		UserInput input;
+	} elem;
 };
+
+class BuilderWidget;
 
 class BuildExpContainer : public QFrame {
 	Q_OBJECT
 public:
-	BuildExpContainer(QWidget *parent, const BuilderContainer &cont);
+	BuildExpContainer(BuilderWidget *parent, const BuilderContainer &cont, QUuid id);
 
 signals:
 	void UpdateBackgroundMap();
@@ -58,6 +73,7 @@ public slots:
 protected:
 	void paintEvent(QPaintEvent *e);
 	void resizeEvent(QResizeEvent *e);
+	void mousePressEvent(QMouseEvent *e);
 
 private:
 	const BuilderContainer &bc;
@@ -66,12 +82,15 @@ private:
 		QVBoxLayout *elementsLay;
 		QVBoxLayout *containerWdgLay;
 	} ui;
+
+	BuilderWidget *_bw;
 };
 
 class BuilderWidget : public QFrame {
 	Q_OBJECT
 public:
 	BuilderWidget(QWidget *parent);
+	const BuilderContainer& GetContainer();
 
 protected:
 	void paintEvent(QPaintEvent *e);
@@ -80,23 +99,35 @@ protected:
 	void dragMoveEvent(QDragMoveEvent *e);
 	void dropEvent(QDropEvent *e);
 	void resizeEvent(QResizeEvent *e);
+	void mousePressEvent(QMouseEvent *e);
 
 signals:
 	void RequestPlaceWidgets();
 	void EnqueueUpdateBackgroundMap();
+	void ElementSelected(QWidget*);
+	void BuilderContainerSelected(BuilderContainer*);
+
+public slots:
+	void DeleteSelected();
+	void SetTotalRepeats(int);
+	void SetRepeats(QUuid, int);
 
 private slots:
 	void UpdateBackgroundMap();
+	void HandleSelection(QWidget*);
 
 private:
 	void InitContainer();
 	void InitWidgets();
 	void PlaceWidgets();
 	void UpdateLines();
-	QWidget* CreateBuildExpElementWidget(const BuilderContainer&);
-	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&);
+	QWidget* CreateBuildExpElementWidget(const BuilderContainer&, QUuid);
+	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&, QUuid);
 	
+
 	BuilderContainer container;
+	BuilderContainer *selectedBc;
+
 	struct BackgroundDescriptor {
 		enum DragMoveAction : quint8 {
 			ACCEPT,
@@ -122,5 +153,6 @@ private:
 
 	struct {
 		QGridLayout *elementsLay;
+		QWidget *selectOverlay;
 	} ui;
 };
