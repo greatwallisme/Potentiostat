@@ -501,9 +501,11 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	w = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
 	auto nodeListOwnerLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
+	QLabel *commentLabel;
+
 	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
 	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
-	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
+	elementsListHolderLay->addWidget(commentLabel = OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
 	elementsListHolderLay->setSpacing(10);
 
 	QScrollArea *elementsListArea = OBJ_NAME(new QScrollArea(), "node-list-scroll-area");
@@ -537,11 +539,6 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 		searchExpLed->clear();
 	});
 
-	//CONNECT(searchExpLed, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterFixedString);
-	CONNECT(searchExpLed, &QLineEdit::textChanged, [=](const QString &str) {
-		;
-	});
-
 	auto selectCategoryLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
 	auto selectCategory = OBJ_NAME(CMB(), "select-category");
 	selectCategory->setView(OBJ_NAME(new QListView, "combo-list"));
@@ -549,11 +546,7 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
 	selectCategoryLay->addWidget(selectCategory);
 	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
-
-	CONNECT(selectCategory, &QComboBox::currentTextChanged, [=](const QString &category) {
-		//proxyModel->SetCurrentCategory(category);
-	});
-
+	
 	nodeListOwnerLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Categories"), "heading-label"), "widget-type", "left-grey"));
 	nodeListOwnerLay->addLayout(selectCategoryLay);
 	nodeListOwnerLay->addLayout(searchLay);
@@ -565,8 +558,11 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 			elementsPtrMap[(*it)->GetFullName()] = *it;
 		}
 
+		QStringList categoryStrList;
 		int i = 0;
-		foreach(auto elem, elements) {
+		foreach(auto elem, elementsPtrMap.values()) {
+			categoryStrList << elem->GetCategory();
+
 			auto label = OBJ_NAME(new QLabel, "element-builder");
 			label->setPixmap(elem->GetImage());
 
@@ -576,7 +572,70 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 			++i;
 		}
 		elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+
+		categoryStrList << EXPERIMENT_VIEW_ALL_CATEGORY;
+		categoryStrList.removeDuplicates();
+
+		foreach(auto str, categoryStrList) {
+			selectCategory->addItem(str);
+		}
+		selectCategory->setCurrentIndex(selectCategory->count() - 1);
 	});
+	
+	auto ListFilter = [=]() {
+		for (int i = 0; i < elementsListHolderLay->count();) {
+			auto item = elementsListHolderLay->itemAt(i);
+			auto w = item->widget();
+			if (!w) {
+				++i;
+				continue;
+			}
+
+			if (w == commentLabel) {
+				++i;
+				continue;
+			}
+
+			elementsListHolderLay->removeItem(item);
+			w->deleteLater();
+			delete item;
+		}
+
+		QList<AbstractBuilderElement*> showElements;
+		QString category = selectCategory->currentText();
+		QString search = searchExpLed->text();
+
+		foreach(auto elem, elementsPtrMap.values()) {
+			if (category != EXPERIMENT_VIEW_ALL_CATEGORY) {
+				if (!elem->GetCategory().contains(category)) {
+					continue;
+				}
+			}
+
+			if (!search.isEmpty()) {
+				if (!elem->GetFullName().contains(search)) {
+					continue;
+				}
+			}
+
+			showElements << elem;
+		}
+
+		int i = 0;
+		foreach(auto elem, showElements) {
+			auto label = OBJ_NAME(new QLabel, "element-builder");
+			label->setPixmap(elem->GetImage());
+
+			label->installEventFilter(new ElementListEventFiler(label, elem));
+
+			elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
+			++i;
+		}
+		elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+	};
+	
+	CONNECT(selectCategory, &QComboBox::currentTextChanged, ListFilter);
+	CONNECT(searchExpLed, &QLineEdit::textChanged, ListFilter);
 
 	return w;
 }

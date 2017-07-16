@@ -229,7 +229,10 @@ void BuilderWidget::PlaceWidgets() {
 		ui.elementsLay->setSpacing(BUILDER_ELEMENT_SPACING);
 	}
 	while (ui.elementsLay->count()) {
-		ui.elementsLay->removeItem(ui.elementsLay->itemAt(0));
+		auto item = ui.elementsLay->itemAt(0);
+		ui.elementsLay->removeItem(item);
+		
+		delete item;
 	}
 
 	int rows = ui.elementsLay->rowCount();
