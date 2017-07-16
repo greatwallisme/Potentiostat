@@ -40,9 +40,10 @@ public:
 public slots:
 	void LoadFonts();
     void ApplyStyle();
-	
-	void LoadPrebuildExperiments();
+
+	void UpdateCustomExperimentList();
 	void LoadBuilderElements();
+	void LoadPrebuildExperiments();
 	void PrebuiltExperimentSelected(const AbstractExperiment*);
 	
 	void SelectHardware(const QString&, quint8 channel);
@@ -69,6 +70,8 @@ signals:
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 	void BuilderElementsFound(const QList<AbstractBuilderElement*>&);
+	void AddNewCustomExperiments(const QList<AbstractExperiment*>&);
+	void RemoveCustomExperiment(const AbstractExperiment*);
 
 	void CreateNewDataWindow(const StartExperimentParameters&);
 
@@ -114,6 +117,7 @@ private:
 	struct {
 		const AbstractExperiment* selectedExp;
 		QList<AbstractExperiment*> expList;
+		QMap<QUuid, AbstractExperiment*> customExpMap;
 		QList<QPluginLoader*> expLoaders;
 	} prebuiltExperiments;
 

@@ -540,8 +540,9 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 	QLineEdit *titleLed;
 
 	auto paramsLay = new QHBoxLayout;
-	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("New Experiment Name: "), "experiment-params-comment"), "comment-placement", "left"));
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiment Name: "), "experiment-params-comment"), "comment-placement", "left"));
 	paramsLay->addWidget(titleLed = new QLineEdit(name));
+	titleLed->setPlaceholderText("Enter new name here");
 
 
 	auto buttonLay = new QHBoxLayout;
@@ -855,6 +856,11 @@ class ExperimentFilterModel : public QSortFilterProxyModel {
 		}
 
 		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
+
+		if (!exp) {
+			return false;
+		}
+
 		QString pattern = filterRegExp().pattern();
 
 		QString descriptionPlain = "";
@@ -1070,10 +1076,75 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		}
 		selectCategory->setCurrentIndex(selectCategory->count() - 1);
 
-		//experimentList->setModel(model);
 		auto oldModel = proxyModel->sourceModel();
 		proxyModel->setSourceModel(model);
 		oldModel->deleteLater();
+	});
+
+	CONNECT(mw, &MainWindow::AddNewCustomExperiments, [=](const QList<AbstractExperiment*> &expList) {
+		auto originModel = proxyModel->sourceModel();
+		QStandardItemModel *model = qobject_cast<QStandardItemModel*>(originModel);
+
+		if (!model) {
+			LOG() << "Unable to get model pointer";
+		}
+
+		QStringList newCategoryStrList;
+		int row = model->rowCount();
+		foreach(const AbstractExperiment *exp, expList) {
+			auto *item = new QStandardItem(exp->GetShortName());
+			item->setData(QVariant::fromValue(exp), Qt::UserRole);
+
+			model->insertRow(row++, item);
+
+			newCategoryStrList << exp->GetCategory();
+		}
+
+		newCategoryStrList.removeDuplicates();
+
+		QStringList currentCategories;
+		for (int i = 0; i < selectCategory->count(); ++i) {
+			currentCategories << selectCategory->itemText(i);
+		}
+
+		QStringList categotiesToPrepend;
+		foreach(auto &c, newCategoryStrList) {
+			if (!currentCategories.contains(c)) {
+				categotiesToPrepend << c;
+			}
+		}
+
+		selectCategory->insertItems(0, categotiesToPrepend);
+	});
+
+	CONNECT(mw, &MainWindow::RemoveCustomExperiment, [=](const AbstractExperiment *exp) {
+		auto srcModel = proxyModel->sourceModel();
+
+		for (int i = 0; i < srcModel->rowCount(); ++i) {
+			auto curExp = srcModel->index(i, 0).data(Qt::UserRole).value<const AbstractExperiment*>();
+
+			if (curExp == exp) {
+				srcModel->removeRow(i);
+				break;
+			}
+		}
+
+		QList<QUuid> toDeleteIds;
+
+		for (auto it = dataTabs.plots.begin(); it != dataTabs.plots.end(); ++it) {
+			for (auto subIt = it.value().begin(); subIt != it.value().end(); ++subIt) {
+				if (subIt.value().exp == exp) {
+					if (!toDeleteIds.contains(it.key())) {
+						toDeleteIds << it.key();
+					}
+					subIt.value().exp = 0;
+				}
+			}
+		}
+
+		foreach(auto &id, toDeleteIds) {
+			mw->StopExperiment(id);
+		}
 	});
 
 	CONNECT(experimentList->selectionModel(), &QItemSelectionModel::currentChanged, [=](const QModelIndex &index, const QModelIndex &) {
@@ -1478,9 +1549,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
 		DataMapVisualization &majorData(handler.data.first());
 
-		handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer);
-		if (majorData.saveFile) {
-			handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+		if (handler.exp) {
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			if (majorData.saveFile) {
+				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+			}
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -1520,9 +1593,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id][ET_AC]);
 		DataMapVisualization &majorData(handler.data.first());
 
-		handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer);
-		if (majorData.saveFile) {
-			handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+		if (handler.exp) {
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			if (majorData.saveFile) {
+				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+			}
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {

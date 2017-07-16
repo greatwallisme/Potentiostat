@@ -5,6 +5,7 @@
 #include "InstrumentEnumerator.h"
 #include "InstrumentOperator.h"
 #include "ExperimentReader.h"
+#include "CustomExperimentRunner.h"
 
 #include <ExperimentFactoryInterface.h>
 #include <BuilderElementFactoryInterface.h>
@@ -40,6 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	LoadPrebuildExperiments();
 	LoadBuilderElements();
+	UpdateCustomExperimentList();
 
 	instrumentEnumerator = new InstrumentEnumerator;
 
@@ -221,35 +223,6 @@ void MainWindow::LoadPrebuildExperiments() {
 	}
 
 	emit PrebuiltExperimentsFound(prebuiltExperiments.expList);
-
-	/*
-	prebuiltExperiments.ecList.clear();
-
-	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
-
-	foreach(const QFileInfo &expFileInfo, expFileInfos) {
-		auto filePath = expFileInfo.absoluteFilePath();
-
-		QFile file(filePath);
-
-		if (!file.open(QIODevice::ReadOnly)) {
-			continue;
-		}
-
-		auto jsonData = file.readAll();
-
-		file.close();
-
-		try {
-			prebuiltExperiments.ecList << ExperimentReader::GenerateExperimentContainer(jsonData);
-		}
-		catch (const QString &err) {
-			LOG() << "Error in the file" << expFileInfo.fileName() << "-" << err;
-		}
-	}
-
-	emit PrebuiltExperimentsFound(prebuiltExperiments.ecList);
-	//*/
 }
 void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 	prebuiltExperiments.selectedExp = exp;
@@ -274,30 +247,6 @@ void MainWindow::UpdateCurrentExperimentState() {
 	else {
 		emit CurrentExperimentCompleted();
 	}
-	/*
-	auto &currentHandler(hardware.currentInstrument.handler);
-	for(auto it = hardware.handlers.begin(); it != hardware.handlers.end(); ++it) {
-		if (it->experiment.busy) {
-			emit HardwareBusy(it->experiment.id);
-			if (it == currentHandler) {
-				emit CurrentHardwareBusy();
-			}
-
-			if (it->experiment.paused) {
-				emit ExperimentPaused(it->experiment.id);
-				if (it == currentHandler) {
-					emit CurrentExperimentPaused();
-				}
-			}
-		}
-		else {
-			emit HardwareAvaliable(it->experiment.id);
-			if (it == currentHandler) {
-				emit CurrentHardwareAvaliable();
-			}
-		}
-	}
-	//*/
 }
 void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 	auto hwIt = SearchForHandler(name, channel);
@@ -633,8 +582,107 @@ void MainWindow::StopExperiment(const QUuid &id) {
 
 	it->oper->StopExperiment(it->experiment.channel);
 }
+
+void FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {
+	if (bc.type == BuilderContainer::ELEMENT) {
+		bc.elem.ptr = elemMap.value(bc.elem.name, 0);
+
+		if (!bc.elem.ptr) {
+			throw QString("Can not find the element named \"%1\"").arg(bc.elem.name);
+		}
+
+		return;
+	}
+
+	for (auto it = bc.elements.begin(); it != bc.elements.end(); ++it) {
+		FillElementPointers(*it, elemMap);
+	}
+}
+void MainWindow::UpdateCustomExperimentList() {
+	LOG() << "Loading custom experiments";
+
+	auto expFileInfos = QDir(CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+	
+	QList<CustomExperiment> cExpList;
+
+	foreach(const QFileInfo &expFileInfo, expFileInfos) {
+		auto filePath = expFileInfo.absoluteFilePath();
+
+		QFile file(filePath);
+
+		if (!file.open(QIODevice::ReadOnly)) {
+			LOG() << "Can not read JSON file.";
+			continue;
+		}
+
+		QByteArray data = file.readAll();
+		file.close();
+
+		try {
+			auto ce = ExperimentReader::GenerateExperimentContainer(data);
+			ce.fileName = expFileInfo.fileName();
+			cExpList << ce;
+		}
+		catch (const QString &err) {
+			LOG() << "Error in the file" << expFileInfo.fileName() << "-" << err;
+			continue;
+		}
+	}
+
+	QMap<QString, AbstractBuilderElement*> elemPtrMap;
+	for (auto it = builderElements.elements.begin(); it != builderElements.elements.end(); ++it) {
+		elemPtrMap[(*it)->GetFullName()] = *it;
+	}
+
+	for (auto it = cExpList.begin(); it != cExpList.end(); ++it) {
+		try {
+			FillElementPointers(it->bc, elemPtrMap);
+		}
+		catch (const QString &err) {
+			LOG() << "Error in the file" << it->fileName << "-" << err;
+			continue;
+		}
+	}
+
+	QList<QUuid> toDeleteIds;
+	QList<CustomExperiment> toAddCe;
+	
+	auto existingIds = prebuiltExperiments.customExpMap.keys();
+	for (auto it = cExpList.begin(); it != cExpList.end(); ++it) {
+		if (existingIds.contains(it->id)) {
+			existingIds.removeOne(it->id);
+			continue;
+		}
+
+		toAddCe << *it;
+	}
+
+	toDeleteIds = existingIds;
+
+	foreach(auto &id, toDeleteIds) {
+		emit RemoveCustomExperiment(prebuiltExperiments.customExpMap.value(id));
+		delete prebuiltExperiments.customExpMap.value(id);
+		prebuiltExperiments.customExpMap.remove(id);
+	}
+
+	QList<AbstractExperiment*> toAddExp;
+
+	foreach(auto &ce, toAddCe) {
+		auto newExp = new CustomExperimentRunner(ce);
+		prebuiltExperiments.customExpMap[ce.id] = newExp;
+		toAddExp << newExp;
+	}
+
+	emit AddNewCustomExperiments(toAddExp);
+}
 void MainWindow::SaveCustomExperiment(const QString &name, const BuilderContainer &bc, const QString &fileName) {
-	auto data = ExperimentWriter::GenerateJsonObject(name, bc);
+	CustomExperiment ce;
+	ce.name = name;
+	ce.bc = bc;
+	ce.fileName = fileName;
+	ce.id = QUuid::createUuid();
+
+	auto data = ExperimentWriter::GenerateJsonObject(ce);
 
 	QDir dir(CUSTOM_EXP_DIR);
 	if (!dir.exists()) {
@@ -643,16 +691,18 @@ void MainWindow::SaveCustomExperiment(const QString &name, const BuilderContaine
 		}
 	}
 
-	QFile file(CUSTOM_EXP_DIR + fileName);
+	QFile file(CUSTOM_EXP_DIR + ce.fileName);
 
 	if (!file.open(QIODevice::WriteOnly)) {
-		LOG() << "Unable to write experiment" << name << "into file.";
+		LOG() << "Unable to write experiment" << ce.name << "into file.";
 		return;
 	}
 
 	file.write(data);
 	file.flush();
 	file.close();
+
+	UpdateCustomExperimentList();
 }
 
 #include <QApplication>

@@ -8,33 +8,17 @@
 #include "ExternalStructures.h"
 #include "BuilderWidget.h"
 
-struct NodeContainer {
-	enum Type : qint32 {
-		NODE,
-		SET
-	};
-
-	qint32 repetition;
-	Type type;
-
-	QList<NodeContainer> elements;
-	ExperimentNode_t parameters;
-};
-
-struct ExperimentContainer {
-	QString shortName;
+struct CustomExperiment {
 	QString name;
-	QString description;
-	QString imagePath;
-	NodeContainer nodes;
+	QString fileName;
+	QUuid id;
+	BuilderContainer bc;
 };
 
 namespace ExperimentReader {
-	ExperimentContainer GenerateExperimentContainer(const QByteArray &jsonData);
-	QList<ExperimentNode_t*> GetNodeListForUserInput(ExperimentContainer&);
-	QVector<ExperimentNode_t> GetNodeArrayForInstrument(ExperimentContainer&);
+	CustomExperiment GenerateExperimentContainer(const QByteArray &jsonData);
 };
 
 namespace ExperimentWriter {
-	QByteArray GenerateJsonObject(const QString&, const BuilderContainer&);
+	QByteArray GenerateJsonObject(const CustomExperiment&);
 };

@@ -145,6 +145,9 @@
     <ClCompile Include="ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="CustomExperimentRunner.cpp">
+      <Filter>_scr\Experiments</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -179,6 +182,9 @@
     </ClInclude>
     <ClInclude Include="Disconnector.h">
       <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomExperimentRunner.h">
+      <Filter>_scr\Experiments</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -4,9 +4,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
-#define NODE_CONTAINER_SET		"set"
-#define NODE_CONTAINER_NODE		"node"
-
 #define BUILDER_CONTAINER_SET		"set"
 #define BUILDER_CONTAINER_ELEMENT	"element"
 
@@ -26,107 +23,70 @@
 		var = joIt->convert();													\
 	}
 
-NodeType_t GetNodeType(const QString &str) {
-	#define CHECK_NODE_TYPE(type)	\
-		if (str == #type) {			\
-			return type;			\
+#define JSON_UUID			"uuid"
+#define JSON_NAME			"name"
+#define JSON_TYPE			"type"
+#define JSON_ELEMENTS		"elements"
+#define JSON_REPEATS		"repeats"
+#define JSON_PLUGIN_NAME	"plugin-name"
+#define JSON_USER_INPUT		"user-input"
+
+UserInput ParseUserInputJson(const QJsonObject &jo) {
+	UserInput ret;
+
+	foreach(auto &val, jo) {
+		if (val.isArray()) {
+			throw QString("User Input contains an array value, but it should not.");
 		}
-	
-	CHECK_NODE_TYPE(DCNODE_OCP);
-	CHECK_NODE_TYPE(DCNODE_SWEEP_POT);
-	CHECK_NODE_TYPE(DCNODE_SWEEP_GALV);
-	CHECK_NODE_TYPE(DCNODE_POINT_POT);
-	CHECK_NODE_TYPE(DCNODE_POINT_GALV);
-	CHECK_NODE_TYPE(DCNODE_NORMALPULSE_POT);
-	CHECK_NODE_TYPE(DCNODE_NORMALPULSE_GALV);
-	CHECK_NODE_TYPE(DCNODE_DIFFPULSE_POT);
-	CHECK_NODE_TYPE(DCNODE_DIFFPULSE_GALV);
-	CHECK_NODE_TYPE(DCNODE_SQRWAVE_POT);
-	CHECK_NODE_TYPE(DCNODE_SQRWAVE_GALV);
-	CHECK_NODE_TYPE(DCNODE_SINEWAVE);
-	CHECK_NODE_TYPE(FRA_NODE_POT);
-	CHECK_NODE_TYPE(FRA_NODE_GALV);
-	CHECK_NODE_TYPE(FRA_NODE_PSEUDOGALV);
+		if (val.isObject()) {
+			throw QString("User Input contains an object value, but it should not.");
+		}
+	}
 
-	throw QString("Field \"nodeType\" has incorrect type (") + str + QString(")");
+	ret = jo.toVariantMap();
+
+	return ret;
 }
+BuilderContainer ParseContainerJson(const QJsonObject &jo) {
+	BuilderContainer ret;
+	ret.id = QUuid::createUuid();
+	ret.w = 0;
+	ret.elem.ptr = 0;
 
-void ReadNodeParameters(const QJsonObject &jo, ExperimentNode_t &node) {
 	auto joEnd = jo.constEnd();
 	auto joIt = jo.constBegin();
 
-	FIND_VALUE("nodeType", isString);
-	node.nodeType = GetNodeType(joIt->toString());
+	FIND_VALUE(JSON_REPEATS, isDouble);
+	ret.repetition = joIt->toInt();
 
-	/*
-	FILL_VALUE_OPTIONAL("VStart", isDouble, node.DCSweep.VStart, toInt);
-	FILL_VALUE_OPTIONAL("VEnd", isDouble, node.DCSweep.VEnd, toInt);
-	FILL_VALUE_OPTIONAL("dVdt", isDouble, node.DCSweep.dVdt, toDouble);
-	//*/
-}
+	FIND_VALUE(JSON_TYPE, isString);
+	auto type = joIt->toString();
 
-void ReadNodes(const QJsonObject &jo, NodeContainer &nc) {
-	auto joEnd = jo.constEnd();
-	auto joIt = jo.constBegin();
+	if (type == BUILDER_CONTAINER_ELEMENT) {
+		ret.type = BuilderContainer::ELEMENT;
+		
+		FIND_VALUE(JSON_PLUGIN_NAME, isString);
+		ret.elem.name = joIt->toString();
 
-	FIND_VALUE("repetition", isDouble);
-	nc.repetition = joIt->toInt();
-
-	FIND_VALUE("type", isString);
-	QString type = joIt->toString();
-
-	if (type == NODE_CONTAINER_SET) {
-		nc.type = NodeContainer::SET;
+		FIND_VALUE(JSON_USER_INPUT, isObject);
+		ret.elem.input = ParseUserInputJson(joIt->toObject());
 	}
-	else if (type == NODE_CONTAINER_NODE) {
-		nc.type = NodeContainer::NODE;
-	}
-	else {
-		throw QString("Unknown type of the node container (") + type + QString(")");
-	}
+	if (type == BUILDER_CONTAINER_SET) {
+		ret.type = BuilderContainer::SET;
 
-	switch (nc.type) {
-		case NodeContainer::NODE:
-			FIND_VALUE("parameters", isObject);
-			ReadNodeParameters(joIt->toObject(), nc.parameters);
-			break;
-
-		case NodeContainer::SET:
-			FIND_VALUE("elements", isArray);
-			foreach(const QJsonValue &val, joIt->toArray()) {
-				if (!val.isObject()) {
-					throw QString("Elements contains non-object value");
-				}
-
-				NodeContainer childNc;
-				ReadNodes(val.toObject(), childNc);
-				nc.elements << childNc;
+		FIND_VALUE(JSON_ELEMENTS, isArray);
+		foreach(const QJsonValue &val, joIt->toArray()) {
+			if (!val.isObject()) {
+				throw QString("Set contains non-object value");
 			}
-			break;
+
+			ret.elements << ParseContainerJson(val.toObject());
+		}
 	}
+
+	return ret;
 }
-
-void ParseExperimentJson(const QJsonObject &jo, ExperimentContainer &ec) {
-	auto joEnd = jo.constEnd();
-	auto joIt = jo.constBegin();
-
-	FIND_VALUE("short-name", isString);
-	ec.shortName = joIt->toString();
-
-	FIND_VALUE("name", isString);
-	ec.name = joIt->toString();
-
-	FIND_VALUE("description", isString);
-	ec.description = joIt->toString();
-
-	FIND_VALUE("image-path", isString);
-	ec.imagePath = joIt->toString();
-
-	FIND_VALUE("nodes", isObject);
-	ReadNodes(joIt->toObject(), ec.nodes);
-}
-
-ExperimentContainer ExperimentReader::GenerateExperimentContainer(const QByteArray &jsonData) {
+CustomExperiment ExperimentReader::GenerateExperimentContainer(const QByteArray &jsonData) {
 	QJsonParseError parseError;
 	QJsonDocument jdoc = QJsonDocument::fromJson(jsonData, &parseError);
 
@@ -142,89 +102,24 @@ ExperimentContainer ExperimentReader::GenerateExperimentContainer(const QByteArr
 		throw QString("QJsonDocument is NOT an object");
 	}
 
-	ExperimentContainer ec;
+	auto jo = jdoc.object();
 
-	ParseExperimentJson(jdoc.object(), ec);
+	auto joEnd = jo.constEnd();
+	auto joIt = jo.constBegin();
 
-	return ec;
-}
-void AddNodePointers(QList<ExperimentNode_t*> &nodePtrs, NodeContainer &nc) {
-	switch (nc.type) {
-		case NodeContainer::NODE:
-			nodePtrs << &nc.parameters;
-			break;
-		case NodeContainer::SET:
-			for (auto it = nc.elements.begin(); it != nc.elements.end(); ++it) {
-				AddNodePointers(nodePtrs, *it);
-			}
-			break;
-	}
-}
-QList<ExperimentNode_t*> ExperimentReader::GetNodeListForUserInput(ExperimentContainer &ec) {
-	QList<ExperimentNode_t*> ret;
+	CustomExperiment ce;
 
-	AddNodePointers(ret, ec.nodes);
+	FIND_VALUE(JSON_NAME, isString);
+	ce.name = joIt->toString();
 
-	return ret;
-}
+	FIND_VALUE(JSON_UUID, isString);
+	ce.id = QUuid(joIt->toString());
 
-void FillDcNodeSweep(ExperimentNode_t &node) {
-	/*
-	node.isHead = false;
-	node.isTail = false;
-	node.nodeType = DCNODE_SWEEP_POT;
-	node.tMin = 100000;
-	node.tMax = 10000000000;
-	node.samplingParams.ADCTimerDiv = 2;
-	node.samplingParams.ADCTimerPeriod = 15625;
-	node.samplingParams.ADCBufferSize = 20;
-	node.samplingParams.DACMultiplier = 20;
-	//*/
-}
-void FillNodeParameters(ExperimentNode_t &node) {
-	switch (node.nodeType) {
-		/*
-		case DCNODE_SWEEP:
-			FillDcNodeSweep(node);
-			break;
-		//*/
+	FIND_VALUE(JSON_ELEMENTS, isObject);
 
-		default:
-			break;
-	}
-}
-void AddNodeInstances(QVector<ExperimentNode_t> &nodes, NodeContainer &nc) {
-	int repetition = nc.repetition;
-	switch (nc.type) {
-		case NodeContainer::NODE:
-			FillNodeParameters(nc.parameters);
-			while (repetition--) {
-				nodes << nc.parameters;
-			}
-			break;
-		case NodeContainer::SET: {
-				QVector<ExperimentNode_t> branch;
-				for (auto it = nc.elements.begin(); it != nc.elements.end(); ++it) {
-					AddNodeInstances(branch, *it);
-				}
-				while (repetition--) {
-					nodes << branch;
-				}
-			}
-			break;
-	}
-}
-QVector<ExperimentNode_t> ExperimentReader::GetNodeArrayForInstrument(ExperimentContainer &ec) {
-	QVector<ExperimentNode_t> ret;
+	ce.bc = ParseContainerJson(joIt->toObject());
 
-	AddNodeInstances(ret, ec.nodes);
-
-	ExperimentNode_t endNode;
-	endNode.nodeType = END_EXPERIMENT_NODE;
-
-	ret << endNode;
-
-	return ret;
+	return ce;
 }
 
 QJsonObject GenerateObjectForUserInput(const UserInput &inputs) {
@@ -258,34 +153,35 @@ QJsonObject GenerateObjectForUserInput(const UserInput &inputs) {
 QJsonObject GenerateObjectForContainer(const BuilderContainer &bc) {
 	QJsonObject ret;
 
-	ret.insert("repeats", bc.repetition);
+	ret.insert(JSON_REPEATS, bc.repetition);
 
 	switch (bc.type) {
 		case BuilderContainer::ELEMENT:
-			ret.insert("type", BUILDER_CONTAINER_ELEMENT);
-			ret.insert("plugin-name", bc.elem.name);
-			ret.insert("user-input", GenerateObjectForUserInput(bc.elem.input));
+			ret.insert(JSON_TYPE, BUILDER_CONTAINER_ELEMENT);
+			ret.insert(JSON_PLUGIN_NAME, bc.elem.name);
+			ret.insert(JSON_USER_INPUT, GenerateObjectForUserInput(bc.elem.input));
 			break;
 	
 		case BuilderContainer::SET: {
-			ret.insert("type", BUILDER_CONTAINER_SET);
+			ret.insert(JSON_TYPE, BUILDER_CONTAINER_SET);
 			QJsonArray jArray;
 			for (auto it = bc.elements.begin(); it != bc.elements.end(); ++it) {
 				jArray.append(GenerateObjectForContainer(*it));
 			}
-			ret.insert("elements", jArray);
+			ret.insert(JSON_ELEMENTS, jArray);
 		} break;
 	}
 
 	return ret;
 }
-QByteArray ExperimentWriter::GenerateJsonObject(const QString &name, const BuilderContainer &bc) {
+QByteArray ExperimentWriter::GenerateJsonObject(const CustomExperiment &ce) {
 	QJsonDocument jDoc;
 
 	QJsonObject joExp;
 
-	joExp.insert("name", name);
-	joExp.insert("elements", GenerateObjectForContainer(bc));
+	joExp.insert(JSON_NAME, ce.name);
+	joExp.insert(JSON_UUID, ce.id.toString());
+	joExp.insert(JSON_ELEMENTS, GenerateObjectForContainer(ce.bc));
 
 	jDoc.setObject(joExp);
 

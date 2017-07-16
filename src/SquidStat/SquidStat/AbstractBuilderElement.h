@@ -3,6 +3,7 @@
 #include <QMap>
 #include <QMetaType>
 #include <ExternalStructures.h>
+#include <AbstractExperiment.h>
 
 #include <QWidget>
 #include <QString>
@@ -19,6 +20,7 @@ public:
 	virtual QString GetFullName() const = 0;
 	virtual QStringList GetCategory() const = 0;
 	virtual QPixmap GetImage() const = 0;
+	virtual ExperimentType GetType() const = 0;
 
 	virtual QWidget* CreateUserInput(UserInput&) const = 0;
 	//virtual UserInput GetUserInput(QWidget*) const = 0;

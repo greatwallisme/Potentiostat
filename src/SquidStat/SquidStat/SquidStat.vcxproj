@@ -113,6 +113,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
   <ItemGroup>
     <ClCompile Include="BuilderWidget.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="CustomExperimentRunner.cpp" />
     <ClCompile Include="ExperimentCalcHelper.cpp" />
     <ClCompile Include="ExperimentReader.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_BuilderWidget.cpp">
@@ -202,6 +203,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
       </Command>
     </CustomBuild>
     <CustomBuild Include="AbstractExperiment.h" />
+    <ClInclude Include="CustomExperimentRunner.h" />
     <ClInclude Include="Disconnector.h" />
     <ClInclude Include="ExperimentCalcHelper.h" />
     <ClInclude Include="ExperimentUIHelper.h" />

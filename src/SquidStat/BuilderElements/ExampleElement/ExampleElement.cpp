@@ -29,6 +29,9 @@ QStringList ExampleElement::GetCategory() const {
 QPixmap ExampleElement::GetImage() const {
 	return QPixmap(":/GUI/Resources/element.png");
 }
+ExperimentType ExampleElement::GetType() const {
+	return ET_DC;
+}
 QWidget* ExampleElement::CreateUserInput(UserInput &inputs) const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
