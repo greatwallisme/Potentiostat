@@ -142,6 +142,9 @@
     <ClCompile Include="BuilderWidget.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="ExperimentCalcHelper.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -170,6 +173,9 @@
     </ClInclude>
     <ClInclude Include="BuilderElementFactoryInterface.h">
       <Filter>_scr\BuilderElements</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperimentCalcHelper.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Disconnector.h">
       <Filter>_scr\MainWindow</Filter>

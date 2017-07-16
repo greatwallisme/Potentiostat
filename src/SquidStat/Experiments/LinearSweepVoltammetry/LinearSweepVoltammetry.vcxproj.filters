@@ -49,6 +49,9 @@
     <ClCompile Include="LinearSweepVoltammetry.cpp">
       <Filter>_src</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\SquidStat\ExperimentCalcHelper.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\SquidStat\AbstractExperiment.h">
@@ -68,96 +71,5 @@
     <CustomBuild Include="Factory.h">
       <Filter>_src</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="Resources\fonts\Esphimere Bold Italic.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Bold.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Extra Light Italic.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Extra Light.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Italic.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Semi Bold Italic.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Semi Bold.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Thin Italic.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Thin.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere.otf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\segoeui(1).ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\SEGOEUIB_2.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\segoeuii_2.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\segoeuil_0.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\segoeuisl.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\SEGOEUIZ_2.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguibl.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguibli.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguili.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguisb_0.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguisbi.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\seguisli.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-    <Font Include="Resources\fonts\Esphimere Light.ttf">
-      <Filter>Resource Files</Filter>
-    </Font>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Resources\combobox-dropdown.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Resources\tab-close.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Resources\tab-close-hover.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Resources\new-tab.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Resources\new-tab-hover.png">
-      <Filter>Resource Files</Filter>
-    </Image>
-    <Image Include="Resources\start.png">
-      <Filter>Resource Files</Filter>
-    </Image>
   </ItemGroup>
 </Project>
