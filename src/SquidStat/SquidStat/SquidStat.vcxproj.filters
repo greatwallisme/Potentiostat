@@ -139,14 +139,14 @@
     <ClCompile Include="GeneratedFiles\Release\moc_BuilderWidget.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="BuilderWidget.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="CustomExperimentRunner.cpp">
       <Filter>_scr\Experiments</Filter>
+    </ClCompile>
+    <ClCompile Include="BuilderWidget.cpp">
+      <Filter>_scr\MainWindow</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -177,14 +177,14 @@
     <ClInclude Include="BuilderElementFactoryInterface.h">
       <Filter>_scr\BuilderElements</Filter>
     </ClInclude>
-    <ClInclude Include="ExperimentCalcHelper.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="Disconnector.h">
       <Filter>_scr\MainWindow</Filter>
     </ClInclude>
     <ClInclude Include="CustomExperimentRunner.h">
       <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="ExperimentCalcHelper.h">
+      <Filter>_scr\ExternalStructures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
