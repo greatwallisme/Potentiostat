@@ -309,15 +309,20 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 /*//////////////     BUILD AN EXPERIMENT TAB   ////////////////////*/
 #node-list-owner {
-	max-width: 270px;
-	min-width: 270px;
+	max-width: 300px;
+	min-width: 300px;
+}
+#node-list-owner > *[widget-type="left-grey"] {
+	border: none;
+	background-color: #f8f9fb;
+	border-right: 1px solid #d3dae2;
 }
 #experiment-builder-owner {
 	border: none;
 	border-right: 1px solid #cbe6f1;
 	background-color: #e9f6fc;
-	max-width: 730px;
-	min-width: 730px;
+	max-width: 700px;
+	min-width: 700px;
 }
 /*//////////////          ELEMENTS LIST        ////////////////////*/
 #elements-list-holder {
@@ -327,6 +332,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #node-list-scroll-area {
 	border: none;
 	margin-right: 1px;
+	
+	border-top: 1px solid #d3dae2;
 }
 #elements-list-descr-label {
 	background-color: #f8f9fb;
@@ -411,8 +418,8 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 #exp-builder-left-spacer {
 	margin: 1px;
-	min-width: 56px;
-	max-width: 56px;
+	min-width: 50px;
+	max-width: 50px;
 	background-color: #e9f6fc;
 }
 #exp-builder-bottom-spacer {

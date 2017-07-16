@@ -504,12 +504,59 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
 	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
 	elementsListHolderLay->addWidget(OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
+	elementsListHolderLay->setSpacing(10);
 
 	QScrollArea *elementsListArea = OBJ_NAME(new QScrollArea(), "node-list-scroll-area");
 	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	elementsListArea->setWidgetResizable(true);
 	elementsListArea->setWidget(elementsListHolder);
 
+	auto searchLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
+	QLabel *searchLabel;
+	QPushButton *searchClearPbt;
+	QLineEdit *searchExpLed;
+	searchLay->addWidget(searchLabel = OBJ_NAME(LBL(""), "search-experiments-label"));
+	searchLay->addWidget(searchExpLed = OBJ_NAME(LED(), "search-experiments"));
+	searchLay->addWidget(searchClearPbt = OBJ_NAME(PBT(""), "search-experiments-clear"));
+	searchLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+	searchLabel->setPixmap(QPixmap(":/GUI/Resources/search-icon.png"));
+	searchClearPbt->setIcon(QIcon(":/GUI/Resources/search-clear-button.png"));
+	searchClearPbt->setIconSize(QPixmap(":/GUI/Resources/search-clear-button.png").size());
+	searchClearPbt->hide();
+
+	CONNECT(searchExpLed, &QLineEdit::textChanged, [=](const QString &text) {
+		if (text.isEmpty()) {
+			searchClearPbt->hide();
+		}
+		else {
+			searchClearPbt->show();
+		}
+	});
+
+	CONNECT(searchClearPbt, &QPushButton::clicked, [=]() {
+		searchExpLed->clear();
+	});
+
+	//CONNECT(searchExpLed, &QLineEdit::textChanged, proxyModel, &QSortFilterProxyModel::setFilterFixedString);
+	CONNECT(searchExpLed, &QLineEdit::textChanged, [=](const QString &str) {
+		;
+	});
+
+	auto selectCategoryLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
+	auto selectCategory = OBJ_NAME(CMB(), "select-category");
+	selectCategory->setView(OBJ_NAME(new QListView, "combo-list"));
+
+	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+	selectCategoryLay->addWidget(selectCategory);
+	selectCategoryLay->addWidget(OBJ_NAME(WDG(), "search-experiments-spacing"));
+
+	CONNECT(selectCategory, &QComboBox::currentTextChanged, [=](const QString &category) {
+		//proxyModel->SetCurrentCategory(category);
+	});
+
+	nodeListOwnerLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Categories"), "heading-label"), "widget-type", "left-grey"));
+	nodeListOwnerLay->addLayout(selectCategoryLay);
+	nodeListOwnerLay->addLayout(searchLay);
 	nodeListOwnerLay->addWidget(elementsListArea);
 
 	CONNECT(mw, &MainWindow::BuilderElementsFound, [=](const QList<AbstractBuilderElement*> &elements) {
