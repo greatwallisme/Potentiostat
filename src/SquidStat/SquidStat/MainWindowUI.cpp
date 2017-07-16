@@ -53,10 +53,14 @@
 #include <QDrag>
 #include <QMimeData>
 
+#include "ExperimentReader.h"
+
 #include <functional>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
+
+#define CUSTOM_EXP_DIR			"./custom/"
 
 #define DEFAULT_MAJOR_CURVE_COLOR		QColor(42, 127, 220)
 #define DEFAULT_MINOR_CURVE_COLOR		QColor(208, 35, 39)
@@ -427,6 +431,7 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 	auto buildExpHolderOwner = new BuilderWidget(mw);
 
 	builderTabs.builder = buildExpHolderOwner;
+	builderTabs.globalMult = mult;
 
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
@@ -508,6 +513,11 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	nodeListOwnerLay->addWidget(elementsListArea);
 
 	CONNECT(mw, &MainWindow::BuilderElementsFound, [=](const QList<AbstractBuilderElement*> &elements) {
+		elementsPtrMap.clear();
+		for (auto it = elements.begin(); it != elements.end(); ++it) {
+			elementsPtrMap[(*it)->GetFullName()] = *it;
+		}
+
 		int i = 0;
 		foreach(auto elem, elements) {
 			auto label = OBJ_NAME(new QLabel, "element-builder");
@@ -532,6 +542,8 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
 
 	auto lay = new QVBoxLayout();
+
+	lay->addWidget(OBJ_NAME(LBL("Save Experiment"), "heading-label"));
 
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 	globalLay->addLayout(lay);
@@ -580,6 +592,179 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 
 	return ret;
 }
+bool MainWindowUI::GetLostDataAgreement(QWidget *parent) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-name-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+
+	lay->addWidget(OBJ_NAME(LBL("Open Experiment"), "heading-label"));
+
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	auto paramsLay = new QHBoxLayout;
+	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>."), "experiment-params-comment"), "comment-placement", "right"));
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Resume"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(paramsLay);
+	lay->addSpacing(40);
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialog->exec();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
+bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cExp) {
+	static bool dialogCanceled;
+	dialogCanceled = true;
+
+	QList<CustomExperiment> cExpList;
+	{
+		auto expFileInfos = QDir(CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+		foreach(const QFileInfo &expFileInfo, expFileInfos) {
+			auto filePath = expFileInfo.absoluteFilePath();
+
+			QFile file(filePath);
+
+			if (!file.open(QIODevice::ReadOnly)) {
+				LOG() << "Can not read JSON file.";
+				continue;
+			}
+
+			QByteArray data = file.readAll();
+			file.close();
+
+			try {
+				auto ce = ExperimentReader::GenerateExperimentContainer(data);
+				ce.fileName = expFileInfo.fileName();
+				cExpList << ce;
+			}
+			catch (const QString &err) {
+				LOG() << "Error in the file" << expFileInfo.fileName() << "-" << err;
+				continue;
+			}
+		}
+	}
+
+
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-name-dialog");
+	QList<QMetaObject::Connection> dialogConn;
+	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
+
+	auto lay = new QVBoxLayout();
+	
+	QListView *fileList;
+	
+	lay->addWidget(OBJ_NAME(LBL("Open Experiment"), "heading-label"));
+	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
+
+	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+	QStandardItemModel *model = new QStandardItemModel(cExpList.size()+1, 1);
+	int row = 0;
+	foreach(auto &ce, cExpList) {
+		auto *item = new QStandardItem(ce.name);
+		item->setData(ce.id, Qt::UserRole);
+		model->setItem(row++, item);
+	}
+	{
+		auto item = new QStandardItem("Create new experiment");
+		item->setData(QUuid(), Qt::UserRole);
+		model->setItem(row++, item);
+	}
+	fileList->setModel(model);
+	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
+	
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+	globalLay->addLayout(lay);
+	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
+
+	auto buttonLay = new QHBoxLayout;
+	QPushButton *okBut;
+	QPushButton *cancelBut;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Open"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addSpacing(40);
+	lay->addLayout(buttonLay);
+	lay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-vertical-spacing"));
+
+	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
+		dialogCanceled = false;
+	});
+
+	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
+	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialog->exec();
+
+	if (!dialogCanceled) {
+		auto index = fileList->selectionModel()->currentIndex();
+		if (index.isValid()) {
+			auto curId = index.data(Qt::UserRole).toUuid();
+
+			if (curId.isNull()) {
+				cExp.fileName = "";
+				cExp.name = "";
+				cExp.id = QUuid::createUuid();
+
+				cExp.bc.type = BuilderContainer::SET;
+				cExp.bc.repeats = 1;
+				cExp.bc.elements.clear();
+				cExp.bc.w = 0;
+				cExp.bc.id = QUuid::createUuid();
+				cExp.bc.elem.input.clear();
+				cExp.bc.elem.name.clear();
+				cExp.bc.elem.ptr = 0;
+			}
+			else {
+				foreach(auto &ce, cExpList) {
+					if (curId == ce.id) {
+						cExp = ce;
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+
+	return !dialogCanceled;
+}
 QWidget* MainWindowUI::GetBuildExperimentTab() {
 	static QWidget *w = 0;
 
@@ -593,6 +778,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	auto nodeListOwner = CreateElementsListWidget();
 	
 	QPushButton *deletePbt;
+	QPushButton *openPbt;
 	QPushButton *savePbt;
 
 	auto topButtonOwner = OBJ_NAME(new QFrame, "builder-top-button-owner");
@@ -604,7 +790,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
 	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT(""), "builder-save-file-button"));
-	topButtonOwnerLay->addWidget(OBJ_NAME(PBT(""), "builder-open-file-button"));
+	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT(""), "builder-open-file-button"));
 
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
@@ -671,6 +857,27 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	});
 
 	builderTabs.connections <<
+	CONNECT(openPbt, &QPushButton::clicked, [=]() {
+		if (!GetLostDataAgreement(mw)) {
+			return;
+		}
+
+		CustomExperiment newCe;
+
+		if (!GetOpenCustomExperiment(mw, newCe)) {
+			return;
+		}
+
+		builderTabs.fileName = newCe.fileName;
+		builderTabs.name = newCe.name;
+		builderTabs.globalMult->setValue(newCe.bc.repeats);
+
+		MainWindow::FillElementPointers(newCe.bc, elementsPtrMap);
+
+		builderTabs.builder->SetupNewContainer(newCe.bc);
+	});
+
+	builderTabs.connections <<
 	CONNECT(savePbt, &QPushButton::clicked, [=]() {
 		auto &container(builderTabs.builder->GetContainer());
 
@@ -692,7 +899,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 		mw->SaveCustomExperiment(name, container, builderTabs.fileName);
 	});
-
+	
 	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builder, &BuilderWidget::DeleteSelected);
 
 	return w;

@@ -90,7 +90,9 @@ class BuilderWidget : public QFrame {
 	Q_OBJECT
 public:
 	BuilderWidget(QWidget *parent);
+	
 	const BuilderContainer& GetContainer();
+	void SetupNewContainer(const BuilderContainer&);
 
 protected:
 	void paintEvent(QPaintEvent *e);
@@ -108,6 +110,7 @@ signals:
 	void BuilderContainerSelected(BuilderContainer*);
 
 public slots:
+	void DeleteContainer(BuilderContainer*);
 	void DeleteSelected();
 	void SetTotalRepeats(int);
 	void SetRepeats(QUuid, int);

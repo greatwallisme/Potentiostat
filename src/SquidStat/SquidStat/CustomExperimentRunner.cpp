@@ -74,16 +74,88 @@ QWidget* CustomExperimentRunner::CreateUserInput() const {
 
 	USER_INPUT_END();
 }
+
+void TurnBranchIndexesIntoAbsolute(NodesData &nd) {
+	for (int i = 0; i < nd.size(); ++i) {
+		ExperimentNode_t *exp = (ExperimentNode_t*)nd[i].data();
+
+		if (exp->isTail && (exp->MaxPlays > 1)) {
+			int16_t *ind = (int16_t*)&exp->branchHeadIndex;
+			
+			if (*ind < 0) {
+				*ind = i + *ind;
+			}
+		}
+	}
+}
+void TurnBranchIndexesIntoRelative(NodesData &nd) {
+	for (int i = 0; i < nd.size(); ++i) {
+		ExperimentNode_t *exp = (ExperimentNode_t*)nd[i].data();
+
+		if (exp->isTail && (exp->MaxPlays > 1)) {
+			int16_t val = exp->branchHeadIndex;
+			int16_t *ind = (int16_t*)&exp->branchHeadIndex;
+			*ind = val - i;
+		}
+	}
+}
+void PushDummyNode(NodesData &nd, uint32_t repeats) {
+	ExperimentNode_t *head = (ExperimentNode_t*)nd.first().data();
+	head->isHead = true;
+	head->isTail = false;
+
+	ExperimentNode_t exp;
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
+	exp.nodeType = DUMMY_NODE;
+	exp.isHead = false;
+	exp.isTail = true;
+	exp.MaxPlays = repeats;
+	*((int16_t*)&exp.branchHeadIndex) = -nd.size();
+
+	nd << QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+}
+void SetupBranch(NodesData &nd, uint32_t repeats) {
+	ExperimentNode_t *head = (ExperimentNode_t*)nd.first().data();
+	head->isHead = true;
+	head->isTail = false;
+
+	ExperimentNode_t *tail = (ExperimentNode_t*)nd.last().data();
+	tail->isHead = false;
+	tail->isTail = true;
+	tail->MaxPlays = repeats;
+	*((int16_t*)&tail->branchHeadIndex) = 1 - nd.size();
+}
+uint32_t GetLastMaxPlays(const NodesData &nd) {
+	const ExperimentNode_t *tail = (const ExperimentNode_t*)nd.last().data();
+	return tail->MaxPlays;
+}
+void SetLastMaxPlays(NodesData &nd, uint32_t repeats) {
+	ExperimentNode_t *tail = (ExperimentNode_t*)nd.last().data();
+	tail->MaxPlays = repeats;
+}
 NodesData FillNodeData(const BuilderContainer &bc, const CalibrationData &calData, const HardwareVersion &hwVersion) {
 	NodesData ret;
 
 	if (bc.type == BuilderContainer::ELEMENT) {
 		auto newData = bc.elem.ptr->GetNodesData(bc.elem.input, calData, hwVersion);
 		
-		//TODO: setup repeats for the element
-		bc.repeats;
+		if (newData.size()) {
+			TurnBranchIndexesIntoRelative(newData);
 
-		ret = newData;
+			if (bc.repeats > 1) {
+				if (GetLastMaxPlays(newData) > 1) {
+					PushDummyNode(newData, bc.repeats);
+				}
+				else if (newData.size() == 1) {
+					SetLastMaxPlays(newData, bc.repeats);
+				}
+				else {
+					SetupBranch(newData, bc.repeats);
+				}
+			}
+
+			ret = newData;
+		}
 	}
 	else {
 		NodesData newData;
@@ -92,10 +164,21 @@ NodesData FillNodeData(const BuilderContainer &bc, const CalibrationData &calDat
 			newData << FillNodeData(*it, calData, hwVersion);
 		}
 
-		//TODO: setup repeats for the container
-		bc.repeats;
+		if (newData.size()) {
+			if (bc.repeats > 1) {
+				if (GetLastMaxPlays(newData) > 1) {
+					PushDummyNode(newData, bc.repeats);
+				}
+				else if (newData.size() == 1) {
+					SetLastMaxPlays(newData, bc.repeats);
+				}
+				else {
+					SetupBranch(newData, bc.repeats);
+				}
+			}
 
-		ret = newData;
+			ret = newData;
+		}
 	}
 
 	return ret;
@@ -104,6 +187,14 @@ NodesData CustomExperimentRunner::GetNodesData(QWidget*, const CalibrationData &
 	NodesData ret;
 
 	ret = FillNodeData(_ce.bc, calData, hwVersion);
+
+	ExperimentNode_t exp;
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
+	exp.nodeType = END_EXPERIMENT_NODE;
+
+	ret << QByteArray((char*)&exp, sizeof(ExperimentNode_t));
+
+	TurnBranchIndexesIntoAbsolute(ret);
 
 	return ret;
 }

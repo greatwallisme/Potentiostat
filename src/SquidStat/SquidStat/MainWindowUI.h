@@ -20,8 +20,10 @@ class QTabWidget;
 #include <QMap>
 #include <QVector>
 #include <QDialog>
+#include <QSpinBox>
 
 #include "ExternalStructures.h"
+#include "ExperimentReader.h"
 #include "InstrumentStructures.h"
 #include "AbstractExperiment.h"
 
@@ -101,6 +103,8 @@ private:
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
 	static QString GetNewTitle(QWidget*, const QString&);
 	static QString GetCustomExperimentName(QWidget*, const QString &);
+	static bool GetLostDataAgreement(QWidget*);
+	static bool GetOpenCustomExperiment(QWidget*, CustomExperiment&);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
@@ -165,10 +169,13 @@ private:
 	struct BuilderHandler {
 		QList<QMetaObject::Connection> connections;
 		BuilderWidget *builder;
+		QSpinBox *globalMult;
 		QWidget *userInputs;
 		QString fileName;
 		QString name;
 	} builderTabs;
+
+	QMap<QString, AbstractBuilderElement*> elementsPtrMap;
 
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;

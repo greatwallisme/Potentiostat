@@ -106,11 +106,32 @@ QWidget* ExampleElement::CreateUserInput(UserInput &inputs) const {
 
 	USER_INPUT_END();
 }
-NodesData ExampleElement::GetNodesData(const UserInput&, const CalibrationData&, const HardwareVersion&) const {
-	return NodesData();
-	/*
+NodesData ExampleElement::GetNodesData(const UserInput &inputs, const CalibrationData&, const HardwareVersion&) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_SWEEP_POT;
+	exp.tMin = 100000;
+	exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	exp.samplingParams.ADCTimerDiv = 3;
+	exp.samplingParams.ADCTimerPeriod = 15625;
+	exp.samplingParams.ADCBufferSizeEven = 20;
+	exp.samplingParams.ADCBufferSizeOdd = 20;
+	exp.samplingParams.PointsIgnored = 0;
+	exp.samplingParams.DACMultEven = 5;
+	exp.samplingParams.DACMultOdd = 5;
+	exp.DCSweep_pot.VStartUserInput = inputs[START_VOLTAGE_OBJ_NAME].toInt();
+	exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VEndUserInput = inputs[END_VOLTAGE_OBJ_NAME].toInt();
+	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
+	exp.DCSweep_pot.VStep = 1;
+	exp.DCSweep_pot.Imax = 32767;
+	exp.DCSweep_pot.IRangeMax = RANGE0;
+	exp.DCSweep_pot.Imin = 0;
+	exp.DCSweep_pot.IRangeMin = RANGE7;
+	exp.MaxPlays = 1;
+	PUSH_NEW_NODE_DATA();
+
 	NODES_DATA_END();
-	//*/
 }

@@ -318,13 +318,25 @@
 #define USER_INPUT_END()	return ret;
 
 
-#define NODES_DATA_START(widget, name)	\
+#define NODES_DATA_START_EXPERIMENT(widget, name)	\
 	NodesData ret;						\
 	if (widget->objectName() != name) { \
 		return ret;						\
 	}									\
 	ExperimentNode_t exp;				\
 	memset(&exp, 0x00, sizeof(ExperimentNode_t));
+
+#define NODES_DATA_START_ELEMENTS(widget, name)	\
+	NodesData ret;						\
+	ExperimentNode_t exp;				\
+	memset(&exp, 0x00, sizeof(ExperimentNode_t));
+
+
+#ifdef BUILDER_ELEMENTS_USER_INPUTS
+	#define NODES_DATA_START NODES_DATA_START_ELEMENTS
+#else
+	#define NODES_DATA_START NODES_DATA_START_EXPERIMENT
+#endif
 
 #define NODES_DATA_END()	return ret;
 

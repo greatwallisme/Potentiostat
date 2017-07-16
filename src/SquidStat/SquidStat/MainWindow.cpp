@@ -587,7 +587,7 @@ void MainWindow::StopExperiment(const QUuid &id) {
 	it->oper->StopExperiment(it->experiment.channel);
 }
 
-void FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {
+void MainWindow::FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {
 	if (bc.type == BuilderContainer::ELEMENT) {
 		bc.elem.ptr = elemMap.value(bc.elem.name, 0);
 

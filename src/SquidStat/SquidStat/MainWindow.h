@@ -37,6 +37,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+	static void FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*>&);
+
 public slots:
 	void LoadFonts();
     void ApplyStyle();

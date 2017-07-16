@@ -17,7 +17,7 @@
 BuilderContainer::BuilderContainer(qint32 rep, Type t) :
 	repeats(rep),
 	type(t),
-	w(0) 
+	w(0)
 {
 }
 QList<QLine> GetLines(QWidget *w, const LineDirection &ld) {
@@ -222,26 +222,6 @@ void BuilderWidget::InitContainer() {
 	container.repeats = 1;
 	container.w = 0;
 	container.elem.ptr = 0;
-	/*/
-	container.repetition = 20;
-	container.elements
-		<< BuilderContainer(1)
-		<< BuilderContainer(2)
-		<< BuilderContainer(10, BuilderContainer::SET)
-		<< BuilderContainer(15, BuilderContainer::SET)
-		<< BuilderContainer(8)
-		<< BuilderContainer(9)
-		<< BuilderContainer(10);
-
-	container.elements[2].elements
-		<< BuilderContainer(3)
-		<< BuilderContainer(4)
-		<< BuilderContainer(5);
-
-	container.elements[3].elements
-		<< BuilderContainer(6)
-		<< BuilderContainer(7);
-	//*/
 }
 void BuilderWidget::PlaceWidgets() {
 	if (!ui.elementsLay) {
@@ -505,7 +485,7 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 			BuilderContainer newCont;
 			newCont.type = BuilderContainer::SET;
 			newCont.repeats = 1;
-			bc.id = QUuid::createUuid();
+			newCont.id = QUuid::createUuid();
 			newCont.w = 0;
 			newCont.elem.ptr = 0;
 			
@@ -600,11 +580,14 @@ void BuilderWidget::HandleSelection(QWidget *w) {
 	emit BuilderContainerSelected(selectedBc);
 }
 void BuilderWidget::DeleteSelected() {
-	if (!selectedBc) {
+	DeleteContainer(selectedBc);
+}
+void BuilderWidget::DeleteContainer(BuilderContainer *bcPtr) {
+	if (!bcPtr) {
 		return;
 	}
 
-	auto toDeleteBc = selectedBc;
+	auto toDeleteBc = bcPtr;
 
 	HandleSelection(0);
 
@@ -665,6 +648,18 @@ void BuilderWidget::DeleteSelected() {
 		}
 	}
 
+	UpdateLines();
+	PlaceWidgets();
+	emit EnqueueUpdateBackgroundMap();
+}
+void BuilderWidget::SetupNewContainer(const BuilderContainer &bc) {
+	while (container.elements.size()) {
+		DeleteContainer(&(*container.elements.begin()));
+	}
+
+	container = bc;
+
+	InitWidgets();
 	UpdateLines();
 	PlaceWidgets();
 	emit EnqueueUpdateBackgroundMap();
