@@ -23,7 +23,6 @@ public:
 	virtual ExperimentType GetType() const = 0;
 
 	virtual QWidget* CreateUserInput(UserInput&) const = 0;
-	//virtual UserInput GetUserInput(QWidget*) const = 0;
 	virtual NodesData GetNodesData(const UserInput&, const CalibrationData&, const HardwareVersion&) const = 0;
 };
 

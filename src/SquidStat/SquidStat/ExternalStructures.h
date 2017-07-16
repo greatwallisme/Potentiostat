@@ -1,12 +1,5 @@
 #pragma once
 
-typedef enum {
-	EDGE_SAMPLING,
-	PERIODIC_SAMPLING,
-	DYNAMIC_SAMPLING,
-	PERIODIC_SAMPLING_STATIC_DAC
-} DCSamplingMode_t;
-
 #include <qglobal.h>
 
 #include <global_typedefs.h>

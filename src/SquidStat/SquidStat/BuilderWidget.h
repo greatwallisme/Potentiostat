@@ -43,7 +43,7 @@ struct BuilderContainer {
 
 	BuilderContainer(qint32 rep = 1, Type t = ELEMENT);
 
-	qint32 repetition;
+	qint32 repeats;
 	Type type;
 	QUuid id;
 

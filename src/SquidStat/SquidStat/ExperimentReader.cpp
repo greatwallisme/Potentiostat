@@ -57,7 +57,7 @@ BuilderContainer ParseContainerJson(const QJsonObject &jo) {
 	auto joIt = jo.constBegin();
 
 	FIND_VALUE(JSON_REPEATS, isDouble);
-	ret.repetition = joIt->toInt();
+	ret.repeats = joIt->toInt();
 
 	FIND_VALUE(JSON_TYPE, isString);
 	auto type = joIt->toString();
@@ -153,7 +153,7 @@ QJsonObject GenerateObjectForUserInput(const UserInput &inputs) {
 QJsonObject GenerateObjectForContainer(const BuilderContainer &bc) {
 	QJsonObject ret;
 
-	ret.insert(JSON_REPEATS, bc.repetition);
+	ret.insert(JSON_REPEATS, bc.repeats);
 
 	switch (bc.type) {
 		case BuilderContainer::ELEMENT:

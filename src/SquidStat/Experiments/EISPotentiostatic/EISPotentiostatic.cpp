@@ -19,14 +19,6 @@
 #define DC_BIAS_DEFAULT			0
 #define AC_AMP_DEFAULT			10		//(in mA)
 
-
-#define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
-
 #define PLOT_VAR_IMPEDANCE				"|Z|"
 #define PLOT_VAR_PHASE					"Phase"
 #define PLOT_VAR_IMP_REAL				"Z\'"

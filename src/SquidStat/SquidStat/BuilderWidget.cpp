@@ -15,7 +15,7 @@
 #define BUILDER_ELEMENT_SPACING		2
 
 BuilderContainer::BuilderContainer(qint32 rep, Type t) :
-	repetition(rep),
+	repeats(rep),
 	type(t),
 	w(0) 
 {
@@ -124,7 +124,7 @@ BuildExpContainer::BuildExpContainer(BuilderWidget *parent, const BuilderContain
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
-	mult->setValue(bc.repetition);
+	mult->setValue(bc.repeats);
 
 	auto disconnector = new Disconnector(mult);
 
@@ -219,7 +219,7 @@ const BuilderContainer& BuilderWidget::GetContainer() {
 }
 void BuilderWidget::InitContainer() {
 	container.type = BuilderContainer::SET;
-	container.repetition = 1;
+	container.repeats = 1;
 	container.w = 0;
 	container.elem.ptr = 0;
 	/*/
@@ -357,7 +357,7 @@ QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc, 
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
-	mult->setValue(bc.repetition);
+	mult->setValue(bc.repeats);
 
 	auto disconnector = new Disconnector(mult);
 	
@@ -481,7 +481,7 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 		if (area->list) {
 			BuilderContainer bc;
 			bc.type = BuilderContainer::ELEMENT;
-			bc.repetition = 1;
+			bc.repeats = 1;
 			bc.id = QUuid::createUuid();
 			bc.w = 0;
 			bc.elem.ptr = emd->elem;
@@ -493,7 +493,7 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 		else {
 			BuilderContainer bc;
 			bc.type = BuilderContainer::ELEMENT;
-			bc.repetition = 1;
+			bc.repeats = 1;
 			bc.id = QUuid::createUuid();
 			bc.w = 0;
 			bc.elem.ptr = emd->elem;
@@ -504,7 +504,7 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 
 			BuilderContainer newCont;
 			newCont.type = BuilderContainer::SET;
-			newCont.repetition = 1;
+			newCont.repeats = 1;
 			bc.id = QUuid::createUuid();
 			newCont.w = 0;
 			newCont.elem.ptr = 0;
@@ -670,12 +670,12 @@ void BuilderWidget::DeleteSelected() {
 	emit EnqueueUpdateBackgroundMap();
 }
 void BuilderWidget::SetTotalRepeats(int val) {
-	container.repetition = val;
+	container.repeats = val;
 }
 void BuilderWidget::SetRepeats(QUuid id, int val) {
 	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
 		if (id == it->id) {
-			it->repetition = val;
+			it->repeats = val;
 			break;
 		}
 
@@ -687,7 +687,7 @@ void BuilderWidget::SetRepeats(QUuid id, int val) {
 
 		for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
 			if (id == cIt->id) {
-				cIt->repetition = val;
+				cIt->repeats = val;
 				found = true;
 				break;
 			}
