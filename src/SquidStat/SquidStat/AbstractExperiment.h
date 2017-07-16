@@ -42,8 +42,8 @@ public:
 	virtual QWidget* CreateUserInput() const = 0;
 	virtual NodesData GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const = 0;
 
-	virtual QStringList GetXAxisParameters() const = 0;
-	virtual QStringList GetYAxisParameters() const = 0;
+	virtual QStringList GetXAxisParameters(ExperimentType) const = 0;
+	virtual QStringList GetYAxisParameters(ExperimentType) const = 0;
 	
 	virtual void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
 	virtual void SaveDcDataHeader(QFile&) const {};

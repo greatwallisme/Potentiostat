@@ -167,18 +167,30 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
 	NODES_DATA_END();
 }
 
-QStringList EISPotentiostatic::GetXAxisParameters() const {
-	return QStringList() <<
+QStringList EISPotentiostatic::GetXAxisParameters(ExperimentType type) const {
+	QStringList ret;
+
+	if (type == ET_AC) {
+		ret <<
 		PLOT_VAR_FREQ <<
 		PLOT_VAR_IMP_REAL;
+	}
+
+	return ret;
 }
-QStringList EISPotentiostatic::GetYAxisParameters() const {
-	return QStringList() <<
+QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
+	QStringList ret;
+
+	if (type == ET_AC) {
+		ret <<
 		PLOT_VAR_IMPEDANCE <<
 		PLOT_VAR_PHASE <<
 		PLOT_VAR_IMP_REAL <<
 		PLOT_VAR_IMP_IMAG <<
 		PLOT_VAR_NEG_IMP_IMAG;
+	}
+
+	return ret;
 }
 void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	ComplexDataPoint_t dataPoint;
@@ -194,12 +206,12 @@ void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &con
 void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DATA_HEADER(PLOT_VAR_FREQ);
-	SAVE_DATA_HEADER(PLOT_VAR_IMPEDANCE);
-	SAVE_DATA_HEADER(PLOT_VAR_PHASE);
-	SAVE_DATA_HEADER(PLOT_VAR_IMP_REAL);
-	SAVE_DATA_HEADER(PLOT_VAR_IMP_IMAG);
-	SAVE_DATA_HEADER(PLOT_VAR_NEG_IMP_IMAG);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_FREQ);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_IMPEDANCE);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_PHASE);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_IMP_REAL);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_IMP_IMAG);
+	SAVE_AC_DATA_HEADER(PLOT_VAR_NEG_IMP_IMAG);
 	
 	SAVE_DATA_HEADER_END();
 }

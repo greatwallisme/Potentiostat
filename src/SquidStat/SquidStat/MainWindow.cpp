@@ -63,6 +63,10 @@ MainWindow::~MainWindow() {
 	CleanupBuilderElements();
 }
 void MainWindow::CleanupExperiments() {
+	foreach(auto exp, prebuiltExperiments.customExpMap) {
+		delete exp;
+	}
+
 	foreach(auto exp, prebuiltExperiments.expList) {
 		delete exp;
 	}

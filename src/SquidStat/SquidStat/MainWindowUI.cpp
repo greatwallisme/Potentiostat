@@ -1502,8 +1502,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		auto dataTabWidget = CreateNewDataTabWidget(startParams.id,
 			startParams.type,
 			startParams.exp->GetShortName(),
-			startParams.exp->GetXAxisParameters(),
-			startParams.exp->GetYAxisParameters());
+			startParams.exp->GetXAxisParameters(startParams.type),
+			startParams.exp->GetYAxisParameters(startParams.type));
 
 		auto &handler(dataTabs.plots[startParams.id][startParams.type]);
 

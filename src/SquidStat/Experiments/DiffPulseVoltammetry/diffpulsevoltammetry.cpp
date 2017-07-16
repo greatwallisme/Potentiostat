@@ -184,19 +184,31 @@ NodesData DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData
 	NODES_DATA_END();
 }
 
-QStringList DiffPulseVoltammetry::GetXAxisParameters() const {
-	return QStringList() <<
-		PLOT_VAR_TIMESTAMP <<
-		PLOT_VAR_TIMESTAMP_NORMALIZED <<
-		PLOT_VAR_EWE <<
-		PLOT_VAR_CURRENT;
+QStringList DiffPulseVoltammetry::GetXAxisParameters(ExperimentType type) const {
+	QStringList ret;
+
+	if (type == ET_DC) {
+		ret <<
+			PLOT_VAR_TIMESTAMP <<
+			PLOT_VAR_TIMESTAMP_NORMALIZED <<
+			PLOT_VAR_EWE <<
+			PLOT_VAR_CURRENT;
+	}
+
+	return ret;
 }
-QStringList DiffPulseVoltammetry::GetYAxisParameters() const {
-	return QStringList() <<
-		PLOT_VAR_EWE <<
-		PLOT_VAR_CURRENT <<
-		PLOT_VAR_ECE <<
-		PLOT_VAR_CURRENT_INTEGRAL;
+QStringList DiffPulseVoltammetry::GetYAxisParameters(ExperimentType type) const {
+	QStringList ret;
+
+	if (type == ET_DC) {
+		ret <<
+			PLOT_VAR_EWE <<
+			PLOT_VAR_CURRENT <<
+			PLOT_VAR_ECE <<
+			PLOT_VAR_CURRENT_INTEGRAL;
+	}
+
+	return ret;
 }
 void DiffPulseVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
@@ -224,12 +236,12 @@ void DiffPulseVoltammetry::PushNewDcData(const ExperimentalDcData &expData, Data
 void DiffPulseVoltammetry::SaveDcDataHeader(QFile &saveFile) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP);
-	SAVE_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
-	SAVE_DATA_HEADER(PLOT_VAR_EWE);
-	SAVE_DATA_HEADER(PLOT_VAR_CURRENT);
-	SAVE_DATA_HEADER(PLOT_VAR_ECE);
-	SAVE_DATA_HEADER(PLOT_VAR_CURRENT_INTEGRAL);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_ECE);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT_INTEGRAL);
 
 	SAVE_DATA_HEADER_END();
 }

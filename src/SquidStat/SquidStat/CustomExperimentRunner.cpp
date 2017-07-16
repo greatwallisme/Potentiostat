@@ -60,10 +60,10 @@ NodesData CustomExperimentRunner::GetNodesData(QWidget*, const CalibrationData&,
 	return NodesData();
 }
 
-QStringList CustomExperimentRunner::GetXAxisParameters() const {
+QStringList CustomExperimentRunner::GetXAxisParameters(ExperimentType) const {
 	return QStringList();
 }
-QStringList CustomExperimentRunner::GetYAxisParameters() const {
+QStringList CustomExperimentRunner::GetYAxisParameters(ExperimentType) const {
 	return QStringList();
 }
 

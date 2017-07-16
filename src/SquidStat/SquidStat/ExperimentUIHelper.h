@@ -56,14 +56,17 @@
 	QString prevChar = "";			\
 	QString str;
 
-#define SAVE_DATA_HEADER(varName)	\
+#define SAVE_DATA_HEADER(type, varName)	\
 	headers += prevChar;			\
 	axes += prevChar;				\
 	headers += QString("\"%1\"").arg(QString(varName).replace("\"", "\"\""));	\
-	str = GetXAxisParameters().contains(varName) ? "X" : "";					\
-	str += GetYAxisParameters().contains(varName) ? "Y" : "";					\
+	str = GetXAxisParameters(type).contains(varName) ? "X" : "";					\
+	str += GetYAxisParameters(type).contains(varName) ? "Y" : "";					\
 	axes += QString("\"%1\"").arg(str);											\
 	prevChar = ";";
+
+#define SAVE_DC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_DC, varName)
+#define SAVE_AC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_AC, varName)
 
 #define SAVE_DATA_HEADER_END()			\
 	saveFile.write(headers.toLatin1()); \

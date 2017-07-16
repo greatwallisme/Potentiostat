@@ -16,8 +16,8 @@ public:
 	QWidget* CreateUserInput() const;
 	NodesData GetNodesData(QWidget*, const CalibrationData&, const HardwareVersion&) const;
 	
-	QStringList GetXAxisParameters() const;
-	QStringList GetYAxisParameters() const;
+	QStringList GetXAxisParameters(ExperimentType) const;
+	QStringList GetYAxisParameters(ExperimentType) const;
 	void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 
 	void SaveAcDataHeader(QFile&) const;
