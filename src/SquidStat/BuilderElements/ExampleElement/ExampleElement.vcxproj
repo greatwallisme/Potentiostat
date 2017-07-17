@@ -27,8 +27,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\SquidStat\AbstractExperiment.h" />
-    <ClInclude Include="..\..\SquidStat\ExperimentFactoryInterface.h" />
     <ClInclude Include="ExampleElement.h" />
     <CustomBuild Include="Factory.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing Factory.h...</Message>

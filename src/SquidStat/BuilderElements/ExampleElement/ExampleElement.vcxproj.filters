@@ -29,9 +29,6 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
-    <Filter Include="_src\Interfaces">
-      <UniqueIdentifier>{dd65a052-13f6-49a1-a7f2-95b23a9fde3f}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GeneratedFiles\qrc_recources.cpp">
@@ -51,12 +48,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\SquidStat\AbstractExperiment.h">
-      <Filter>_src\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SquidStat\ExperimentFactoryInterface.h">
-      <Filter>_src\Interfaces</Filter>
-    </ClInclude>
     <ClInclude Include="ExampleElement.h">
       <Filter>_src</Filter>
     </ClInclude>
