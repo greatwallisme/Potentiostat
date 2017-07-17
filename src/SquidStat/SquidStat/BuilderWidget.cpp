@@ -582,6 +582,9 @@ void BuilderWidget::HandleSelection(QWidget *w) {
 	
 	emit BuilderContainerSelected(selectedBc);
 }
+void BuilderWidget::RemoveSelection() {
+	HandleSelection(0);
+}
 void BuilderWidget::DeleteSelected() {
 	DeleteContainer(selectedBc);
 }

@@ -880,7 +880,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	topButtonOwnerLay->addStretch(1);
 	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
 	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
-	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
+	//topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
 	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT(""), "builder-save-file-button"));
 	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT(""), "builder-open-file-button"));
@@ -1028,15 +1028,31 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	//CreateBuildExperimentTabWidget()
 
-	auto builderTabsLay = NO_SPACING(NO_MARGIN(new QStackedLayout));
+	auto builderTabsPlacerholder = OBJ_NAME(WDG(), "experiment-builder-placeholder");
+	auto builderTabsLay = NO_SPACING(NO_MARGIN(new QStackedLayout(builderTabsPlacerholder)));
 
 	lay->addWidget(nodeListOwner);
-	lay->addLayout(builderTabsLay);
+	lay->addWidget(builderTabsPlacerholder);
 	lay->addWidget(nodeParamsOwner);
 
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
+
+	auto RemoveSelection = [=]() {
+		auto wdg = builderTabsLay->widget(builderTabsLay->currentIndex());
+		if (!wdg) {
+			return;
+		}
+
+		auto builder = wdg->findChild<BuilderWidget*>("build-exp-holder");
+
+		if (!builder) {
+			return;
+		}
+
+		builder->RemoveSelection();
+	};
 
 	CONNECT(tabBar, &QTabBar::tabBarClicked, [=](int index) {
 		if (index != tabBar->count() - 1) {
@@ -1073,6 +1089,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 		}
 
 		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+		RemoveSelection();
 		builderTabsLay->setCurrentIndex(index);
 		prevCloseTabButtonPos = index;
 
@@ -1104,6 +1121,8 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			if ((prevCloseTabButtonPos == (tabBar->count() - 2)) && (tabBar->count() > 2)) {
 				--prevCloseTabButtonPos;
 			}
+
+			RemoveSelection();
 
 			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 			QObject::disconnect(closeTabButtonConnection);
