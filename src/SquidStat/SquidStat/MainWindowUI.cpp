@@ -409,12 +409,8 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
-	static QWidget *w = 0;
-
-	if (w) {
-		return w;
-	}
+QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
+	QWidget *w = 0;
 
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
@@ -430,8 +426,8 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget() {
 
 	auto buildExpHolderOwner = new BuilderWidget(mw);
 
-	builderTabs.builder = buildExpHolderOwner;
-	builderTabs.globalMult = mult;
+	builderTabs.builders[id].builder = buildExpHolderOwner;
+	builderTabs.builders[id].globalMult = mult;
 
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
@@ -871,17 +867,8 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 
 	return !dialogCanceled;
 }
-QWidget* MainWindowUI::GetBuildExperimentTab() {
-	static QWidget *w = 0;
-
-	if (w) {
-		return w;
-	}
-
-	w = WDG();
-	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
-
-	auto nodeListOwner = CreateElementsListWidget();
+QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
+	QWidget *w = 0;
 	
 	QPushButton *deletePbt;
 	QPushButton *openPbt;
@@ -905,14 +892,110 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-right-buttons-replacement"), 1, 2, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-left-spacer"), 1, 0, 2, 1);
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
-	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(), 1, 1);
+	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(id), 1, 1);
+
+
+	builderTabs.builders[id].connections <<
+	CONNECT(openPbt, &QPushButton::clicked, [=]() {
+		if (!GetLostDataAgreement(mw)) {
+			return;
+		}
+
+		CustomExperiment newCe;
+
+		if (!GetOpenCustomExperiment(mw, newCe)) {
+			return;
+		}
+
+		builderTabs.builders[id].fileName = newCe.fileName;
+		builderTabs.builders[id].name = newCe.name;
+		builderTabs.builders[id].globalMult->setValue(newCe.bc.repeats);
+
+		MainWindow::FillElementPointers(newCe.bc, elementsPtrMap);
+
+		builderTabs.builders[id].builder->SetupNewContainer(newCe.bc);
+	});
+
+	builderTabs.builders[id].connections <<
+	CONNECT(savePbt, &QPushButton::clicked, [=]() {
+		auto &container(builderTabs.builders[id].builder->GetContainer());
+
+		if (!container.elements.count()) {
+			return;
+		}
+
+		QString name = GetCustomExperimentName(mw, builderTabs.builders[id].name);
+
+		if (name.isEmpty()) {
+			return;
+		}
+
+		builderTabs.builders[id].name = name;
+
+		builderTabs.tabBar->setTabText(builderTabs.tabBar->currentIndex(), name);
+
+		if (builderTabs.builders[id].fileName.isEmpty()) {
+			builderTabs.builders[id].fileName = QUuid::createUuid().toString() + ".json";
+		}
+
+		mw->SaveCustomExperiment(name, container, builderTabs.builders[id].fileName);
+	});
+
+	builderTabs.builders[id].connections <<
+	CONNECT(builderTabs.builders[id].builder, &BuilderWidget::BuilderContainerSelected, [=](BuilderContainer *bc) {
+		if (builderTabs.userInputs) {
+			builderTabs.paramsLay->removeWidget(builderTabs.userInputs);
+			builderTabs.userInputs->deleteLater();
+			builderTabs.userInputs = 0;
+		}
+
+		if (bc && (bc->type == BuilderContainer::ELEMENT)) {
+			auto elem = bc->elem.ptr;
+
+			builderTabs.userInputs = elem->CreateUserInput(bc->elem.input);
+			builderTabs.paramsLay->addWidget(builderTabs.userInputs);
+
+			builderTabs.paramsHeadWidget->show();
+		}
+		else {
+			builderTabs.paramsHeadWidget->hide();
+		}
+	});
+
+	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builders[id].builder, &BuilderWidget::DeleteSelected);
+
+	w = expBuilderOwner;
+
+	return w;
+}
+#include <QMessageBox>
+QWidget* MainWindowUI::GetBuildExperimentTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = OBJ_NAME(WDG(), "build-experiment-owner");
+	auto *tabBarLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+
+	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
+
+	QTabBar *tabBar;
+	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
+	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
+	tabFrameLay->addWidget(builderTabs.tabBar = tabBar = OBJ_NAME(new QTabBar, "builder-tab"));
+
+	tabBarLayout->addWidget(tabFrame);
+	tabBarLayout->addLayout(lay);
+
+	tabBar->setExpanding(false);
+	tabBar->addTab(QIcon(":/GUI/Resources/new-tab.png"), "");
+
+	auto nodeListOwner = CreateElementsListWidget();
 
 	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
 	auto *nodeParamsOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(nodeParamsOwner)));
-
-	lay->addWidget(nodeListOwner);
-	lay->addWidget(expBuilderOwner);
-	lay->addWidget(nodeParamsOwner);
 
 
 
@@ -940,73 +1023,103 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	//nodeParamsOwnerLay->addLayout(buttonLay, 3, 1);
 	nodeParamsOwnerLay->setRowStretch(2, 1);
 
+	builderTabs.paramsHeadWidget = paramsHeadWidget;
+	builderTabs.paramsLay = paramsLay;
 
-	builderTabs.connections << 
-	CONNECT(builderTabs.builder, &BuilderWidget::BuilderContainerSelected, [=](BuilderContainer *bc) {
-		if (builderTabs.userInputs) {
-			paramsLay->removeWidget(builderTabs.userInputs);
-			builderTabs.userInputs->deleteLater();
-			builderTabs.userInputs = 0;
+	//CreateBuildExperimentTabWidget()
+
+	auto builderTabsLay = NO_SPACING(NO_MARGIN(new QStackedLayout));
+
+	lay->addWidget(nodeListOwner);
+	lay->addLayout(builderTabsLay);
+	lay->addWidget(nodeParamsOwner);
+
+	static QPushButton *closeTabButton = 0;
+	static QMetaObject::Connection closeTabButtonConnection;
+	static int prevCloseTabButtonPos = -1;
+
+	CONNECT(tabBar, &QTabBar::tabBarClicked, [=](int index) {
+		if (index != tabBar->count() - 1) {
+			//QMessageBox::information(mw, QString(index), "");
+			return;
+		}
+		
+		auto tabName = QString("New experiment");
+		tabBar->insertTab(tabBar->count() - 1, tabName);
+
+		const QUuid id = QUuid::createUuid();
+
+		builderTabs.builders[id].name = "New experiment";
+
+		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
+
+		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
+		//builderTabsLay->setCurrentIndex(tabBar->count() - 2);
+		tabBar->setCurrentIndex(tabBar->count() - 2);
+	});
+	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
+		if (index < 0) {
+			return;
+		}
+		if (index >= tabBar->count() - 1) {
+			tabBar->setCurrentIndex(prevCloseTabButtonPos);
+			return;
 		}
 
-		if (bc && (bc->type == BuilderContainer::ELEMENT)) {
-			auto elem = bc->elem.ptr;
-
-			builderTabs.userInputs = elem->CreateUserInput(bc->elem.input);
-			paramsLay->addWidget(builderTabs.userInputs);
-
-			paramsHeadWidget->show();
+		if (closeTabButton) {
+			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+			QObject::disconnect(closeTabButtonConnection);
+			closeTabButton->deleteLater();
 		}
-		else {
-			paramsHeadWidget->hide();
-		}
+
+		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+		builderTabsLay->setCurrentIndex(index);
+		prevCloseTabButtonPos = index;
+
+		closeTabButtonConnection =
+		CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
+			int currentIndex = tabBar->currentIndex();
+
+			if ((-1 == currentIndex) || (currentIndex >= tabBar->count() - 1)) {
+				return;
+			}
+
+			auto wdg = builderTabsLay->widget(currentIndex);
+			auto builder = wdg->findChild<QWidget*>("build-exp-holder");
+			
+			if (0 != builder) {
+				for (auto itId = builderTabs.builders.begin(); itId != builderTabs.builders.end(); ++itId) {
+					if (itId.value().builder != builder) {
+						continue;
+					}
+
+					foreach(auto conn, itId.value().connections) {
+						QObject::disconnect(conn);
+					}
+					
+					break;
+				}
+			}
+
+			if ((prevCloseTabButtonPos == (tabBar->count() - 2)) && (tabBar->count() > 2)) {
+				--prevCloseTabButtonPos;
+			}
+
+			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+			QObject::disconnect(closeTabButtonConnection);
+			closeTabButton->deleteLater();
+			closeTabButton = 0;
+			tabBar->removeTab(currentIndex);
+			builderTabsLay->removeWidget(wdg);
+			wdg->deleteLater();
+
+			if (tabBar->count() == 1) {
+				tabBar->tabBarClicked(tabBar->count() - 1);
+			}
+		});
 	});
 
-	builderTabs.connections <<
-	CONNECT(openPbt, &QPushButton::clicked, [=]() {
-		if (!GetLostDataAgreement(mw)) {
-			return;
-		}
-
-		CustomExperiment newCe;
-
-		if (!GetOpenCustomExperiment(mw, newCe)) {
-			return;
-		}
-
-		builderTabs.fileName = newCe.fileName;
-		builderTabs.name = newCe.name;
-		builderTabs.globalMult->setValue(newCe.bc.repeats);
-
-		MainWindow::FillElementPointers(newCe.bc, elementsPtrMap);
-
-		builderTabs.builder->SetupNewContainer(newCe.bc);
-	});
-
-	builderTabs.connections <<
-	CONNECT(savePbt, &QPushButton::clicked, [=]() {
-		auto &container(builderTabs.builder->GetContainer());
-
-		if (!container.elements.count()) {
-			return;
-		}
-
-		QString name = GetCustomExperimentName(mw, builderTabs.name);
-
-		if (name.isEmpty()) {
-			return;
-		}
-
-		builderTabs.name = name;
-
-		if (builderTabs.fileName.isEmpty()) {
-			builderTabs.fileName = QUuid::createUuid().toString() + ".json";
-		}
-
-		mw->SaveCustomExperiment(name, container, builderTabs.fileName);
-	});
-	
-	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builder, &BuilderWidget::DeleteSelected);
+	tabBar->tabBarClicked(tabBar->count() - 1);
 
 	return w;
 }

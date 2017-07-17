@@ -21,6 +21,7 @@ class QTabWidget;
 #include <QVector>
 #include <QDialog>
 #include <QSpinBox>
+#include <QTabBar>
 
 #include "ExternalStructures.h"
 #include "ExperimentReader.h"
@@ -118,7 +119,8 @@ private:
 	QWidget* GetRunExperimentTab();
 
 	QWidget* GetBuildExperimentTab();
-	QWidget* CreateBuildExpHolderWidget();
+	QWidget* CreateBuildExperimentTabWidget(const QUuid&);
+	QWidget* CreateBuildExpHolderWidget(const QUuid &id);
 	QWidget* CreateElementsListWidget();
 
 	QWidget* GetNewDataWindowTab();
@@ -170,9 +172,16 @@ private:
 		QList<QMetaObject::Connection> connections;
 		BuilderWidget *builder;
 		QSpinBox *globalMult;
-		QWidget *userInputs;
 		QString fileName;
 		QString name;
+	};
+
+	struct {
+		QMap<QUuid, BuilderHandler> builders;
+		QWidget *userInputs;
+		QWidget *paramsHeadWidget;
+		QVBoxLayout *paramsLay;
+		QTabBar *tabBar;
 	} builderTabs;
 
 	QMap<QString, AbstractBuilderElement*> elementsPtrMap;

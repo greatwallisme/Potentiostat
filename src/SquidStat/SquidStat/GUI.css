@@ -127,7 +127,7 @@ QPushButton#bar-button:open {
 #top-tab-bar-owner {
 	background-color: #7b1a1e;
 	border: none;
-	border-top: 1px solid #ce2026;
+	border: 1px solid #ce2026;
 }
 /*//////////////        SELECT EXPERIMENT      ////////////////////*/
 #experiment-list-owner {
@@ -311,6 +311,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #node-list-owner {
 	max-width: 300px;
 	min-width: 300px;
+	border-top: 1px solid #ce2026;
+	margin-top: -1px;
 }
 #node-list-owner > *[widget-type="left-grey"] {
 	border: none;
@@ -539,6 +541,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 500px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#build-experiment-owner,
 #new-data-window-owner {
 	border: none;
 	background-color: #ce2026;
@@ -548,12 +551,28 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab::pane {
 	/*border-top: 1px solid #ce2026;*/
 }
+#builder-tab {
+	border: none;
+	background-color: #ce2026;
+	border-bottom: 1px solid #ce2026;
+}
 #plot-tab QTabBar {
 	background-color: #ce2026;
+}
+#builder-tab-frame {
+	border: none;
+	background-color: #ce2026;
+	
+	padding-left: 25px;
+	padding-bottom: -1px;
 }
 #plot-tab::tab-bar {
 	left: 25px;
 }
+#builder-tab::tab {
+	margin-bottom: 1px;
+}
+#builder-tab::tab,
 #plot-tab QTabBar::tab {
 	padding-top: 0px;
 	padding-right: 15px;
@@ -569,12 +588,14 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	min-height: 21px;
 	max-height: 21px;
-	
 }
+#builder-tab::tab:selected,
 #plot-tab QTabBar::tab:selected {
     color: #000000;
 	background-color: #ffffff;
 }
+#builder-tab::tab:last,
+#builder-tab::tab:only-one,
 #plot-tab QTabBar::tab:last,
 #plot-tab QTabBar::tab:only-one {
 	color: #ce2026;
@@ -590,6 +611,8 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	background-color: #ffbec0;
 }
+#builder-tab::tab:last:selected,
+#builder-tab::tab:only-one,
 #plot-tab QTabBar::tab:last:selected,
 #plot-tab QTabBar::tab:only-one {
 	/*padding-bottom: 10px;*/
