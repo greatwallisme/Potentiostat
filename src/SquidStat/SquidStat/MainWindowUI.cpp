@@ -56,6 +56,7 @@
 #include "ExperimentReader.h"
 
 #include <functional>
+#include <QScrollBar>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -409,15 +410,82 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
+class MyScrollArea : public QScrollArea {
+public:
+	MyScrollArea() : pressed(false), dragged(false) {}
+
+protected:
+	void mousePressEvent(QMouseEvent *me) {
+		pressed = true;
+		dragged = false;
+		pressButton = me->button();
+		pressPoint = me->pos();
+
+		me->ignore();
+	}
+	void mouseMoveEvent(QMouseEvent *me) {
+		if (pressed) {
+			QPoint pos = me->pos();
+			QLine moveVector(pressPoint, pos);
+
+			auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
+
+			if (dragged || (!dragged && (length > 3))) {
+				dragged = true;
+
+				Dragging(moveVector.dx(), moveVector.dy());
+
+				pressPoint = pos;
+				me->accept();
+			}
+			else {
+				me->ignore();
+			}
+		}
+		else {
+			me->ignore();
+		}
+	}
+	void mouseReleaseEvent(QMouseEvent *e) {
+		if (dragged) {
+			e->accept();
+		}
+		else {
+			e->ignore();
+		}
+
+		pressed = false;
+		dragged = false;
+	}
+
+private:
+	void Dragging(int dx, int dy) {
+		auto bar = this->verticalScrollBar();
+
+		if (bar) {
+			bar->setValue(bar->value() - dy);
+		}
+		bar = this->horizontalScrollBar();
+
+		if (bar) {
+			bar->setValue(bar->value() - dx);
+		}
+	}
+
+	QPoint pressPoint;
+	Qt::MouseButton pressButton;
+	bool pressed;
+	bool dragged;
+};
 QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	QWidget *w = 0;
 
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
-	QScrollArea *buildExpHolder;
+	MyScrollArea *buildExpHolder;
 	QSpinBox *mult;
-	lay->addWidget(buildExpHolder = OBJ_NAME(new QScrollArea, "exp-builder-scroll-area"));
+	lay->addWidget(buildExpHolder = OBJ_NAME(new MyScrollArea, "exp-builder-scroll-area"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "exp-builder-global-multiplier"));
 
 	mult->setMinimum(1);

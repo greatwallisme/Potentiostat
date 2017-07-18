@@ -116,7 +116,7 @@ protected:
 	void dragMoveEvent(QDragMoveEvent *e);
 	void dropEvent(QDropEvent *e);
 	void resizeEvent(QResizeEvent *e);
-	void mousePressEvent(QMouseEvent *e);
+	void mouseReleaseEvent(QMouseEvent *e);
 
 signals:
 	void RequestPlaceWidgets();
@@ -142,7 +142,7 @@ private:
 	void UpdateLines();
 	QWidget* CreateBuildExpElementWidget(const BuilderContainer&, QUuid);
 	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&, QUuid);
-	
+
 
 	BuilderContainer container;
 	BuilderContainer *selectedBc;

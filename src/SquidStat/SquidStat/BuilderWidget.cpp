@@ -16,10 +16,6 @@
 
 #define BUILDER_ELEMENT_SPACING		2
 
-struct ContainerMimeData {
-	QUuid id;
-};
-
 BuilderContainer::BuilderContainer(qint32 rep, Type t) :
 	repeats(rep),
 	type(t),
@@ -820,7 +816,7 @@ void BuilderWidget::dropEvent(QDropEvent *e) {
 void BuilderWidget::resizeEvent(QResizeEvent *e) {
 	emit EnqueueUpdateBackgroundMap();
 }
-void BuilderWidget::mousePressEvent(QMouseEvent *e) {
+void BuilderWidget::mouseReleaseEvent(QMouseEvent *e) {
 	HandleSelection(0);
 }
 QUuid BuilderWidget::GetId(QWidget *w) {
