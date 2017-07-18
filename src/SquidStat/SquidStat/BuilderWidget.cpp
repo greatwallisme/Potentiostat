@@ -585,6 +585,45 @@ void BuilderWidget::HandleSelection(QWidget *w) {
 void BuilderWidget::RemoveSelection() {
 	HandleSelection(0);
 }
+void BuilderWidget::DuplicateSelected() {
+	if (!selectedBc) {
+		return;
+	}
+
+	auto sourceBcPtr = selectedBc;
+	auto copyBc = *selectedBc;
+
+	copyBc.id = QUuid::createUuid();
+	copyBc.w = 0;
+	for(auto it = copyBc.elements.begin(); it != copyBc.elements.end(); ++it) {
+		it->id = QUuid::createUuid();
+		it->w = 0;
+	}
+
+	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
+		if (it->w == selectedBc->w) {
+			container.elements.insert(++it, copyBc); --it;
+			break;
+		}
+
+		bool found = false;
+		for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+			if (cIt->w == selectedBc->w) {
+				it->elements.insert(++cIt, copyBc); --cIt;
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			break;
+		}
+	}
+
+	InitWidgets();
+	UpdateLines();
+	PlaceWidgets();
+	emit EnqueueUpdateBackgroundMap();
+}
 void BuilderWidget::DeleteSelected() {
 	DeleteContainer(selectedBc);
 }

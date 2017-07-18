@@ -114,6 +114,7 @@ signals:
 public slots:
 	void DeleteContainer(BuilderContainer*);
 	void DeleteSelected();
+	void DuplicateSelected();
 	void SetTotalRepeats(int);
 	void SetRepeats(QUuid, int);
 

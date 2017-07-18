@@ -871,6 +871,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QWidget *w = 0;
 	
 	QPushButton *deletePbt;
+	QPushButton *duplicatePbt;
 	QPushButton *openPbt;
 	QPushButton *savePbt;
 
@@ -878,7 +879,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
 	topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
 	topButtonOwnerLay->addStretch(1);
-	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
+	topButtonOwnerLay->addWidget(duplicatePbt = OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
 	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
 	//topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
@@ -963,6 +964,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	});
 
 	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builders[id].builder, &BuilderWidget::DeleteSelected);
+	CONNECT(duplicatePbt, &QPushButton::clicked, builderTabs.builders[id].builder, &BuilderWidget::DuplicateSelected);
 
 	w = expBuilderOwner;
 
