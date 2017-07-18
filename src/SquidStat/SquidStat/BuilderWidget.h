@@ -94,6 +94,8 @@ public:
 	const BuilderContainer& GetContainer();
 	void SetupNewContainer(const BuilderContainer&);
 
+	void RemoveSelection();
+
 protected:
 	void paintEvent(QPaintEvent *e);
 	void dragEnterEvent(QDragEnterEvent *e);

@@ -319,6 +319,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	background-color: #f8f9fb;
 	border-right: 1px solid #d3dae2;
 }
+#experiment-builder-placeholder,
 #experiment-builder-owner {
 	border: none;
 	border-right: 1px solid #cbe6f1;
