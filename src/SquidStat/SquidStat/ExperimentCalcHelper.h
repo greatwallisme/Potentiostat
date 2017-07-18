@@ -12,9 +12,11 @@
 #define SQUIDSTAT_PIC_MAX_ADCDC_BUF_SIZE 512
 #define SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD 50000
 #define SQUIDSTAT_TEENSY_MAX_ADCDC_BUF_SIZE 512
+#define SQUIDSTAT_PIC_TIMER_CLK_SPEED 1e8
+#define SQUIDSTAT_MAX_ADC_AC_BUF_SIZE 1024.0
 #define HF_CUTOFF_VALUE 500
 #define SIGNAL_GEN_RESOLUTION 1024
-#define MIN_TICKS_FOR_USB_TRANSMISSION (80 * 1e5)
+#define MIN_TICKS_FOR_USB_TRANSMISSION (80 * SQUIDSTAT_PIC_TIMER_CLK_SPEED / 1e3)
 
 class ExperimentCalcHelperClass
 {
@@ -27,9 +29,10 @@ public:
   static ProcessedDCData ProcessDCDataPoint(const cal_t * calData, ExperimentalDcData rawData);
 
 	/* AC methods */
-	static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len);
+	static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double numCycles);
   static QList<double> calculateFrequencyList(double lowerFreq, double upperFreq, double pointsPerDecade);
   static void calcACSamplingParams(const cal_t * calData, ExperimentNode_t * pNode, double amplitude);
+  static double calcNumberOfCycles(const ExperimentalAcData);
 };
 
 

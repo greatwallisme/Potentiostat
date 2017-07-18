@@ -2,6 +2,8 @@
 
 #include "ExperimentCalcHelper.h"
 
+#include <qdebug.h>
+
 /* DC methods */
 
 void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, double t_sample_period)
@@ -105,7 +107,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
 
   /* 3) Calculate ADCMult. If ADC sampling period is greater than 1s, reduce ADCBufSize */
   pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-  while (pNode->samplingParams.ADCBufferSizeEven * dt > 1e8)
+  while (pNode->samplingParams.ADCBufferSizeEven * dt > SQUIDSTAT_PIC_TIMER_CLK_SPEED)
   {
     pNode->samplingParams.ADCBufferSizeEven >>= 1;
     pNode->samplingParams.ADCBufferSizeOdd >>= 1;
@@ -198,14 +200,9 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   return processedData;
 }
 
-static double GetCurrent(const cal_t * calData, int16_t rawCurrent, currentRange_t currentRange)
-{
-
-}
-
 /* AC methods */
 
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double numCycles)
 {
 	//TODO: add error statistics, THD
 
@@ -216,11 +213,13 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 
 	for (int i = 0; i < len; i++)
 	{
-		double arg = (double)i / (double)len * 2 * M_PI;
+		double arg = (double)i / (double)len * numCycles * 2 * M_PI;
 		I_RealSum += bufCurrent[i] * cos(arg);
 		I_ImagSum += bufCurrent[i] * sin(arg);
 		WE_RealSum += bufEWE[i] * cos(arg);
 		WE_ImagSum += bufEWE[i] * sin(arg);
+
+    //qDebug().noquote()<<bufEWE[i];
 	}
 
 	double I_abs = sqrt(I_RealSum * I_RealSum + I_ImagSum * I_ImagSum);
@@ -337,4 +336,19 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   /* (3) Calculate signal amplitude */
   //TODO: get a frequency-dependant transfer function
   pNode->FRA_pot_node.amplitude = MIN((int16_t) (amplitude * calData->m_DACac / 1000), DAC_AC_RESOLUTION);
+}
+
+double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
+{
+  double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
+  
+  if (acDataHeader.freqRange == HF_RANGE)
+  {
+    double n = acDataHeader.frequency / (acDataHeader.frequency - samplingFreq);
+    return acDataHeader.ADCacBufSize / n;
+  }
+  else
+  {
+    return acDataHeader.ADCacBufSize / (samplingFreq / acDataHeader.frequency);
+  }
 }

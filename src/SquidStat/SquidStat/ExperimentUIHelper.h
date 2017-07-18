@@ -20,19 +20,18 @@
 
 #define GET_DATA_PTR(expDataRaw) \
 	(ExperimentalAcData*)expDataRaw.data()
-#define GET_DATA_ARRAY_SIZE(expDataRaw) \
-	(expDataRaw.size() - sizeof(ExperimentalAcData)) / sizeof(int16_t)
 
 #define GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw)				\
 	ExperimentalAcData *expData = GET_DATA_PTR(expDataRaw);			\
-	uint16_t expDataArraySize = GET_DATA_ARRAY_SIZE(expDataRaw);	\
+  double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*expData); \
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
 		expData->frequency,											\
 		expData->data,												\
-		expData->data + (expDataArraySize / 2),						\
+		expData->data + expData->ADCacBufSize,						\
 		expData->gainVoltage,										\
 		expData->gainCurrent,										\
-		expDataArraySize / 2);
+		expData->ADCacBufSize,                      \
+    numCycles);
 
 #define PUSH_BACK_DATA(store, val) {		\
 	if (container[store].data.isEmpty()) {	\

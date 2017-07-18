@@ -18,7 +18,7 @@ typedef QList<QByteArray> NodesData;
 #define COMMAND_FRAIMING_BYTES	FRAMING_WORD
 
 #define MAX_CHANNEL_VALUE		4
-#define MAX_DATA_LENGTH			2048
+#define MAX_DATA_LENGTH			8192
 
 #pragma pack(push, 4)
 
@@ -58,16 +58,5 @@ struct ResponsePacket {
 	FramedComPacketHeader_t hdr;
 	char data[0];
 };
-
-#pragma pack(pop)
-
-#pragma pack(push,1)
-
-typedef struct {
-  float frequency;
-  int16_t gainVoltage;
-  int16_t gainCurrent;
-  int16_t data[0];
-} ExperimentalAcData;
 
 #pragma pack(pop)
