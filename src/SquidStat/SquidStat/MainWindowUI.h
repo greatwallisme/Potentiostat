@@ -104,8 +104,8 @@ private:
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
 	static QString GetNewTitle(QWidget*, const QString&);
 	static QString GetCustomExperimentName(QWidget*, const QString &);
-	static bool GetLostDataAgreement(QWidget*);
-	static bool GetOpenCustomExperiment(QWidget*, CustomExperiment&);
+	static bool GetUserAgreement(QWidget*, const QString &title, const QString &text, const QString &okText, const QString &cancelText);
+	bool GetOpenCustomExperiment(QWidget*, CustomExperiment&);
 
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
