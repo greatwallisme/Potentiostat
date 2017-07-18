@@ -11,8 +11,14 @@
 #include <QMimeData>
 
 #include <QEventLoop>
+#include <QtMath>
+#include <QDrag>
 
 #define BUILDER_ELEMENT_SPACING		2
+
+struct ContainerMimeData {
+	QUuid id;
+};
 
 BuilderContainer::BuilderContainer(qint32 rep, Type t) :
 	repeats(rep),
@@ -78,41 +84,139 @@ QList<QLine> GetLines(QWidget *w, const LineDirection &ld) {
 class ElementEventFilter : public QObject {
 public:
 	ElementEventFilter(QObject *parent, BuilderWidget *bw) :
-		QObject(parent), _bw(bw) {}
+		QObject(parent), _bw(bw), pressed(false), dragged(false) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::MouseButtonPress) {
-			auto w = qobject_cast<QWidget*>(obj);
-			if (!w) {
-				return false;
-			}
+		bool ret = false;
 
-			auto me = (QMouseEvent*)e;
+		switch (e->type()) {
+			case QEvent::MouseButtonPress:
+				if (!IsIgnoreArea(obj, e)) {
+					pressed = true;
+					dragged = false;
+					pressButton = ((QMouseEvent*)e)->button();
+					pressPoint = ((QMouseEvent*)e)->pos();
 
-			auto marg = w->contentsMargins();
-			QPoint bottomRight = QPoint(w->width(), w->height());
-			bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
+					ret = true;
+				}
 
-			QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
+				break;
 
-			if (!QRect(topLeft, bottomRight).contains(me->pos())) {
-				return false;
-			}
+			case QEvent::MouseMove:
+				if(pressed && !dragged) {
+					QPoint pos = ((QMouseEvent*)e)->pos();
+					QLine moveVector(pressPoint, pos);
+					auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
+					if (length > 3) {
+						dragged = true;
+						ret = ProcessDrag(obj, e);
+					}
+				}
+				break;
 
-			emit _bw->ElementSelected(w);
-			return true;
+			case QEvent::MouseButtonRelease:
+				if (pressed && !dragged) {
+					ret = ProcessSelection(obj, e);
+				}
+				pressed = false;
+				dragged = false;
+				break;
 		}
-		return false;
+
+		return ret;
 	}
 
 private:
+	bool IsIgnoreArea(QObject *obj, QEvent *e) {
+		auto w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return true;
+		}
+
+		auto me = (QMouseEvent*)e;
+
+		auto marg = w->contentsMargins();
+		QPoint bottomRight = QPoint(w->width(), w->height());
+		bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
+
+		QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
+
+		if (!QRect(topLeft, bottomRight).contains(me->pos())) {
+			return true;
+		}
+
+		return false;
+	}
+	bool ProcessSelection(QObject *obj, QEvent *e) {
+		auto w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return false;
+		}
+
+		if (IsIgnoreArea(obj, e)) {
+			return false;
+		}
+
+		emit _bw->ElementSelected(w);
+		return true;
+	}
+	bool ProcessDrag(QObject *obj, QEvent *e) {
+		QWidget *w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return false;
+		}
+
+		QMouseEvent *me = (QMouseEvent*)e;
+
+		if (IsIgnoreArea(obj, e)) {
+			return false;
+		}
+
+		if (pressButton == Qt::LeftButton) {
+			auto margins = w->contentsMargins();
+			auto rect = w->rect();
+
+			QPoint startPoint;
+			startPoint.setX(margins.left() - 1);
+			startPoint.setY(margins.top() - 1);
+			QPoint endPoint;
+			endPoint.setX(rect.width() - margins.right() + 1);
+			endPoint.setY(rect.height() - margins.bottom());
+
+			QUuid id = _bw->GetId(w);
+
+			auto mime = new QMimeData;
+			mime->setData(CONTAINER_MIME_TYPE, id.toByteArray());
+
+			auto pixmap = w->grab(QRect(startPoint, endPoint));
+			pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
+
+			QDrag *drag = new QDrag(obj);
+			drag->setMimeData(mime);
+			drag->setPixmap(pixmap);
+			drag->setHotSpot((pressPoint - QPoint(margins.left(), margins.top())) / 2);
+
+			Qt::DropAction dropAction = drag->exec(Qt::MoveAction, Qt::MoveAction);
+			return true;
+		}
+
+		return false;
+	}
+
+	QPoint pressPoint;
+	Qt::MouseButton pressButton;
+	bool pressed;
+	bool dragged;
+
 	BuilderWidget *_bw;
 };
 
 BuildExpContainer::BuildExpContainer(BuilderWidget *parent, const BuilderContainer &cont, QUuid id) :
 	QFrame(parent),
 	_bw(parent),
-	bc(cont)
+	bc(cont),
+	pressed(false),
+	dragged(false)
 {
 	OBJ_NAME(this, "node-builder-container");
 
@@ -174,8 +278,58 @@ void BuildExpContainer::resizeEvent(QResizeEvent *e) {
 	emit UpdateBackgroundMap();
 }
 void BuildExpContainer::mousePressEvent(QMouseEvent *me) {
-	auto w = this;
+	if (!IsIgnoreArea(me)) {
+		pressed = true;
+		dragged = false;
+		pressButton = me->button();
+		pressPoint = me->pos();
 
+		me->accept();
+	}
+	else {
+		me->ignore();
+	}
+}
+void BuildExpContainer::mouseMoveEvent(QMouseEvent *me) {
+	if (pressed && !dragged) {
+		QPoint pos = me->pos();
+		QLine moveVector(pressPoint, pos);
+
+		auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
+		
+		if (length > 3) {
+			dragged = true;
+			if (ProcessDrag(me)) {
+				me->accept();
+			}
+			else {
+				me->ignore();
+			}
+		}
+	}
+	else {
+		me->ignore();
+	}
+}
+void BuildExpContainer::mouseReleaseEvent(QMouseEvent *me) {
+	if (pressed && !dragged) {
+		if (ProcessSelection(me)) {
+			me->accept();
+		}
+		else {
+			me->ignore();
+		}
+	}
+	else {
+		me->ignore();
+	}
+
+	pressed = false;
+	dragged = false;
+}
+bool BuildExpContainer::IsIgnoreArea(QMouseEvent *me) {
+	auto w = this;
+	
 	auto marg = w->contentsMargins();
 	QPoint bottomRight = QPoint(w->width(), w->height());
 	bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
@@ -183,12 +337,57 @@ void BuildExpContainer::mousePressEvent(QMouseEvent *me) {
 	QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
 
 	if (!QRect(topLeft, bottomRight).contains(me->pos())) {
-		me->ignore();
-		return;
+		return true;
+	}
+
+	return false;
+}
+bool BuildExpContainer::ProcessSelection(QMouseEvent *me) {
+	auto w = this;
+
+	if (IsIgnoreArea(me)) {
+		return false;
 	}
 
 	emit _bw->ElementSelected(w);
-	me->accept();
+	return true;
+}
+bool BuildExpContainer::ProcessDrag(QMouseEvent *me) {
+	auto w = this;
+
+	if (IsIgnoreArea(me)) {
+		return false;
+	}
+
+	if (pressButton == Qt::LeftButton) {
+		auto margins = w->contentsMargins();
+		auto rect = w->rect();
+
+		QPoint startPoint;
+		startPoint.setX(margins.left() - 1);
+		startPoint.setY(margins.top() - 1);
+		QPoint endPoint;
+		endPoint.setX(rect.width() - margins.right() + 1);
+		endPoint.setY(rect.height() - margins.bottom());
+
+		QUuid id = _bw->GetId(w);
+
+		auto mime = new QMimeData;
+		mime->setData(CONTAINER_MIME_TYPE, id.toByteArray());
+
+		auto pixmap = w->grab(QRect(startPoint, endPoint));
+		pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
+
+		QDrag *drag = new QDrag(this);
+		drag->setMimeData(mime);
+		drag->setPixmap(pixmap);
+		drag->setHotSpot((pressPoint - QPoint(margins.left(), margins.top())) / 2);
+
+		Qt::DropAction dropAction = drag->exec(Qt::MoveAction, Qt::MoveAction);
+		return true;
+	}
+	
+	return false;
 }
 
 BuilderWidget::BuilderWidget(QWidget *parent) :
@@ -412,7 +611,8 @@ void BuilderWidget::paintEvent(QPaintEvent *e) {
 	}
 }
 void BuilderWidget::dragEnterEvent(QDragEnterEvent *e) {
-	if (e->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
+	if (e->mimeData()->hasFormat(ELEMENT_MIME_TYPE) || 
+		e->mimeData()->hasFormat(CONTAINER_MIME_TYPE)) {
 		e->accept();
 	}
 	else {
@@ -425,7 +625,8 @@ void BuilderWidget::dragLeaveEvent(QDragLeaveEvent *e) {
 }
 void BuilderWidget::dragMoveEvent(QDragMoveEvent *e) {
 	do {
-		if (!e->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
+		if (!(e->mimeData()->hasFormat(ELEMENT_MIME_TYPE) ||
+			e->mimeData()->hasFormat(CONTAINER_MIME_TYPE)) ) {
 			break;
 		}
 		auto pos = e->pos();
@@ -452,6 +653,108 @@ void BuilderWidget::dragMoveEvent(QDragMoveEvent *e) {
 	this->update();
 }
 void BuilderWidget::dropEvent(QDropEvent *e) {
+	if (e->mimeData()->hasFormat(CONTAINER_MIME_TYPE)) {
+		if (!background.currentArea) {
+			return;
+		}
+
+		auto area = background.currentArea;
+		auto byteArray = e->mimeData()->data(CONTAINER_MIME_TYPE);
+		auto id = QUuid(byteArray);
+		BuilderContainer toMove;
+		BuilderContainer *origin = 0;
+
+		for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
+			if (it->id == id) {
+				toMove = *it;
+				origin = &(*it);
+				break;
+			}
+
+			bool found = false;
+			for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+				if (cIt->id == id) {
+					toMove = *cIt;
+					origin = &(*cIt);
+					found = true;
+					break;
+				}
+			}
+			if (found) {
+				break;
+			}
+		}
+		if (!origin) {
+			return;
+		}
+
+		if (area->list == &origin->elements) {
+			background.currentArea = 0;
+			this->update();
+			return;
+		}
+
+		toMove.id = QUuid::createUuid();
+		toMove.w = 0;
+		for (auto it = toMove.elements.begin(); it != toMove.elements.end(); ++it) {
+			it->id = QUuid::createUuid();
+			it->w = 0;
+		}
+
+		if (area->list) {
+
+			if ( (area->list == &container.elements) || (toMove.type == BuilderContainer::ELEMENT) ) {
+				area->list->insert(area->before, toMove);
+			}
+			else {
+				for (auto it = toMove.elements.rbegin(); it != toMove.elements.rend(); ++it) {
+					area->list->insert(area->before, *it);
+				}
+			}
+		}
+		else {
+			BuilderContainer oldBc = *area->before;
+
+			BuilderContainer newCont;
+			newCont.type = BuilderContainer::SET;
+			newCont.repeats = 1;
+			newCont.id = QUuid::createUuid();
+			newCont.w = 0;
+			newCont.elem.ptr = 0;
+
+
+			if (toMove.type == BuilderContainer::ELEMENT) {
+				if (area->dropAction == BackgroundDescriptor::AFTER) {
+					newCont.elements << oldBc;
+				}
+
+				newCont.elements << toMove;
+
+				if (area->dropAction == BackgroundDescriptor::BEFORE) {
+					newCont.elements << oldBc;
+				}
+			}
+			else {
+				if (area->dropAction == BackgroundDescriptor::AFTER) {
+					newCont.elements << oldBc;
+				}
+
+				for (auto it = toMove.elements.begin(); it != toMove.elements.end(); ++it) {
+					newCont.elements << *it;
+				}
+
+				if (area->dropAction == BackgroundDescriptor::BEFORE) {
+					newCont.elements << oldBc;
+				}
+			}
+
+			*area->before = newCont;
+		}
+
+		InitWidgets();
+		DeleteContainer(origin);
+	}
+
 	if (e->mimeData()->hasFormat(ELEMENT_MIME_TYPE)) {
 		if (!background.currentArea) {
 			return;
@@ -519,6 +822,36 @@ void BuilderWidget::resizeEvent(QResizeEvent *e) {
 }
 void BuilderWidget::mousePressEvent(QMouseEvent *e) {
 	HandleSelection(0);
+}
+QUuid BuilderWidget::GetId(QWidget *w) {
+	if (!w) {
+		return QUuid();
+	}
+
+	QUuid ret;
+	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
+		if (it->w == w) {
+			ret = it->id;
+			break;
+		}
+
+		if (it->type == BuilderContainer::SET) {
+			bool found = false;
+
+			for (auto cIt = it->elements.begin(); cIt != it->elements.end(); ++cIt) {
+				if (cIt->w == w) {
+					ret = cIt->id;
+					found = true;
+					break;
+				}
+			}
+
+			if (found) {
+				break;
+			}
+		}
+	}
+	return ret;
 }
 void BuilderWidget::HandleSelection(QWidget *w) {
 	if (ui.selectOverlay) {

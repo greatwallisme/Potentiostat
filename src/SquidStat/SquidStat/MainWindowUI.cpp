@@ -477,7 +477,7 @@ public:
 				drag->setPixmap(pixmap);
 				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
 
-				Qt::DropAction dropAction = drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
+				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
 			}
 
 			return false;
