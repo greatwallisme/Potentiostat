@@ -460,16 +460,21 @@ QLabel[experiment-params-widget="low-margin"] {
 	qproperty-alignment: "AlignRight | AlignTop";
 	
 	margin: 0px;
-	padding-right: 10px;
-	padding-top: 10px;
+	padding: 0px;
+	padding-right: 5px;
+	padding-top: 5px;
 }
 #select-element-overlay-name {
 	border: none;
 	background-color: #00000000;
+	
 	color: #ffffff;
-	font-size: 14px;
-	padding-left: 10px;
-	padding-bottom: 10px;
+	font-size: 12px;
+	
+	margin: 0px;
+	padding: 0px;
+	padding-left: 5px;
+	padding-bottom: 5px;
 	
 	qproperty-wordWrap: true;
 }

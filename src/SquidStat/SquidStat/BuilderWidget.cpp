@@ -894,8 +894,18 @@ void BuilderWidget::HandleSelection(QWidget *w) {
 	}
 
 	auto marg = w->contentsMargins();
-	QPoint bottomRight = QPoint(w->width(), w->height());
-	bottomRight -= QPoint(marg.right() + overlayPadding, marg.bottom());
+	
+	int spinPosY;
+	auto spin = w->findChild<QSpinBox*>();
+	if (spin) {
+		spinPosY = spin->pos().y();
+	}
+	else {
+		spinPosY = w->height() - marg.bottom();
+	}
+
+	QPoint bottomRight = QPoint(w->width(), spinPosY);
+	bottomRight -= QPoint(marg.right() + overlayPadding, 0);
 
 	QPoint topLeft = QPoint(marg.left(), marg.top());
 	
