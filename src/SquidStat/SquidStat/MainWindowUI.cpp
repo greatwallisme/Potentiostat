@@ -56,6 +56,7 @@
 #include "ExperimentReader.h"
 
 #include <functional>
+#include <QScrollBar>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -409,15 +410,82 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
+class MyScrollArea : public QScrollArea {
+public:
+	MyScrollArea() : pressed(false), dragged(false) {}
+
+protected:
+	void mousePressEvent(QMouseEvent *me) {
+		pressed = true;
+		dragged = false;
+		pressButton = me->button();
+		pressPoint = me->pos();
+
+		me->ignore();
+	}
+	void mouseMoveEvent(QMouseEvent *me) {
+		if (pressed) {
+			QPoint pos = me->pos();
+			QLine moveVector(pressPoint, pos);
+
+			auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
+
+			if (dragged || (!dragged && (length > 3))) {
+				dragged = true;
+
+				Dragging(moveVector.dx(), moveVector.dy());
+
+				pressPoint = pos;
+				me->accept();
+			}
+			else {
+				me->ignore();
+			}
+		}
+		else {
+			me->ignore();
+		}
+	}
+	void mouseReleaseEvent(QMouseEvent *e) {
+		if (dragged) {
+			e->accept();
+		}
+		else {
+			e->ignore();
+		}
+
+		pressed = false;
+		dragged = false;
+	}
+
+private:
+	void Dragging(int dx, int dy) {
+		auto bar = this->verticalScrollBar();
+
+		if (bar) {
+			bar->setValue(bar->value() - dy);
+		}
+		bar = this->horizontalScrollBar();
+
+		if (bar) {
+			bar->setValue(bar->value() - dx);
+		}
+	}
+
+	QPoint pressPoint;
+	Qt::MouseButton pressButton;
+	bool pressed;
+	bool dragged;
+};
 QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	QWidget *w = 0;
 
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
-	QScrollArea *buildExpHolder;
+	MyScrollArea *buildExpHolder;
 	QSpinBox *mult;
-	lay->addWidget(buildExpHolder = OBJ_NAME(new QScrollArea, "exp-builder-scroll-area"));
+	lay->addWidget(buildExpHolder = OBJ_NAME(new MyScrollArea, "exp-builder-scroll-area"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "exp-builder-global-multiplier"));
 
 	mult->setMinimum(1);
@@ -477,7 +545,7 @@ public:
 				drag->setPixmap(pixmap);
 				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
 
-				Qt::DropAction dropAction = drag->exec(Qt::CopyAction | Qt::MoveAction, Qt::CopyAction);
+				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
 			}
 
 			return false;
@@ -694,31 +762,35 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 
 	return ret;
 }
-bool MainWindowUI::GetLostDataAgreement(QWidget *parent) {
+bool MainWindowUI::GetUserAgreement(QWidget *parent, const QString &title, const QString &text, const QString &okText, const QString &cancelText) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
-	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-name-dialog");
+	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-agreement-dialog");
 	QList<QMetaObject::Connection> dialogConn;
 	auto globalLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(dialog)));
 
 	auto lay = new QVBoxLayout();
 
-	lay->addWidget(OBJ_NAME(LBL("Open Experiment"), "heading-label"));
+	lay->addWidget(OBJ_NAME(new QLabel(title), "heading-label"));
+	//lay->addWidget(OBJ_NAME(LBL("Open Experiment"), "heading-label"));
 
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
 	auto paramsLay = new QHBoxLayout;
-	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>."), "experiment-params-comment"), "comment-placement", "right"));
+	//paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>."), "experiment-params-comment"), "comment-placement", "right"));
+	QLabel *textLabel;
+	paramsLay->addWidget(textLabel = OBJ_PROP(OBJ_NAME(new QLabel(text), "experiment-params-comment"), "comment-placement", "right"));
+	textLabel->setWordWrap(true);
 
 	auto buttonLay = new QHBoxLayout;
 	QPushButton *okBut;
 	QPushButton *cancelBut;
 	buttonLay->addStretch(1);
-	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Resume"), "secondary-button"));
-	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addWidget(okBut = OBJ_NAME(new QPushButton(okText), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(new QPushButton(cancelText), "secondary-button"));
 	buttonLay->addStretch(1);
 
 	lay->addLayout(paramsLay);
@@ -775,6 +847,26 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		}
 	}
 
+	if (!cExpList.count()) {
+		auto title = "Open Experiment";
+		auto text = "No custom experiments were created.";
+		auto okText = "Ok";
+		auto cancelText = "Cancel";
+
+		GetUserAgreement(parent, title, text, okText, cancelText);
+		
+		return false;
+	}
+	else {
+		auto title = "Open Experiment";
+		auto text = "Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>.";
+		auto okText = "Resume";
+		auto cancelText = "Cancel";
+
+		if (!GetUserAgreement(parent, title, text, okText, cancelText)) {
+			return false;
+		}
+	}
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "custom-exp-name-dialog");
 	QList<QMetaObject::Connection> dialogConn;
@@ -789,16 +881,11 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 
 	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-	QStandardItemModel *model = new QStandardItemModel(cExpList.size()+1, 1);
+	QStandardItemModel *model = new QStandardItemModel(cExpList.size(), 1);
 	int row = 0;
 	foreach(auto &ce, cExpList) {
 		auto *item = new QStandardItem(ce.name);
 		item->setData(ce.id, Qt::UserRole);
-		model->setItem(row++, item);
-	}
-	{
-		auto item = new QStandardItem("Create new experiment");
-		item->setData(QUuid(), Qt::UserRole);
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
@@ -808,13 +895,14 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	auto buttonLay = new QHBoxLayout;
+	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
 	QPushButton *okBut;
 	QPushButton *cancelBut;
-	buttonLay->addStretch(1);
+	QPushButton *deleteBut;
 	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Open"), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
-	buttonLay->addStretch(1);
+	buttonLay->addSpacing(20);
+	buttonLay->addWidget(deleteBut = OBJ_NAME(PBT("Delete"), "secondary-button"));
 
 	lay->addSpacing(40);
 	lay->addLayout(buttonLay);
@@ -827,6 +915,33 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 	CONNECT(okBut, &QPushButton::clicked, dialog, &QDialog::accept);
 	CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
 
+	dialogConn << CONNECT(deleteBut, &QPushButton::clicked, [=]() {
+		auto index = fileList->selectionModel()->currentIndex();
+		if (!index.isValid()) {
+			return;
+		}
+
+		auto title = "Delete Experiment";
+		QString text = "You are about to delete the experiment <b>\"" + index.data(Qt::DisplayRole).toString() + "\"</b>.<br>Are you sure?";
+		auto okText = "Delete";
+		auto cancelText = "Cancel";
+
+		if (GetUserAgreement(parent, title, text, okText, cancelText)) {
+			auto curId = index.data(Qt::UserRole).toUuid();
+			
+			foreach(auto &ce, cExpList) {
+				if (curId == ce.id) {
+					fileList->model()->removeRow(index.row());
+
+					if (QFile(CUSTOM_EXP_DIR + ce.fileName).remove()) {
+						mw->UpdateCustomExperimentList();
+					}
+					break;
+				}
+			}
+		}
+	});
+
 	dialog->exec();
 
 	if (!dialogCanceled) {
@@ -834,28 +949,15 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		if (index.isValid()) {
 			auto curId = index.data(Qt::UserRole).toUuid();
 
-			if (curId.isNull()) {
-				cExp.fileName = "";
-				cExp.name = "";
-				cExp.id = QUuid::createUuid();
-
-				cExp.bc.type = BuilderContainer::SET;
-				cExp.bc.repeats = 1;
-				cExp.bc.elements.clear();
-				cExp.bc.w = 0;
-				cExp.bc.id = QUuid::createUuid();
-				cExp.bc.elem.input.clear();
-				cExp.bc.elem.name.clear();
-				cExp.bc.elem.ptr = 0;
-			}
-			else {
-				foreach(auto &ce, cExpList) {
-					if (curId == ce.id) {
-						cExp = ce;
-						break;
-					}
+			foreach(auto &ce, cExpList) {
+				if (curId == ce.id) {
+					cExp = ce;
+					break;
 				}
 			}
+		}
+		else {
+			dialogCanceled = true;
 		}
 	}
 
@@ -871,6 +973,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QWidget *w = 0;
 	
 	QPushButton *deletePbt;
+	QPushButton *duplicatePbt;
 	QPushButton *openPbt;
 	QPushButton *savePbt;
 
@@ -878,7 +981,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
 	topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
 	topButtonOwnerLay->addStretch(1);
-	topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
+	topButtonOwnerLay->addWidget(duplicatePbt = OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
 	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
 	//topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
@@ -897,10 +1000,6 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 
 	builderTabs.builders[id].connections <<
 	CONNECT(openPbt, &QPushButton::clicked, [=]() {
-		if (!GetLostDataAgreement(mw)) {
-			return;
-		}
-
 		CustomExperiment newCe;
 
 		if (!GetOpenCustomExperiment(mw, newCe)) {
@@ -910,6 +1009,8 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 		builderTabs.builders[id].fileName = newCe.fileName;
 		builderTabs.builders[id].name = newCe.name;
 		builderTabs.builders[id].globalMult->setValue(newCe.bc.repeats);
+		
+		builderTabs.tabBar->setTabText(builderTabs.tabBar->currentIndex(), newCe.name);
 
 		MainWindow::FillElementPointers(newCe.bc, elementsPtrMap);
 
@@ -963,6 +1064,7 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	});
 
 	CONNECT(deletePbt, &QPushButton::clicked, builderTabs.builders[id].builder, &BuilderWidget::DeleteSelected);
+	CONNECT(duplicatePbt, &QPushButton::clicked, builderTabs.builders[id].builder, &BuilderWidget::DuplicateSelected);
 
 	w = expBuilderOwner;
 

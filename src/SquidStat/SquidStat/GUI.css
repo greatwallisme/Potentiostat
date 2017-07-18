@@ -541,6 +541,11 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-width: 500px;
 	max-width: 500px;
 }
+#custom-exp-agreement-dialog {
+	border: 1px solid #7b1a1e;
+	min-width: 600px;
+	max-width: 600px;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #build-experiment-owner,
 #new-data-window-owner {

@@ -21,6 +21,7 @@
 #include "AbstractBuilderElement.h"
 
 #define ELEMENT_MIME_TYPE	"image/element"
+#define CONTAINER_MIME_TYPE	"image/builder-container"
 
 struct ElementMimeData {
 	AbstractBuilderElement *elem;
@@ -74,14 +75,25 @@ protected:
 	void paintEvent(QPaintEvent *e);
 	void resizeEvent(QResizeEvent *e);
 	void mousePressEvent(QMouseEvent *e);
+	void mouseMoveEvent(QMouseEvent *e);
+	void mouseReleaseEvent(QMouseEvent *e);
 
 private:
+	bool ProcessSelection(QMouseEvent *me);
+	bool ProcessDrag(QMouseEvent *me);
+	bool IsIgnoreArea(QMouseEvent *me);
+
 	const BuilderContainer &bc;
 
 	struct {
 		QVBoxLayout *elementsLay;
 		QVBoxLayout *containerWdgLay;
 	} ui;
+
+	QPoint pressPoint;
+	Qt::MouseButton pressButton;
+	bool pressed;
+	bool dragged;
 
 	BuilderWidget *_bw;
 };
@@ -95,6 +107,7 @@ public:
 	void SetupNewContainer(const BuilderContainer&);
 
 	void RemoveSelection();
+	QUuid GetId(QWidget*);
 
 protected:
 	void paintEvent(QPaintEvent *e);
@@ -103,7 +116,7 @@ protected:
 	void dragMoveEvent(QDragMoveEvent *e);
 	void dropEvent(QDropEvent *e);
 	void resizeEvent(QResizeEvent *e);
-	void mousePressEvent(QMouseEvent *e);
+	void mouseReleaseEvent(QMouseEvent *e);
 
 signals:
 	void RequestPlaceWidgets();
@@ -114,6 +127,7 @@ signals:
 public slots:
 	void DeleteContainer(BuilderContainer*);
 	void DeleteSelected();
+	void DuplicateSelected();
 	void SetTotalRepeats(int);
 	void SetRepeats(QUuid, int);
 
@@ -128,7 +142,7 @@ private:
 	void UpdateLines();
 	QWidget* CreateBuildExpElementWidget(const BuilderContainer&, QUuid);
 	QWidget* CreateBuildExpContainerWidget(const BuilderContainer&, QUuid);
-	
+
 
 	BuilderContainer container;
 	BuilderContainer *selectedBc;
