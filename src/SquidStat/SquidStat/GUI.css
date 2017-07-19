@@ -204,8 +204,8 @@ QPushButton#bar-button:open {
 	max-height: 100px;
 }
 #experiment-description-spacing-bottom {
-	min-height: 140px;
-	max-height: 140px;
+	min-height: 50px;
+	max-height: 50px;
 }
 #experiment-description-icon {
 	image-position: left center;
@@ -238,6 +238,11 @@ QPushButton#bar-button:open {
 	
 	color: #677284;
 	font-size: 16px;
+}
+#experiment-description-text-scroll {
+	border: none;
+	margin-right: 1px;
+	padding-right: 15px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
 #hw-list-combo {

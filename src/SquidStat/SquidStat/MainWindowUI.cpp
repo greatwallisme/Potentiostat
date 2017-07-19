@@ -1592,10 +1592,20 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
 	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
 
+	auto descrTextHolder = WDG();
+	auto descrTextHolderLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descrTextHolder)));
+	descrTextHolderLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
+	descrTextHolderLay->addStretch(1);
+
+	QScrollArea *descrTextArea = OBJ_NAME(new QScrollArea, "experiment-description-text-scroll");
+	descrTextArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	descrTextArea->setWidgetResizable(true);
+	descrTextArea->setWidget(descrTextHolder);
+
 	descriptionWidgetLay->addWidget(descrIcon = OBJ_NAME(LBL(""), "experiment-description-icon"));
 	descriptionWidgetLay->addWidget(descrName = OBJ_NAME(LBL(""), "experiment-description-name"));
-	descriptionWidgetLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
-	descriptionWidgetLay->addStretch(1);
+	descriptionWidgetLay->addWidget(descrTextArea, 1);
+	//descriptionWidgetLay->addStretch(1);
 
 	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
 	descriptionHelpLay->addWidget(descriptionWidget);
