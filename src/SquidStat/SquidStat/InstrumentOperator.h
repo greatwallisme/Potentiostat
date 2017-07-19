@@ -31,6 +31,7 @@ signals:
 	void ExperimentCompleted();
 	void ExperimentPaused();
 	void ExperimentResumed();
+	void NodeDownloaded();
 
 private:
 	SerialCommunicator *_communicator;
