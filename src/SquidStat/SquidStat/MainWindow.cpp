@@ -416,7 +416,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		return;
 	}
 
-	MainWindowUI::ExperimentNotes notes;
+	ExperimentNotes notes;
 
 	if (!MainWindowUI::GetExperimentNotes(this, notes)) {
 		return;
@@ -438,6 +438,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		curParam.exp = prebuiltExperiments.selectedExp;
 		curParam.cal = instrumentInfo.calData;
 		curParam.hwVer = instrumentInfo.hwVer;
+		curParam.notes = notes;
 
 		QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
 		if (types.count() > 1) {
@@ -490,10 +491,10 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	foreach(auto &param, startParams) {
 		switch (param.type) {
 			case ET_DC:
-				prebuiltExperiments.selectedExp->SaveDcDataHeader(*param.file);
+				prebuiltExperiments.selectedExp->SaveDcDataHeader(*param.file, param.notes);
 				break;
 			case ET_AC:
-				prebuiltExperiments.selectedExp->SaveAcDataHeader(*param.file);
+				prebuiltExperiments.selectedExp->SaveAcDataHeader(*param.file, param.notes);
 				break;
 		}
 

@@ -5,6 +5,8 @@
 #include <ExternalStructures.h>
 #include <ExperimentCalcHelper.h>
 
+#include <QStringList>
+
 #define TOP_WIDGET_NAME_PREFIX "custom-experiment-"
 
 
@@ -262,7 +264,7 @@ void CustomExperimentRunner::PushNewDcData(const ExperimentalDcData &expData, Da
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void CustomExperimentRunner::SaveDcDataHeader(QFile &saveFile) const {
+void CustomExperimentRunner::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
@@ -298,7 +300,7 @@ void CustomExperimentRunner::PushNewAcData(const QByteArray &expDataRaw, DataMap
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
 }
-void CustomExperimentRunner::SaveAcDataHeader(QFile &saveFile) const {
+void CustomExperimentRunner::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_AC_DATA_HEADER(PLOT_VAR_FREQ);

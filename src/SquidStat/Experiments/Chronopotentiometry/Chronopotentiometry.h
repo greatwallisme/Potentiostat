@@ -20,7 +20,7 @@ public:
 	QStringList GetYAxisParameters(ExperimentType) const;
 	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 
-	void SaveDcDataHeader(QFile&) const;
+	void SaveDcDataHeader(QFile&, const ExperimentNotes&notes) const;
 	void SaveDcData(QFile&, const DataMap&) const;
 private:
 	int hardwareVersion; //TODO: this is a placeholder member

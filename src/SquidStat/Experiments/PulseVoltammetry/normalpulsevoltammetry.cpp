@@ -223,7 +223,7 @@ void NormalPulseVoltammetry::PushNewDcData(const ExperimentalDcData &expData, Da
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
 }
-void NormalPulseVoltammetry::SaveDcDataHeader(QFile &saveFile) const {
+void NormalPulseVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
