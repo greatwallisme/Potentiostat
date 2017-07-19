@@ -354,6 +354,26 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	border: 1px solid #9ecfd3;
 }
+#hover-element-overlay {
+	border: 1px solid #9ecfd3;
+	margin: 0px;
+	padding: 0px;
+}
+#hover-element-overlay-name {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	border: none;
+	margin: 0px;
+	padding: 0px;
+	margin-bottom: 5px;
+}
+#hover-element-overlay-icon {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	border: none;
+	min-height: 100px;
+	max-height: 100px;
+	margin: 0px;
+	padding: 0px;
+}
 /*//////////////       EXPERIMENT BUILDER      ////////////////////*/
 #node-builder-label {
 	qproperty-alignment: "AlignHCenter | AlignVCenter";

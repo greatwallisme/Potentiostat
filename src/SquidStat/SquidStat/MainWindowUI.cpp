@@ -57,6 +57,7 @@
 
 #include <functional>
 #include <QScrollBar>
+#include <QGraphicsDropShadowEffect> 
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -506,10 +507,11 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 
 	return w;
 }
-class ElementListEventFiler : public QObject {
+
+class OverlayEventFilter : public QObject {
 public:
-	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
-		QObject(parent), _elem(elem) {}
+	OverlayEventFilter(QObject *parent, AbstractBuilderElement *elem) :
+		QObject(parent), _elem(elem), dragInAction(false){}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
 		if (e->type() == QEvent::MouseButtonPress) {
@@ -543,11 +545,86 @@ public:
 				QDrag *drag = new QDrag(obj);
 				drag->setMimeData(mime);
 				drag->setPixmap(pixmap);
-				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
+				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top())) / 2);
 
+				dragInAction = true;
 				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
+				obj->deleteLater();
+				w->parentWidget()->update();
+				return true;
 			}
 
+			return false;
+		}
+		if (e->type() == QEvent::Enter) {
+			return true;
+		}
+		if (e->type() == QEvent::Leave) {
+			if (dragInAction) {
+				return false;
+			}
+			obj->deleteLater();
+			QWidget *w = qobject_cast<QWidget*>(obj);
+			if (w) {
+				w->parentWidget()->update();
+			}
+			return true;
+		}
+		return false;
+	}
+private:
+	AbstractBuilderElement *_elem;
+	bool dragInAction;
+};
+class ElementListEventFiler : public QObject {
+public:
+	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
+		QObject(parent), _elem(elem)
+	{}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::Enter) {
+			QWidget *w = qobject_cast<QWidget*>(obj);
+
+			if (!w) {
+				return false;
+			}
+
+			auto marg = w->contentsMargins();
+
+			auto additionalHeight = (w->height() - marg.bottom() - marg.top()) * 0.25;
+
+			QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 1);
+
+			QPoint bottomRight = QPoint(w->width(), w->height() + additionalHeight);
+			bottomRight -= QPoint(marg.right(), marg.bottom());
+
+			auto overlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
+			overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
+			overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
+
+			auto effect = new QGraphicsDropShadowEffect(overlay);
+			effect->setOffset(3, 3);
+			effect->setColor(QColor("#7f7f7f7f"));
+			effect->setBlurRadius(5);
+			overlay->setGraphicsEffect(effect);
+
+			QLabel *iconLbl;
+			QLabel *textLbl;
+
+			auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(overlay)));
+			lay->addWidget(iconLbl = OBJ_NAME(new QLabel(), "hover-element-overlay-icon"));
+			lay->addWidget(textLbl = OBJ_NAME(new QLabel(_elem->GetFullName()), "hover-element-overlay-name"));
+
+			textLbl->setWordWrap(true);
+			iconLbl->setPixmap(_elem->GetImage());
+
+			overlay->show();
+			overlay->raise();
+
+			return true;
+		}
+		if (e->type() == QEvent::Leave) {
 			return false;
 		}
 		return false;
@@ -555,6 +632,8 @@ public:
 
 private:
 	AbstractBuilderElement *_elem;
+
+	//QWidget *overlay;
 };
 QWidget* MainWindowUI::CreateElementsListWidget() {
 	static QWidget *w = 0;
