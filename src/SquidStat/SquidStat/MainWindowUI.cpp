@@ -2782,6 +2782,21 @@ void MainWindowUI::MoveAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis ax
 	handler.axisParams[axis].min.val -= axisdVal;
 	handler.axisParams[axis].max.val -= axisdVal;
 }
+void MainWindowUI::ZoomAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis axis, int percents) {
+	if (!handler.plot->axisEnabled(axis)) {
+		return;
+	}
+
+	handler.axisParams[axis].min.autoScale = false;
+	handler.axisParams[axis].max.autoScale = false;
+	handler.axisParams[axis].min.val = handler.plot->axisInterval(axis).minValue();
+	handler.axisParams[axis].max.val = handler.plot->axisInterval(axis).maxValue();
+
+	double axisWidth = handler.axisParams[axis].max.val - handler.axisParams[axis].min.val;
+
+	handler.axisParams[axis].min.val += (axisWidth * percents) / 100.;
+	handler.axisParams[axis].max.val -= (axisWidth * percents) / 100.;
+}
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
@@ -2878,59 +2893,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define PROPERTY_MOUSE_PRESSED_POINT	"mouse-pressed-point"
 	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, false);
 	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, QPoint(0, 0));
-
-	plotOverlay->installEventFilter(new PlotDragOverlayEventFilter(plotOverlay, [=](QObject *obj, QEvent *e) -> bool {
-		bool ret = false;
-		bool pressed = obj->property(PROPERTY_MOUSE_PRESSED).toBool();
-		QPoint startPoint = obj->property(PROPERTY_MOUSE_PRESSED_POINT).toPoint();
-		
-		switch (e->type()) {
-			case QEvent::MouseButtonPress:
-				pressed = true;
-				startPoint = ((QMouseEvent*)e)->pos();
-				ret = true;
-				break;
-
-			case QEvent::MouseMove:
-				if (pressed) {
-					auto curPos = ((QMouseEvent*)e)->pos();
-
-					QLine line(startPoint, curPos);
-					startPoint = curPos;
-
-					PlotHandler &handler(dataTabs.plots[id][type]);
-					MoveAxis(handler, QwtPlot::xBottom, line.dx());
-					MoveAxis(handler, QwtPlot::yLeft, -line.dy());
-					MoveAxis(handler, QwtPlot::yRight, -line.dy());
-
-					bool needReplot = false;
-					needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
-					needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
-					needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
-
-					if (needReplot) {
-						plot->replot();
-					}
-
-					ret = true;
-				}
-				break;
-
-			case QEvent::MouseButtonRelease:
-				pressed = false;
-				ret = true;
-				break;
-		}
-
-		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, startPoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, pressed);
-		return ret;
-	}));
+	
+	QPushButton *zoomInPbt;
+	QPushButton *zoomOutPbt;
 
 	plotOverlayLay->setRowStretch(0, 1);
 	plotOverlayLay->setColumnStretch(0, 1);
-	plotOverlayLay->addWidget(OBJ_NAME(PBT(""), "plot-zoom-in-button"), 1, 3);
-	plotOverlayLay->addWidget(OBJ_NAME(PBT(""), "plot-zoom-out-button"), 2, 3);
+	plotOverlayLay->addWidget(zoomInPbt = OBJ_NAME(PBT(""), "plot-zoom-in-button"), 1, 3);
+	plotOverlayLay->addWidget(zoomOutPbt = OBJ_NAME(PBT(""), "plot-zoom-out-button"), 2, 3);
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
@@ -2943,6 +2913,86 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
+
+	plotHandler.plotTabConnections << CONNECT(zoomInPbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+		ZoomAxis(handler, QwtPlot::xBottom, 10);
+		ZoomAxis(handler, QwtPlot::yLeft, 10);
+		ZoomAxis(handler, QwtPlot::yRight, 10);
+
+		bool needReplot = false;
+		needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
+		needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+		if (needReplot) {
+			plot->replot();
+		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(zoomOutPbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+		ZoomAxis(handler, QwtPlot::xBottom, -10);
+		ZoomAxis(handler, QwtPlot::yLeft, -10);
+		ZoomAxis(handler, QwtPlot::yRight, -10);
+
+		bool needReplot = false;
+		needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
+		needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+		if (needReplot) {
+			plot->replot();
+		}
+	});
+
+	plotOverlay->installEventFilter(new PlotDragOverlayEventFilter(plotOverlay, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+		bool pressed = obj->property(PROPERTY_MOUSE_PRESSED).toBool();
+		QPoint startPoint = obj->property(PROPERTY_MOUSE_PRESSED_POINT).toPoint();
+
+		switch (e->type()) {
+		case QEvent::MouseButtonPress:
+			pressed = true;
+			startPoint = ((QMouseEvent*)e)->pos();
+			ret = true;
+			break;
+
+		case QEvent::MouseMove:
+			if (pressed) {
+				auto curPos = ((QMouseEvent*)e)->pos();
+
+				QLine line(startPoint, curPos);
+				startPoint = curPos;
+
+				PlotHandler &handler(dataTabs.plots[id][type]);
+				MoveAxis(handler, QwtPlot::xBottom, line.dx());
+				MoveAxis(handler, QwtPlot::yLeft, -line.dy());
+				MoveAxis(handler, QwtPlot::yRight, -line.dy());
+
+				bool needReplot = false;
+				needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
+				needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
+				needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+				if (needReplot) {
+					plot->replot();
+				}
+
+				ret = true;
+			}
+			break;
+
+		case QEvent::MouseButtonRelease:
+			pressed = false;
+			ret = true;
+			break;
+		}
+
+		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, startPoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, pressed);
+		return ret;
+	}));
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);

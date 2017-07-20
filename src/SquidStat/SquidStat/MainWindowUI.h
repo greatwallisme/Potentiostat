@@ -127,6 +127,7 @@ private:
 
 
 	void MoveAxis(PlotHandler &handler, QwtPlot::Axis axis, int dVal);
+	void ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, int percents);
 
 	struct {
 		struct {
