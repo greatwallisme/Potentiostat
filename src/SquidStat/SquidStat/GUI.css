@@ -954,6 +954,33 @@ QScrollBar::sub-page:horizontal {
 	border-color: #e8cecf;
 }
 /*//////////////         PLOT       ////////////////////*/
+#plot-canvas-overlay {
+	border: none;
+	background-color: #00000000;
+}
+#plot-zoom-in-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/zoom-in.png);
+	qproperty-iconSize: 44px 44px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	padding: 0px;
+}
+#plot-zoom-out-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/zoom-out.png);
+	qproperty-iconSize: 44px 44px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	margin-bottom: 10px;
+	padding: 0px;
+}
 QwtPlot {
 	margin: 30px;
 	border: none;

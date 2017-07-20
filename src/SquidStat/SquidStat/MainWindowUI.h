@@ -125,6 +125,9 @@ private:
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
 
+
+	void MoveAxis(PlotHandler &handler, QwtPlot::Axis axis, int dVal);
+
 	struct {
 		struct {
 			struct {

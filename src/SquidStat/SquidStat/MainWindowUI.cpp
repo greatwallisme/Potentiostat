@@ -55,9 +55,13 @@
 
 #include "ExperimentReader.h"
 
+#include "UIEventFilters.hpp"
+
 #include <functional>
 #include <QScrollBar>
 #include <QGraphicsDropShadowEffect> 
+#include <QDialogButtonBox>
+#include <QMessageBox>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -411,73 +415,6 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 
 	return w;
 }
-class MyScrollArea : public QScrollArea {
-public:
-	MyScrollArea() : pressed(false), dragged(false) {}
-
-protected:
-	void mousePressEvent(QMouseEvent *me) {
-		pressed = true;
-		dragged = false;
-		pressButton = me->button();
-		pressPoint = me->pos();
-
-		me->ignore();
-	}
-	void mouseMoveEvent(QMouseEvent *me) {
-		if (pressed) {
-			QPoint pos = me->pos();
-			QLine moveVector(pressPoint, pos);
-
-			auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
-
-			if (dragged || (!dragged && (length > 3))) {
-				dragged = true;
-
-				Dragging(moveVector.dx(), moveVector.dy());
-
-				pressPoint = pos;
-				me->accept();
-			}
-			else {
-				me->ignore();
-			}
-		}
-		else {
-			me->ignore();
-		}
-	}
-	void mouseReleaseEvent(QMouseEvent *e) {
-		if (dragged) {
-			e->accept();
-		}
-		else {
-			e->ignore();
-		}
-
-		pressed = false;
-		dragged = false;
-	}
-
-private:
-	void Dragging(int dx, int dy) {
-		auto bar = this->verticalScrollBar();
-
-		if (bar) {
-			bar->setValue(bar->value() - dy);
-		}
-		bar = this->horizontalScrollBar();
-
-		if (bar) {
-			bar->setValue(bar->value() - dx);
-		}
-	}
-
-	QPoint pressPoint;
-	Qt::MouseButton pressButton;
-	bool pressed;
-	bool dragged;
-};
 QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	QWidget *w = 0;
 
@@ -508,133 +445,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	return w;
 }
 
-class OverlayEventFilter : public QObject {
-public:
-	OverlayEventFilter(QObject *parent, AbstractBuilderElement *elem) :
-		QObject(parent), _elem(elem), dragInAction(false){}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::MouseButtonPress) {
-			QWidget *w = qobject_cast<QWidget*>(obj);
-			if (!w) {
-				return false;
-			}
-
-			QMouseEvent *me = (QMouseEvent*)e;
-
-			if (me->button() == Qt::LeftButton) {
-				auto margins = w->contentsMargins();
-				auto rect = w->rect();
-
-				QPoint startPoint;
-				startPoint.setX(margins.left() - 1);
-				startPoint.setY(margins.top() - 1);
-				QPoint endPoint;
-				endPoint.setX(rect.width() - margins.right());
-				endPoint.setY(rect.height() - margins.bottom());
-
-				ElementMimeData emd;
-				emd.elem = _elem;
-
-				auto mime = new QMimeData;
-				mime->setData(ELEMENT_MIME_TYPE, QByteArray((char*)&emd, sizeof(ElementMimeData)));
-
-				auto pixmap = w->grab(QRect(startPoint, endPoint));
-				pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
-
-				QDrag *drag = new QDrag(obj);
-				drag->setMimeData(mime);
-				drag->setPixmap(pixmap);
-				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top())) / 2);
-
-				dragInAction = true;
-				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
-				obj->deleteLater();
-				w->parentWidget()->update();
-				return true;
-			}
-
-			return false;
-		}
-		if (e->type() == QEvent::Enter) {
-			return true;
-		}
-		if (e->type() == QEvent::Leave) {
-			if (dragInAction) {
-				return false;
-			}
-			obj->deleteLater();
-			QWidget *w = qobject_cast<QWidget*>(obj);
-			if (w) {
-				w->parentWidget()->update();
-			}
-			return true;
-		}
-		return false;
-	}
-private:
-	AbstractBuilderElement *_elem;
-	bool dragInAction;
-};
-class ElementListEventFiler : public QObject {
-public:
-	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
-		QObject(parent), _elem(elem)
-	{}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::Enter) {
-			QWidget *w = qobject_cast<QWidget*>(obj);
-
-			if (!w) {
-				return false;
-			}
-
-			auto marg = w->contentsMargins();
-
-			auto additionalHeight = (w->height() - marg.bottom() - marg.top()) * 0.25;
-
-			QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 1);
-
-			QPoint bottomRight = QPoint(w->width(), w->height() + additionalHeight);
-			bottomRight -= QPoint(marg.right(), marg.bottom());
-
-			auto overlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
-			overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
-			overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
-
-			auto effect = new QGraphicsDropShadowEffect(overlay);
-			effect->setOffset(3, 3);
-			effect->setColor(QColor("#7f7f7f7f"));
-			effect->setBlurRadius(5);
-			overlay->setGraphicsEffect(effect);
-
-			QLabel *iconLbl;
-			QLabel *textLbl;
-
-			auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(overlay)));
-			lay->addWidget(iconLbl = OBJ_NAME(new QLabel(), "hover-element-overlay-icon"));
-			lay->addWidget(textLbl = OBJ_NAME(new QLabel(_elem->GetFullName()), "hover-element-overlay-name"));
-
-			textLbl->setWordWrap(true);
-			iconLbl->setPixmap(_elem->GetImage());
-
-			overlay->show();
-			overlay->raise();
-
-			return true;
-		}
-		if (e->type() == QEvent::Leave) {
-			return false;
-		}
-		return false;
-	}
-
-private:
-	AbstractBuilderElement *_elem;
-
-	//QWidget *overlay;
-};
 QWidget* MainWindowUI::CreateElementsListWidget() {
 	static QWidget *w = 0;
 
@@ -1149,7 +959,6 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 
 	return w;
 }
-#include <QMessageBox>
 QWidget* MainWindowUI::GetBuildExperimentTab() {
 	static QWidget *w = 0;
 
@@ -1504,52 +1313,6 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 
 	return !dialogCanceled;
 }
-class ExperimentFilterModel : public QSortFilterProxyModel {
-	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
-		QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
-
-		if (!index.isValid()) {
-			return false;
-		}
-
-		auto exp = index.data(Qt::UserRole).value<const AbstractExperiment*>();
-
-		if (!exp) {
-			return false;
-		}
-
-		QString pattern = filterRegExp().pattern();
-
-		QString descriptionPlain = "";
-		QXmlStreamReader xml("<i>" + exp->GetDescription() + "</i>");
-		while (!xml.atEnd()) {
-			if (xml.readNext() == QXmlStreamReader::Characters) {
-				descriptionPlain += xml.text();
-			}
-		}
-
-		bool validCategory = false;
-		if (_category == EXPERIMENT_VIEW_ALL_CATEGORY) {
-			validCategory = true;
-		}
-		else {
-			validCategory = exp->GetCategory().contains(_category);
-		}
-
-		return (exp->GetShortName().contains(pattern, filterCaseSensitivity()) ||
-			exp->GetFullName().contains(pattern, filterCaseSensitivity()) ||
-			descriptionPlain.contains(pattern, filterCaseSensitivity())) && validCategory;
-	}
-
-public:
-	void SetCurrentCategory(const QString &category) {
-		_category = category;
-		invalidateFilter();
-	}
-
-private:
-	QString _category;
-};
 QWidget* MainWindowUI::GetRunExperimentTab() {
 	static QWidget *w = 0;
 
@@ -2295,7 +2058,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-
 template<typename T, typename F>
 void ModifyObject(QObject *parent, F &lambda) {
 	foreach(QObject* obj, parent->children()) {
@@ -2307,7 +2069,6 @@ void ModifyObject(QObject *parent, F &lambda) {
 		ModifyObject<T>(obj, lambda);
 	}
 }
-#include <QDialogButtonBox>
 bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	static bool ret;
 	ret = false;
@@ -2687,53 +2448,6 @@ QwtPlotCurve* MainWindowUI::CreateCurve(int yAxisId, const QColor &color) {
 	return curve;
 }
 
-class PlotEventFilter : public QObject {
-public:
-	PlotEventFilter(QObject *parent, std::function<void(void)> lambda) : QObject(parent), _lambda(lambda) {}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		if ((e->type() == QEvent::MouseButtonDblClick) || (e->type() == QEvent::MouseButtonPress)) {
-			_lambda();
-			return true;
-		}
-		return false;
-	}
-
-private:
-	std::function<void(void)> _lambda;
-};
-class LegendEventFilter : public QObject {
-public:
-	LegendEventFilter(QObject *parent, QwtPlot *plot) : QObject(parent), _plot(plot) {}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::MouseButtonDblClick) {
-			obj->deleteLater();
-			_plot->insertLegend(0);
-			_plot->replot();
-			return true;
-		}
-		return false;
-	}
-
-private:
-	QwtPlot *_plot;
-};
-class PopupDialogEventFilter : public QObject {
-public:
-	PopupDialogEventFilter(QObject *parent, std::function<void(QEvent*, bool&)> lambda) : QObject(parent), _lambda(lambda) {}
-
-	bool eventFilter(QObject *obj, QEvent *e) {
-		if (e->type() == QEvent::KeyPress) {
-			bool ret;
-			_lambda(e, ret);
-			return ret;
-		}
-		return false;
-	}
-private:
-	std::function<void(QEvent*, bool&)> _lambda;
-};
 QString MainWindowUI::GetNewTitle(QWidget *parent, const QString &oldText) {
 	static bool dialogCanceled;
 	dialogCanceled = false;
@@ -3051,6 +2765,23 @@ bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHand
 
 	return ret;
 }
+void MainWindowUI::MoveAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis axis, int dVal) {
+	if (!handler.plot->axisEnabled(axis)) {
+		return;
+	}
+
+	handler.axisParams[axis].min.autoScale = false;
+	handler.axisParams[axis].max.autoScale = false;
+	handler.axisParams[axis].min.val = handler.plot->axisInterval(axis).minValue();
+	handler.axisParams[axis].max.val = handler.plot->axisInterval(axis).maxValue();
+
+	double canvasWidth = handler.plot->canvas()->width();
+	double axisWidth = handler.axisParams[axis].max.val - handler.axisParams[axis].min.val;
+	double axisdVal = (axisWidth * dVal) / canvasWidth;
+
+	handler.axisParams[axis].min.val -= axisdVal;
+	handler.axisParams[axis].max.val -= axisdVal;
+}
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
@@ -3135,6 +2866,71 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	}
 
 	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
+
+	auto plotCanvas = plot->canvas();
+
+	auto plotOverlay = OBJ_NAME(new QWidget(plotCanvas), "plot-canvas-overlay");
+	plotCanvas->installEventFilter(new PlotOverlayEventFilter(plotCanvas, plotOverlay));
+
+	auto plotOverlayLay = NO_SPACING(NO_MARGIN(new QGridLayout(plotOverlay)));
+
+	#define PROPERTY_MOUSE_PRESSED	"mouse-pressed"
+	#define PROPERTY_MOUSE_PRESSED_POINT	"mouse-pressed-point"
+	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, false);
+	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, QPoint(0, 0));
+
+	plotOverlay->installEventFilter(new PlotDragOverlayEventFilter(plotOverlay, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+		bool pressed = obj->property(PROPERTY_MOUSE_PRESSED).toBool();
+		QPoint startPoint = obj->property(PROPERTY_MOUSE_PRESSED_POINT).toPoint();
+		
+		switch (e->type()) {
+			case QEvent::MouseButtonPress:
+				pressed = true;
+				startPoint = ((QMouseEvent*)e)->pos();
+				ret = true;
+				break;
+
+			case QEvent::MouseMove:
+				if (pressed) {
+					auto curPos = ((QMouseEvent*)e)->pos();
+
+					QLine line(startPoint, curPos);
+					startPoint = curPos;
+
+					PlotHandler &handler(dataTabs.plots[id][type]);
+					MoveAxis(handler, QwtPlot::xBottom, line.dx());
+					MoveAxis(handler, QwtPlot::yLeft, -line.dy());
+					MoveAxis(handler, QwtPlot::yRight, -line.dy());
+
+					bool needReplot = false;
+					needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
+					needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
+					needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+					if (needReplot) {
+						plot->replot();
+					}
+
+					ret = true;
+				}
+				break;
+
+			case QEvent::MouseButtonRelease:
+				pressed = false;
+				ret = true;
+				break;
+		}
+
+		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, startPoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, pressed);
+		return ret;
+	}));
+
+	plotOverlayLay->setRowStretch(0, 1);
+	plotOverlayLay->setColumnStretch(0, 1);
+	plotOverlayLay->addWidget(OBJ_NAME(PBT(""), "plot-zoom-in-button"), 1, 3);
+	plotOverlayLay->addWidget(OBJ_NAME(PBT(""), "plot-zoom-out-button"), 2, 3);
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
@@ -3356,9 +3152,15 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 		settings.setValue(DATA_SAVE_PATH, QFileInfo(fileName).absolutePath());
 
-		if (!plot->grab().save(fileName, "PNG")) {
+		plotOverlay->hide();
+		auto marg = plot->contentsMargins();
+		auto rect = plot->rect();
+		auto topLeft = QPoint(marg.left(), marg.top());
+		auto bottomRight = QPoint(rect.width() - marg.right(), rect.height() - marg.bottom());
+		if (!plot->grab(QRect(topLeft, bottomRight)).save(fileName, "PNG")) {
 			LOG() << "Error during saving plot into \"" << fileName << "\"";
 		}
+		plotOverlay->show();
 	});
 
 	plotHandler.plotTabConnections << CONNECT(xCombo, &QComboBox::currentTextChanged, [=](const QString &curText) {
