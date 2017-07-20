@@ -1,8 +1,8 @@
 #define _USE_MATH_DEFINES
 
 #include "ExperimentCalcHelper.h"
-
-#include <qdebug.h>
+#include "Log.h"  //debugging only
+#include <qdebug.h>  //debugging only
 
 /* DC methods */
 
@@ -219,7 +219,10 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 		WE_RealSum += bufEWE[i] * cos(arg);
 		WE_ImagSum += bufEWE[i] * sin(arg);
 
-    //qDebug().noquote()<<bufEWE[i];
+    QString debugStr;
+    //debugStr.append(QString::number(bufEWE[i])); debugStr.append('\t'); debugStr.append(QString::number(bufCurrent[i]));
+    //qDebug().noquote().nospace() << debugStr;
+    qDebug().noquote() << QString::number(bufEWE[i]);
 	}
 
 	double I_abs = sqrt(I_RealSum * I_RealSum + I_ImagSum * I_ImagSum);
@@ -262,8 +265,10 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   pNode->FRA_pot_node.freqRange = pNode->FRA_pot_node.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
 
   /* (1) Calculate signal gen clock frequency and signal gen register value */
-  int wavegenClkdiv = 1 << (int) WAVEGENCLK_3KHZ;
-  pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_3KHZ;
+        //int wavegenClkdiv = 1 << (int) WAVEGENCLK_24KHZ;
+        //pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_24KHZ;
+        int wavegenClkdiv = 1 << (int) WAVEGENCLK_12_5MHZ;
+        pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_12_5MHZ;
   double fSignal = pNode->FRA_pot_node.frequency;
 
   while (fSignal * SIGNAL_GEN_RESOLUTION * wavegenClkdiv >= 25e6)
@@ -274,6 +279,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
       break;
   }
   pNode->FRA_pot_node.wavegenFraction = (uint32_t)(fSignal * wavegenClkdiv / 25e6 * 268435456);
+  pNode->FRA_pot_node.wavegenFraction = (pNode->FRA_pot_node.wavegenFraction == 0) ? 1 : pNode->FRA_pot_node.wavegenFraction; //make sure frequency doesn't equal zero
 
   /* Re-calculate signal frequency based on integer timer values */
   fSignal = (double)pNode->FRA_pot_node.wavegenFraction / 268435456.0 * 25e6 / wavegenClkdiv;
@@ -288,7 +294,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     fSample = (n - 1) * fSignal / n;
   else
     fSample = fSignal * n;
-  uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
+  //uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
+  uint64_t TimerPeriod = (uint64_t)(25.0e6 / fSample / ADCclkdiv);
 
   while (1)
   {
@@ -300,7 +307,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     }
 
     /* Recalculate sampling frequency and ADCbufsize based on integer timer values */
-    fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
+    //fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
+    fSample = 25.0e6 / ADCclkdiv / TimerPeriod;
     if (pNode->FRA_pot_node.freqRange == HF_RANGE)
     {
       double denom = fSignal - fSample;
