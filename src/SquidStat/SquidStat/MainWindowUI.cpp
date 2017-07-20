@@ -57,6 +57,7 @@
 
 #include <functional>
 #include <QScrollBar>
+#include <QGraphicsDropShadowEffect> 
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -506,10 +507,11 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 
 	return w;
 }
-class ElementListEventFiler : public QObject {
+
+class OverlayEventFilter : public QObject {
 public:
-	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
-		QObject(parent), _elem(elem) {}
+	OverlayEventFilter(QObject *parent, AbstractBuilderElement *elem) :
+		QObject(parent), _elem(elem), dragInAction(false){}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
 		if (e->type() == QEvent::MouseButtonPress) {
@@ -543,11 +545,86 @@ public:
 				QDrag *drag = new QDrag(obj);
 				drag->setMimeData(mime);
 				drag->setPixmap(pixmap);
-				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top()))/2);
+				drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top())) / 2);
 
+				dragInAction = true;
 				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
+				obj->deleteLater();
+				w->parentWidget()->update();
+				return true;
 			}
 
+			return false;
+		}
+		if (e->type() == QEvent::Enter) {
+			return true;
+		}
+		if (e->type() == QEvent::Leave) {
+			if (dragInAction) {
+				return false;
+			}
+			obj->deleteLater();
+			QWidget *w = qobject_cast<QWidget*>(obj);
+			if (w) {
+				w->parentWidget()->update();
+			}
+			return true;
+		}
+		return false;
+	}
+private:
+	AbstractBuilderElement *_elem;
+	bool dragInAction;
+};
+class ElementListEventFiler : public QObject {
+public:
+	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
+		QObject(parent), _elem(elem)
+	{}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		if (e->type() == QEvent::Enter) {
+			QWidget *w = qobject_cast<QWidget*>(obj);
+
+			if (!w) {
+				return false;
+			}
+
+			auto marg = w->contentsMargins();
+
+			auto additionalHeight = (w->height() - marg.bottom() - marg.top()) * 0.25;
+
+			QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 1);
+
+			QPoint bottomRight = QPoint(w->width(), w->height() + additionalHeight);
+			bottomRight -= QPoint(marg.right(), marg.bottom());
+
+			auto overlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
+			overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
+			overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
+
+			auto effect = new QGraphicsDropShadowEffect(overlay);
+			effect->setOffset(3, 3);
+			effect->setColor(QColor("#7f7f7f7f"));
+			effect->setBlurRadius(5);
+			overlay->setGraphicsEffect(effect);
+
+			QLabel *iconLbl;
+			QLabel *textLbl;
+
+			auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(overlay)));
+			lay->addWidget(iconLbl = OBJ_NAME(new QLabel(), "hover-element-overlay-icon"));
+			lay->addWidget(textLbl = OBJ_NAME(new QLabel(_elem->GetFullName()), "hover-element-overlay-name"));
+
+			textLbl->setWordWrap(true);
+			iconLbl->setPixmap(_elem->GetImage());
+
+			overlay->show();
+			overlay->raise();
+
+			return true;
+		}
+		if (e->type() == QEvent::Leave) {
 			return false;
 		}
 		return false;
@@ -555,6 +632,8 @@ public:
 
 private:
 	AbstractBuilderElement *_elem;
+
+	//QWidget *overlay;
 };
 QWidget* MainWindowUI::CreateElementsListWidget() {
 	static QWidget *w = 0;
@@ -1244,9 +1323,18 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	return w;
 }
-bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentNotes &ret) {
+bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
+
+	ret.other.workingElectrode.first = "Working electrode";
+	ret.other.workingElectrodeArea.first = "Working electrode area (cm^2)";
+	ret.other.counterElectrode.first = "Counter electrode";
+	ret.other.counterElectrodeArea.first = "Counter electrode area (cm^2)";
+	ret.other.solvent.first = "Solvent";
+	ret.other.electrolyte.first = "Electrolyte";
+	ret.other.electrolyteConcentration.first = "Electrolyte concentration (moles per liter)";
+	ret.other.atmosphere.first = "Atmosphere";
 
 	static QMap<QString, qreal> references;
 	references["Predefined 1"] = 1.0;
@@ -1261,6 +1349,15 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentN
 	QLineEdit *otherRefLed;
 	QLineEdit *potVsSheLed;
 	QTextEdit *notesTed;
+
+	QLineEdit* workingElectrode;
+	QLineEdit* workingElectrodeArea;
+	QLineEdit* counterElectrode;
+	QLineEdit* counterElectrodeArea;
+	QLineEdit* solvent;
+	QLineEdit* electrolyte;
+	QLineEdit* electrolyteConcentration;
+	QLineEdit* atmosphere;
 
 	QVBoxLayout *dialogLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
 
@@ -1286,21 +1383,21 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentN
 	lay->addWidget(OBJ_NAME(LBL("Other parameters"), "heading-label"), 6, 0, 1, 2);
 	int row = 7;
 	lay->addWidget(OBJ_NAME(LBL("Working electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(workingElectrode = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Working electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(workingElectrodeArea = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Counter electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(counterElectrode = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Counter electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(counterElectrodeArea = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Solvent"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(solvent = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Electrolyte"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration (moles per liter)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(electrolyte = LED(), row++, 1);
+	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration<br>(moles per liter)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(electrolyteConcentration = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Atmosphere"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(LED(), row++, 1);
+	lay->addWidget(atmosphere = LED(), row++, 1);
 
 	QPushButton *okBut;
 	QPushButton *cancelBut;
@@ -1386,9 +1483,22 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, MainWindowUI::ExperimentN
 		QObject::disconnect(conn);
 	}
 
-	ret.notes = notesTed->toPlainText();
-	ret.refElectrode = commRefRadio->isChecked() ? electrodeCombo->currentText() : otherRefLed->text();
-	ret.potential = potVsSheLed->text();
+	if (!dialogCanceled) {
+		ret.description = notesTed->toPlainText();
+		ret.refElectrode.first = commRefRadio->isChecked() ? electrodeCombo->currentText() : otherRefLed->text();
+		ret.refElectrode.second = potVsSheLed->text();
+
+		#define COPY_NOTE_VALUE(a) ret.other.a.second = a->text();
+
+		COPY_NOTE_VALUE(workingElectrode);
+		COPY_NOTE_VALUE(workingElectrodeArea);
+		COPY_NOTE_VALUE(counterElectrode);
+		COPY_NOTE_VALUE(counterElectrodeArea);
+		COPY_NOTE_VALUE(solvent);
+		COPY_NOTE_VALUE(electrolyte);
+		COPY_NOTE_VALUE(electrolyteConcentration);
+		COPY_NOTE_VALUE(atmosphere);
+	}
 
 	dialog->deleteLater();
 
@@ -1513,10 +1623,20 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *descriptionWidget = OBJ_NAME(WDG(), "experiment-description-owner");
 	auto *descriptionWidgetLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descriptionWidget)));
 
+	auto descrTextHolder = WDG();
+	auto descrTextHolderLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(descrTextHolder)));
+	descrTextHolderLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
+	descrTextHolderLay->addStretch(1);
+
+	QScrollArea *descrTextArea = OBJ_NAME(new QScrollArea, "experiment-description-text-scroll");
+	descrTextArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	descrTextArea->setWidgetResizable(true);
+	descrTextArea->setWidget(descrTextHolder);
+
 	descriptionWidgetLay->addWidget(descrIcon = OBJ_NAME(LBL(""), "experiment-description-icon"));
 	descriptionWidgetLay->addWidget(descrName = OBJ_NAME(LBL(""), "experiment-description-name"));
-	descriptionWidgetLay->addWidget(descrText = OBJ_NAME(LBL(""), "experiment-description-text"));
-	descriptionWidgetLay->addStretch(1);
+	descriptionWidgetLay->addWidget(descrTextArea, 1);
+	//descriptionWidgetLay->addStretch(1);
 
 	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-top"));
 	descriptionHelpLay->addWidget(descriptionWidget);
@@ -1832,11 +1952,16 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 	bool ret = false;
 	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, ";");
 
-	if (readData.size() < 2) {
+	if (readData.size() < 13) {
 		return ret;
 	}
 
 	data.fileName = QFileInfo(dialogRet).fileName();
+
+
+	for(int i = 0; i < 11; ++i) {
+		readData.pop_front();
+	}
 
 	QStringList hdrList = readData.front();
 	readData.pop_front();

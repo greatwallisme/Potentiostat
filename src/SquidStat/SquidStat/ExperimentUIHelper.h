@@ -67,7 +67,28 @@
 #define SAVE_DC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_DC, varName)
 #define SAVE_AC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_AC, varName)
 
+#define PUT_NOTES_VALUE(val) \
+	notesStr += spacer + val.first + ";" + val.second + "\n";
+
 #define SAVE_DATA_HEADER_END()			\
+	QString spacer = "";				\
+	QString notesStr = "";				\
+	for (int i = 0; i <= headers.count(QChar(';')); ++i) {	\
+		spacer += ";";					\
+	}									\
+	notesStr += spacer + "Description" + ";" + "\"" + QString(notes.description).replace(QChar('"'), "\"\"") + "\"" + "\n"; \
+	PUT_NOTES_VALUE(notes.refElectrode); \
+	PUT_NOTES_VALUE(notes.other.workingElectrode);	\
+	PUT_NOTES_VALUE(notes.other.workingElectrodeArea); \
+	PUT_NOTES_VALUE(notes.other.counterElectrode); \
+	PUT_NOTES_VALUE(notes.other.counterElectrodeArea); \
+	PUT_NOTES_VALUE(notes.other.solvent); \
+	PUT_NOTES_VALUE(notes.other.electrolyte); \
+	PUT_NOTES_VALUE(notes.other.electrolyteConcentration); \
+	PUT_NOTES_VALUE(notes.other.atmosphere); \
+	notesStr += spacer; \
+	saveFile.write(notesStr.toLatin1()); \
+	saveFile.write("\n");				\
 	saveFile.write(headers.toLatin1()); \
 	saveFile.write("\n");				\
 	saveFile.write(axes.toLatin1());	\

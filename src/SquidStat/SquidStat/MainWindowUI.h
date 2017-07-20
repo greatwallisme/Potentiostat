@@ -40,12 +40,6 @@ public:
 
 	void CreateUI();
 
-	struct ExperimentNotes {
-		QString notes;
-		QString refElectrode;
-		QString potential;
-	};
-
 	struct CsvFileData {
 		QString fileName;
 		ExperimentNotes notes;

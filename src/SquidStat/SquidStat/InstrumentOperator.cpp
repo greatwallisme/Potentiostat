@@ -3,6 +3,10 @@
 
 #include "Log.h"
 
+#include <QEventLoop>
+#include <QTimer>
+#include <QSignalMapper>
+
 InstrumentOperator::InstrumentOperator(const InstrumentInfo &info, QObject *parent) :
 	QObject(parent)
 {
@@ -55,9 +59,14 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			LOG() << "Node complete";
 			break;
 
-    case OVERCURRENT_WARNING:
-      LOG() << "Overcurrent warning, channel stopped";
-        break;
+		case OVERCURRENT_WARNING:
+			LOG() << "Overcurrent warning, channel stopped";
+			break;
+
+		case DATA_RECEIVED_OK:
+			//LOG() << "DATA_RECEIVED_OK";
+			emit NodeDownloaded();
+			break;
 
 		default:
 			LOG() << "Unknown response";
@@ -69,7 +78,36 @@ void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 chan
 
 	_communicator->SendCommand((CommandID)BEGIN_NEW_EXP_DOWNLOAD, channel, QByteArray((char*)&nodesCount, sizeof(nodesCount)));
 	foreach(auto node, nodesData) {
+		QEventLoop loop;
+		QSignalMapper mapper;
+		QTimer timer;
+		timer.setInterval(1000);
+
+		#define EXIT_BY_TIMER		1
+		#define EXIT_BY_RESPONCE	0
+
+		mapper.setMapping(this, EXIT_BY_RESPONCE);
+		mapper.setMapping(&timer, EXIT_BY_TIMER);
+
+		connect(&mapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped), &loop, &QEventLoop::exit);
+		connect(this, &InstrumentOperator::NodeDownloaded,
+			&mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+		connect(&timer, &QTimer::timeout,
+			&mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+		
 		_communicator->SendCommand((CommandID)APPEND_EXP_NODE, channel, node);
+		
+		timer.start();
+		int ret = loop.exec();
+		timer.stop();
+
+		if (ret != EXIT_BY_RESPONCE) {
+			LOG() << "Error while downloading experiment.";
+
+			emit ExperimentCompleted();
+			return;
+		}
+		
 	}
 	_communicator->SendCommand((CommandID)END_NEW_EXP_DOWNLOAD, channel);
 

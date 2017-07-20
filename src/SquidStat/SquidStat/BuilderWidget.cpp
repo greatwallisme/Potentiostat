@@ -79,8 +79,8 @@ QList<QLine> GetLines(QWidget *w, const LineDirection &ld) {
 
 class ElementEventFilter : public QObject {
 public:
-	ElementEventFilter(QObject *parent, BuilderWidget *bw) :
-		QObject(parent), _bw(bw), pressed(false), dragged(false) {}
+	ElementEventFilter(QObject *parent, BuilderWidget *bw, QWidget *image, QWidget *comment) :
+		QObject(parent), _bw(bw), pressed(false), dragged(false), entered(false), _image(image), _comment(comment) {}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
 		bool ret = false;
@@ -116,6 +116,28 @@ public:
 				}
 				pressed = false;
 				dragged = false;
+				break;
+
+			case QEvent::HoverEnter:
+					entered = true;
+				break;
+
+			case QEvent::HoverMove:
+				if (entered) {
+					if (IsIgnoreArea(obj, e)) {
+						_image->show();
+						_comment->hide();
+					}
+					else {
+						_image->hide();
+						_comment->show();
+					}
+					ret = true;
+				}
+				break;
+
+			case QEvent::HoverLeave:
+				entered = false;
 				break;
 		}
 
@@ -203,6 +225,10 @@ private:
 	Qt::MouseButton pressButton;
 	bool pressed;
 	bool dragged;
+	bool entered;
+
+	QWidget *_image;
+	QWidget *_comment;
 
 	BuilderWidget *_bw;
 };
@@ -521,21 +547,28 @@ QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc, 
 	}
 
 	auto *w = OBJ_NAME(new QFrame(this), "node-builder-element");
-	w->installEventFilter(new ElementEventFilter(w, this));
+	
 
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
 	QSpinBox *mult;
-	QLabel *label;
+	QLabel *imageLbl;
+	QLabel *commentLbl;
 
-	lay->addWidget(label = OBJ_NAME(new QLabel, "node-builder-label"));
+	lay->addWidget(imageLbl = OBJ_NAME(new QLabel, "node-builder-label"));
+	lay->addWidget(commentLbl = OBJ_NAME(new QLabel(bc.elem.name), "node-builder-label"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "node-builder-multiplier-single"));
 
-	label->setPixmap(bc.elem.ptr->GetImage());
+	commentLbl->setWordWrap(true);
+	commentLbl->hide();
+	imageLbl->setPixmap(bc.elem.ptr->GetImage());
 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(bc.repeats);
+
+	w->setAttribute(Qt::WA_Hover, true);
+	w->installEventFilter(new ElementEventFilter(w, this, imageLbl, commentLbl));
 
 	auto disconnector = new Disconnector(mult);
 	
@@ -894,8 +927,18 @@ void BuilderWidget::HandleSelection(QWidget *w) {
 	}
 
 	auto marg = w->contentsMargins();
-	QPoint bottomRight = QPoint(w->width(), w->height());
-	bottomRight -= QPoint(marg.right() + overlayPadding, marg.bottom());
+	
+	int spinPosY;
+	auto spin = w->findChild<QSpinBox*>();
+	if (spin) {
+		spinPosY = spin->pos().y();
+	}
+	else {
+		spinPosY = w->height() - marg.bottom();
+	}
+
+	QPoint bottomRight = QPoint(w->width(), spinPosY);
+	bottomRight -= QPoint(marg.right() + overlayPadding, 0);
 
 	QPoint topLeft = QPoint(marg.left(), marg.top());
 	

@@ -18,6 +18,6 @@ public:
 	QStringList GetYAxisParameters(ExperimentType) const;
 
 	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
-	void SaveDcDataHeader(QFile&) const;
+	void SaveDcDataHeader(QFile&, const ExperimentNotes&) const;
 	void SaveDcData(QFile&, const DataMap&) const;
 };

@@ -12,6 +12,21 @@ class QFile;
 #include <QMap>
 #include <QVector>
 
+struct ExperimentNotes {
+	QString description;
+	QPair<QString, QString> refElectrode;
+	struct {
+		QPair<QString, QString> workingElectrode;
+		QPair<QString, QString> workingElectrodeArea;
+		QPair<QString, QString> counterElectrode;
+		QPair<QString, QString> counterElectrodeArea;
+		QPair<QString, QString> solvent;
+		QPair<QString, QString> electrolyte;
+		QPair<QString, QString> electrolyteConcentration;
+		QPair<QString, QString> atmosphere;
+	} other;
+};
+
 typedef QList<qreal> DataList;
 struct DataStore {
 	DataStore() : min(0), max(0) {}
@@ -27,6 +42,8 @@ enum ExperimentType : uint8_t {
 	ET_SAVED
 };
 typedef QList<ExperimentType> ExperimentTypeList;
+
+
 
 class AbstractExperiment {
 public:
@@ -46,11 +63,11 @@ public:
 	virtual QStringList GetYAxisParameters(ExperimentType) const = 0;
 	
 	virtual void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
-	virtual void SaveDcDataHeader(QFile&) const {};
+	virtual void SaveDcDataHeader(QFile&, const ExperimentNotes&) const {};
 	virtual void SaveDcData(QFile&, const DataMap&) const {};
 
 	virtual void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
-	virtual void SaveAcDataHeader(QFile&) const {};
+	virtual void SaveAcDataHeader(QFile&, const ExperimentNotes&) const {};
 	virtual void SaveAcData(QFile&, const DataMap&) const {};
 };
 

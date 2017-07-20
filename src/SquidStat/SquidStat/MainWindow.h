@@ -28,6 +28,7 @@ struct StartExperimentParameters {
 	const AbstractExperiment *exp;
 	CalibrationData cal;
 	HardwareVersion hwVer;
+	ExperimentNotes notes;
 };
 
 class MainWindow : public QMainWindow {

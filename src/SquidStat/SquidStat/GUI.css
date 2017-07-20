@@ -204,8 +204,8 @@ QPushButton#bar-button:open {
 	max-height: 100px;
 }
 #experiment-description-spacing-bottom {
-	min-height: 140px;
-	max-height: 140px;
+	min-height: 50px;
+	max-height: 50px;
 }
 #experiment-description-icon {
 	image-position: left center;
@@ -238,6 +238,11 @@ QPushButton#bar-button:open {
 	
 	color: #677284;
 	font-size: 16px;
+}
+#experiment-description-text-scroll {
+	border: none;
+	margin-right: 1px;
+	padding-right: 15px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
 #hw-list-combo {
@@ -354,6 +359,26 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	border: 1px solid #9ecfd3;
 }
+#hover-element-overlay {
+	border: 1px solid #9ecfd3;
+	margin: 0px;
+	padding: 0px;
+}
+#hover-element-overlay-name {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	border: none;
+	margin: 0px;
+	padding: 0px;
+	margin-bottom: 5px;
+}
+#hover-element-overlay-icon {
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	border: none;
+	min-height: 100px;
+	max-height: 100px;
+	margin: 0px;
+	padding: 0px;
+}
 /*//////////////       EXPERIMENT BUILDER      ////////////////////*/
 #node-builder-label {
 	qproperty-alignment: "AlignHCenter | AlignVCenter";
@@ -460,16 +485,21 @@ QLabel[experiment-params-widget="low-margin"] {
 	qproperty-alignment: "AlignRight | AlignTop";
 	
 	margin: 0px;
-	padding-right: 10px;
-	padding-top: 10px;
+	padding: 0px;
+	padding-right: 5px;
+	padding-top: 5px;
 }
 #select-element-overlay-name {
 	border: none;
 	background-color: #00000000;
+	
 	color: #ffffff;
-	font-size: 14px;
-	padding-left: 10px;
-	padding-bottom: 10px;
+	font-size: 12px;
+	
+	margin: 0px;
+	padding: 0px;
+	padding-left: 5px;
+	padding-bottom: 5px;
 	
 	qproperty-wordWrap: true;
 }

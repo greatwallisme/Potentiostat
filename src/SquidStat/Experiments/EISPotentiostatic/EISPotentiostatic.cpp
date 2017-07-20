@@ -195,7 +195,7 @@ void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &con
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
 }
-void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile) const {
+void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_AC_DATA_HEADER(PLOT_VAR_FREQ);
