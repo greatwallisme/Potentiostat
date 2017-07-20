@@ -429,6 +429,8 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(1);
+	mult->setSuffix("x");
+	mult->setToolTip("Number of the experiment repeats");
 
 	auto buildExpHolderOwner = new BuilderWidget(mw);
 
