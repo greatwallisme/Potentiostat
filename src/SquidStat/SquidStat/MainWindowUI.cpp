@@ -2782,7 +2782,10 @@ void MainWindowUI::MoveAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis ax
 	handler.axisParams[axis].min.val -= axisdVal;
 	handler.axisParams[axis].max.val -= axisdVal;
 }
-void MainWindowUI::ZoomAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis axis, int percents) {
+void MainWindowUI::ZoomAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis axis, double percents) {
+	ZoomAxis(handler, axis, percents, percents);
+}
+void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double percentsMin, double percentsMax) {
 	if (!handler.plot->axisEnabled(axis)) {
 		return;
 	}
@@ -2794,8 +2797,9 @@ void MainWindowUI::ZoomAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis ax
 
 	double axisWidth = handler.axisParams[axis].max.val - handler.axisParams[axis].min.val;
 
-	handler.axisParams[axis].min.val += (axisWidth * percents) / 100.;
-	handler.axisParams[axis].max.val -= (axisWidth * percents) / 100.;
+	handler.axisParams[axis].min.val += (axisWidth * percentsMin);
+	handler.axisParams[axis].max.val -= (axisWidth * percentsMax);
+
 }
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
@@ -2888,11 +2892,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotCanvas->installEventFilter(new PlotOverlayEventFilter(plotCanvas, plotOverlay));
 
 	auto plotOverlayLay = NO_SPACING(NO_MARGIN(new QGridLayout(plotOverlay)));
-
-	#define PROPERTY_MOUSE_PRESSED	"mouse-pressed"
-	#define PROPERTY_MOUSE_PRESSED_POINT	"mouse-pressed-point"
-	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, false);
-	plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, QPoint(0, 0));
 	
 	QPushButton *zoomInPbt;
 	QPushButton *zoomOutPbt;
@@ -2916,9 +2915,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	plotHandler.plotTabConnections << CONNECT(zoomInPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
-		ZoomAxis(handler, QwtPlot::xBottom, 10);
-		ZoomAxis(handler, QwtPlot::yLeft, 10);
-		ZoomAxis(handler, QwtPlot::yRight, 10);
+		ZoomAxis(handler, QwtPlot::xBottom, 0.1);
+		ZoomAxis(handler, QwtPlot::yLeft, 0.1);
+		ZoomAxis(handler, QwtPlot::yRight, 0.1);
 
 		bool needReplot = false;
 		needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
@@ -2932,9 +2931,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	plotHandler.plotTabConnections << CONNECT(zoomOutPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
-		ZoomAxis(handler, QwtPlot::xBottom, -10);
-		ZoomAxis(handler, QwtPlot::yLeft, -10);
-		ZoomAxis(handler, QwtPlot::yRight, -10);
+		ZoomAxis(handler, QwtPlot::xBottom, -0.1);
+		ZoomAxis(handler, QwtPlot::yLeft, -0.1);
+		ZoomAxis(handler, QwtPlot::yRight, -0.1);
 
 		bool needReplot = false;
 		needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
@@ -2946,16 +2945,48 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	});
 
+	#define PROPERTY_MOUSE_MOVE_PRESSED			"mouse-move-pressed"
+	#define PROPERTY_MOUSE_MOVE_PRESSED_POINT	"mouse-move-pressed-point"
+	#define PROPERTY_MOUSE_GRAB_PRESSED			"mouse-grab-pressed"
+	#define PROPERTY_MOUSE_GRAB_PRESSED_POINT	"mouse-grab-pressed-point"
+	#define PROPERTY_MOUSE_GRAB_END_POINT		"mouse-grab-end-point"
+	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, false);
+	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, QPoint(0, 0));
+	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, false);
+	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, QPoint(0, 0));
+	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, QPoint(0, 0));
+
 	plotOverlay->installEventFilter(new PlotDragOverlayEventFilter(plotOverlay, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
-		bool pressed = obj->property(PROPERTY_MOUSE_PRESSED).toBool();
-		QPoint startPoint = obj->property(PROPERTY_MOUSE_PRESSED_POINT).toPoint();
+		bool pressed = obj->property(PROPERTY_MOUSE_MOVE_PRESSED).toBool();
+		QPoint startPoint = obj->property(PROPERTY_MOUSE_MOVE_PRESSED_POINT).toPoint();
+		bool grabbed = obj->property(PROPERTY_MOUSE_GRAB_PRESSED).toBool();
+		QPoint grabbedPoint = obj->property(PROPERTY_MOUSE_GRAB_PRESSED_POINT).toPoint();
+		QPoint grabbedEndPoint = obj->property(PROPERTY_MOUSE_GRAB_END_POINT).toPoint();
 
 		switch (e->type()) {
 		case QEvent::MouseButtonPress:
-			pressed = true;
-			startPoint = ((QMouseEvent*)e)->pos();
-			ret = true;
+			if( !grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton) ) {
+				pressed = true;
+				startPoint = ((QMouseEvent*)e)->pos();
+				ret = true;
+			}
+			if( !pressed && (((QMouseEvent*)e)->button() == Qt::LeftButton) ) {
+				grabbed = true;
+				grabbedPoint = ((QMouseEvent*)e)->pos();
+				grabbedEndPoint = grabbedPoint;
+				ret = true;
+			}
+			if (grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton)) {
+				grabbed = false;
+
+				QWidget *w = qobject_cast<QWidget*>(obj);
+				if (w) {
+					w->update();
+				}
+
+				ret = true;
+			}
 			break;
 
 		case QEvent::MouseMove:
@@ -2981,16 +3012,83 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 				ret = true;
 			}
+			if (grabbed) {
+				grabbedEndPoint = ((QMouseEvent*)e)->pos();
+				
+				QWidget *w = qobject_cast<QWidget*>(obj);
+				if (w) {
+					w->update();
+				}
+
+				ret = true;
+			}
 			break;
 
 		case QEvent::MouseButtonRelease:
-			pressed = false;
-			ret = true;
+			if (pressed && ((QMouseEvent*)e)->button() == Qt::RightButton) {
+				pressed = false;
+				ret = true;
+			}
+			if (grabbed && ((QMouseEvent*)e)->button() == Qt::LeftButton) {
+				grabbed = false;
+
+				QWidget *w = qobject_cast<QWidget*>(obj);
+				if (w) {
+					w->update();
+				}
+
+				PlotHandler &handler(dataTabs.plots[id][type]);
+				auto rect = w->rect();
+
+				auto topLeft = QPoint(qMin(grabbedPoint.x(), grabbedEndPoint.x()), qMin(grabbedPoint.y(), grabbedEndPoint.y()));
+				auto bottomRight = QPoint(qMax(grabbedPoint.x(), grabbedEndPoint.x()), qMax(grabbedPoint.y(), grabbedEndPoint.y()));
+
+				double xMinPers = (double)topLeft.x() / rect.width();
+				double xMaxPers = (double)(rect.width() - bottomRight.x()) / rect.width();
+				double yMinPers = (double)topLeft.y() / rect.height();
+				double yMaxPers = (double)(rect.height() - bottomRight.y()) / rect.height();
+
+				ZoomAxis(handler, QwtPlot::xBottom, xMinPers, xMaxPers);
+				ZoomAxis(handler, QwtPlot::yLeft, yMinPers, yMaxPers);
+				ZoomAxis(handler, QwtPlot::yRight, yMinPers, yMaxPers);
+
+				bool needReplot = false;
+				needReplot |= ApplyNewAxisParams(QwtPlot::xBottom, handler);
+				needReplot |= ApplyNewAxisParams(QwtPlot::yLeft, handler);
+				needReplot |= ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+				if (needReplot) {
+					handler.plot->replot();
+				}
+
+				ret = true;
+			}
+			break;
+
+		case QEvent::Paint:
+			if (grabbed) {
+				QWidget *w = qobject_cast<QWidget*>(obj);
+				if (!w) {
+					break;
+				}
+
+				QPainter painter(w);
+
+				auto pen = QPen(QColor("#4d565f"), 2, Qt::DashLine);
+				painter.setPen(pen);
+
+				painter.drawRect(QRect(grabbedPoint, grabbedEndPoint));
+
+				ret = true;
+			}
 			break;
 		}
 
-		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED_POINT, startPoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_PRESSED, pressed);
+		plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, startPoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, pressed);
+		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, grabbedPoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, grabbedEndPoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, grabbed);
 		return ret;
 	}));
 
