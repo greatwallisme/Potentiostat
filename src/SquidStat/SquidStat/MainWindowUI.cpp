@@ -62,6 +62,7 @@
 #include <QGraphicsDropShadowEffect> 
 #include <QDialogButtonBox>
 #include <QMessageBox>
+#include <QToolTip>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -2914,7 +2915,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
-
+	
 	plotHandler.plotTabConnections << CONNECT(zoomInPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ZoomAxis(handler, QwtPlot::xBottom, 0.1);
@@ -2952,21 +2953,132 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define PROPERTY_MOUSE_GRAB_PRESSED			"mouse-grab-pressed"
 	#define PROPERTY_MOUSE_GRAB_PRESSED_POINT	"mouse-grab-pressed-point"
 	#define PROPERTY_MOUSE_GRAB_END_POINT		"mouse-grab-end-point"
+	#define PROPERTY_MOUSE_CURVE_POINT			"mouse-curve-point"
+	#define PROPERTY_MOUSE_CURVE_POINT_VALID	"mouse-curve-point-valid"
+	#define PROPERTY_MOUSE_CURVE_POINT_COLOR	"mouse-curve-point-color"
+	#define PROPERTY_MOUSE_CURVE_POINT_WIDTH	"mouse-curve-point-width"
+
+	plotOverlay->setAttribute(Qt::WA_Hover, true);
 	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, false);
 	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, QPoint(0, 0));
 	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, false);
 	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, QPoint(0, 0));
 	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, QPoint(0, 0));
+	plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT, QPointF(0, 0));
+	plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_VALID, false);
+	plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_COLOR, QString(""));
+	plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_WIDTH, 5.0);
 
 	plotOverlay->installEventFilter(new PlotDragOverlayEventFilter(plotOverlay, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
-		bool pressed = obj->property(PROPERTY_MOUSE_MOVE_PRESSED).toBool();
-		QPoint startPoint = obj->property(PROPERTY_MOUSE_MOVE_PRESSED_POINT).toPoint();
-		bool grabbed = obj->property(PROPERTY_MOUSE_GRAB_PRESSED).toBool();
-		QPoint grabbedPoint = obj->property(PROPERTY_MOUSE_GRAB_PRESSED_POINT).toPoint();
-		QPoint grabbedEndPoint = obj->property(PROPERTY_MOUSE_GRAB_END_POINT).toPoint();
+
+		auto pressed = obj->property(PROPERTY_MOUSE_MOVE_PRESSED).toBool();
+		auto startPoint = obj->property(PROPERTY_MOUSE_MOVE_PRESSED_POINT).toPoint();
+		auto grabbed = obj->property(PROPERTY_MOUSE_GRAB_PRESSED).toBool();
+		auto grabbedPoint = obj->property(PROPERTY_MOUSE_GRAB_PRESSED_POINT).toPoint();
+		auto grabbedEndPoint = obj->property(PROPERTY_MOUSE_GRAB_END_POINT).toPoint();
+		auto curvePointValid = obj->property(PROPERTY_MOUSE_CURVE_POINT_VALID).toBool();
+		auto curvePoint = obj->property(PROPERTY_MOUSE_CURVE_POINT).toPointF();
+		auto pointColor = QColor(obj->property(PROPERTY_MOUSE_CURVE_POINT_COLOR).toString());
+		auto penWidth = obj->property(PROPERTY_MOUSE_CURVE_POINT_WIDTH).toDouble();
+
+		QWidget *w = qobject_cast<QWidget*>(obj);
 
 		switch (e->type()) {
+		case QEvent::HoverEnter:
+			ret = true;
+			break;
+		case QEvent::HoverLeave:
+			ret = true;
+			break;
+		case QEvent::HoverMove:
+			if (!pressed && !grabbed) {
+				double dist = 100000;
+				auto pos = ((QMouseEvent*)e)->pos();
+				QwtPlot::Axis yAxis;
+
+				PlotHandler &handler(dataTabs.plots[id][type]);
+
+
+				QPointF curvePointSample;
+				curvePointValid = false;
+				foreach(auto &curData, handler.data) {
+					double curDist;
+					auto index = curData.curve1->closestPoint(pos, &curDist);
+
+					if ( (-1 != index) && (curDist <= 10.) && (curDist < dist) ) {
+						dist = curDist;
+						yAxis = QwtPlot::yLeft;
+
+						auto sym = curData.curve1->symbol();
+						if (sym) {
+							penWidth = sym->size().width();
+							if (penWidth < 5.0) {
+								penWidth = 5.0;
+							}
+						}
+						else {
+							penWidth = 5.0;
+						}
+
+						curvePointSample = curData.curve1->sample(index);
+						pointColor = curData.curve1->pen().color();
+						curvePoint = QPoint(handler.plot->transform(QwtPlot::xBottom, curvePointSample.x()) + 1,
+							handler.plot->transform(yAxis, curvePointSample.y()) + 1);
+
+						curvePointValid = true;
+					}
+					
+					index = curData.curve2->closestPoint(pos, &curDist);
+
+					if ((-1 != index) && (curDist <= 10.) && (curDist < dist)) {
+						dist = curDist;
+						yAxis = QwtPlot::yRight;
+
+						auto sym = curData.curve2->symbol();
+						if (sym) {
+							penWidth = sym->size().width();
+							if (penWidth < 5.0) {
+								penWidth = 5.0;
+							}
+						}
+						else {
+							penWidth = 5.0;
+						}
+
+						curvePointSample = curData.curve2->sample(index);
+						pointColor = curData.curve2->pen().color();
+						curvePoint = QPoint(handler.plot->transform(QwtPlot::xBottom, curvePointSample.x()) + 1,
+							handler.plot->transform(yAxis, curvePointSample.y()) + 1);
+
+						curvePointValid = true;
+					}
+				}
+				
+				if (curvePointValid) {
+					auto tooltipText = QString("(%1; %2)").arg(curvePointSample.x(), 0, 'f', 2).arg(curvePointSample.y(), 0, 'f', 2);
+					//plotOverlay->setToolTip();
+					QToolTip::showText(plotOverlay->mapToGlobal(pos), tooltipText, plotOverlay, QRect(), 0);
+				}
+				else {
+					plotOverlay->setToolTip(QString());
+				}
+
+				if (w) {
+					w->update();
+				}
+			}
+			else {
+				auto prevCurvePointValid = curvePointValid;
+				curvePointValid = false;
+
+				if ((prevCurvePointValid != curvePointValid) && w) {
+					w->update();
+				}
+			}
+
+			break;
+
 		case QEvent::MouseButtonPress:
 			if( !grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton) ) {
 				pressed = true;
@@ -2982,7 +3094,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton)) {
 				grabbed = false;
 
-				QWidget *w = qobject_cast<QWidget*>(obj);
 				if (w) {
 					w->update();
 				}
@@ -3017,7 +3128,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (grabbed) {
 				grabbedEndPoint = ((QMouseEvent*)e)->pos();
 				
-				QWidget *w = qobject_cast<QWidget*>(obj);
 				if (w) {
 					w->update();
 				}
@@ -3034,11 +3144,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (grabbed && ((QMouseEvent*)e)->button() == Qt::LeftButton) {
 				grabbed = false;
 
-				QWidget *w = qobject_cast<QWidget*>(obj);
+				if ((grabbedPoint.x() == grabbedEndPoint.x()) && (grabbedPoint.y() == grabbedEndPoint.y()) ) {
+					break;
+				}
+				
 				if (w) {
 					w->update();
 				}
-
+				
 				PlotHandler &handler(dataTabs.plots[id][type]);
 				auto rect = w->rect();
 
@@ -3068,12 +3181,18 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 
 		case QEvent::Paint:
-			if (grabbed) {
-				QWidget *w = qobject_cast<QWidget*>(obj);
-				if (!w) {
-					break;
-				}
+			if (curvePointValid && w) {
+				QPainter painter(w);
+				painter.setRenderHint(QPainter::Antialiasing, true);
 
+				auto pen = QPen(QColor("#4d565f"), 2, Qt::SolidLine);
+				painter.setPen(pen);
+				painter.setBrush(pointColor);
+				painter.drawEllipse(curvePoint, penWidth, penWidth);
+
+				ret = true;
+			}
+			if (grabbed && w) {
 				QPainter painter(w);
 
 				auto pen = QPen(QColor("#4d565f"), 2, Qt::DashLine);
@@ -3091,7 +3210,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, grabbedPoint);
 		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, grabbedEndPoint);
 		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, grabbed);
-		return ret;
+		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT, curvePoint);
+		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_VALID, curvePointValid);
+		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_COLOR, pointColor.name());
+		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_WIDTH, penWidth);
+		return ret; 
 	}));
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
