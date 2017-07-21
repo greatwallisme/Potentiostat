@@ -1,14 +1,13 @@
 #define _USE_MATH_DEFINES
 
 #include "ExperimentCalcHelper.h"
-
-#include <qdebug.h>
+#include "Log.h"  //debugging only
+#include <qdebug.h>  //debugging only
 
 /* DC methods */
 
 void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, double t_sample_period)
 {
-
 	int dt_min = 50000;
 	switch (HWversion)
 	{
@@ -16,6 +15,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
 	case EDGE:
 	case PICO:
 	case SOLO:
+  case PLUS:
 		dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
 		break;
 	case PLUS_2_0:
@@ -56,10 +56,11 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
   pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
 }
 
-void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode, double dEdt)
+uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode, double dEdt, double samplingInterval)
 {
-  if (dEdt == 0) return;
+  if (dEdt == 0) return 1;
 
+  uint32_t FilterSize;
   int dt_min = 50000;
   switch (HWversion)
   {
@@ -67,6 +68,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
     case PICO:
     case EDGE:
     case SOLO:
+    case PLUS:
       dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
     break;
     case PLUS_2_0:
@@ -82,7 +84,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
   pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
   pNode->DCSweep_pot.VStep = 1;
   uint64_t dt;
-  double ticksPerStep = 1 / abs(dEdt) / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * 1e11;
+  double ticksPerStep = 1 / abs(dEdt) / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000;
   do
   {
     dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
@@ -105,26 +107,97 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
     dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
   }
 
-  /* 3) Calculate ADCMult. If ADC sampling period is greater than 1s, reduce ADCBufSize */
-  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-  while (pNode->samplingParams.ADCBufferSizeEven * dt > SQUIDSTAT_PIC_TIMER_CLK_SPEED)
-  {
-    pNode->samplingParams.ADCBufferSizeEven >>= 1;
-    pNode->samplingParams.ADCBufferSizeOdd >>= 1;
-  }
+  /* 3) Calculate ADCMult. If ADC sampling period is greater than maxSamplingInterval, reduce ADCBufSize */
+  if (samplingInterval == 0)
+    pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
+  else
+    pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint32_t)MIN(pNode->samplingParams.DACMultEven, samplingInterval * SECONDS / dt);
+  FilterSize = uint32_t((samplingInterval / dt) / (pNode->samplingParams.ADCBufferSizeEven / dt));
 
   /* 4) Calculate Points Ignored (for dynamic sampling) */
   if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
     pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
+  else
+    pNode->samplingParams.PointsIgnored = 0;
 
   /* 5) Make sure timer period isn't too big for uint32_t */
   pNode->samplingParams.ADCTimerDiv = 0;
-  while (dt > 4294967295 - 5e5) //5e5 accounts conservatively for loop time
+  while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
   {
     pNode->samplingParams.ADCTimerDiv++;
     dt >>= 1;
   }
   pNode->samplingParams.ADCTimerPeriod = (uint32_t) dt;
+
+  return FilterSize;
+}
+
+void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode)
+{
+  int dt_min = 50000;
+  switch (HWversion)
+  {
+  case PRIME:
+  case PICO:
+  case EDGE:
+  case SOLO:
+  case PLUS:
+    dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
+    break;
+  case PLUS_2_0:
+  case PRIME_2_0:
+  case SOLO_2_0:
+    dt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
+    break;
+  default:
+    break;
+  }
+
+  pNode->samplingParams.ADCTimerDiv = 0;
+  pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
+
+  /* 1) Take the lesser of (period - pulsewidth) and pulsewidth */
+  double t_pulse;
+  bool isEvenPeriodShorter;
+  if (t_period - t_pulsewidth < t_pulsewidth)
+  {
+    t_pulse = t_period - t_pulsewidth;
+    isEvenPeriodShorter = true;
+  }
+  else
+  {
+    t_pulse = t_pulsewidth;
+    isEvenPeriodShorter = false;
+  }
+  uint16_t bufMult = 1;
+
+  /* 2) Minimize dt */
+  uint32_t dt;
+  do
+  {
+    dt = t_pulse * MILLISECONDS / bufMult;
+    if (dt / dt_min > 1 && bufMult < DACdcBUF_SIZE && bufMult < ADCdcBUF_SIZE)
+    {
+      bufMult <<= 1;
+    }
+  } while (dt / dt_min > 1);
+  pNode->samplingParams.ADCTimerPeriod = dt;
+
+  if (isEvenPeriodShorter)
+  {
+    pNode->samplingParams.DACMultEven = bufMult;
+    pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
+  }
+  else
+  {
+    pNode->samplingParams.DACMultOdd = bufMult;
+    pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * ((t_period - t_pulsewidth) / t_pulsewidth);
+  }
+  pNode->samplingParams.PointsIgnored = bufMult / 2;
+
+  /* 3) Calculate ADCMult */
+  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.DACMultEven;
+  pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultOdd;
 }
 
 currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)
@@ -136,6 +209,7 @@ currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWvers
 	case EDGE:
 	case PICO:
 	case SOLO:
+  case PLUS:
 		MaxCurrentRange = 3;
 		break;
 	case PLUS_2_0:
@@ -219,7 +293,10 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 		WE_RealSum += bufEWE[i] * cos(arg);
 		WE_ImagSum += bufEWE[i] * sin(arg);
 
-    //qDebug().noquote()<<bufEWE[i];
+    QString debugStr;
+    //debugStr.append(QString::number(bufEWE[i])); debugStr.append('\t'); debugStr.append(QString::number(bufCurrent[i]));
+    //qDebug().noquote().nospace() << debugStr;
+    qDebug().noquote() << QString::number(bufEWE[i]);
 	}
 
 	double I_abs = sqrt(I_RealSum * I_RealSum + I_ImagSum * I_ImagSum);
@@ -262,8 +339,10 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   pNode->FRA_pot_node.freqRange = pNode->FRA_pot_node.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
 
   /* (1) Calculate signal gen clock frequency and signal gen register value */
-  int wavegenClkdiv = 1 << (int) WAVEGENCLK_3KHZ;
-  pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_3KHZ;
+        //int wavegenClkdiv = 1 << (int) WAVEGENCLK_24KHZ;
+        //pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_24KHZ;
+        int wavegenClkdiv = 1 << (int) WAVEGENCLK_12_5MHZ;
+        pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_12_5MHZ;
   double fSignal = pNode->FRA_pot_node.frequency;
 
   while (fSignal * SIGNAL_GEN_RESOLUTION * wavegenClkdiv >= 25e6)
@@ -274,6 +353,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
       break;
   }
   pNode->FRA_pot_node.wavegenFraction = (uint32_t)(fSignal * wavegenClkdiv / 25e6 * 268435456);
+  pNode->FRA_pot_node.wavegenFraction = (pNode->FRA_pot_node.wavegenFraction == 0) ? 1 : pNode->FRA_pot_node.wavegenFraction; //make sure frequency doesn't equal zero
 
   /* Re-calculate signal frequency based on integer timer values */
   fSignal = (double)pNode->FRA_pot_node.wavegenFraction / 268435456.0 * 25e6 / wavegenClkdiv;
@@ -288,7 +368,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     fSample = (n - 1) * fSignal / n;
   else
     fSample = fSignal * n;
-  uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
+  //uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
+  uint64_t TimerPeriod = (uint64_t)(25.0e6 / fSample / ADCclkdiv);
 
   while (1)
   {
@@ -300,7 +381,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     }
 
     /* Recalculate sampling frequency and ADCbufsize based on integer timer values */
-    fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
+    //fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
+    fSample = 25.0e6 / ADCclkdiv / TimerPeriod;
     if (pNode->FRA_pot_node.freqRange == HF_RANGE)
     {
       double denom = fSignal - fSample;

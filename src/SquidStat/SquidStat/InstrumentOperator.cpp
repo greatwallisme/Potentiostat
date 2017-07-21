@@ -59,14 +59,26 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			LOG() << "Node complete";
 			break;
 
-		case OVERCURRENT_WARNING:
-			LOG() << "Overcurrent warning, channel stopped";
-			break;
-
 		case DATA_RECEIVED_OK:
 			//LOG() << "DATA_RECEIVED_OK";
 			emit NodeDownloaded();
 			break;
+
+    case OVERCURRENT_WARNING:
+      LOG() << "The current has exceeded its set maximum limit!";
+      break;
+
+    case ECE_OVERVOLTAGE_WARNING:
+      LOG() << "Counter electrode potential out of range!";
+        break;
+     
+    case EWE_OVERVOLTAGE_WARNING:
+      LOG() << "Working electrode potential out of range!";
+      break;
+
+    case REF_OVERVOLTAGE_WARNING:
+      LOG() << "Reference electrode potential out of range!";
+      break;
 
 		default:
 			LOG() << "Unknown response";

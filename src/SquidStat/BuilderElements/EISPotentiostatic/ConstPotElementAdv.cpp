@@ -103,7 +103,7 @@ QWidget* ConstPotElementAdv::CreateUserInput(UserInput &inputs) const {
   _INSERT_LEFT_ALIGN_COMMENT("<b>Current ranging</b>", row, 1);
 
   ++row;
-  _START_RADIO_BUTTON_GROUP(CURRENT_RANGE_OBJ_NAME);
+  _START_RADIO_BUTTON_GROUP("CURRENT_RANGE_OBJ_NAME");
   _INSERT_RADIO_BUTTON("Autorange", row, 0);
   ++row;
   _INSERT_RADIO_BUTTON("Upper current limit: ", row, 0);

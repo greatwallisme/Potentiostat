@@ -3,6 +3,7 @@
 
 #include <AbstractExperiment.h>
 #include <QtWidgets/QWidget>
+#include <ExperimentCalcHelper.h>
 
 class DiffPulseVoltammetry : public AbstractExperiment {
 public:
@@ -22,10 +23,6 @@ public:
 
 	void SaveDcDataHeader(QFile&, const ExperimentNotes&notes) const;
 	void SaveDcData(QFile&, const DataMap&) const;
-private:
-	int hardwareVersion; //TODO: this is a placeholder member
-	void getSamplingParameters(quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode) const;
-
 };
 
 #endif // DIFFPULSEVOLTAMMETRY_H

@@ -3,6 +3,7 @@
 
 #include <AbstractExperiment.h>
 #include <QtWidgets/QWidget>
+#include <ExperimentCalcHelper.h>
 
 class Chronopotentiometry : public AbstractExperiment {
 public:

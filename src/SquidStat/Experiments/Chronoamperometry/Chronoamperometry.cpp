@@ -168,16 +168,6 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 }
 NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
-	QString selectedRadio1;
-	QString selectedRadio2;
-	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
-	GET_SELECTED_RADIO(selectedRadio2, "Test radio 2 id");
-
-
-	QString selectedDropDown;
-	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
-	//*/
 
 	double v1, v2, v3, v4, t1, t2, t3, t4;
 	GET_TEXT_INPUT_VALUE_DOUBLE(v1, V1_OBJECT_NAME);
@@ -206,9 +196,9 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t1 * 1e8;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+	exp.tMin = 0;
+	exp.tMax = t1 * SECONDS;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v1);
 	exp.DCPoint_pot.VPointVsOCP = _ocp1;
@@ -216,15 +206,17 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
 	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t2 * 1e8;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+	exp.tMin = 0;
+	exp.tMax = t2 * SECONDS;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v2);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -232,15 +224,17 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
 	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t3 * 1e8;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+	exp.tMin = 0;
+	exp.tMax = t3 * SECONDS;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v3);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -248,15 +242,17 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
 	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t4 * 1e8;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+	exp.tMin = 0;
+	exp.tMax = t4 * SECONDS;
+  exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v4);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -264,8 +260,10 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
 	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
