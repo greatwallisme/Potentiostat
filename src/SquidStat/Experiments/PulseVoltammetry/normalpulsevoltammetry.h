@@ -3,6 +3,7 @@
 
 #include <AbstractExperiment.h>
 #include <QtWidgets/QWidget>
+#include <ExperimentCalcHelper.h>
 
 class NormalPulseVoltammetry : public AbstractExperiment {
 public:
@@ -22,10 +23,6 @@ public:
 	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
 	void SaveDcDataHeader(QFile&, const ExperimentNotes&notes) const;
 	void SaveDcData(QFile&, const DataMap&) const;
-private:
-	int hardwareVersion; //TODO: this is a placeholder member
-	void getSamplingParameters(quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode) const;
-
 };
 
 #endif // NORMALPULSEVOLTAMMETRY_H

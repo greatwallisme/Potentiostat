@@ -51,6 +51,9 @@
     <ClCompile Include="EISPotentiostatic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\SquidStat\ExperimentCalcHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="Factory.h">

@@ -43,11 +43,11 @@
     <ClCompile Include="GeneratedFiles\Release\moc_Factory.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="ConstPotElement.cpp">
-      <Filter>_src</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="ConstPotElementAdv.cpp">
+      <Filter>_src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -59,7 +59,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConstPotElement.h">
+    <ClInclude Include="ConstPotElementAdv.h">
       <Filter>_src</Filter>
     </ClInclude>
   </ItemGroup>

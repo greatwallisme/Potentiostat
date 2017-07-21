@@ -11,10 +11,14 @@
 #define END_VOLTAGE_OBJ_NAME	"end-voltage"
 #define END_VOLTAGE_VS_OCP_OBJ_NAME "end-voltage-vs-ocp"
 #define SCAN_RATE_OBJ_NAME	"scan-rate"
+#define CURRENT_RANGE_OBJ_NAME  "current-range-mode"
+#define CURRENT_RANGE_VALUE_OBJ_NAME  "approx-current-max-value"
+#define CURRENT_RANGE_UNITS_OBJ_NAME  "current-range-units"
 
 #define START_VOLTAGE_DEFAULT	0
 #define END_VOLTAGE_DEFAULT		1
 #define SCAN_RATE_DEFAULT	1
+#define CURRENT_RANGE_VALUE_DEFAULT 100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
@@ -88,6 +92,25 @@ QWidget* LinearSweepVoltammetry::CreateUserInput() const {
 	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_LEFT_ALIGN_COMMENT("<b>Current ranging</b>", row, 1);
+  
+  ++row;
+  _START_RADIO_BUTTON_GROUP("CURRENT_RANGE_OBJ_NAME");
+  _INSERT_RADIO_BUTTON("Autorange", row, 0);
+  ++row;
+  _INSERT_RADIO_BUTTON("Approx. max current: ", row, 0);
+  _END_RADIO_BUTTON_GROUP();
+  _INSERT_TEXT_INPUT(CURRENT_RANGE_VALUE_DEFAULT, CURRENT_RANGE_VALUE_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(CURRENT_RANGE_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
+
 	_SET_ROW_STRETCH(++row, 1);
 	_SET_COL_STRETCH(3, 1);
 
@@ -103,22 +126,42 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
   QString endVoltageVsOCP_str;
   bool startVoltageVsOCP;
   bool endVoltageVsOCP;
+  QString currentRangeMode_str;
+  QString currentRangeUnits_str;
+  currentRange_t currentRangeMode;
+  double approxMaxCurrent;
 
 	GET_TEXT_INPUT_VALUE_DOUBLE(startVoltage, START_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(endVoltage, END_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(dEdt, SCAN_RATE_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(startVoltageVsOCP_str, START_VOLTAGE_VS_OCP_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(endVoltageVsOCP_str, END_VOLTAGE_VS_OCP_OBJ_NAME);
+  GET_SELECTED_RADIO(currentRangeMode_str, CURRENT_RANGE_OBJ_NAME);
+  GET_TEXT_INPUT_VALUE_DOUBLE(approxMaxCurrent, CURRENT_RANGE_VALUE_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(currentRangeUnits_str, CURRENT_RANGE_UNITS_OBJ_NAME);
 
   startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
   endVoltageVsOCP = endVoltageVsOCP_str.contains("open circuit");
 
+  if (currentRangeMode_str.contains("Autorange"))
+    currentRangeMode = AUTORANGE;
+  else
+  {
+    if (currentRangeUnits_str.contains("mA"))
+      approxMaxCurrent *= 1;
+    else if (currentRangeUnits_str.contains("uA"))
+      approxMaxCurrent *= 1e-3;
+    else if (currentRangeUnits_str.contains("nA"))
+      approxMaxCurrent *= 1e-6;
+    currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, approxMaxCurrent);
+  }
+
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_POT;
-  exp.tMin = 5 * 1e5;
-  exp.tMax = 5 * 1e5;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.tMin = 5 * MILLISECONDS;
+  exp.tMax = 5 * MILLISECONDS;
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 1);
   exp.DCPoint_pot.dIdtMin = 0;
   exp.DCPoint_pot.Imax = 32767;
@@ -132,9 +175,9 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 10 * 1e2;
+	exp.tMin = 10 * MICROSECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
   exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
   exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;

@@ -5,27 +5,27 @@
 
 #define TOP_WIDGET_NAME			"Chronopotentiometry"
 
-#define V1_OBJECT_NAME			"voltage-1"
-#define V1_VS_OCP_OBJ_NAME		"voltage-1-vs-ocp"
-#define T1_OBJECT_NAME			"voltage-1-time"
-#define V2_OBJECT_NAME			"voltage-2"
-#define V2_VS_OCP_OBJ_NAME		"voltage-2-vs-ocp"
-#define T2_OBJECT_NAME			"voltage-2-time"
-#define V3_OBJECT_NAME			"voltage-3"
-#define V3_VS_OCP_OBJ_NAME		"voltage-3-vs-ocp"
-#define T3_OBJECT_NAME			"voltage-3-time"
-#define V4_OBJECT_NAME			"voltage-4"
-#define V4_VS_OCP_OBJ_NAME		"voltage-4-vs-ocp"
-#define T4_OBJECT_NAME			"voltage-4-time"
+#define I1_OBJECT_NAME			"current-1"
+#define I1_UNITS_OBJ_NAME   "current-units-1"
+#define T1_OBJECT_NAME			"current-1-time"
+#define I2_OBJECT_NAME			"current-2"
+#define I2_UNITS_OBJ_NAME   "current-units-2"
+#define T2_OBJECT_NAME			"current-2-time"
+#define I3_OBJECT_NAME			"current-3"
+#define I3_UNITS_OBJ_NAME   "current-units-3"
+#define T3_OBJECT_NAME			"current-3-time"
+#define I4_OBJECT_NAME			"current-4"
+#define I4_UNITS_OBJ_NAME   "current-units-4"
+#define T4_OBJECT_NAME			"current-4-time"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
 
-#define V1_DEFAULT				0.1
-#define T1_DEFAULT				0
-#define V2_DEFAULT				0.2
+#define I1_DEFAULT				1
+#define T1_DEFAULT				10
+#define I2_DEFAULT				2
 #define T2_DEFAULT				0
-#define V3_DEFAULT				0.3
+#define I3_DEFAULT				3
 #define T3_DEFAULT				0
-#define V4_DEFAULT				0.4
+#define I4_DEFAULT				4
 #define T4_DEFAULT				0
 #define SAMPLING_INT_DEFAULT	1
 
@@ -43,12 +43,11 @@ QString Chronopotentiometry::GetFullName() const {
 	return "Chronopotentiometry";
 }
 QString Chronopotentiometry::GetDescription() const {
-	return "This experiment holds the working electrode at a constant potential while recording the current and charge passed. The working electrode is sequentially poised at up to four potentials for the specified duration of time";
+	return "This experiment applies a constant current to the cell while recording the working electrode potential. Current is applied sequentially at up to four values for the specified duration of time";
 }
 QStringList Chronopotentiometry::GetCategory() const {
-	return QStringList() <<
-		"Basic voltammetry";
-
+  return QStringList() <<
+    "Basic voltammetry";
 }
 ExperimentTypeList Chronopotentiometry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
@@ -65,16 +64,13 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Potential 1 = ", row, 0);
-	_INSERT_TEXT_INPUT(V1_DEFAULT, V1_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-	_START_DROP_DOWN(V1_VS_OCP_OBJ_NAME, row, 1);
-	_ADD_DROP_DOWN_ITEM("reference");
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_END_DROP_DOWN();
+	_INSERT_RIGHT_ALIGN_COMMENT("Current 1 = ", row, 0);
+	_INSERT_TEXT_INPUT(I1_DEFAULT, I1_OBJECT_NAME, row, 1);
+  _START_DROP_DOWN(I1_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	//TODO: add hh:mm:ss format
 	++row;
@@ -86,16 +82,13 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Potential 2 = ", row, 0);
-	_INSERT_TEXT_INPUT(V2_DEFAULT, V2_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-	_START_DROP_DOWN(V2_VS_OCP_OBJ_NAME, row, 1);
-	_ADD_DROP_DOWN_ITEM("reference");
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_END_DROP_DOWN();
+	_INSERT_RIGHT_ALIGN_COMMENT("Current 2 = ", row, 0);
+	_INSERT_TEXT_INPUT(I2_DEFAULT, I2_OBJECT_NAME, row, 1);
+  _START_DROP_DOWN(I2_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	//TODO: add hh:mm:ss format
 	++row;
@@ -107,16 +100,13 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Potential 3 = ", row, 0);
-	_INSERT_TEXT_INPUT(V3_DEFAULT, V3_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-	_START_DROP_DOWN(V3_VS_OCP_OBJ_NAME, row, 1);
-	_ADD_DROP_DOWN_ITEM("reference");
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_END_DROP_DOWN();
+	_INSERT_RIGHT_ALIGN_COMMENT("Current 3 = ", row, 0);
+	_INSERT_TEXT_INPUT(I3_DEFAULT, I3_OBJECT_NAME, row, 1);
+  _START_DROP_DOWN(I3_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	//TODO: add hh:mm:ss format
 	++row;
@@ -128,16 +118,13 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Potential 4 = ", row, 0);
-	_INSERT_TEXT_INPUT(V4_DEFAULT, V4_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-	_START_DROP_DOWN(V4_VS_OCP_OBJ_NAME, row, 1);
-	_ADD_DROP_DOWN_ITEM("reference");
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_END_DROP_DOWN();
+	_INSERT_RIGHT_ALIGN_COMMENT("Current 4 = ", row, 0);
+	_INSERT_TEXT_INPUT(I4_DEFAULT, I4_OBJECT_NAME, row, 1);
+  _START_DROP_DOWN(I4_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	//TODO: add hh:mm:ss format
 	++row;
@@ -170,11 +157,11 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
 	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
 	//*/
 
-	double v1, v2, v3, v4, t1, t2, t3, t4;
-	GET_TEXT_INPUT_VALUE_DOUBLE(v1, V1_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(v2, V2_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(v3, V3_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(v4, V4_OBJECT_NAME);
+	double i1, i2, i3, i4, t1, t2, t3, t4;
+	GET_TEXT_INPUT_VALUE_DOUBLE(i1, I1_OBJECT_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(i2, I2_OBJECT_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(i3, I3_OBJECT_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(i4, I4_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t1, T1_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
@@ -183,76 +170,98 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
 	double dt;
 	GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_PERIOD_OBJ_NAME);
 
-	QString ocp1, ocp2, ocp3, ocp4;
-	bool _ocp1, _ocp2, _ocp3, _ocp4;
-	GET_SELECTED_DROP_DOWN(ocp1, V1_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp2, V2_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp3, V3_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp4, V4_VS_OCP_OBJ_NAME);
-	_ocp1 = ocp1.contains("open circuit");
-	_ocp2 = ocp2.contains("open circuit");
-	_ocp3 = ocp3.contains("open circuit");
-	_ocp4 = ocp4.contains("open circuit");
+	QString iUnits1, iUnits2, iUnits3, iUnits4;
+	GET_SELECTED_DROP_DOWN(iUnits1, I1_UNITS_OBJ_NAME);
+	GET_SELECTED_DROP_DOWN(iUnits2, I2_UNITS_OBJ_NAME);
+	GET_SELECTED_DROP_DOWN(iUnits3, I3_UNITS_OBJ_NAME);
+	GET_SELECTED_DROP_DOWN(iUnits4, I4_UNITS_OBJ_NAME);
+  if (iUnits1.contains("mA"))
+    i1 *= 1;
+  else if (iUnits1.contains("uA"))
+    i1 *= 1e-3;
+  else if (iUnits1.contains("nA"))
+    i1 *= 1e-6;
+
+  if (iUnits2.contains("mA"))
+    i2 *= 1;
+  else if (iUnits2.contains("uA"))
+    i2 *= 1e-3;
+  else if (iUnits2.contains("nA"))
+    i2 *= 1e-6;
+
+  if (iUnits3.contains("mA"))
+    i3 *= 1;
+  else if (iUnits3.contains("uA"))
+    i3 *= 1e-3;
+  else if (iUnits3.contains("nA"))
+    i3 *= 1e-6;
+
+  if (iUnits4.contains("mA"))
+    i4 *= 1;
+  else if (iUnits4.contains("uA"))
+    i4 *= 1e-3;
+  else if (iUnits4.contains("nA"))
+    i4 *= 1e-6;
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t1 * 1e8;
+	exp.nodeType = DCNODE_POINT_GALV;
+	exp.tMin = 0;
+	exp.tMax = t1 * SECONDS;
 	getSamplingParameters(dt, &exp);
-	exp.DCPoint_pot.VPointUserInput = (int)(v1 * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i1);
+  exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i1);
+  exp.DCPoint_galv.Vmax = 32767;
+  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.dVdtMin = 0;
 	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  if(exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t2 * 1e8;
-	getSamplingParameters(dt, &exp);
-	exp.DCPoint_pot.VPointUserInput = (int)(v2 * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  exp.isHead = false;
+  exp.isTail = false;
+  exp.nodeType = DCNODE_POINT_GALV;
+  exp.tMin = 0;
+  exp.tMax = t2 * SECONDS;
+  getSamplingParameters(dt, &exp);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i2);
+  exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i2);
+  exp.DCPoint_galv.Vmax = 32767;
+  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.dVdtMin = 0;
+  exp.MaxPlays = 1;
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t3 * 1e8;
-	getSamplingParameters(dt, &exp);
-	exp.DCPoint_pot.VPointUserInput = (int)(v3 * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  exp.isHead = false;
+  exp.isTail = false;
+  exp.nodeType = DCNODE_POINT_GALV;
+  exp.tMin = 0;
+  exp.tMax = t3 * SECONDS;
+  getSamplingParameters(dt, &exp);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i3);
+  exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i3);
+  exp.DCPoint_galv.Vmax = 32767;
+  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.dVdtMin = 0;
+  exp.MaxPlays = 1;
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1e7;
-	exp.tMax = t4 * 1e8;
-	getSamplingParameters(dt, &exp);
-	exp.DCPoint_pot.VPointUserInput = (int)(v4 * 3276.8);
-	exp.DCPoint_pot.VPointVsOCP = false;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
-	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
-	exp.MaxPlays = 1;
-	PUSH_NEW_NODE_DATA();
+  exp.isHead = false;
+  exp.isTail = false;
+  exp.nodeType = DCNODE_POINT_GALV;
+  exp.tMin = 0;
+  exp.tMax = t4 * SECONDS;
+  getSamplingParameters(dt, &exp);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i4);
+  exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i4);
+  exp.DCPoint_galv.Vmax = 32767;
+  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.dVdtMin = 0;
+  exp.MaxPlays = 1;
+  if (exp.tMax != 0)
+    PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
@@ -286,23 +295,24 @@ QStringList Chronopotentiometry::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void Chronopotentiometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void Chronopotentiometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	static QMap<DataMap*, qreal> timestampOffset;
-	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+	qreal timestamp = (qreal)expData.timestamp / SECONDS;
+  ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
+  PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, processedData.ECE);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;

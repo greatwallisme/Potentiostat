@@ -13,12 +13,16 @@
 #define LOWER_V_VS_OCP_OBJ_NAME	"lower-voltage-vs-ocp"
 #define SCAN_RATE_OBJ_NAME		"scan-rate"
 #define CYCLES_OBJ_NAME			"cycles"
+#define CURRENT_RANGE_OBJ_NAME  "current-range-mode"
+#define CURRENT_RANGE_VALUE_OBJ_NAME  "approx-current-max-value"
+#define CURRENT_RANGE_UNITS_OBJ_NAME  "current-range-units"
 
 #define START_VOLTAGE_DEFAULT	0
 #define UPPER_VOLTAGE_DEFAULT	0.5
 #define LOWER_VOLTAGE_DEFAULT	-0.5
 #define SCAN_RATE_DEFAULT		1
 #define CYCLES_DEFAULT			3
+#define CURRENT_RANGE_VALUE_DEFAULT 100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
@@ -115,6 +119,25 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
 	_INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
+
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_LEFT_ALIGN_COMMENT("<b>Current ranging</b>", row, 1);
+
+  ++row;
+  _START_RADIO_BUTTON_GROUP(CURRENT_RANGE_OBJ_NAME);
+  _INSERT_RADIO_BUTTON("Autorange", row, 0);
+  ++row;
+  _INSERT_RADIO_BUTTON("Approx. max current: ", row, 0);
+  _END_RADIO_BUTTON_GROUP();
+  _INSERT_TEXT_INPUT(CURRENT_RANGE_VALUE_DEFAULT, CURRENT_RANGE_VALUE_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(CURRENT_RANGE_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
@@ -122,16 +145,6 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 }
 NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
-	QString selectedRadio1;
-	QString selectedRadio2;
-	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
-	GET_SELECTED_RADIO(selectedRadio2, "Test radio 2 id");
-
-
-	QString selectedDropDown;
-	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
-	//*/
 
 	double startVoltage;
   QString startVoltageVsOCP_str;
@@ -144,6 +157,11 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	bool lowerVoltageVsOCP;
 	double dEdt;
 	qint32 cycles;
+  QString currentRangeMode_str;
+  QString currentRangeUnits_str;
+  currentRange_t currentRangeMode;
+  double approxMaxCurrent;
+
 	GET_TEXT_INPUT_VALUE_DOUBLE(startVoltage, START_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperVoltage, UPPER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
@@ -152,16 +170,33 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   GET_SELECTED_DROP_DOWN(startVoltageVsOCP_str, START_V_VS_OCP_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(upperVoltageVsOCP_str, UPPER_V_VS_OCP_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(lowerVoltageVsOCP_str, LOWER_V_VS_OCP_OBJ_NAME);
+  GET_SELECTED_RADIO(currentRangeMode_str, CURRENT_RANGE_OBJ_NAME);
+  GET_TEXT_INPUT_VALUE_DOUBLE(approxMaxCurrent, CURRENT_RANGE_VALUE_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(currentRangeUnits_str, CURRENT_RANGE_UNITS_OBJ_NAME);
+
   startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
   upperVoltageVsOCP = upperVoltageVsOCP_str.contains("open circuit");
   lowerVoltageVsOCP = lowerVoltageVsOCP_str.contains("open circuit");
+
+  if (currentRangeMode_str.contains("Autorange"))
+    currentRangeMode = AUTORANGE;
+  else
+  {
+    if (currentRangeUnits_str.contains("mA"))
+      approxMaxCurrent *= 1;
+    else if (currentRangeUnits_str.contains("uA"))
+      approxMaxCurrent *= 1e-3;
+    else if (currentRangeUnits_str.contains("nA"))
+      approxMaxCurrent *= 1e-6;
+    currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, approxMaxCurrent);
+  }
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 2e8;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.25);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
 	exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP;
@@ -169,6 +204,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCPoint_pot.IrangeMax = RANGE0;
 	exp.DCPoint_pot.Imin = 0;
 	exp.DCPoint_pot.IrangeMin = RANGE7;
+  exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -177,7 +213,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
 	exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
@@ -195,7 +231,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCSweep_pot.VStartVsOCP = upperVoltageVsOCP;
@@ -214,7 +250,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-  exp.currentRangeMode = AUTORANGE; //placeholder
+  exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
   exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
 	exp.DCSweep_pot.VStartVsOCP = lowerVoltageVsOCP;
