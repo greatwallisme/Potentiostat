@@ -30,7 +30,11 @@ QString ExampleExperiment::GetFullName() const {
 	return "Linear Sweep Voltammetry";
 }
 QString ExampleExperiment::GetDescription() const {
-	return "This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT";
+	return "This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT"
+		"<br>This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT"
+		"<br>This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT"
+		"<br>This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT"
+		"<br>This experiment sweeps the <b>potential</b> of the working electrode from E1 to E2 at constant scan rate dE/dT";
 }
 QStringList ExampleExperiment::GetCategory() const {
 	return QStringList() <<

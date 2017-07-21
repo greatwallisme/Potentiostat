@@ -125,6 +125,11 @@ private:
 	QWidget* GetPlotWidget();
 	QWidget* GetControlButtonsWidget();
 
+
+	void MoveAxis(PlotHandler &handler, QwtPlot::Axis axis, int dVal);
+	void ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double percents);
+	void ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double percentsMin, double percentsMax);
+
 	struct {
 		struct {
 			struct {

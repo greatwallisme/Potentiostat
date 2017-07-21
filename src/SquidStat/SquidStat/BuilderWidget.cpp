@@ -251,6 +251,8 @@ BuildExpContainer::BuildExpContainer(BuilderWidget *parent, const BuilderContain
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(bc.repeats);
+	mult->setSuffix("x");
+	mult->setToolTip("Number of the branch repeats");
 
 	auto disconnector = new Disconnector(mult);
 
@@ -566,6 +568,8 @@ QWidget* BuilderWidget::CreateBuildExpElementWidget(const BuilderContainer &bc, 
 	mult->setMinimum(1);
 	mult->setMaximum(99999);
 	mult->setValue(bc.repeats);
+	mult->setSuffix("x");
+	mult->setToolTip("Number of the element repeats");
 
 	w->setAttribute(Qt::WA_Hover, true);
 	w->installEventFilter(new ElementEventFilter(w, this, imageLbl, commentLbl));

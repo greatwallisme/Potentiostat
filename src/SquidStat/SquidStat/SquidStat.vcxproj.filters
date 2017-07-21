@@ -186,6 +186,9 @@
     <ClInclude Include="ExperimentCalcHelper.h">
       <Filter>_scr\ExternalStructures</Filter>
     </ClInclude>
+    <ClInclude Include="UIEventFilters.hpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="SerialCommunicator.h">
