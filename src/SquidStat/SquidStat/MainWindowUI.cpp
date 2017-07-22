@@ -463,7 +463,7 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
 	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
 	elementsListHolderLay->addWidget(commentLabel = OBJ_NAME(LBL("Drag and drop elements on right window"), "elements-list-descr-label"), 0, 0, 1, 2);
-	elementsListHolderLay->setSpacing(10);
+	elementsListHolderLay->setSpacing(15);
 
 	QScrollArea *elementsListArea = OBJ_NAME(new QScrollArea(), "node-list-scroll-area");
 	elementsListArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
@@ -582,8 +582,8 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 					bottomRight -= QPoint(marg.right(), marg.bottom());
 
 					auto parentWdg = w->parentWidget();
-					ui.buildExperiment.listItemOverlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
-					auto overlay = ui.buildExperiment.listItemOverlay;
+					auto overlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
+					ui.buildExperiment.listItemOverlay = overlay;
 					overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
 					//overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
 					
@@ -643,13 +643,14 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 							if (dragInAction) {
 								return false;
 							}
-							QTimer::singleShot(50, [=]() {
-								if (ui.buildExperiment.listItemOverlay) {
-									ui.buildExperiment.listItemOverlay->deleteLater();
-									ui.buildExperiment.listItemOverlay = 0;
+							if (ui.buildExperiment.listItemOverlay) {
+								auto objToDelete = ui.buildExperiment.listItemOverlay;
+								ui.buildExperiment.listItemOverlay = 0;
+								QTimer::singleShot(50, [=]() {
+									objToDelete->deleteLater();
 									ui.buildExperiment.listItemHolder->update();
-								}
-							});
+								});
+							}
 							return true;
 						}
 						return false;

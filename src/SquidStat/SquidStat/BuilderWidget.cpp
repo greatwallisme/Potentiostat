@@ -292,6 +292,8 @@ void BuilderWidget::InitContainer() {
 	container.elem.ptr = 0;
 }
 void BuilderWidget::PlaceWidgets() {
+	HandleSelection(0);
+
 	if (!ui.elementsLay) {
 		ui.elementsLay = NO_MARGIN(new QGridLayout(this));
 		ui.elementsLay->setSpacing(BUILDER_ELEMENT_SPACING);
