@@ -63,6 +63,7 @@
 #include <QDialogButtonBox>
 #include <QMessageBox>
 #include <QToolTip>
+#include <QTimer>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -507,36 +508,6 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	nodeListOwnerLay->addLayout(selectCategoryLay);
 	nodeListOwnerLay->addLayout(searchLay);
 	nodeListOwnerLay->addWidget(elementsListArea);
-
-	CONNECT(mw, &MainWindow::BuilderElementsFound, [=](const QList<AbstractBuilderElement*> &elements) {
-		elementsPtrMap.clear();
-		for (auto it = elements.begin(); it != elements.end(); ++it) {
-			elementsPtrMap[(*it)->GetFullName()] = *it;
-		}
-
-		QStringList categoryStrList;
-		int i = 0;
-		foreach(auto elem, elementsPtrMap.values()) {
-			categoryStrList << elem->GetCategory();
-
-			auto label = OBJ_NAME(new QLabel, "element-builder");
-			label->setPixmap(elem->GetImage());
-
-			label->installEventFilter(new ElementListEventFiler(label, elem));
-
-			elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
-			++i;
-		}
-		elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
-
-		categoryStrList << EXPERIMENT_VIEW_ALL_CATEGORY;
-		categoryStrList.removeDuplicates();
-
-		foreach(auto str, categoryStrList) {
-			selectCategory->addItem(str);
-		}
-		selectCategory->setCurrentIndex(selectCategory->count() - 1);
-	});
 	
 	auto ListFilter = [=]() {
 		for (int i = 0; i < elementsListHolderLay->count();) {
@@ -577,21 +548,177 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 			showElements << elem;
 		}
 
+		ui.buildExperiment.listItemOverlay = 0;
+		ui.buildExperiment.listItemHolder = elementsListHolder;
 		int i = 0;
 		foreach(auto elem, showElements) {
 			auto label = OBJ_NAME(new QLabel, "element-builder");
 			label->setPixmap(elem->GetImage());
 
-			label->installEventFilter(new ElementListEventFiler(label, elem));
+			//label->installEventFilter(new ElementListEventFiler(label, elem));
+			label->installEventFilter(new UniversalEventFilter(label, [=](QObject *obj, QEvent *e) {
+				auto &_elem(elem);
+
+				if (e->type() == QEvent::Enter) {
+					if (ui.buildExperiment.listItemOverlay) {
+						ui.buildExperiment.listItemOverlay->deleteLater();
+						ui.buildExperiment.listItemOverlay = 0;
+						ui.buildExperiment.listItemHolder->update();
+					}
+
+					QWidget *w = qobject_cast<QWidget*>(obj);
+
+					if (!w) {
+						return false;
+					}
+
+					auto marg = w->contentsMargins();
+
+					auto additionalHeight = (w->height() - marg.bottom() - marg.top()) * 0.25;
+
+					QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 3);
+
+					QPoint bottomRight = QPoint(w->width(), w->height() + additionalHeight);
+					bottomRight -= QPoint(marg.right(), marg.bottom());
+
+					auto parentWdg = w->parentWidget();
+					ui.buildExperiment.listItemOverlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
+					auto overlay = ui.buildExperiment.listItemOverlay;
+					overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
+					//overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
+					
+					static bool dragInAction;
+					dragInAction = false;
+					overlay->installEventFilter(new UniversalEventFilter(overlay, [=](QObject *obj, QEvent *e) {
+						if (e->type() == QEvent::MouseButtonPress) {
+							QWidget *w = qobject_cast<QWidget*>(obj);
+							if (!w) {
+								return false;
+							}
+
+							QMouseEvent *me = (QMouseEvent*)e;
+
+							if (me->button() == Qt::LeftButton) {
+								auto margins = w->contentsMargins();
+								auto rect = w->rect();
+
+								QPoint startPoint;
+								startPoint.setX(margins.left() - 1);
+								startPoint.setY(margins.top() - 1);
+								QPoint endPoint;
+								endPoint.setX(rect.width() - margins.right());
+								endPoint.setY(rect.height() - margins.bottom());
+
+								ElementMimeData emd;
+								emd.elem = _elem;
+
+								auto mime = new QMimeData;
+								mime->setData(ELEMENT_MIME_TYPE, QByteArray((char*)&emd, sizeof(ElementMimeData)));
+
+								auto pixmap = w->grab(QRect(startPoint, endPoint));
+								pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
+
+								QDrag *drag = new QDrag(obj);
+								drag->setMimeData(mime);
+								drag->setPixmap(pixmap);
+								drag->setHotSpot((me->pos() - QPoint(margins.left(), margins.top())) / 2);
+
+								dragInAction = true;
+								Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
+								dragInAction = false;
+								if (ui.buildExperiment.listItemOverlay) {
+									ui.buildExperiment.listItemOverlay->deleteLater();
+									ui.buildExperiment.listItemOverlay = 0;
+									ui.buildExperiment.listItemHolder->update();
+								}
+								return true;
+							}
+
+							return false;
+						}
+						if (e->type() == QEvent::Enter) {
+							return true;
+						}
+						if (e->type() == QEvent::Leave) {
+							if (dragInAction) {
+								return false;
+							}
+							QTimer::singleShot(50, [=]() {
+								if (ui.buildExperiment.listItemOverlay) {
+									ui.buildExperiment.listItemOverlay->deleteLater();
+									ui.buildExperiment.listItemOverlay = 0;
+									ui.buildExperiment.listItemHolder->update();
+								}
+							});
+							return true;
+						}
+						return false;
+					}));
+
+					auto effect = new QGraphicsDropShadowEffect(overlay);
+					effect->setOffset(3, 3);
+					effect->setColor(QColor("#7f7f7f7f"));
+					effect->setBlurRadius(5);
+					overlay->setGraphicsEffect(effect);
+
+					QLabel *iconLbl;
+					QLabel *textLbl;
+
+					auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(overlay)));
+					lay->addWidget(iconLbl = OBJ_NAME(new QLabel(), "hover-element-overlay-icon"));
+					lay->addWidget(textLbl = OBJ_NAME(new QLabel(_elem->GetFullName()), "hover-element-overlay-name"));
+
+					textLbl->setWordWrap(true);
+					iconLbl->setPixmap(_elem->GetImage());
+
+					overlay->show();
+					overlay->raise();
+
+					return true;
+				}
+				if (e->type() == QEvent::Leave) {
+					return false;
+				}
+				return false;
+			}));
 
 			elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
 			++i;
 		}
 		elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
 	};
-	
+
 	CONNECT(selectCategory, &QComboBox::currentTextChanged, ListFilter);
 	CONNECT(searchExpLed, &QLineEdit::textChanged, ListFilter);
+	CONNECT(mw, &MainWindow::BuilderElementsFound, [=](const QList<AbstractBuilderElement*> &elements) {
+		elementsPtrMap.clear();
+		for (auto it = elements.begin(); it != elements.end(); ++it) {
+			elementsPtrMap[(*it)->GetFullName()] = *it;
+		}
+
+		QStringList categoryStrList;
+		//int i = 0;
+		foreach(auto elem, elementsPtrMap.values()) {
+			categoryStrList << elem->GetCategory();
+
+			//auto label = OBJ_NAME(new QLabel, "element-builder");
+			//label->setPixmap(elem->GetImage());
+
+			//label->installEventFilter(new ElementListEventFiler(label, elem));
+
+			//elementsListHolderLay->addWidget(label, 1 + i / 2, i % 2);
+			//++i;
+		}
+		//elementsListHolderLay->setRowStretch(1 + i / 2 + i % 2, 1);
+
+		categoryStrList << EXPERIMENT_VIEW_ALL_CATEGORY;
+		categoryStrList.removeDuplicates();
+
+		foreach(auto str, categoryStrList) {
+			selectCategory->addItem(str);
+		}
+		selectCategory->setCurrentIndex(selectCategory->count() - 1);
+	});
 
 	return w;
 }

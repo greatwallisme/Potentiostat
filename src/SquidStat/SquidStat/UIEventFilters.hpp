@@ -11,7 +11,8 @@
 #include <QScrollBar>
 
 #include <QSortFilterProxyModel>
-#include <QGraphicsDropShadowEffect> 
+#include <QGraphicsDropShadowEffect>
+#include <QXmlStreamReader>
 
 #include <QtMath>
 
@@ -89,7 +90,165 @@ private:
 	bool dragged;
 };
 
+class ElementEventFilter : public QObject {
+public:
+	ElementEventFilter(QObject *parent, BuilderWidget *bw, QWidget *image, QWidget *comment) :
+		QObject(parent), _bw(bw), pressed(false), dragged(false), entered(false), _image(image), _comment(comment) {}
 
+	bool eventFilter(QObject *obj, QEvent *e) {
+		bool ret = false;
+
+		switch (e->type()) {
+		case QEvent::MouseButtonPress:
+			if (!IsIgnoreArea(obj, e)) {
+				pressed = true;
+				dragged = false;
+				pressButton = ((QMouseEvent*)e)->button();
+				pressPoint = ((QMouseEvent*)e)->pos();
+
+				ret = true;
+			}
+
+			break;
+
+		case QEvent::MouseMove:
+			if (pressed && !dragged) {
+				QPoint pos = ((QMouseEvent*)e)->pos();
+				QLine moveVector(pressPoint, pos);
+				auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
+				if (length > 3) {
+					dragged = true;
+					ret = ProcessDrag(obj, e);
+				}
+			}
+			break;
+
+		case QEvent::MouseButtonRelease:
+			if (pressed && !dragged) {
+				ret = ProcessSelection(obj, e);
+			}
+			pressed = false;
+			dragged = false;
+			break;
+
+		case QEvent::HoverEnter:
+			entered = true;
+			break;
+
+		case QEvent::HoverMove:
+			if (entered) {
+				if (IsIgnoreArea(obj, e)) {
+					_image->show();
+					_comment->hide();
+				}
+				else {
+					_image->hide();
+					_comment->show();
+				}
+				ret = true;
+			}
+			break;
+
+		case QEvent::HoverLeave:
+			entered = false;
+			_image->show();
+			_comment->hide();
+			break;
+		}
+
+		return ret;
+	}
+
+private:
+	bool IsIgnoreArea(QObject *obj, QEvent *e) {
+		auto w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return true;
+		}
+
+		auto me = (QMouseEvent*)e;
+
+		auto marg = w->contentsMargins();
+		QPoint bottomRight = QPoint(w->width(), w->height());
+		bottomRight -= QPoint(marg.right() - 3, marg.bottom() - 3);
+
+		QPoint topLeft = QPoint(marg.left() - 3, marg.top() - 3);
+
+		if (!QRect(topLeft, bottomRight).contains(me->pos())) {
+			return true;
+		}
+
+		return false;
+	}
+	bool ProcessSelection(QObject *obj, QEvent *e) {
+		auto w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return false;
+		}
+
+		if (IsIgnoreArea(obj, e)) {
+			return false;
+		}
+
+		emit _bw->ElementSelected(w);
+		return true;
+	}
+	bool ProcessDrag(QObject *obj, QEvent *e) {
+		QWidget *w = qobject_cast<QWidget*>(obj);
+		if (!w) {
+			return false;
+		}
+
+		QMouseEvent *me = (QMouseEvent*)e;
+
+		if (IsIgnoreArea(obj, e)) {
+			return false;
+		}
+
+		if (pressButton == Qt::LeftButton) {
+			auto margins = w->contentsMargins();
+			auto rect = w->rect();
+
+			QPoint startPoint;
+			startPoint.setX(margins.left() - 1);
+			startPoint.setY(margins.top() - 1);
+			QPoint endPoint;
+			endPoint.setX(rect.width() - margins.right() + 1);
+			endPoint.setY(rect.height() - margins.bottom());
+
+			QUuid id = _bw->GetId(w);
+
+			auto mime = new QMimeData;
+			mime->setData(CONTAINER_MIME_TYPE, id.toByteArray());
+
+			auto pixmap = w->grab(QRect(startPoint, endPoint));
+			pixmap = pixmap.scaledToHeight((endPoint.y() - startPoint.y()) / 2, Qt::SmoothTransformation);
+
+			QDrag *drag = new QDrag(obj);
+			drag->setMimeData(mime);
+			drag->setPixmap(pixmap);
+			drag->setHotSpot((pressPoint - QPoint(margins.left(), margins.top())) / 2);
+
+			Qt::DropAction dropAction = drag->exec(Qt::MoveAction, Qt::MoveAction);
+			return true;
+		}
+
+		return false;
+	}
+
+	QPoint pressPoint;
+	Qt::MouseButton pressButton;
+	bool pressed;
+	bool dragged;
+	bool entered;
+
+	QWidget *_image;
+	QWidget *_comment;
+
+	BuilderWidget *_bw;
+};
+
+/*
 class OverlayEventFilter : public QObject {
 public:
 	OverlayEventFilter(QObject *parent, AbstractBuilderElement *elem) :
@@ -132,6 +291,7 @@ public:
 				dragInAction = true;
 				Qt::DropAction dropAction = drag->exec(Qt::CopyAction, Qt::CopyAction);
 				obj->deleteLater();
+				auto parentWdg = w->parentWidget();
 				w->parentWidget()->update();
 				return true;
 			}
@@ -145,9 +305,10 @@ public:
 			if (dragInAction) {
 				return false;
 			}
-			obj->deleteLater();
 			QWidget *w = qobject_cast<QWidget*>(obj);
+			obj->deleteLater();
 			if (w) {
+				auto parentWdg = w->parentWidget();
 				w->parentWidget()->update();
 			}
 			return true;
@@ -161,7 +322,7 @@ private:
 class ElementListEventFiler : public QObject {
 public:
 	ElementListEventFiler(QObject *parent, AbstractBuilderElement *elem) :
-		QObject(parent), _elem(elem)
+		QObject(parent), _elem(elem)//, overlay(0)
 	{}
 
 	bool eventFilter(QObject *obj, QEvent *e) {
@@ -176,11 +337,12 @@ public:
 
 			auto additionalHeight = (w->height() - marg.bottom() - marg.top()) * 0.25;
 
-			QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 1);
+			QPoint topLeft = QPoint(marg.left() - 1, marg.top() - 3);
 
 			QPoint bottomRight = QPoint(w->width(), w->height() + additionalHeight);
 			bottomRight -= QPoint(marg.right(), marg.bottom());
 
+			auto parentWdg = w->parentWidget();
 			auto overlay = OBJ_NAME(new QFrame(w->parentWidget()), "hover-element-overlay");
 			overlay->installEventFilter(new OverlayEventFilter(overlay, _elem));
 			overlay->setGeometry(QRect(topLeft + w->pos(), bottomRight + w->pos()));
@@ -217,7 +379,7 @@ private:
 
 	//QWidget *overlay;
 };
-
+//*/
 class ExperimentFilterModel : public QSortFilterProxyModel {
 	bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
 		QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
@@ -328,6 +490,18 @@ public:
 private:
 	QWidget *_parent;
 	QWidget *_overlay;
+};
+
+class UniversalEventFilter : public QObject {
+public:
+	UniversalEventFilter(QObject *parent, std::function<bool(QObject*, QEvent*)> lambda) :
+		QObject(parent), _lambda(lambda) {}
+
+	bool eventFilter(QObject *obj, QEvent *e) {
+		return _lambda(obj, e);
+	}
+private:
+	std::function<bool(QObject*, QEvent*)> _lambda;
 };
 
 class PlotDragOverlayEventFilter : public QObject {

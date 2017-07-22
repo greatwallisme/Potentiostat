@@ -139,6 +139,10 @@ private:
 			QPushButton *newDataTabButton;
 			QTabWidget *docTabs;
 		} newDataTab;
+		struct {
+			QWidget *listItemOverlay;
+			QWidget *listItemHolder;
+		} buildExperiment;
 	} ui;
 		
 	struct {
