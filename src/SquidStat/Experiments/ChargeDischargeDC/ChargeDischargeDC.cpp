@@ -193,8 +193,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
-	exp.DCPoint_pot.Imax = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+  exp.DCPoint_pot.IrangeMax = RANGE0;
+  exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? minChgCurrent : minDischgCurrent);
 	exp.DCPoint_pot.Imin = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
   exp.DCPoint_pot.dIdtMin = 0;
@@ -236,8 +236,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-	exp.DCPoint_pot.IrangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? chgCurrent * 1.5 : dischgCurrent * 1.5);
-	exp.DCPoint_pot.Imax = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, chgCurrent * 1.5);
+  exp.DCPoint_pot.IrangeMax = RANGE0;
+  exp.DCPoint_pot.Imax = 32767;
 	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? minChgCurrent : minDischgCurrent);
 	exp.DCPoint_pot.Imin = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
   exp.DCPoint_pot.dIdtMin = 0;

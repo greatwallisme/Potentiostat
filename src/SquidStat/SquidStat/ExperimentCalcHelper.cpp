@@ -221,10 +221,19 @@ currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWvers
 		break;
 	}
 
-	int range = 0;
-	int32_t currentBinary;
+	//int range = 0;
+	//int32_t currentBinary;
+  /*****************************************/
+  short range = -1;
+  while ((ABS(targetCurrent) < OVERCURRENT_LIMIT * calData->m_iP[range + 1] + calData->b_i[range + 1]) && ((range + 1) < MaxCurrentRange))
+  {
+    range += 1;
+  }
+  return (currentRange_t)range;
+  
 
-	while (true)
+    /*************************************************/
+	/*while (true)
 	{
 		currentBinary = targetCurrent > 0 ? targetCurrent * calData->m_DACdcP_I[range] + calData->b_DACdc_I[range] : targetCurrent * calData->m_DACdcN_I[range] + calData->b_DACdc_I[range];
 		if (ABS(currentBinary) < UNDERCURRENT_LIMIT)
@@ -241,7 +250,7 @@ currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWvers
 			break;
 	}
 
-	return (currentRange_t)range;
+	return (currentRange_t)range;*/
 }
 
 int16_t ExperimentCalcHelperClass::GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent)
