@@ -141,9 +141,6 @@
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="CyclicVoltammetry.rc" />
-  </ItemGroup>
-  <ItemGroup>
     <Image Include="Resources\experiment.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
