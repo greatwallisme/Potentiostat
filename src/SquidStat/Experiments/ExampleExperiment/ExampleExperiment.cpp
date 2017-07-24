@@ -331,10 +331,7 @@ NodesData ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCSweep_pot.VEndUserInput = 1024;
 	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
 	exp.DCSweep_pot.VStep = 1;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+  exp.DCSweep_pot.Imax = 1e10;
 	exp.MaxPlays = 3;
 	PUSH_NEW_NODE_DATA();
 
@@ -355,10 +352,7 @@ NodesData ExampleExperiment::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCSweep_pot.VEndUserInput = 512;
 	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
 	exp.DCSweep_pot.VStep = 1;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+  exp.DCSweep_pot.Imax = 1e10;
 	exp.MaxPlays = 1;
 	exp.branchHeadIndex = 0;
 	PUSH_NEW_NODE_DATA();

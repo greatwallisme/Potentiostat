@@ -27,12 +27,14 @@
 #define REST_PERIOD_INT_DEFAULT 1
 #define CYCLES_DEFAULT			10
 
+#define PLOT_VAR_DATETIME "Date/time"
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
+#define PLOT_VAR_ELAPSED_TIME_HR "Elapsed time (hr)"
+#define PLOT_VAR_EWE					"Working electrode (V)"
+#define PLOT_VAR_CURRENT				"Current (mA)"
+#define PLOT_VAR_ECE					"Counter electrode (V)"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 QString ChargeDischargeDC::GetShortName() const {
 	return "Charge/Discharge";
@@ -46,7 +48,6 @@ QString ChargeDischargeDC::GetDescription() const {
 QStringList ChargeDischargeDC::GetCategory() const {
 	return QStringList() <<
 		"Energy storage";
-
 }
 ExperimentTypeList ChargeDischargeDC::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
@@ -177,7 +178,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1 * SECONDS;
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-	exp.DCPoint_galv.Irange = chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
+	exp.DCPoint_galv.Irange = chargeFirst ? ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
 	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
 	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
@@ -193,10 +194,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-  exp.DCPoint_pot.IrangeMax = RANGE0;
-  exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chargeFirst ? minChgCurrent : minDischgCurrent);
-	exp.DCPoint_pot.Imin = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
+	exp.DCPoint_pot.Imin = chargeFirst ? ABS(minChgCurrent) : ABS(minDischgCurrent);
   exp.DCPoint_pot.dIdtMin = 0;
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -220,7 +219,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 3e8;
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
+	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
 	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
 	exp.DCPoint_galv.Vmax = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCPoint_galv.Vmin = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
@@ -236,10 +235,8 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
-  exp.DCPoint_pot.IrangeMax = RANGE0;
-  exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMin = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, !chargeFirst ? minChgCurrent : minDischgCurrent);
-	exp.DCPoint_pot.Imin = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minChgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minDischgCurrent);
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
+	exp.DCPoint_pot.Imin = !chargeFirst ?  ABS(minChgCurrent) : ABS(minDischgCurrent);
   exp.DCPoint_pot.dIdtMin = 0;
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData,!chargeFirst ? upperVoltage : lowerVoltage);
 	exp.DCPoint_pot.VPointVsOCP = false;
@@ -268,8 +265,9 @@ QStringList ChargeDischargeDC::GetXAxisParameters(ExperimentType type) const {
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_TIMESTAMP <<
+			PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_TIMESTAMP_NORMALIZED <<
+      PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT;
 	}
@@ -312,12 +310,15 @@ void ChargeDischargeDC::PushNewDcData(const ExperimentalDcData &expData, DataMap
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+  PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
 void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	//SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+  SAVE_DC_DATA_HEADER(PLOT_VAR_DATETIME);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
+  SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_ECE);
@@ -329,8 +330,9 @@ void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes 
 void ChargeDischargeDC::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	//SAVE_DATA(PLOT_VAR_TIMESTAMP);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
+  SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);
 	SAVE_DATA(PLOT_VAR_ECE);

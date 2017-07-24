@@ -138,10 +138,13 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\experiment.png">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </Image>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CyclicVoltammetry.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\experiment.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

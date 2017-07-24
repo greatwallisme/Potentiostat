@@ -880,7 +880,7 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 	else {
 		auto title = "Open Experiment";
 		auto text = "Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>.";
-		auto okText = "Resume";
+		auto okText = "Continue";
 		auto cancelText = "Cancel";
 
 		if (!GetUserAgreement(parent, title, text, okText, cancelText)) {
@@ -1277,9 +1277,17 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	ret.other.atmosphere.first = "Atmosphere";
 
 	static QMap<QString, qreal> references;
-	references["Predefined 1"] = 1.0;
-	references["Predefined 2"] = 1.1;
-	references["Predefined 3"] = 1.2;
+	references["Ag/AgCl in 0.1M KCl"] = 0.2894;
+	references["Ag/AgCl in 1.0M KCl"] = 0.2368;
+	references["Ag/AgCl in saturated KCl"] = 0.1976;
+  references["Calomel in 0.1M KCl"] = 0.3337;
+  references["Calomel in 1.0M KCl"] = 0.2807;
+  references["Calomel in saturated KCl"] = 0.2415;
+  references["Lead sulphate"] = -0.2760;
+  references["Mercury sulphate in 0.5M H2SO4"] = 0.6820;
+  references["Mercury sulphate in saturated K2SO4"] = 0.6500;
+  references["Mercury oxide in 0.1M NaOH"] = 0.1650;
+  references["Mercury oxide in 1.0M NaOH"] = 0.1400;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
 

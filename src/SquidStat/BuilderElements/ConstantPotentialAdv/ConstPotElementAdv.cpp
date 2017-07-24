@@ -61,7 +61,7 @@ QWidget* ConstPotElementAdv::CreateUserInput(UserInput &inputs) const {
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INTERVAL_DEFAULT, SAMPLING_INTERVAL_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("seconds", row, 2);
+  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
   ++row;
   _INSERT_VERTICAL_SPACING(row);
@@ -73,9 +73,9 @@ QWidget* ConstPotElementAdv::CreateUserInput(UserInput &inputs) const {
   _INSERT_RIGHT_ALIGN_COMMENT("Max duration: ", row, 0);
   _INSERT_TEXT_INPUT(DURATION_DEFAULT, DURATION_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DURATION_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("seconds");
-  _ADD_DROP_DOWN_ITEM("minutes");
-  _ADD_DROP_DOWN_ITEM("hours");
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
   _END_DROP_DOWN();
 
   ++row;
@@ -116,7 +116,9 @@ QWidget* ConstPotElementAdv::CreateUserInput(UserInput &inputs) const {
   _END_DROP_DOWN();
 
 	_SET_ROW_STRETCH(++row, 1);
-	_SET_COL_STRETCH(2, 1);
+  _SET_COL_STRETCH(0, 10);
+  _SET_COL_STRETCH(1, 1);
+	_SET_COL_STRETCH(2, 2);
 
 	USER_INPUT_END();
 }
@@ -135,7 +137,7 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
   QString currentRangeMode_str = inputs[CURRENT_RANGE_OBJ_NAME].toString();
   QString currentRangeUnits_str = inputs[CURRENT_RANGE_UNITS_OBJ_NAME].toString();
   currentRange_t currentRangeMode;
-  double upperCurrentLimit;
+  double upperCurrentLimit = inputs[CURRENT_RANGE_VALUE_OBJ_NAME].toDouble();
   
   if (durationUnits_str.contains("seconds"))
     duration *= 1;
@@ -168,10 +170,8 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
       upperCurrentLimit *= 1e-3;
     else if (currentRangeUnits_str.contains("nA"))
       upperCurrentLimit *= 1e-6;
-    currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, upperCurrentLimit);
+    currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, upperCurrentLimit);
   }
-
-  currentRange_t maxCurrentRange = currentRangeMode == AUTORANGE ? RANGE0 : currentRangeMode;
 
 	exp.isHead = false;
 	exp.isTail = false;
@@ -182,10 +182,8 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VPoint);
   exp.DCPoint_pot.VPointVsOCP = vsOCP;
-  exp.DCPoint_pot.IrangeMax = maxCurrentRange;
-  exp.DCPoint_pot.Imax = currentRangeMode == AUTORANGE ? 32767 : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMax, upperCurrentLimit);
-  exp.DCPoint_pot.IrangeMin = currentRangeMode == AUTORANGE ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, minimumCurrent) : currentRangeMode;
-  exp.DCPoint_pot.Imin = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_pot.IrangeMin, minimumCurrent);
+  exp.DCPoint_pot.Imax = upperCurrentLimit;
+  exp.DCPoint_pot.Imin = minimumCurrent;
   exp.DCPoint_pot.dIdtMin = dIdtMin;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();

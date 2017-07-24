@@ -16,8 +16,6 @@
 #define SAMPLING_INT_UNITS_OBJ_NAME       "sampling-interval-units"
 #define MAX_CURRENT_OBJ_NAME      "max-current"
 #define MAX_CURRENT_UNITS_OBJ_NAME "max-current-units"
-#define MIN_CURRENT_OBJ_NAME      "min-current"
-#define MIN_CURRENT_UNITS_OBJ_NAME  "min-current-units"
 #define AUTORANGE_MODE_OBJ_NAME   "autorange-mode"
 
 #define VSTART_DEFAULT	    -0.1
@@ -67,24 +65,6 @@ QWidget* DCPotentialSweepElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum current: ", row, 0);
-  _INSERT_TEXT_INPUT(MAX_CURRENT_DEFAULT, MAX_CURRENT_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(MAX_CURRENT_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mA");
-  _ADD_DROP_DOWN_ITEM("uA");
-  _ADD_DROP_DOWN_ITEM("nA");
-  _END_DROP_DOWN();
-
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Minimum current: ", row, 0);
-  _INSERT_TEXT_INPUT(MIN_CURRENT_DEFAULT, MIN_CURRENT_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(MIN_CURRENT_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mA");
-  _ADD_DROP_DOWN_ITEM("uA");
-  _ADD_DROP_DOWN_ITEM("nA");
-  _END_DROP_DOWN();
-
-  ++row;
   _INSERT_VERTICAL_SPACING(row);
 
   ++row;
@@ -115,6 +95,15 @@ QWidget* DCPotentialSweepElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_RADIO_BUTTON_LAYOUT("Fixed range (based on maximum current)");
   _END_RADIO_BUTTON_GROUP();
 
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Maximum expected current: ", row, 0);
+  _INSERT_TEXT_INPUT(MAX_CURRENT_DEFAULT, MAX_CURRENT_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(MAX_CURRENT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
+
 	_SET_ROW_STRETCH(++row, 1);
 	_SET_COL_STRETCH(2, 1);
 
@@ -135,8 +124,6 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   QString samplingIntUnits_str = inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString();
   double maxCurrent = inputs[MAX_CURRENT_OBJ_NAME].toDouble();
   QString maxCurrentUnits_str = inputs[MAX_CURRENT_UNITS_OBJ_NAME].toString();
-  double minCurrent = inputs[MIN_CURRENT_OBJ_NAME].toDouble();
-  QString minCurrentUnits_str = inputs[MIN_CURRENT_UNITS_OBJ_NAME].toString();
   QString currentRangeMode_str = inputs[AUTORANGE_MODE_OBJ_NAME].toString();
   currentRange_t currentRangeMode;
 
@@ -155,22 +142,15 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   else if (maxCurrentUnits_str.contains("nA"))
     maxCurrent *= 1e-6;
 
-  if (minCurrentUnits_str.contains("mA"))
-    minCurrent *= 1;
-  else if (minCurrentUnits_str.contains("uA"))
-    minCurrent *= 1e-3;
-  else if (minCurrentUnits_str.contains("nA"))
-    minCurrent *= 1e-6;
-
 
   if (currentRangeMode_str.contains("Autorange"))
     currentRangeMode = AUTORANGE;
   else
-    currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
+    currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
 
 	exp.isHead = false;
 	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
+	exp.nodeType = DCNODE_SWEEP_POT;
 	exp.tMin = 0;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
@@ -180,10 +160,7 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   exp.DCSweep_pot.VStartVsOCP = VStartVsOCP;
   exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VEnd);
   exp.DCSweep_pot.VEndVsOCP = VEndVsOCP;
-  exp.DCSweep_pot.IRangeMax = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
-  exp.DCSweep_pot.Imax = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCSweep_pot.IRangeMax, maxCurrent);
-  exp.DCSweep_pot.IRangeMin = currentRangeMode == AUTORANGE ? ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, minCurrent) : exp.DCSweep_pot.IRangeMax;
-  exp.DCSweep_pot.Imin = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCSweep_pot.IRangeMin, minCurrent);
+  exp.DCSweep_pot.Imax = maxCurrent;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

@@ -126,10 +126,7 @@ NodesData ExampleElement::GetNodesData(const UserInput &inputs, const Calibratio
 	exp.DCSweep_pot.VEndUserInput = inputs[END_VOLTAGE_OBJ_NAME].toInt();
 	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
 	exp.DCSweep_pot.VStep = 1;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+  exp.DCSweep_pot.Imax = 1e10;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

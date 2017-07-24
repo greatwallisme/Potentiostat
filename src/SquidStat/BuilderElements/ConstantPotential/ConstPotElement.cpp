@@ -51,18 +51,20 @@ QWidget* ConstPotElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
   _INSERT_TEXT_INPUT(DURATION_DEFAULT, DURATION_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DURATION_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("seconds");
-  _ADD_DROP_DOWN_ITEM("minutes");
-  _ADD_DROP_DOWN_ITEM("hours");
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
   _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
 	_INSERT_TEXT_INPUT(SAMPLING_INTERVAL_DEFAULT, SAMPLING_INTERVAL_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("seconds", row, 2);
+	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	_SET_ROW_STRETCH(++row, 1);
-	_SET_COL_STRETCH(2, 1);
+	_SET_COL_STRETCH(0, 3);
+  _SET_COL_STRETCH(1, 1);
+  _SET_COL_STRETCH(2, 2);
 
 	USER_INPUT_END();
 }
@@ -75,11 +77,11 @@ NodesData ConstPotElement::GetNodesData(const UserInput &inputs, const Calibrati
 
   int durationMultiplier = 1;
   QString durationUnits = inputs[DURATION_UNITS_OBJ_NAME].toInt();
-  if (durationUnits.contains("seconds"))
+  if (durationUnits.contains("s"))
     durationMultiplier = 1;
-  else if (durationUnits.contains("minutes"))
+  else if (durationUnits.contains("min"))
     durationMultiplier = 60;
-  else if (durationUnits.contains("hours"))
+  else if (durationUnits.contains("hr"))
     durationMultiplier = 3600;
 
 	exp.isHead = false;
@@ -91,9 +93,7 @@ NodesData ConstPotElement::GetNodesData(const UserInput &inputs, const Calibrati
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble());
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, inputs[CONST_POTENTIAL_OBJ_NAME].toDouble());
   exp.DCPoint_pot.VPointVsOCP = vsOCP;
-  exp.DCPoint_pot.IrangeMax = RANGE0;
-  exp.DCPoint_pot.IrangeMin = RANGE7; //todo: get hw model to determine max range, or deal with it in firmware
-  exp.DCPoint_pot.Imax = 32767;
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
   exp.DCPoint_pot.Imin = 0;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();

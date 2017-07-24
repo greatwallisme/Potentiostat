@@ -72,8 +72,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\experiment.png">
-      <Filter>Resource Files</Filter>
-    </Image>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="CyclicVoltammetry.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\experiment.png" />
   </ItemGroup>
 </Project>

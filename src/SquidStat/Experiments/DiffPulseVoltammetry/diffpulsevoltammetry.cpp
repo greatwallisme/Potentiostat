@@ -22,11 +22,12 @@
 #define PULSE_PERIOD_DEFAULT	100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
+#define PLOT_VAR_ELAPSED_TIME_HR      "Elapsed time (hr)"
+#define PLOT_VAR_EWE					"Working electrode (V)"
+#define PLOT_VAR_CURRENT				"Current (mA)"
+#define PLOT_VAR_ECE					"Counter electrode (V)"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 QString DiffPulseVoltammetry::GetShortName() const {
 	return "Differential Pulse Voltammetry";
@@ -147,10 +148,8 @@ NodesData DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.1);
 	exp.DCPoint_pot.VPointUserInput = (int16_t)(startVoltage * 3276.8);
 	exp.DCPoint_pot.VPointVsOCP = startVsOCP_str.contains("open circuit");
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
   exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -182,9 +181,9 @@ QStringList DiffPulseVoltammetry::GetXAxisParameters(ExperimentType type) const 
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_TIMESTAMP <<
+      PLOT_VAR_EWE <<
+			PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_TIMESTAMP_NORMALIZED <<
-			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT;
 	}
 
@@ -195,8 +194,8 @@ QStringList DiffPulseVoltammetry::GetYAxisParameters(ExperimentType type) const 
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT <<
+			PLOT_VAR_EWE <<
 			PLOT_VAR_ECE <<
 			PLOT_VAR_CURRENT_INTEGRAL;
 	}
@@ -226,11 +225,12 @@ void DiffPulseVoltammetry::PushNewDcData(const ExperimentalDcData &expData, Data
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+  PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
 void DiffPulseVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
@@ -243,7 +243,7 @@ void DiffPulseVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNot
 void DiffPulseVoltammetry::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);

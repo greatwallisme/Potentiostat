@@ -25,11 +25,12 @@
 #define CURRENT_RANGE_VALUE_DEFAULT 100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
+#define PLOT_VAR_ELAPSED_TIME_HR      "Elapsed time (hr)"
+#define PLOT_VAR_EWE					"Working electrode (V)"
+#define PLOT_VAR_CURRENT				"Current (mA)"
+#define PLOT_VAR_ECE					"Counter electrode (V)"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 QString CyclicVoltammetry::GetShortName() const {
 	return "Cyclic Voltammetry";
@@ -188,7 +189,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
       approxMaxCurrent *= 1e-3;
     else if (currentRangeUnits_str.contains("nA"))
       approxMaxCurrent *= 1e-6;
-    currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, approxMaxCurrent);
+    currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, approxMaxCurrent);
   }
 
 	exp.isHead = false;
@@ -200,10 +201,8 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.25);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
 	exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP;
-	exp.DCPoint_pot.Imax = 32767;
-	exp.DCPoint_pot.IrangeMax = RANGE0;
+	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
-	exp.DCPoint_pot.IrangeMin = RANGE7;
   exp.DCPoint_pot.dIdtMin = 0;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
@@ -219,10 +218,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+	exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -237,10 +233,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCSweep_pot.VStartVsOCP = upperVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
 	exp.DCSweep_pot.VEndVsOCP = lowerVoltageVsOCP;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+  exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -256,10 +249,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCSweep_pot.VStartVsOCP = lowerVoltageVsOCP;
   exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
 	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
-	exp.DCSweep_pot.Imax = 32767;
-	exp.DCSweep_pot.IRangeMax = RANGE0;
-	exp.DCSweep_pot.Imin = 0;
-	exp.DCSweep_pot.IRangeMin = RANGE7;
+  exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = cycles;
 	PUSH_NEW_NODE_DATA();
 
@@ -273,11 +263,12 @@ QStringList CyclicVoltammetry::GetXAxisParameters(ExperimentType type) const {
 	QStringList ret;
 
 	if (type == ET_DC) {
-		ret <<
-			PLOT_VAR_TIMESTAMP <<
-			PLOT_VAR_TIMESTAMP_NORMALIZED <<
-			PLOT_VAR_EWE <<
-			PLOT_VAR_CURRENT;
+    ret <<
+      PLOT_VAR_EWE <<
+      PLOT_VAR_CURRENT <<
+      PLOT_VAR_ELAPSED_TIME_HR <<
+      PLOT_VAR_TIMESTAMP_NORMALIZED;
+
 	}
 
 	return ret;
@@ -287,8 +278,8 @@ QStringList CyclicVoltammetry::GetYAxisParameters(ExperimentType type) const {
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT <<
+			PLOT_VAR_EWE <<
 			PLOT_VAR_ECE <<
 			PLOT_VAR_CURRENT_INTEGRAL;
 	}
@@ -318,11 +309,12 @@ void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+  PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
 void CyclicVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
@@ -335,7 +327,7 @@ void CyclicVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes 
 void CyclicVoltammetry::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);

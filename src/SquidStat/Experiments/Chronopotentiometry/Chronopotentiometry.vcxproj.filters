@@ -29,7 +29,7 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
-    <Filter Include="Other Files">
+    <Filter Include="Resource Files\Other Files">
       <UniqueIdentifier>{B67473BF-9FA1-4674-831E-CB28F72D4791}</UniqueIdentifier>
       <Extensions>*</Extensions>
       <ParseFiles>true</ParseFiles>
@@ -70,7 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="normalpulsevoltammetryplugin.json">
-      <Filter>Other Files</Filter>
+      <Filter>Resource Files\Other Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

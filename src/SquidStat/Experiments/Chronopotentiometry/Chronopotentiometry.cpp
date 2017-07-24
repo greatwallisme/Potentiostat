@@ -30,11 +30,12 @@
 #define SAMPLING_INT_DEFAULT	1
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
+#define PLOT_VAR_ELAPSED_TIME_HR      "Elapsed time (hr)"
+#define PLOT_VAR_EWE					"Working electrode (V)"
+#define PLOT_VAR_CURRENT				"Current (mA)"
+#define PLOT_VAR_ECE					"Counter electrode (V)"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 QString Chronopotentiometry::GetShortName() const {
 	return "Chronopotentiometry";
@@ -208,8 +209,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
 	exp.nodeType = DCNODE_POINT_GALV;
 	exp.tMin = 0;
 	exp.tMax = t1 * SECONDS;
-	getSamplingParameters(dt, &exp);
-  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i1);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i1);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i1);
   exp.DCPoint_galv.Vmax = 32767;
   exp.DCPoint_galv.Vmin = -32768;
@@ -223,8 +224,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
   exp.tMax = t2 * SECONDS;
-  getSamplingParameters(dt, &exp);
-  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i2);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i2);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i2);
   exp.DCPoint_galv.Vmax = 32767;
   exp.DCPoint_galv.Vmin = -32768;
@@ -238,8 +239,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
   exp.tMax = t3 * SECONDS;
-  getSamplingParameters(dt, &exp);
-  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i3);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i3);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i3);
   exp.DCPoint_galv.Vmax = 32767;
   exp.DCPoint_galv.Vmin = -32768;
@@ -253,8 +254,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
   exp.tMax = t4 * SECONDS;
-  getSamplingParameters(dt, &exp);
-  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetCurrentRange(hwVersion.hwModel, &calData, i4);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i4);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i4);
   exp.DCPoint_galv.Vmax = 32767;
   exp.DCPoint_galv.Vmin = -32768;
@@ -274,8 +275,9 @@ QStringList Chronopotentiometry::GetXAxisParameters(ExperimentType type) const {
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_TIMESTAMP <<
+			//PLOT_VAR_TIMESTAMP <<
 			PLOT_VAR_TIMESTAMP_NORMALIZED <<
+      PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT;
 	}
@@ -318,11 +320,12 @@ void Chronopotentiometry::PushNewDcData(const ExperimentalDcData &expData, DataM
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+  PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
 void Chronopotentiometry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
@@ -335,7 +338,7 @@ void Chronopotentiometry::SaveDcDataHeader(QFile &saveFile, const ExperimentNote
 void Chronopotentiometry::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);
@@ -343,41 +346,4 @@ void Chronopotentiometry::SaveDcData(QFile &saveFile, const DataMap &container) 
 	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
 
 	SAVE_DATA_END();
-}
-void Chronopotentiometry::getSamplingParameters(double t_sample, ExperimentNode_t * pNode) const
-{
-	//debugging: this algorithm doesn't work...
-	//TODO: make sure that this doesn't calculate an ADCMult or DACMult too big for the hardware buffers
-
-	/* This switch-case is a placeholder for calculating dt_min, which needs to be defined elsewhere*/
-	int dt_min = 1;
-	int HardwareVersion = 0;
-	switch (HardwareVersion)
-	{
-		case 0:
-			dt_min = 50000; //500 microseconds * 100 ticks/microsecond
-			break;
-		case 1:
-			dt_min = 500;	//5 microseconds * 100 ticks/microsecond
-			break;
-		default:
-			break;
-	}
-	pNode->samplingParams.ADCTimerDiv = 0;
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
-	pNode->DCSweep_pot.VStep = 1;
-
-	/* Minimize dt */		//todo: account for dt overflows
-	uint32_t dt;
-	do
-	{
-		dt = (uint32_t)(t_sample * 1.0e8 / pNode->samplingParams.ADCBufferSizeEven);
-		if (dt / dt_min > 1)
-		{
-			pNode->samplingParams.ADCBufferSizeEven <<= 1;
-		}
-	} while (dt / dt_min > 1);
-	pNode->samplingParams.ADCTimerPeriod = dt;
-	pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.ADCBufferSizeEven;
-	pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
 }

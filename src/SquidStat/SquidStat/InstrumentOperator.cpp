@@ -64,6 +64,10 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			emit NodeDownloaded();
 			break;
 
+    case OVERCURRENT_ERROR:
+      LOG() << "The current has exceeded instrument limits! The channel has been shut off.";
+      break;
+
     case OVERCURRENT_WARNING:
       LOG() << "The current has exceeded its set maximum limit!";
       break;

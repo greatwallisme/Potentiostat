@@ -29,30 +29,27 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
 
 	pNode->samplingParams.ADCTimerDiv = 0;
 	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
-	pNode->DCSweep_pot.VStep = 1;
 
 	/* Minimize dt */		//todo: account for dt overflows
 	uint64_t dt;
-	do
-	{
-		dt = (uint64_t)(t_sample_period * 1.0e8 / pNode->samplingParams.ADCBufferSizeEven);
-		if (dt / dt_min > 1 && pNode->samplingParams.ADCBufferSizeEven < ADCdcBUF_SIZE)
-		{
-			pNode->samplingParams.ADCBufferSizeEven <<= 1;
-      pNode->samplingParams.ADCBufferSizeOdd <<= 1;
-		}
-	} while (dt / dt_min > 1 && pNode->samplingParams.ADCBufferSizeEven < ADCdcBUF_SIZE);
+  do
+  {
+    pNode->samplingParams.ADCBufferSizeEven <<= 1;
+    pNode->samplingParams.ADCBufferSizeOdd <<= 1;
+    dt = (uint64_t)(t_sample_period * 1.0e8 / pNode->samplingParams.ADCBufferSizeEven);
+  } while (dt / dt_min > 1 && pNode->samplingParams.ADCBufferSizeEven < ADCdcBUF_SIZE);
 
   /* Make sure dt isn't too small */
   dt = MAX(dt_min, dt);
 
-  /* Make sure dt isn't too big for uin32_t */
+  /* Make sure dt isn't too big for uint32_t */
   pNode->samplingParams.ADCTimerDiv = 0;
-  while (dt > 4294967295 - 5e5) //(5e5 accounts conservatively for loop time)
+  while (dt > 4294967295 - 5e5 && pNode->samplingParams.ADCTimerDiv < 7) //(5e5 accounts conservatively for loop time)
   {
     pNode->samplingParams.ADCTimerDiv++;
     dt >>= 1;
   }
+  //TODO: insert a software multiplier here for really long periods dt. Make it hw model dependent?
   pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
 }
 
@@ -200,9 +197,9 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
   pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultOdd;
 }
 
-currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)
+currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)
 {
-	int MaxCurrentRange;
+	int range;
 	switch (HWversion)
 	{
 	case PRIME:
@@ -210,47 +207,26 @@ currentRange_t ExperimentCalcHelperClass::GetCurrentRange(HardwareModel_t HWvers
 	case PICO:
 	case SOLO:
   case PLUS:
-		MaxCurrentRange = 3;
+    range = 3;
 		break;
 	case PLUS_2_0:
 	case SOLO_2_0:
 	case PRIME_2_0:
-		MaxCurrentRange = 7;
+    range = 7;
 		break;
 	default:
 		break;
 	}
 
-	//int range = 0;
-	//int32_t currentBinary;
-  /*****************************************/
-  short range = -1;
-  while ((ABS(targetCurrent) < OVERCURRENT_LIMIT * calData->m_iP[range + 1] + calData->b_i[range + 1]) && ((range + 1) < MaxCurrentRange))
+  while (1)
   {
-    range += 1;
+    float slope = MAX(calData->m_iN[range], calData->m_iP[range]);
+    if (ABS(targetCurrent) > slope * OVERCURRENT_LIMIT + calData->b_i[range] && range > 0)
+      range--;
+    else
+      break;
   }
   return (currentRange_t)range;
-  
-
-    /*************************************************/
-	/*while (true)
-	{
-		currentBinary = targetCurrent > 0 ? targetCurrent * calData->m_DACdcP_I[range] + calData->b_DACdc_I[range] : targetCurrent * calData->m_DACdcN_I[range] + calData->b_DACdc_I[range];
-		if (ABS(currentBinary) < UNDERCURRENT_LIMIT)
-		{
-			if (range == MaxCurrentRange)
-				break;
-			else
-			{
-				range++;
-				continue;
-			}
-		}
-		else
-			break;
-	}
-
-	return (currentRange_t)range;*/
 }
 
 int16_t ExperimentCalcHelperClass::GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent)
@@ -278,7 +254,11 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   processedData.EWE = ewe - ref;
   processedData.ECE = ece - ref;
   int n = (int)rawData.currentRange;
-  processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange] :
+  if (rawData.currentRange == OFF)
+
+    processedData.current = 0;
+  else
+    processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange] :
                                                            calData->m_iN[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange];
   return processedData;
 }
