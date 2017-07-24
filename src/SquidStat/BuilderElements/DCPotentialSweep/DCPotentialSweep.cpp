@@ -34,7 +34,7 @@ QStringList DCPotentialSweepElement::GetCategory() const {
 		"Basic voltammetry";
 }
 QPixmap DCPotentialSweepElement::GetImage() const {
-	return QPixmap(":/GUI/Resources/element.png");
+	return QPixmap(":/GUI/DCPotentialSweep");
 }
 ExperimentType DCPotentialSweepElement::GetType() const {
 	return ET_DC;

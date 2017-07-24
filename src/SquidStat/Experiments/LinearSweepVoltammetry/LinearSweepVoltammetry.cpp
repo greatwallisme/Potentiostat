@@ -45,7 +45,7 @@ ExperimentTypeList LinearSweepVoltammetry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap LinearSweepVoltammetry::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/LinearSweepVoltammetry");
 }
 /*
 #include <QIntValidator>

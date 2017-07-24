@@ -42,5 +42,6 @@
         <file>Resources/builder-select-all.png</file>
         <file>Resources/zoom-in.png</file>
         <file>Resources/zoom-out.png</file>
+        <file>Resources/experiment.png</file>
     </qresource>
 </RCC>

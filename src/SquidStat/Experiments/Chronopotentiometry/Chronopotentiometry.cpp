@@ -54,7 +54,7 @@ ExperimentTypeList Chronopotentiometry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap Chronopotentiometry::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/Chronopotentiometry");
 }
 /*
 #include <QIntValidator>

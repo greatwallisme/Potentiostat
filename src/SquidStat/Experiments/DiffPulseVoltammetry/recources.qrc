@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/GUI">
-        <file>Resources/experiment.png</file>
+    <qresource prefix="/Experiments">
+        <file alias="DiffPulseVoltammetry">Resources/experiment.png</file>
     </qresource>
 </RCC>

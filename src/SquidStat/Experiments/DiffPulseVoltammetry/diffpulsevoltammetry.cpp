@@ -48,7 +48,7 @@ ExperimentTypeList DiffPulseVoltammetry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap DiffPulseVoltammetry::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/DiffPulseVoltammetry");
 }
 /*
 #include <QIntValidator>

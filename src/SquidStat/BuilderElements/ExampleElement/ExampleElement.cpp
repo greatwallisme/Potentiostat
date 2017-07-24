@@ -27,7 +27,7 @@ QStringList ExampleElement::GetCategory() const {
 		"Example Category 2";
 }
 QPixmap ExampleElement::GetImage() const {
-	return QPixmap(":/GUI/Resources/element.png");
+	return QPixmap(":/GUI/ExampleElement");
 }
 ExperimentType ExampleElement::GetType() const {
 	return ET_DC;

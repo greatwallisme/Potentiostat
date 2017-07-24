@@ -50,7 +50,7 @@ ExperimentTypeList CyclicVoltammetry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap CyclicVoltammetry::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/CyclicVoltammetry");
 }
 /*
 #include <QIntValidator>

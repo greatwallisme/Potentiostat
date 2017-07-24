@@ -53,7 +53,7 @@ ExperimentTypeList ChargeDischargeDC::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap ChargeDischargeDC::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/ChargeDischargeDC");
 }
 /*
 #include <QIntValidator>

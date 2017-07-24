@@ -27,7 +27,7 @@ QStringList ConstPotElement::GetCategory() const {
 		"Basic voltammetry";
 }
 QPixmap ConstPotElement::GetImage() const {
-	return QPixmap(":/GUI/Resources/element.png");
+	return QPixmap(":/GUI/ConstantPotential");
 }
 ExperimentType ConstPotElement::GetType() const {
 	return ET_DC;

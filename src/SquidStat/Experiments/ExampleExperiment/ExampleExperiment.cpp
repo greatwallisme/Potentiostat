@@ -45,7 +45,7 @@ ExperimentTypeList ExampleExperiment::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap ExampleExperiment::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/ExampleExperiment");
 }
 /*
 #include <QIntValidator>

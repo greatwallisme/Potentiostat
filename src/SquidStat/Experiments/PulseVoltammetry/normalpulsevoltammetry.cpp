@@ -46,7 +46,7 @@ ExperimentTypeList NormalPulseVoltammetry::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap NormalPulseVoltammetry::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/NormalPulseVoltammetry");
 }
 /*
 #include <QIntValidator>

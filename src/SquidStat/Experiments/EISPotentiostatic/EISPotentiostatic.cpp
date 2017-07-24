@@ -44,7 +44,7 @@ ExperimentTypeList EISPotentiostatic::GetTypes() const {
 	return ExperimentTypeList() << ET_AC;
 }
 QPixmap EISPotentiostatic::GetImage() const {
-	return QPixmap(":/GUI/Resources/experiment.png");
+	return QPixmap(":/Experiments/EISPotentiostatic");
 }
 /*
 #include <QIntValidator>
