@@ -272,8 +272,8 @@ QPushButton#bar-button:open {
 	max-height: 0px;
 }
 #experiment-params-spacing-bottom {
-	min-height: 100px;
-	max-height: 100px;
+	min-height: 30px;
+	max-height: 30px;
 }
 #experiment-params-spacing-left,
 #experiment-params-spacing-right {
@@ -931,7 +931,7 @@ QScrollBar::sub-page:horizontal {
 	border: none;
 	min-height: 65px;
 	margin-top: 0px;
-	font-size: 16px;
+	font-size: 22px;
 }
 #control-button-blue {
 	border: 2px solid #d4e7ee;

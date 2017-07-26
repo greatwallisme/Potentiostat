@@ -480,8 +480,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		foreach(auto &param, startParams) {
 			param.file->close();
 			param.file->deleteLater();
-			return;
 		}
+		return;
 	}
 	
 	hardware.currentInstrument.handler->experiment.busy = true;
