@@ -8,15 +8,19 @@
 #define V1_OBJECT_NAME			"voltage-1"
 #define V1_VS_OCP_OBJ_NAME		"voltage-1-vs-ocp"
 #define T1_OBJECT_NAME			"voltage-1-time"
+#define T1_UNITS_OBJ_NAME   "voltage-1-time-units"
 #define V2_OBJECT_NAME			"voltage-2"
 #define V2_VS_OCP_OBJ_NAME		"voltage-2-vs-ocp"
 #define T2_OBJECT_NAME			"voltage-2-time"
+#define T2_UNITS_OBJ_NAME   "voltage-2-time-units"
 #define V3_OBJECT_NAME			"voltage-3"
 #define V3_VS_OCP_OBJ_NAME		"voltage-3-vs-ocp"
 #define T3_OBJECT_NAME			"voltage-3-time"
+#define T3_UNITS_OBJ_NAME   "voltage-3-time-units"
 #define V4_OBJECT_NAME			"voltage-4"
 #define V4_VS_OCP_OBJ_NAME		"voltage-4-vs-ocp"
 #define T4_OBJECT_NAME			"voltage-4-time"
+#define T4_UNITS_OBJ_NAME   "voltage-4-time-units"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
 #define CURRENT_RANGE_OBJ_NAME  "current-range"
 
@@ -58,22 +62,11 @@ ExperimentTypeList Chronoamperometry::GetTypes() const {
 QPixmap Chronoamperometry::GetImage() const {
 	return QPixmap(":/Experiments/Chronoamperometry");
 }
-/*
-#include <QIntValidator>
-#include <QDoubleValidator>
-#include <QRegExpValidator>
-//*/
+
 QWidget* Chronoamperometry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-
-  //TODO: add current ranging options
-  /*_INSERT_LEFT_ALIGN_COMMENT("Current range: ", row, 0);
-  _START_DROP_DOWN(CURRENT_RANGE_OBJ_NAME, row, 1);
-  _ADD_DROP_DOWN_ITEM("Autorange");
-  for (int i=0; i< )
-  _ADD_DROP_DOWN_ITEM("")*/
 
 	_INSERT_RIGHT_ALIGN_COMMENT("Potential 1 = ", row, 0);
 	_INSERT_TEXT_INPUT(V1_DEFAULT, V1_OBJECT_NAME, row, 1);
@@ -86,11 +79,14 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T1_DEFAULT, T1_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T1_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -107,11 +103,14 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T2_DEFAULT, T2_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T2_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -128,11 +127,14 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T3_DEFAULT, T3_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T3_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -149,11 +151,14 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T4_DEFAULT, T4_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T4_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -171,6 +176,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
 	double v1, v2, v3, v4, t1, t2, t3, t4;
+  QString t1Units_str, t2Units_str, t3Units_str, t4Units_str;
 	GET_TEXT_INPUT_VALUE_DOUBLE(v1, V1_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(v2, V2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(v3, V3_OBJECT_NAME);
@@ -179,6 +185,10 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
+  GET_SELECTED_DROP_DOWN(t1Units_str, T1_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
 
 	double dt;
 	GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_PERIOD_OBJ_NAME);
@@ -198,7 +208,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
-	exp.tMax = t1 * SECONDS;
+  exp.tMax = t1 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t1Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v1);
@@ -214,7 +224,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
-	exp.tMax = t2 * SECONDS;
+	exp.tMax = t2 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t2Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v2);
@@ -230,7 +240,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
-	exp.tMax = t3 * SECONDS;
+	exp.tMax = t3 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t3Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v3);
@@ -246,7 +256,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
-	exp.tMax = t4 * SECONDS;
+	exp.tMax = t4 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t4Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v4);

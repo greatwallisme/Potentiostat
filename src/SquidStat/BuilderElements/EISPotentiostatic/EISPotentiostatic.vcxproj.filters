@@ -46,7 +46,7 @@
     <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="ConstPotElementAdv.cpp">
+    <ClCompile Include="EISPotentiostatic.cpp">
       <Filter>_src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,7 +59,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConstPotElementAdv.h">
+    <ClInclude Include="EISPotentiostatic.h">
       <Filter>_src</Filter>
     </ClInclude>
   </ItemGroup>

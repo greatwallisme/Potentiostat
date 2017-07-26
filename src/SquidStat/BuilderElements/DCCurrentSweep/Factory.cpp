@@ -1,7 +1,7 @@
 #include "Factory.h"
 
-#include "ConstPotElementAdv.h"
+#include "DCCurrentSweep.h"
 
 AbstractBuilderElement* Factory::CreateElement(const QVariant&) {
-	return new ConstPotElementAdv;
+	return new DCCurrentSweep;
 }

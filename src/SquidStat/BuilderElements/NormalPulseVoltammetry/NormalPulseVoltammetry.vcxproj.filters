@@ -46,7 +46,7 @@
     <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="EISGalvanostatic.cpp">
+    <ClCompile Include="NormalPulseVoltammetry.cpp">
       <Filter>_src</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,7 +59,7 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EISGalvanostatic.h">
+    <ClInclude Include="NormalPulseVoltammetry.h">
       <Filter>_src</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,7 +3,7 @@
 #include <AbstractBuilderElement.h>
 #include <ExperimentCalcHelper.h>
 
-class ConstPotElementAdv : public AbstractBuilderElement {
+class ConstCurrentElement : public AbstractBuilderElement {
 public:
 	QString GetFullName() const;
 	QStringList GetCategory() const;

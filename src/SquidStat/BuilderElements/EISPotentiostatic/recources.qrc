@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/GUI">
-        <file>Resources/element.png</file>
+        <file alias="EISPotentiostatic">Resources/element.png</file>
     </qresource>
 </RCC>

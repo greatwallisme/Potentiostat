@@ -53,11 +53,12 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
   pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
 }
 
-uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode, double dEdt, double samplingInterval)
+uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
+  double dEdt, double samplingInterval)
 {
   if (dEdt == 0) return 1;
 
-  uint32_t FilterSize;
+  uint32_t FilterSize = 1;
   int dt_min = 50000;
   switch (HWversion)
   {
@@ -105,11 +106,11 @@ uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t H
   }
 
   /* 3) Calculate ADCMult. If ADC sampling period is greater than maxSamplingInterval, reduce ADCBufSize */
-  if (samplingInterval == 0)
-    pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultEven;
-  else
-    pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint32_t)MIN(pNode->samplingParams.DACMultEven, samplingInterval * SECONDS / dt);
-  FilterSize = uint32_t((samplingInterval / dt) / (pNode->samplingParams.ADCBufferSizeEven / dt));
+  if (samplingInterval == 0) //if auto-calculate mode is selected, then use dt * DACdcBUF_SIZE
+    samplingInterval = dt * pNode->samplingParams.DACMultEven;
+  while (round(samplingInterval / dt / FilterSize) > ADCdcBUF_SIZE)
+    FilterSize++;
+  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint16_t) round(samplingInterval / dt / FilterSize);
 
   /* 4) Calculate Points Ignored (for dynamic sampling) */
   if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
@@ -125,6 +126,84 @@ uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t H
     dt >>= 1;
   }
   pNode->samplingParams.ADCTimerPeriod = (uint32_t) dt;
+
+  return FilterSize;
+}
+
+uint32_t ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
+  double dIdt, currentRange_t currentRange, double samplingInterval)
+{
+  if (dIdt == 0) return 1;
+
+  samplingInterval *= SECONDS;
+  uint32_t FilterSize = 1;
+  int dt_min = 50000;
+  switch (HWversion)
+  {
+  case PRIME:
+  case PICO:
+  case EDGE:
+  case SOLO:
+  case PLUS:
+    dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
+    break;
+  case PLUS_2_0:
+  case PRIME_2_0:
+  case SOLO_2_0:
+    dt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
+    break;
+  default:
+    break;
+  }
+
+  /* 1) Minimize dt, maximize DACMult */
+  pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
+  pNode->DCSweep_galv.IStep = 1;
+  uint64_t dt;
+  double ticksPerStep = 1 / abs(dIdt) / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS;
+  do
+  {
+    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
+    if (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACdcBUF_SIZE)
+    {
+      if (pNode->samplingParams.DACMultEven << 1 < DACdcBUF_SIZE)
+      {
+        pNode->samplingParams.DACMultEven <<= 1;
+        pNode->samplingParams.DACMultOdd <<= 1;
+      }
+      else
+        break;
+    }
+  } while (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACdcBUF_SIZE);
+
+  /* 2) Increase VStep, if necessary (if dt is too small, or if DACbuf is expended too quickly */
+  while (dt < dt_min || pNode->samplingParams.DACMultEven * dt * DACdcBUF_SIZE < MIN_TICKS_FOR_USB_TRANSMISSION)
+  {
+    pNode->DCSweep_galv.IStep++;
+    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven * pNode->DCSweep_galv.IStep);
+  }
+
+  /* 3) Calculate ADCMult. If ADC sampling period is greater than maxSamplingInterval, reduce ADCBufSize */
+  if (samplingInterval == 0) //if auto-calculate mode is selected, then use dt * DACdcBUF_SIZE
+    samplingInterval = dt * pNode->samplingParams.DACMultEven;
+  while (round(samplingInterval / dt / FilterSize) > ADCdcBUF_SIZE)
+    FilterSize++;
+  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint16_t)round(samplingInterval / dt / FilterSize);
+
+  /* 4) Calculate Points Ignored (for dynamic sampling) */
+  if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
+    pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
+  else
+    pNode->samplingParams.PointsIgnored = 0;
+
+  /* 5) Make sure timer period isn't too big for uint32_t */
+  pNode->samplingParams.ADCTimerDiv = 0;
+  while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
+  {
+    pNode->samplingParams.ADCTimerDiv++;
+    dt >>= 1;
+  }
+  pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
 
   return FilterSize;
 }
@@ -263,7 +342,51 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   return processedData;
 }
 
+double ExperimentCalcHelperClass::GetUnitsMultiplier(QString units_str)
+{
+  /* current units */
+  if (units_str.contains("mA"))
+    return 1;
+  else if (units_str.contains("uA"))
+    return 1e-3;
+  else if (units_str.contains("nA"))
+    return 1e-6;
+
+  /* frequency units */
+  else if (units_str.contains("mHz"))
+    return 1e-3;
+  else if (units_str.contains("kHz"))
+    return 1e3;
+  else if (units_str.contains("MHz"))
+    return 1e6;
+  else if (units_str.contains("Hz"))    //this else-if must come after the other xHz units
+    return 1;
+
+  /* time units */
+  else if (units_str.contains("min"))
+    return 60;
+  else if (units_str.contains("hr"))
+    return 3600;
+  else
+    return 1;
+}
+
 /* AC methods */
+
+currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange_DACac(const cal_t * calData, double targetCurrentAmp)
+{
+  int range = 7;
+
+  while (1)
+  {
+    double inv_slope = calData->m_DACac * calData->m_DACdcP_I[range] / calData->m_DACdcP_V;
+    if (ABS(targetCurrentAmp) > inv_slope * OVERCURRENT_LIMIT * (3.3 / 10 / 2) && range > 0)
+      range--;
+    else
+      break;
+  }
+  return (currentRange_t)range;
+}
 
 ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double numCycles)
 {

@@ -5,10 +5,15 @@
 
 #define TOP_WIDGET_NAME			"Charge-Discharge-DC"
 
+#define STARTING_PHASE_OPT_OBJ_NAME "starting-phase-option"
 #define CHG_CURRENT_OBJ_NAME	"charge-current"
+#define CHG_CURRENT_UNITS_OBJ_NAME "charge-current-units"
 #define DISCHG_CURRENT_OBJ_NAME	"discharge-current"
+#define DISCHG_CURRENT_UNITS_OBJ_NAME "discharge-current-units"
 #define MIN_CHG_CURRENT_OBJ_NAME	"min-charge-current"
+#define MIN_CHG_CURRENT_UNITS_OBJ_NAME "min-charge-current-units"
 #define MIN_DISCHG_CURRENT_OBJ_NAME	"min-discharge-current"
+#define MIN_DISCHG_CURRENT_UNITS_OBJ_NAME "min-discharge-current-units"
 #define UPPER_VOLTAGE_OBJ_NAME	"upper-voltage"
 #define LOWER_VOLTAGE_OBJ_NAME  "lower-voltage"
 #define SAMP_INTERVAL_OBJ_NAME	"sampling-interval"
@@ -55,17 +60,13 @@ ExperimentTypeList ChargeDischargeDC::GetTypes() const {
 QPixmap ChargeDischargeDC::GetImage() const {
 	return QPixmap(":/Experiments/ChargeDischargeDC");
 }
-/*
-#include <QIntValidator>
-#include <QDoubleValidator>
-#include <QRegExpValidator>
-//*/
+
 QWidget* ChargeDischargeDC::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
 	_INSERT_RIGHT_ALIGN_COMMENT("Starting phase", row, 0);
-	_START_DROP_DOWN("Starting phase selection id", row, 1);
+	_START_DROP_DOWN(STARTING_PHASE_OPT_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("Charge first");
 	_ADD_DROP_DOWN_ITEM("Discharge first");
 	_END_DROP_DOWN();
@@ -76,7 +77,11 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Charging current = ", row, 0);
 	_INSERT_TEXT_INPUT(CHG_CURRENT_DEFAULT, CHG_CURRENT_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mA", row, 2);
+  _START_DROP_DOWN(CHG_CURRENT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit = ", row, 0);
@@ -86,7 +91,11 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Minimum charging current = ", row, 0);
 	_INSERT_TEXT_INPUT(MIN_CHG_CURRENT_DEFAULT, MIN_CHG_CURRENT_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mA", row, 2);
+  _START_DROP_DOWN(MIN_CHG_CURRENT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -94,7 +103,11 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Discharging current = ", row, 0);
 	_INSERT_TEXT_INPUT(DISCHG_CURRENT_DEFAULT, DISCHG_CURRENT_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mA", row, 2);
+  _START_DROP_DOWN(DISCHG_CURRENT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Lower voltage limit = ", row, 0);
@@ -104,7 +117,11 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Minimum discharging current = ", row, 0);
 	_INSERT_TEXT_INPUT(MIN_DISCHG_CURRENT_DEFAULT, MIN_DISCHG_CURRENT_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mA", row, 2);
+  _START_DROP_DOWN(MIN_DISCHG_CURRENT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
@@ -142,32 +159,46 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	//TODO: what to do about cells hooked up backwards?
 	//TODO: incorporate max charge/discharge capacity? Or incorporate this into another experiment?
 	//TODO: make a const. power discharge node type
-	//TODO: is there a constant voltage phase during discharge?
 
+  QString firstPhase_str;
 	bool chargeFirst= false;
 	double upperVoltage;
 	double lowerVoltage;
 	double chgCurrent;
+  QString chgCurrentUnits_str;
 	double minChgCurrent;
+  QString minChgCurrentUnits_str;
 	double dischgCurrent;
+  QString dischgCurrentUnits_str;
 	double minDischgCurrent;
+  QString minDischgCurrentUnits_str;
 	double sampInterval;
 	double restPeriodDuration;
 	double restPeriodInterval;
 	qint32 cycles;
-	QString firstPhase;
-	GET_SELECTED_DROP_DOWN(firstPhase, "Starting phase selection id");
+	
+	GET_SELECTED_DROP_DOWN(firstPhase_str, STARTING_PHASE_OPT_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperVoltage, UPPER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(chgCurrent, CHG_CURRENT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(chgCurrentUnits_str, CHG_CURRENT_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(dischgCurrent, DISCHG_CURRENT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(dischgCurrentUnits_str, DISCHG_CURRENT_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(minChgCurrent, MIN_CHG_CURRENT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(minChgCurrentUnits_str, MIN_CHG_CURRENT_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(minDischgCurrent, MIN_DISCHG_CURRENT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(minDischgCurrentUnits_str, MIN_DISCHG_CURRENT_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(sampInterval, SAMP_INTERVAL_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodDuration, REST_PERIOD_OBJ);
 	GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodInterval, REST_PERIOD_INT_OBJ);
 	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
-	if (!firstPhase.contains("Discharge first"))
+
+  chgCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(chgCurrentUnits_str);
+  dischgCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(dischgCurrentUnits_str);
+  minChgCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(minChgCurrentUnits_str);
+  minDischgCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(minDischgCurrentUnits_str);
+
+	if (!firstPhase_str.contains("Discharge first"))
 	{
 		chargeFirst = true;
 	}
@@ -208,8 +239,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.DCocp.Vmax = 0x7FFF;
   exp.DCocp.dVdtMin = 0;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
-	exp.tMin = restPeriodDuration * SECONDS;
-	exp.tMax = restPeriodDuration * SECONDS;
+	exp.tMin = exp.tMax = restPeriodDuration * SECONDS;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
@@ -231,7 +261,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 3e8;
+	exp.tMin = 2 * SECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);

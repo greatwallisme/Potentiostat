@@ -1,7 +1,6 @@
 #include "Factory.h"
-
-#include "EISGalvanostatic.h"
+#include "ConstCurrentElement.h"
 
 AbstractBuilderElement* Factory::CreateElement(const QVariant&) {
-	return new EISGalvanostatic;
+	return new ConstCurrentElement;
 }

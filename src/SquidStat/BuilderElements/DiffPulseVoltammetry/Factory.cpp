@@ -1,7 +1,7 @@
 #include "Factory.h"
 
-#include "EISGalvanostatic.h"
+#include "DiffPulseVoltammetry.h"
 
 AbstractBuilderElement* Factory::CreateElement(const QVariant&) {
-	return new EISGalvanostatic;
+	return new DiffPulseVoltammetry;
 }

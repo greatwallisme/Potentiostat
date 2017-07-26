@@ -8,15 +8,19 @@
 #define I1_OBJECT_NAME			"current-1"
 #define I1_UNITS_OBJ_NAME   "current-units-1"
 #define T1_OBJECT_NAME			"current-1-time"
+#define T1_UNITS_OBJ_NAME   "current-1-time-units"
 #define I2_OBJECT_NAME			"current-2"
 #define I2_UNITS_OBJ_NAME   "current-units-2"
 #define T2_OBJECT_NAME			"current-2-time"
+#define T2_UNITS_OBJ_NAME   "current-2-time-units"
 #define I3_OBJECT_NAME			"current-3"
 #define I3_UNITS_OBJ_NAME   "current-units-3"
 #define T3_OBJECT_NAME			"current-3-time"
+#define T3_UNITS_OBJ_NAME   "current-3-time-units"
 #define I4_OBJECT_NAME			"current-4"
 #define I4_UNITS_OBJ_NAME   "current-units-4"
 #define T4_OBJECT_NAME			"current-4-time"
+#define T4_UNITS_OBJ_NAME   "current-4-time-units"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
 
 #define I1_DEFAULT				1
@@ -56,11 +60,7 @@ ExperimentTypeList Chronopotentiometry::GetTypes() const {
 QPixmap Chronopotentiometry::GetImage() const {
 	return QPixmap(":/Experiments/Chronopotentiometry");
 }
-/*
-#include <QIntValidator>
-#include <QDoubleValidator>
-#include <QRegExpValidator>
-//*/
+
 QWidget* Chronopotentiometry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
@@ -73,11 +73,14 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
   _ADD_DROP_DOWN_ITEM("nA");
   _END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T1_DEFAULT, T1_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T1_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -95,7 +98,11 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T2_DEFAULT, T2_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T2_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -113,7 +120,11 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(T3_DEFAULT, T3_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T3_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -139,7 +150,11 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
 	_INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_PERIOD_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(T4_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
@@ -147,18 +162,9 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 }
 NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
-	QString selectedRadio1;
-	QString selectedRadio2;
-	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
-	GET_SELECTED_RADIO(selectedRadio2, "Test radio 2 id");
-
-
-	QString selectedDropDown;
-	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
-	//*/
 
 	double i1, i2, i3, i4, t1, t2, t3, t4;
+  QString t1Units_str, t2Units_str, t3Units_str, t4Units_str;
 	GET_TEXT_INPUT_VALUE_DOUBLE(i1, I1_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(i2, I2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(i3, I3_OBJECT_NAME);
@@ -167,6 +173,10 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
 	GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
+  GET_SELECTED_DROP_DOWN(t1Units_str, T1_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
 
 	double dt;
 	GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_PERIOD_OBJ_NAME);
@@ -176,39 +186,17 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
 	GET_SELECTED_DROP_DOWN(iUnits2, I2_UNITS_OBJ_NAME);
 	GET_SELECTED_DROP_DOWN(iUnits3, I3_UNITS_OBJ_NAME);
 	GET_SELECTED_DROP_DOWN(iUnits4, I4_UNITS_OBJ_NAME);
-  if (iUnits1.contains("mA"))
-    i1 *= 1;
-  else if (iUnits1.contains("uA"))
-    i1 *= 1e-3;
-  else if (iUnits1.contains("nA"))
-    i1 *= 1e-6;
 
-  if (iUnits2.contains("mA"))
-    i2 *= 1;
-  else if (iUnits2.contains("uA"))
-    i2 *= 1e-3;
-  else if (iUnits2.contains("nA"))
-    i2 *= 1e-6;
-
-  if (iUnits3.contains("mA"))
-    i3 *= 1;
-  else if (iUnits3.contains("uA"))
-    i3 *= 1e-3;
-  else if (iUnits3.contains("nA"))
-    i3 *= 1e-6;
-
-  if (iUnits4.contains("mA"))
-    i4 *= 1;
-  else if (iUnits4.contains("uA"))
-    i4 *= 1e-3;
-  else if (iUnits4.contains("nA"))
-    i4 *= 1e-6;
+  i1 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits1);
+  i2 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits2);
+  i3 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits3);
+  i4 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits4);
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_GALV;
 	exp.tMin = 0;
-	exp.tMax = t1 * SECONDS;
+	exp.tMax = t1 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t1Units_str);
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i1);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i1);
@@ -223,7 +211,7 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
-  exp.tMax = t2 * SECONDS;
+  exp.tMax = t2 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t2Units_str);
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i2);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i2);
@@ -238,7 +226,7 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
-  exp.tMax = t3 * SECONDS;
+  exp.tMax = t3 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t3Units_str);
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i3);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i3);
@@ -253,7 +241,7 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
-  exp.tMax = t4 * SECONDS;
+  exp.tMax = t4 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t4Units_str);
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i4);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i4);

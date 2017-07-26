@@ -9,8 +9,11 @@
 
 #define UPPER_FREQ_OBJ_NAME		"upper-frequency"
 #define LOWER_FREQ_OBJ_NAME		"lower-frequency"
+#define UPPER_FREQ_UNITS_OBJ_NAME "upper-frequency-units"
+#define LOWER_FREQ_UNITS_OBJ_NAME "lower-frequency-units"
 #define STEPS_PER_DEC_OBJ_NAME	"step-per-decade"
 #define DC_BIAS_OBJ_NAME		"DC-bias"
+#define DC_BIAS_VS_OCP_OBJ_NAME "DC-bias-vs-OCP"
 #define AC_AMP_OBJ_NAME			"AC-amplitude"
 
 #define UPPER_FREQ_DEFAULT		1000000		//(in Hz)
@@ -57,12 +60,20 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 	int row = 0;
 	_INSERT_RIGHT_ALIGN_COMMENT("Upper frequency", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_FREQ_DEFAULT, UPPER_FREQ_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("Hz", row, 2);
+  _START_DROP_DOWN(UPPER_FREQ_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("kHz");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Lower frequency", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_FREQ_DEFAULT, LOWER_FREQ_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("Hz", row, 2);
+  _START_DROP_DOWN(LOWER_FREQ_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("kHz");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Steps per decade", row, 0);
@@ -78,7 +89,7 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN("DC bias reference selection id", row, 1);
+	_START_DROP_DOWN(DC_BIAS_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
@@ -94,52 +105,43 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 }
 NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
-	/*
-	QString selectedRadio1;
-	QString selectedRadio2;
-	GET_SELECTED_RADIO(selectedRadio1, "Test radio 1 id");
-	GET_SELECTED_RADIO(selectedRadio2, "Test radio 2 id");
-
-
-	QString selectedDropDown;
-	GET_SELECTED_DROP_DOWN(selectedDropDown, "Test drop down id");
-	//*/
 
 	double upperFreq;
 	double lowerFreq;
+  QString upperFreqUnits_str;
+  QString lowerFreqUnits_str;
 	double stepsPerDecade;
 	double VBias;
 	bool VBiasVsOCP = false;
 	QString VBiasVsOCPStr;
   double amplitude;
-	
-	GET_SELECTED_DROP_DOWN(VBiasVsOCPStr, "DC bias reference selection id");
+
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperFreq, UPPER_FREQ_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerFreq, LOWER_FREQ_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(upperFreqUnits_str, UPPER_FREQ_UNITS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(lowerFreqUnits_str, LOWER_FREQ_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(stepsPerDecade, STEPS_PER_DEC_OBJ_NAME);
   GET_TEXT_INPUT_VALUE_DOUBLE(amplitude, AC_AMP_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(VBias, DC_BIAS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(VBiasVsOCPStr, DC_BIAS_VS_OCP_OBJ_NAME);
+
 	if (VBiasVsOCPStr.contains("open circuit"))
-	{
 		VBiasVsOCP = true;
-	}
 
   QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDecade);
 
-	//exp.isHead = false;
-	//exp.isTail = false;
-	//exp.nodeType = DCNODE_POINT_POT;
-	//exp.tMin = 1e8;
-	//		//exp.tMax = 0xffffffffffffffff;
-	//exp.tMax = 2e8;		//debugging
-	//exp.DCPoint_pot.Imax = 0xffff;
-	//exp.DCPoint_pot.Imin = 0;
-	//exp.DCPoint_pot.IrangeMax = RANGE0;
-	//exp.DCPoint_pot.IrangeMin = RANGE7;
-	////TODO exp.DCPoint_pot.dVdtMax = 0.1;
-	//exp.MaxPlays = 1;
- // ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 1);
-	//PUSH_NEW_NODE_DATA();
+	exp.isHead = false;
+	exp.isTail = false;
+	exp.nodeType = DCNODE_POINT_POT;
+  exp.tMin = exp.tMax = 2 * SECONDS;
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
+  exp.DCPoint_pot.Imin = 0;
+  exp.DCPoint_pot.dIdtMin = 0;
+  exp.DCPoint_pot.VPointUserInput = VBias;
+  exp.DCPoint_pot.VPointVsOCP = VBiasVsOCP;
+	exp.MaxPlays = 1;
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
+	PUSH_NEW_NODE_DATA();
 
   for (int i = 0; i < frequencyList.length(); i++)
   {

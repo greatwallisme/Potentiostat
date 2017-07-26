@@ -129,49 +129,22 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
   bool vsOCP = inputs[POTENTIAL_V_OCP_OBJ_NAME].toString().contains("open circuit");
   double samplingInterval = inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble();
   double duration = inputs[DURATION_OBJ_NAME].toDouble();
-  QString durationUnits_str = inputs[DURATION_UNITS_OBJ_NAME].toString();
   double minimumCurrent = inputs[MINIMUM_CURRENT_OBJ_NAME].toDouble();
-  QString minimumCurrentUnits_str = inputs[MINIMUM_CURRENT_UNITS_OBJ_NAME].toString();
   double dIdtMin = inputs[DI_DT_MIN_OBJ_NAME].toDouble();
   QString dIdtUnits_str = inputs[DI_DT_UNITS_OBJ_NAME].toString();
   QString currentRangeMode_str = inputs[CURRENT_RANGE_OBJ_NAME].toString();
-  QString currentRangeUnits_str = inputs[CURRENT_RANGE_UNITS_OBJ_NAME].toString();
   currentRange_t currentRangeMode;
   double upperCurrentLimit = inputs[CURRENT_RANGE_VALUE_OBJ_NAME].toDouble();
   
-  if (durationUnits_str.contains("seconds"))
-    duration *= 1;
-  else if (durationUnits_str.contains("minutes"))
-    duration *= 60;
-  else if (durationUnits_str.contains("hours"))
-    duration *= 3600;
-
-  if (minimumCurrentUnits_str.contains("mA"))
-    minimumCurrent *= 1;
-  else if (minimumCurrentUnits_str.contains("uA"))
-    minimumCurrent *= 1e-3;
-  else if (minimumCurrentUnits_str.contains("nA"))
-    minimumCurrent *= 1e-6;
-
-  if (dIdtUnits_str.contains("mA/s"))
-    dIdtMin *= 1;
-  else if (dIdtUnits_str.contains("uA/s"))
-    dIdtMin *= 1e-3;
-  else if (dIdtUnits_str.contains("nA/s"))
-    dIdtMin *= 1e-6;
-
+  duration *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[DURATION_UNITS_OBJ_NAME].toString());
+  minimumCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[MINIMUM_CURRENT_UNITS_OBJ_NAME].toString());
+  dIdtMin *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[DI_DT_UNITS_OBJ_NAME].toString());
+  upperCurrentLimit *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[CURRENT_RANGE_UNITS_OBJ_NAME].toString());
+  
   if (currentRangeMode_str.contains("Autorange"))
     currentRangeMode = AUTORANGE;
   else
-  {
-    if (currentRangeUnits_str.contains("mA"))
-      upperCurrentLimit *= 1;
-    else if (currentRangeUnits_str.contains("uA"))
-      upperCurrentLimit *= 1e-3;
-    else if (currentRangeUnits_str.contains("nA"))
-      upperCurrentLimit *= 1e-6;
     currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, upperCurrentLimit);
-  }
 
 	exp.isHead = false;
 	exp.isTail = false;

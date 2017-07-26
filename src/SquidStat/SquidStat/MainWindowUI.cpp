@@ -2291,7 +2291,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 	QListView *fileList;
 
-	lay->addWidget(OBJ_NAME(LBL("Data Set List"), "heading-label"));
+	lay->addWidget(OBJ_NAME(LBL("Dataset List"), "heading-label"));
 	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
 
 	fileList->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -2965,9 +2965,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
 	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X - axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y1 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y2 - axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
@@ -2995,9 +2995,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
-	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add a Data File(s)"), "secondary-button"));
-	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Workers && Lines"), "secondary-button"));
-	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot"), "secondary-button"));
+	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"));
+	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"));
+	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"));
 	buttonLay->addStretch(1);
 
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);

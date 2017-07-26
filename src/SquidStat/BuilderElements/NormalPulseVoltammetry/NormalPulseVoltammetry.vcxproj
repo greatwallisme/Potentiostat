@@ -12,7 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp" />
-    <ClCompile Include="EISGalvanostatic.cpp" />
+    <ClCompile Include="NormalPulseVoltammetry.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Factory.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -28,7 +28,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EISGalvanostatic.h" />
+    <ClInclude Include="NormalPulseVoltammetry.h" />
     <CustomBuild Include="Factory.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing Factory.h...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
@@ -53,7 +53,7 @@
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{32DE625E-DA5D-4BC6-9CA2-3C0C1261D2ED}</ProjectGuid>
+    <ProjectGuid>{DA975AAD-F37C-4D7B-A541-62E75350E1D3}</ProjectGuid>
     <Keyword>Qt4VSv1.0</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>

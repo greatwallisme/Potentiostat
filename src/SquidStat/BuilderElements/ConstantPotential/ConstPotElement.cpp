@@ -73,22 +73,14 @@ NodesData ConstPotElement::GetNodesData(const UserInput &inputs, const Calibrati
 
   QString vsOCP_string = inputs[POTENTIAL_V_OCP_OBJ_NAME].toString();
   bool vsOCP = vsOCP_string.contains("open circuit");
-
-
-  int durationMultiplier = 1;
-  QString durationUnits = inputs[DURATION_UNITS_OBJ_NAME].toInt();
-  if (durationUnits.contains("s"))
-    durationMultiplier = 1;
-  else if (durationUnits.contains("min"))
-    durationMultiplier = 60;
-  else if (durationUnits.contains("hr"))
-    durationMultiplier = 3600;
+  double duration = inputs[DURATION_OBJ_NAME].toDouble();
+  duration *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[DURATION_UNITS_OBJ_NAME].toString());
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
-	exp.tMax = (uint64_t)(inputs[DURATION_OBJ_NAME].toDouble() * durationMultiplier * SECONDS);
+	exp.tMax = (uint64_t)(duration * SECONDS);
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble());
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, inputs[CONST_POTENTIAL_OBJ_NAME].toDouble());

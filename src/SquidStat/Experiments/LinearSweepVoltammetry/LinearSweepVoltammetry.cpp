@@ -144,18 +144,11 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
   startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
   endVoltageVsOCP = endVoltageVsOCP_str.contains("open circuit");
 
+  approxMaxCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(currentRangeUnits_str);
   if (currentRangeMode_str.contains("Autorange"))
     currentRangeMode = AUTORANGE;
   else
-  {
-    if (currentRangeUnits_str.contains("mA"))
-      approxMaxCurrent *= 1;
-    else if (currentRangeUnits_str.contains("uA"))
-      approxMaxCurrent *= 1e-3;
-    else if (currentRangeUnits_str.contains("nA"))
-      approxMaxCurrent *= 1e-6;
     currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, approxMaxCurrent);
-  }
 
   exp.isHead = false;
   exp.isTail = false;
@@ -177,7 +170,10 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	exp.tMin = 10 * MICROSECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+
+  //TODO: send filtersize SOMEWHERE to ignore N points
+  uint32_t filterSize = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+
   exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
   exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, endVoltage);

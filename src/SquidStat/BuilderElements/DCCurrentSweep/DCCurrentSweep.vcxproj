@@ -12,7 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp" />
-    <ClCompile Include="ConstPotElementAdv.cpp" />
+    <ClCompile Include="DCCurrentSweep.cpp" />
     <ClCompile Include="Factory.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_Factory.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -28,7 +28,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ConstPotElementAdv.h" />
+    <ClInclude Include="DCCurrentSweep.h" />
     <CustomBuild Include="Factory.h">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing Factory.h...</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
@@ -53,7 +53,7 @@
     </CustomBuild>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{251891EB-B16C-49ED-97DB-8B38A7A2660C}</ProjectGuid>
+    <ProjectGuid>{A935E030-8579-4981-A92B-A8834F8B9244}</ProjectGuid>
     <Keyword>Qt4VSv1.0</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
