@@ -52,6 +52,7 @@
 #define SAVE_DATA_HEADER_START()	\
 	QString headers;				\
 	QString axes;					\
+	static QChar listSeparator = (QLocale().decimalPoint() == QChar(',')) ? ';' : ','; \
 	QString prevChar = "";			\
 	QString str;
 
@@ -62,21 +63,21 @@
 	str = GetXAxisParameters(type).contains(varName) ? "X" : "";					\
 	str += GetYAxisParameters(type).contains(varName) ? "Y" : "";					\
 	axes += QString("\"%1\"").arg(str);											\
-	prevChar = ";";
+	prevChar = listSeparator;
 
 #define SAVE_DC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_DC, varName)
 #define SAVE_AC_DATA_HEADER(varName) SAVE_DATA_HEADER(ET_AC, varName)
 
 #define PUT_NOTES_VALUE(val) \
-	notesStr += spacer + val.first + ";" + val.second + "\n";
+	notesStr += spacer + val.first + listSeparator + val.second + "\n";
 
 #define SAVE_DATA_HEADER_END()			\
 	QString spacer = "";				\
 	QString notesStr = "";				\
-	for (int i = 0; i <= headers.count(QChar(';')); ++i) {	\
-		spacer += ";";					\
+	for (int i = 0; i <= headers.count(listSeparator); ++i) {	\
+		spacer += listSeparator;					\
 	}									\
-	notesStr += spacer + "Description" + ";" + "\"" + QString(notes.description).replace(QChar('"'), "\"\"") + "\"" + "\n"; \
+	notesStr += spacer + "Description" + listSeparator + "\"" + QString(notes.description).replace(QChar('"'), "\"\"") + "\"" + "\n"; \
 	PUT_NOTES_VALUE(notes.refElectrode); \
 	PUT_NOTES_VALUE(notes.other.workingElectrode);	\
 	PUT_NOTES_VALUE(notes.other.workingElectrodeArea); \
@@ -98,12 +99,13 @@
 
 #define SAVE_DATA_START() \
 	static QChar decimalPoint = QLocale().decimalPoint(); \
+	static QChar listSeparator = (decimalPoint == QChar(',')) ? ';' : ','; \
 	QString prevChar = "";
 
 #define SAVE_DATA(varName)	\
 	saveFile.write(prevChar.toLatin1()); \
 	saveFile.write(QString("%1").arg(container[varName].data.last(), 0, 'e').replace(QChar('.'), decimalPoint).toLatin1()); \
-	prevChar = ";";
+	prevChar = listSeparator;
 
 #define SAVE_DATA_END() \
 	saveFile.write("\n"); \

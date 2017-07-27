@@ -1852,7 +1852,8 @@ bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData>
 }
 bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileData &data) {
 	bool ret = false;
-	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, ";");
+	QChar listSeparator = (QLocale().decimalPoint() == QChar(',')) ? ';' : ',';
+	QList<QStringList> readData = QtCSV::Reader::readToList(dialogRet, listSeparator);
 
 	if (readData.size() < 13) {
 		return ret;
