@@ -43,5 +43,9 @@
         <file>Resources/zoom-in.png</file>
         <file>Resources/zoom-out.png</file>
         <file>Resources/experiment.png</file>
+        <file>Resources/pan-view.png</file>
+        <file>Resources/reset-zoom.png</file>
+        <file>Resources/show-gridline.png</file>
+        <file>Resources/zoom-to-selection.png</file>
     </qresource>
 </RCC>

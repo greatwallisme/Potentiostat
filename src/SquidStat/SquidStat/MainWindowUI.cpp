@@ -2965,7 +2965,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
-	settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	//settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
@@ -2994,22 +2994,25 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *editLinesPbt;
 	QPushButton *savePlotPbt;
 
-	auto buttonLay = new QHBoxLayout;
-	buttonLay->addStretch(1);
-	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"));
-	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"));
-	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"));
-	buttonLay->addStretch(1);
+	auto buttonLay = new QGridLayout;
+	//buttonLay->addStretch(1);
+	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"), 0, 0);
+	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"), 1, 0);
+	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"), 2, 0);
+	buttonLay->addWidget(OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
+	buttonLay->setColumnStretch(1, 1);
+	buttonLay->setRowStretch(4, 1);
 
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
-	settingsLay->addLayout(buttonLay, 5, 0, 1, -1);
-	settingsLay->setRowStretch(6, 1);
+	settingsLay->addLayout(buttonLay, 5, 0, -1, -1);
+	//settingsLay->setRowStretch(6, 1);
 
-	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
+	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
+	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
-	lay->addLayout(settingsLay, 1, 1);
-	lay->addWidget(plot, 0, 2, 2, 1);
-	lay->setColumnStretch(1, 1);
+	lay->addLayout(settingsLay, 1, 1, -1, 1);
+	lay->addWidget(plot, 1, 2, -1, 1);
+	//lay->setColumnStretch(1, 1);
 	lay->setColumnStretch(2, 1);
 
 	auto controlButtonLay = new QHBoxLayout;
@@ -3035,11 +3038,26 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	
 	QPushButton *zoomInPbt;
 	QPushButton *zoomOutPbt;
+	QPushButton *showGridlinesPbt;
+	QPushButton *zoomToSelectionPbt;
+	QPushButton *panViewPbt;
+	QPushButton *resetZoomPbt;
 
 	plotOverlayLay->setRowStretch(0, 1);
 	plotOverlayLay->setColumnStretch(0, 1);
-	plotOverlayLay->addWidget(zoomInPbt = OBJ_NAME(PBT(""), "plot-zoom-in-button"), 1, 3);
-	plotOverlayLay->addWidget(zoomOutPbt = OBJ_NAME(PBT(""), "plot-zoom-out-button"), 2, 3);
+	plotOverlayLay->addWidget(showGridlinesPbt = OBJ_NAME(PBT(""), "plot-gridlines-button"), 1, 3);
+	plotOverlayLay->addWidget(zoomToSelectionPbt = OBJ_NAME(PBT(""), "plot-zoom-to-selection-button"), 2, 3);
+	plotOverlayLay->addWidget(panViewPbt = OBJ_NAME(PBT(""), "plot-pan-view-button"), 3, 3);
+	plotOverlayLay->addWidget(resetZoomPbt = OBJ_NAME(PBT(""), "plot-reset-zoom-button"), 4, 3);
+	plotOverlayLay->addWidget(zoomInPbt = OBJ_NAME(PBT(""), "plot-zoom-in-button"), 5, 3);
+	plotOverlayLay->addWidget(zoomOutPbt = OBJ_NAME(PBT(""), "plot-zoom-out-button"), 6, 3);
+
+	showGridlinesPbt->setToolTip("Show/hide gridlines");
+	zoomToSelectionPbt->setToolTip("Zoom to selection");
+	panViewPbt->setToolTip("Pan view");
+	resetZoomPbt->setToolTip("Reset zoom");
+	zoomInPbt->setToolTip("Zoom in");
+	zoomOutPbt->setToolTip("Zoom out");
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;

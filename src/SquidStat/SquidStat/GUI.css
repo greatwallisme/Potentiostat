@@ -967,6 +967,62 @@ QScrollBar::sub-page:horizontal {
 	border: none;
 	background-color: #00000000;
 }
+#plot-gridlines-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/show-gridline.png);
+	qproperty-iconSize: 38px 38px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	padding: 0px;
+	
+	margin-bottom: 3px;
+	margin-top: 3px;
+}
+#plot-zoom-to-selection-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/zoom-to-selection.png);
+	qproperty-iconSize: 38px 38px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	padding: 0px;
+	
+	margin-bottom: 3px;
+	margin-top: 3px;
+}
+#plot-pan-view-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/pan-view.png);
+	qproperty-iconSize: 38px 38px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	padding: 0px;
+	
+	margin-bottom: 3px;
+	margin-top: 3px;
+}
+#plot-reset-zoom-button {
+	border: none;
+	background-color: #00000000;
+	
+	qproperty-icon: url(:/GUI/Resources/reset-zoom.png);
+	qproperty-iconSize: 38px 38px;
+	
+	margin: 0px;
+	margin-right: 10px;
+	padding: 0px;
+	
+	margin-bottom: 3px;
+	margin-top: 3px;
+}
 #plot-zoom-in-button {
 	border: none;
 	background-color: #00000000;
@@ -992,6 +1048,7 @@ QScrollBar::sub-page:horizontal {
 }
 QwtPlot {
 	margin: 30px;
+	margin-top: 0px;
 	border: none;
 	background-color: #ffffff;
 }
