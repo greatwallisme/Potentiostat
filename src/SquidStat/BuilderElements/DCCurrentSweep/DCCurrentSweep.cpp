@@ -67,11 +67,11 @@ QWidget* DCCurrentSweep::CreateUserInput(UserInput &inputs) const {
   _END_DROP_DOWN();
 
   ++row;
-  _INSERT_LEFT_ALIGN_COMMENT("<b>Sampling interval</b>", row, 1);
+  _INSERT_CENTERED_COMMENT("<b>Sampling interval</b>", row);
 
   ++row;
   _START_RADIO_BUTTON_GROUP(SAMPLING_MODE_OBJ_NAME);
-  _INSERT_RADIO_BUTTON("Auto-calculate (recommended)", row, 0);
+  _INSERT_RADIO_BUTTON_EXT("Auto-calculate (recommended)", row, 0, 1, -1);
   ++row;
   _INSERT_RADIO_BUTTON("Fixed interval: ", row, 0);
   _END_RADIO_BUTTON_GROUP();
@@ -79,7 +79,7 @@ QWidget* DCCurrentSweep::CreateUserInput(UserInput &inputs) const {
   _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	_SET_ROW_STRETCH(++row, 1);
-	_SET_COL_STRETCH(2, 1);
+	_SET_COL_STRETCH(4, 1);
 
 	USER_INPUT_END();
 }

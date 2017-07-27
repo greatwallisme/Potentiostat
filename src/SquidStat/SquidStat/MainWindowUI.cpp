@@ -1127,7 +1127,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	
 	paramsHeadWidget->hide();
 
-	auto *scrollAreaWidget = WDG();
+	auto *scrollAreaWidget = OBJ_NAME(new QFrame, "buider-parameters-owner");
 	QVBoxLayout *paramsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(scrollAreaWidget)));
 
 	QScrollArea *scrollArea = OBJ_NAME(new QScrollArea(), "experiment-params-scroll-area");

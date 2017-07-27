@@ -125,6 +125,13 @@
 		lay->addWidget(lbl, row, col); \
 	}
 
+#define _INSERT_CENTERED_COMMENT(text, row) \
+	{ \
+		auto lbl = OBJ_PROP(OBJ_NAME(LBL(text), "experiment-params-comment"), "comment-placement", "center"); \
+		OBJ_PROP(lbl, "experiment-params-widget", "low-margin"); \
+		lay->addWidget(lbl, row, 0, 1, -1); \
+	}
+
 #define _INSERT_TEXT_INPUT_ELEMENT(default_value, obj_name, row, col) \
 	{	\
 		auto inputsPtr = &inputs; \
@@ -203,7 +210,7 @@
 	#define _END_RADIO_BUTTON_GROUP _END_RADIO_BUTTON_GROUP_EXPERIMENT
 #endif
 
-#define _INSERT_RADIO_BUTTON(text, row, col)	\
+#define _INSERT_RADIO_BUTTON_EXT(text, row, col, rowSpan, colSpan)	\
 	{											\
 		auto button = RBT(text);				\
 		OBJ_PROP(button, "experiment-params-widget", "low-margin"); \
@@ -211,8 +218,11 @@
 		if(0 == group->checkedButton()) {		\
 			button->setChecked(true);			\
 		}										\
-		lay->addWidget(button, row, col);		\
+		lay->addWidget(button, row, col, rowSpan, colSpan);		\
 	}
+
+#define _INSERT_RADIO_BUTTON(text, row, col)	\
+		_INSERT_RADIO_BUTTON_EXT(text, row, col, 1, 1)
 
 #define _START_RADIO_BUTTON_GROUP_HORIZONTAL_LAYOUT(obj_name, row, col)	\
 	_START_RADIO_BUTTON_GROUP(obj_name);						\
@@ -271,13 +281,16 @@
 		butLay->addWidget(button);				\
 	}
 
-#define _START_DROP_DOWN(obj_name, row, col)			\
+#define _START_DROP_DOWN_EXT(obj_name, row, col, rowSpan, colSpan)			\
 	{													\
 		auto combo = OBJ_NAME(CMB(), obj_name);			\
 		OBJ_PROP(combo, "experiment-params-widget", "low-margin"); \
 		QListView *comboList = OBJ_NAME(new QListView, "combo-list"); \
 		combo->setView(comboList);						\
-		lay->addWidget(combo, row, col);
+		lay->addWidget(combo, row, col, rowSpan, colSpan);
+
+#define _START_DROP_DOWN(obj_name, row, col)			\
+		_START_DROP_DOWN_EXT(obj_name, row, col, 1, 1)
 
 #define _END_DROP_DOWN_EXPERIMENT()								\
 		auto val = settings.value(combo->objectName(), "").toString();\

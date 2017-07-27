@@ -42,7 +42,7 @@ QWidget* ConstPotElement::CreateUserInput(UserInput &inputs) const {
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("With respect to ", row, 0);
-  _START_DROP_DOWN(POTENTIAL_V_OCP_OBJ_NAME, row, 1);
+  _START_DROP_DOWN_EXT(POTENTIAL_V_OCP_OBJ_NAME, row, 1, 1, 2);
   _ADD_DROP_DOWN_ITEM("reference");
   _ADD_DROP_DOWN_ITEM("open circuit");
   _END_DROP_DOWN();
@@ -62,9 +62,9 @@ QWidget* ConstPotElement::CreateUserInput(UserInput &inputs) const {
 	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	_SET_ROW_STRETCH(++row, 1);
-	_SET_COL_STRETCH(0, 3);
-  _SET_COL_STRETCH(1, 1);
-  _SET_COL_STRETCH(2, 2);
+	_SET_COL_STRETCH(3, 1);
+  //_SET_COL_STRETCH(1, 1);
+  //_SET_COL_STRETCH(2, 2);
 
 	USER_INPUT_END();
 }

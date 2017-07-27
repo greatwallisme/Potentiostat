@@ -267,6 +267,11 @@ QPushButton#bar-button:open {
 	margin-left: 7px;
 	margin-right: 40px;
 }
+#experiment-params-comment[comment-placement="center"] {
+	qproperty-alignment: 'AlignHCenter | AlignVCenter';
+	margin-left: 0px;
+	margin-right: 0px;
+}
 #experiment-params-spacing-top {
 	min-height: 0px;
 	max-height: 0px;
@@ -331,6 +336,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	background-color: #e9f6fc;
 	max-width: 700px;
 	min-width: 700px;
+}
+#buider-parameters-owner {
+	border: none;
+	margin-right: 15px;
 }
 /*//////////////          ELEMENTS LIST        ////////////////////*/
 #elements-list-holder {

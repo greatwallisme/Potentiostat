@@ -69,7 +69,7 @@ QWidget* EISPotentiostatic::CreateUserInput(UserInput &inputs) const {
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-  _START_DROP_DOWN(DC_BIAS_VS_OCP_OBJ_NAME, row, 1);
+  _START_DROP_DOWN_EXT(DC_BIAS_VS_OCP_OBJ_NAME, row, 1, 1, -1);
   _ADD_DROP_DOWN_ITEM("reference");
   _ADD_DROP_DOWN_ITEM("open circuit");
   _END_DROP_DOWN();

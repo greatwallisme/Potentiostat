@@ -51,7 +51,7 @@ QWidget* NormalPulseVoltammetry::CreateUserInput(UserInput &inputs) const {
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
-  _START_DROP_DOWN(START_V_VS_OCP_OBJ_NAME, row, 1);
+  _START_DROP_DOWN_EXT(START_V_VS_OCP_OBJ_NAME, row, 1, 1, -1);
   _ADD_DROP_DOWN_ITEM("open circuit");
   _ADD_DROP_DOWN_ITEM("reference");
   _END_DROP_DOWN();
@@ -68,7 +68,7 @@ QWidget* NormalPulseVoltammetry::CreateUserInput(UserInput &inputs) const {
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-  _START_DROP_DOWN(FINAL_V_VS_OCP_OBJ_NAME, row, 1);
+  _START_DROP_DOWN_EXT(FINAL_V_VS_OCP_OBJ_NAME, row, 1, 1, -1);
   _ADD_DROP_DOWN_ITEM("open circuit");
   _ADD_DROP_DOWN_ITEM("reference");
   _END_DROP_DOWN();
@@ -79,30 +79,30 @@ QWidget* NormalPulseVoltammetry::CreateUserInput(UserInput &inputs) const {
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Pulse width = ", row, 0);
   _INSERT_TEXT_INPUT(PULSE_WIDTH_DEFAULT, PULSE_WIDTH_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
+  _INSERT_LEFT_ALIGN_COMMENT("ms", row, 2);
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Pulse period = ", row, 0);
   _INSERT_TEXT_INPUT(PULSE_PERIOD_DEFAULT, PULSE_PERIOD_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
+  _INSERT_LEFT_ALIGN_COMMENT("ms", row, 2);
 
   ++row;
   _INSERT_VERTICAL_SPACING(row);
 
   ++row;
-  _INSERT_LEFT_ALIGN_COMMENT("<b>Current ranging</b>", row, 1);
+  _INSERT_CENTERED_COMMENT("<b>Current ranging</b>", row);
 
   ++row;
   _START_RADIO_BUTTON_GROUP(AUTORANGE_MODE_OBJ_NAME);
-  _INSERT_RADIO_BUTTON("Autorange", row, 1);
+  _INSERT_RADIO_BUTTON("Autorange", row, 0);
   ++row;
-  _INSERT_RADIO_BUTTON("Fixed range (based on", row, 1);
+  _INSERT_RADIO_BUTTON_EXT("Fixed range (based on maximum current)", row, 0, 1, -1);
   _END_RADIO_BUTTON_GROUP();
-  ++row;
-  _INSERT_LEFT_ALIGN_COMMENT("       maximum current)", row, 1);
+  //++row;
+  //_INSERT_LEFT_ALIGN_COMMENT("       maximum current)", row, 1);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum expected current: ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Max. expected current: ", row, 0);
   _INSERT_TEXT_INPUT(MAX_CURRENT_DEFAULT, MAX_CURRENT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(MAX_CURRENT_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mA");
