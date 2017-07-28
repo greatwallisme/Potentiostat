@@ -1043,12 +1043,13 @@ QScrollBar::sub-page:horizontal {
 	
 	margin: 0px;
 	margin-right: 10px;
-	margin-bottom: 10px;
+	margin-bottom: 100px;
 	padding: 0px;
 }
 QwtPlot {
 	margin: 30px;
 	margin-top: 0px;
+	margin-right: 0px;
 	border: none;
 	background-color: #ffffff;
 }

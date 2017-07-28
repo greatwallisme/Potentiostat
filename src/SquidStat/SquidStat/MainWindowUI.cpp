@@ -2730,6 +2730,13 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 
 	return !dialogCanceled;
 }
+void MainWindowUI::ResetAxis(MainWindowUI::PlotHandler &handler, QwtPlot::Axis axis) {
+	AxisParameters &axisParams(handler.axisParams[axis]);
+
+	axisParams.max.autoScale = true;
+	axisParams.min.autoScale = true;
+	axisParams.step.autoScale = true;
+}
 bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHandler &handler) {
 	bool ret = false;
 	if ((axis == QwtPlot::yRight) && !handler.plot->axisEnabled(axis)) {
@@ -2813,95 +2820,6 @@ bool MainWindowUI::ApplyNewAxisParams(QwtPlot::Axis axis, MainWindowUI::PlotHand
 			ret = true;
 		}
 	}
-	/*
-	else if (!axisParams.min.autoScale && !axisParams.max.autoScale) {
-		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
-		double min = axisParams.min.val;
-		double max = axisParams.max.val;
-
-		if (plot->axisAutoScale(axis) ||
-			(min != plot->axisInterval(axis).minValue()) ||
-			(max != plot->axisInterval(axis).maxValue()) ||
-			(step != plot->axisStepSize(axis))) {
-			plot->setAxisScale(axis, min, max, step);
-			ret = true;
-		}
-	}
-	else if (axisParams.min.autoScale) {
-		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
-		double min;
-		double max = axisParams.max.val;
-		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			double curMin;
-			switch (axis) {
-				case QwtPlot::xBottom:
-				case QwtPlot::xTop:
-					curMin = qMin(it->curve1->minXValue(), it->curve2->minXValue());
-					break;
-				case QwtPlot::yLeft:
-					curMin = it->curve1->minYValue();
-					break;
-				case QwtPlot::yRight:
-					curMin = it->curve2->minYValue();
-					break;
-			}
-
-			if (it == handler.data.begin()) {
-				min = curMin;
-				continue;
-			}
-
-			if (curMin < min) {
-				min = curMin;
-			}
-		}
-
-		if (plot->axisAutoScale(axis) ||
-			(min != plot->axisInterval(axis).minValue()) ||
-			(max != plot->axisInterval(axis).maxValue()) ||
-			(step != plot->axisStepSize(axis))) {
-			plot->setAxisScale(axis, min, max, step);
-			ret = true;
-		}
-	}
-	else if (axisParams.max.autoScale) {
-		double step = axisParams.step.autoScale ? (double)0.0 : axisParams.step.val;
-		double max;
-		double min = axisParams.min.val;
-		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			double curMax;
-			switch (axis) {
-				case QwtPlot::xBottom:
-				case QwtPlot::xTop:
-					curMax = qMax(it->curve1->maxXValue(), it->curve2->maxXValue());
-					break;
-				case QwtPlot::yLeft:
-					curMax = it->curve1->maxYValue();
-					break;
-				case QwtPlot::yRight:
-					curMax = it->curve2->maxYValue();
-					break;
-			}
-
-			if (it == handler.data.begin()) {
-				max = curMax;
-				continue;
-			}
-
-			if (curMax > max) {
-				max = curMax;
-			}
-		}
-
-		if (plot->axisAutoScale(axis) ||
-			(min != plot->axisInterval(axis).minValue()) ||
-			(max != plot->axisInterval(axis).maxValue()) ||
-			(step != plot->axisStepSize(axis))) {
-			plot->setAxisScale(axis, min, max, step);
-			ret = true;
-		}
-	}
-	//*/
 
 	return ret;
 }
@@ -3007,14 +2925,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	settingsLay->addLayout(buttonLay, 5, 0, -1, -1);
 	//settingsLay->setRowStretch(6, 1);
 
-	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
-	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
-	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
-	lay->addLayout(settingsLay, 1, 1, -1, 1);
-	lay->addWidget(plot, 1, 2, -1, 1);
-	//lay->setColumnStretch(1, 1);
-	lay->setColumnStretch(2, 1);
-
 	auto controlButtonLay = new QHBoxLayout;
 	QPushButton *pauseExperiment;
 	QPushButton *stopExperiment;
@@ -3034,7 +2944,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	auto plotOverlay = OBJ_NAME(new QWidget(plotCanvas), "plot-canvas-overlay");
 	plotCanvas->installEventFilter(new PlotOverlayEventFilter(plotCanvas, plotOverlay));
 
-	auto plotOverlayLay = NO_SPACING(NO_MARGIN(new QGridLayout(plotOverlay)));
+	auto plotButtonsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout));
 	
 	QPushButton *zoomInPbt;
 	QPushButton *zoomOutPbt;
@@ -3043,14 +2953,13 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *panViewPbt;
 	QPushButton *resetZoomPbt;
 
-	plotOverlayLay->setRowStretch(0, 1);
-	plotOverlayLay->setColumnStretch(0, 1);
-	plotOverlayLay->addWidget(showGridlinesPbt = OBJ_NAME(PBT(""), "plot-gridlines-button"), 1, 3);
-	plotOverlayLay->addWidget(zoomToSelectionPbt = OBJ_NAME(PBT(""), "plot-zoom-to-selection-button"), 2, 3);
-	plotOverlayLay->addWidget(panViewPbt = OBJ_NAME(PBT(""), "plot-pan-view-button"), 3, 3);
-	plotOverlayLay->addWidget(resetZoomPbt = OBJ_NAME(PBT(""), "plot-reset-zoom-button"), 4, 3);
-	plotOverlayLay->addWidget(zoomInPbt = OBJ_NAME(PBT(""), "plot-zoom-in-button"), 5, 3);
-	plotOverlayLay->addWidget(zoomOutPbt = OBJ_NAME(PBT(""), "plot-zoom-out-button"), 6, 3);
+	plotButtonsLay->addStretch(1);
+	plotButtonsLay->addWidget(showGridlinesPbt = OBJ_NAME(PBT(""), "plot-gridlines-button"));
+	plotButtonsLay->addWidget(zoomToSelectionPbt = OBJ_NAME(PBT(""), "plot-zoom-to-selection-button"));
+	plotButtonsLay->addWidget(panViewPbt = OBJ_NAME(PBT(""), "plot-pan-view-button"));
+	plotButtonsLay->addWidget(resetZoomPbt = OBJ_NAME(PBT(""), "plot-reset-zoom-button"));
+	plotButtonsLay->addWidget(zoomInPbt = OBJ_NAME(PBT(""), "plot-zoom-in-button"));
+	plotButtonsLay->addWidget(zoomOutPbt = OBJ_NAME(PBT(""), "plot-zoom-out-button"));
 
 	showGridlinesPbt->setToolTip("Show/hide gridlines");
 	zoomToSelectionPbt->setToolTip("Zoom to selection");
@@ -3058,6 +2967,15 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	resetZoomPbt->setToolTip("Reset zoom");
 	zoomInPbt->setToolTip("Zoom in");
 	zoomOutPbt->setToolTip("Zoom out");
+
+	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
+	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
+	lay->addLayout(settingsLay, 1, 1, -1, 1);
+	lay->addWidget(plot, 1, 2, -1, 1);
+	lay->addLayout(plotButtonsLay, 1, 3, -1, 1);
+	//lay->setColumnStretch(1, 1);
+	lay->setColumnStretch(2, 1);
 
 	PlotHandler plotHandler;
 	plotHandler.plot = plot;
@@ -3101,6 +3019,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		if (needReplot) {
 			plot->replot();
 		}
+	});
+
+	plotHandler.plotTabConnections << CONNECT(resetZoomPbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+		ResetAxis(handler, QwtPlot::xBottom);
+		ResetAxis(handler, QwtPlot::yLeft);
+		ResetAxis(handler, QwtPlot::yRight);
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+		ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		ApplyNewAxisParams(QwtPlot::yRight, handler);
+
+		plot->replot();
 	});
 
 	#define PROPERTY_MOUSE_MOVE_PRESSED			"mouse-move-pressed"
