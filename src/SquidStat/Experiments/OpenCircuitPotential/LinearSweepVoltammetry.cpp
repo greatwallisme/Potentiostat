@@ -160,7 +160,7 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
   exp.DCPoint_pot.dIdtMin = 0;
   exp.DCPoint_pot.Imax = MAX_CURRENT;
   exp.DCPoint_pot.Imin = 0;
-  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
+  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
   exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP;
   exp.numPlays = 1;
 
@@ -174,9 +174,9 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
   //TODO: send filtersize SOMEWHERE to ignore N points
   uint32_t filterSize = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 
-  exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
+  exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
   exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
-	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, endVoltage);
+	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, endVoltage);
   exp.DCSweep_pot.VEndVsOCP = endVoltageVsOCP;
 	exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
@@ -224,7 +224,7 @@ void LinearSweepVoltammetry::PushNewDcData(const ExperimentalDcData &expData, Da
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCdata.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCdata.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 

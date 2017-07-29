@@ -143,9 +143,9 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   uint32_t numPoints = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dVdt, samplingInterval);
   (const_cast<DCPotentialSweepElement*>(this))->setNumIgnoredPoints(numPoints);
 
-	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VStart);
+	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VStart);
   exp.DCSweep_pot.VStartVsOCP = VStartVsOCP;
-  exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VEnd);
+  exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VEnd);
   exp.DCSweep_pot.VEndVsOCP = VEndVsOCP;
   exp.DCSweep_pot.Imax = maxCurrent;
 	exp.MaxPlays = 1;

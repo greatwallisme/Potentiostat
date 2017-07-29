@@ -114,8 +114,8 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
   exp.DCPoint_galv.dVdtMin = 0;
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.currentRangeMode, biasCurrent);
-  exp.DCPoint_galv.Vmax = 32767;
-  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
   PUSH_NEW_NODE_DATA();
 
   for (int i = 0; i < frequencyList.count(); i++)

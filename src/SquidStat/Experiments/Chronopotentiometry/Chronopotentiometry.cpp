@@ -200,8 +200,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i1);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i1);
-  exp.DCPoint_galv.Vmax = 32767;
-  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
   exp.DCPoint_galv.dVdtMin = 0;
 	exp.MaxPlays = 1;
   if(exp.tMax != 0)
@@ -230,8 +230,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i3);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i3);
-  exp.DCPoint_galv.Vmax = 32767;
-  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
   exp.DCPoint_galv.dVdtMin = 0;
   exp.MaxPlays = 1;
   if (exp.tMax != 0)
@@ -245,8 +245,8 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
   exp.DCPoint_galv.Irange = exp.currentRangeMode = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, i4);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, i4);
-  exp.DCPoint_galv.Vmax = 32767;
-  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
   exp.DCPoint_galv.dVdtMin = 0;
   exp.MaxPlays = 1;
   if (exp.tMax != 0)

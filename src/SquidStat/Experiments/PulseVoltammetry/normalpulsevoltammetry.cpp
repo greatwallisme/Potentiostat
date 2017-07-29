@@ -137,7 +137,7 @@ NodesData NormalPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	exp.tMax = restTime * SECONDS;
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.1);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
 	exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP_str.contains("open circuit");
   exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
@@ -151,9 +151,9 @@ NodesData NormalPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, pulsePeriod, pulseWidth, &exp);
-  exp.DCPulseNormal_pot.VBaselineUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+  exp.DCPulseNormal_pot.VBaselineUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
   exp.DCPulseNormal_pot.VBaselineVsOCP = startVoltageVsOCP_str.contains("open circuit");
-  exp.DCPulseNormal_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VFinal);
+  exp.DCPulseNormal_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VFinal);
 	exp.DCPulseNormal_pot.VEndVsOCP = VFinalVsOCP_str.contains("open circuit");
   exp.DCPulseNormal_pot.VStep = (float)((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep);
 	exp.MaxPlays = 1;

@@ -97,7 +97,7 @@ QWidget* DiffPulseVoltammetry::CreateUserInput(UserInput &inputs) const {
   _INSERT_VERTICAL_SPACING(row);
 
   ++row;
-  _INSERT_CENTERED_COMMENT("<b>Current ranging</b>", row, 1);
+  _INSERT_CENTERED_COMMENT("<b>Current ranging</b>", row);
 
   ++row;
   _START_RADIO_BUTTON_GROUP(AUTORANGE_MODE_OBJ_NAME);
@@ -145,9 +145,9 @@ NodesData DiffPulseVoltammetry::GetNodesData(const UserInput &inputs, const Cali
   exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = RangeMode_str.contains("Auto") ? AUTORANGE : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, (qint32)round(pulsePeriod), (qint32)round(pulseWidth), &exp);
-  exp.DCPulseDiff_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+  exp.DCPulseDiff_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
   exp.DCPulseDiff_pot.VStartVsOCP = inputs[START_V_VS_OCP_OBJ_NAME].toString().contains("open circuit");
-  exp.DCPulseDiff_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VFinal);
+  exp.DCPulseDiff_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VFinal);
   exp.DCPulseDiff_pot.VEndVsOCP = inputs[FINAL_V_VS_OCP_OBJ_NAME].toString().contains("open circuit");
   exp.DCPulseDiff_pot.VStep = (float)((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep);
   exp.DCPulseDiff_pot.VHeight = (int16_t)round((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * pulseHeight);

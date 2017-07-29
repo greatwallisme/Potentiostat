@@ -83,7 +83,7 @@ NodesData ConstPotElement::GetNodesData(const UserInput &inputs, const Calibrati
 	exp.tMax = (uint64_t)(duration * SECONDS);
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble());
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, inputs[CONST_POTENTIAL_OBJ_NAME].toDouble());
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, inputs[CONST_POTENTIAL_OBJ_NAME].toDouble());
   exp.DCPoint_pot.VPointVsOCP = vsOCP;
   exp.DCPoint_pot.Imax = MAX_CURRENT;
   exp.DCPoint_pot.Imin = 0;

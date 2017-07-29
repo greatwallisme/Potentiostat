@@ -97,8 +97,8 @@ NodesData ConstCurrentElement::GetNodesData(const UserInput &inputs, const Calib
   exp.DCPoint_galv.Irange = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, constCurrent);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, constCurrent);
   exp.DCPoint_galv.dVdtMin = 0;
-  exp.DCPoint_galv.Vmax = 32767;
-  exp.DCPoint_galv.Vmin = -32768;
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

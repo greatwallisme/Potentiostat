@@ -316,7 +316,7 @@ int16_t ExperimentCalcHelperClass::GetBINCurrent(const cal_t * calData, currentR
 	return binCurrent;
 }
 
-int16_t ExperimentCalcHelperClass::GetBINVoltage(const cal_t * calData, double targetVoltage)
+int16_t ExperimentCalcHelperClass::GetBINVoltageForDAC(const cal_t * calData, double targetVoltage)
 {
 	float slope = targetVoltage > 0 ? calData->m_DACdcP_V : calData->m_DACdcN_V;
 	int32_t binVolt = (int32_t)(targetVoltage * slope + calData->b_DACdc_V);
@@ -361,6 +361,20 @@ double ExperimentCalcHelperClass::GetUnitsMultiplier(QString units_str)
     return 1e6;
   else if (units_str.contains("Hz"))    //this else-if must come after the other xHz units
     return 1;
+
+  /* resistance units */
+  else if (units_str.contains("kOhms"))
+    return 1e3;
+  else if (units_str.contains("MOhms"))
+    return 1e6;
+  else if (units_str.contains("Ohms"))
+    return 1;
+
+  /* power units */
+  else if (units_str.contains("mW"))
+    return 1;
+  else if (units_str.contains("W"))
+    return 1e3;
 
   /* time units */
   else if (units_str.contains("min"))

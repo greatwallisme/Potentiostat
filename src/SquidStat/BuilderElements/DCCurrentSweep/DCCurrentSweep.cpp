@@ -113,8 +113,8 @@ NodesData DCCurrentSweep::GetNodesData(const UserInput &inputs, const Calibratio
   exp.DCSweep_galv.IStart = ExperimentCalcHelperClass::GetBINCurrent(&calData, currentRange, IStart);
   exp.DCSweep_galv.IEnd = ExperimentCalcHelperClass::GetBINCurrent(&calData, currentRange, IEnd);
   exp.DCSweep_galv.Irange = currentRange;
-  exp.DCSweep_galv.Vmin = -32768;
-  exp.DCSweep_galv.Vmax = 32767;
+  exp.DCSweep_galv.Vmin = -MAX_VOLTAGE;
+  exp.DCSweep_galv.Vmax = MAX_VOLTAGE;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/Experiments">
+        <file alias="LinearSweepVoltammetry">Resources/experiment.png</file>
+    </qresource>
+</RCC>

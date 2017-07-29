@@ -192,7 +192,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = 2e8;
   exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 0.25);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
 	exp.DCPoint_pot.VPointVsOCP = startVoltageVsOCP;
 	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
@@ -210,9 +210,9 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   //TODO: send filtersize SOMEWHERE to ignore N points
   uint32_t filterSize = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 
-	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
 	exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
-	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);
 	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
 	exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
@@ -228,9 +228,9 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   //TODO: send filtersize SOMEWHERE to ignore N points
   uint32_t filtersize = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 
-	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);
 	exp.DCSweep_pot.VStartVsOCP = upperVoltageVsOCP;
-	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
+	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, lowerVoltage);
 	exp.DCSweep_pot.VEndVsOCP = lowerVoltageVsOCP;
   exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
@@ -247,9 +247,9 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   //TODO: send filtersize SOMEWHERE to ignore N points
   uint32_t _filterSize = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
 
-  exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, lowerVoltage);
+  exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, lowerVoltage);
 	exp.DCSweep_pot.VStartVsOCP = lowerVoltageVsOCP;
-  exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, upperVoltage);
+  exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);
 	exp.DCSweep_pot.VEndVsOCP = upperVoltageVsOCP;
   exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = cycles;
@@ -298,7 +298,7 @@ void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 

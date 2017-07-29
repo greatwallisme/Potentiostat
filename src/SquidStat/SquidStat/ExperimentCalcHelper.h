@@ -18,6 +18,7 @@
 #define SIGNAL_GEN_RESOLUTION 1024
 #define MIN_TICKS_FOR_USB_TRANSMISSION (80 * MILLISECONDS)
 #define MAX_CURRENT 1.0e10
+#define MAX_VOLTAGE 30
 
 class ExperimentCalcHelperClass
 {
@@ -30,7 +31,7 @@ public:
   static void GetSamplingParameters_pulse(HardwareModel_t HWversion, quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode);
 	static currentRange_t GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent);
 	static int16_t GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent);
-	static int16_t GetBINVoltage(const cal_t * calData, double targetVoltage);
+	static int16_t GetBINVoltageForDAC(const cal_t * calData, double targetVoltage);
   static ProcessedDCData ProcessDCDataPoint(const cal_t * calData, ExperimentalDcData rawData);
   static double GetUnitsMultiplier(QString units_str);
 

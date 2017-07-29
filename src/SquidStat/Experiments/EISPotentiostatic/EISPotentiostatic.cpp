@@ -149,7 +149,7 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
     exp.isTail = false;
     exp.nodeType = FRA_NODE_POT;
     exp.FRA_pot_node.frequency = (float)frequencyList[i];
-    exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VBias);
+    exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VBias);
     exp.FRA_pot_node.VBiasVsOCP = VBiasVsOCP;
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, amplitude);
     PUSH_NEW_NODE_DATA();

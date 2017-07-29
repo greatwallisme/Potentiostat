@@ -137,9 +137,9 @@ NodesData NormalPulseVoltammetry::GetNodesData(const UserInput &inputs, const Ca
   exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = RangeMode_str.contains("Auto") ? AUTORANGE : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, (qint32)round(pulsePeriod), (qint32)round(pulseWidth), &exp);
-  exp.DCPulseNormal_pot.VBaselineUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, startVoltage);
+  exp.DCPulseNormal_pot.VBaselineUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
   exp.DCPulseNormal_pot.VBaselineVsOCP = inputs[START_V_VS_OCP_OBJ_NAME].toString().contains("open circuit");
-  exp.DCPulseNormal_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, VFinal);
+  exp.DCPulseNormal_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VFinal);
   exp.DCPulseNormal_pot.VEndVsOCP = inputs[FINAL_V_VS_OCP_OBJ_NAME].toString().contains("open circuit");
   exp.DCPulseNormal_pot.VStep = (float)((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep);
   exp.MaxPlays = 1;

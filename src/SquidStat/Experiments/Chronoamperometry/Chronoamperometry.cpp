@@ -211,7 +211,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
   exp.tMax = t1 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t1Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v1);
+  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, v1);
 	exp.DCPoint_pot.VPointVsOCP = _ocp1;
 	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
@@ -227,7 +227,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = t2 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t2Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v2);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, v2);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
@@ -243,7 +243,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = t3 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t3Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v3);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, v3);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
@@ -259,7 +259,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMax = t4 * SECONDS * ExperimentCalcHelperClass::GetUnitsMultiplier(t4Units_str);
   exp.currentRangeMode = AUTORANGE;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
-	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltage(&calData, v4);
+	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, v4);
 	exp.DCPoint_pot.VPointVsOCP = false;
 	exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = 0;
