@@ -6,6 +6,7 @@
 #include <qwt_legend.h>
 #include <qwt_scale_widget.h>
 #include <qwt_text_label.h>
+#include <qwt_plot_grid.h>
 
 #include "UIHelper.hpp"
 
@@ -3021,6 +3022,32 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	});
 
+	#define PROPERTY_PAN_VIEW_PRESSED			"pan-view-pressed"
+	#define PROPERTY_ZOOM_TO_SELECTION_PRESSED	"zoom-to-selection-pressed"
+	plotHandler.plotTabConnections << CONNECT(panViewPbt, &QPushButton::clicked, [=]() {
+		plotOverlay->setProperty(PROPERTY_PAN_VIEW_PRESSED, true);
+		plotOverlay->setProperty(PROPERTY_ZOOM_TO_SELECTION_PRESSED, false);
+	});
+	plotHandler.plotTabConnections << CONNECT(zoomToSelectionPbt, &QPushButton::clicked, [=]() {
+		plotOverlay->setProperty(PROPERTY_PAN_VIEW_PRESSED, false);
+		plotOverlay->setProperty(PROPERTY_ZOOM_TO_SELECTION_PRESSED, true);
+	});
+	
+	QwtPlotGrid *grid = new QwtPlotGrid();
+	grid->setPen(QColor("#7f4d565f"), 1, Qt::DashLine);
+	grid->attach(plot);
+	grid->hide();
+
+	plotHandler.plotTabConnections << CONNECT(showGridlinesPbt, &QPushButton::clicked, [=]() {
+		if (grid->isVisible()) {
+			grid->hide();
+		}
+		else {
+			grid->show();
+		}
+		plot->replot();
+	});
+
 	plotHandler.plotTabConnections << CONNECT(resetZoomPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ResetAxis(handler, QwtPlot::xBottom);
@@ -3045,6 +3072,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define PROPERTY_MOUSE_CURVE_POINT_WIDTH	"mouse-curve-point-width"
 
 	plotOverlay->setAttribute(Qt::WA_Hover, true);
+	plotOverlay->setProperty(PROPERTY_PAN_VIEW_PRESSED, false);
+	plotOverlay->setProperty(PROPERTY_ZOOM_TO_SELECTION_PRESSED, false);
 	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, false);
 	plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, QPoint(0, 0));
 	plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, false);
@@ -3067,6 +3096,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		auto curvePoint = obj->property(PROPERTY_MOUSE_CURVE_POINT).toPointF();
 		auto pointColor = QColor(obj->property(PROPERTY_MOUSE_CURVE_POINT_COLOR).toString());
 		auto penWidth = obj->property(PROPERTY_MOUSE_CURVE_POINT_WIDTH).toDouble();
+		auto panViewPressed = obj->property(PROPERTY_PAN_VIEW_PRESSED).toBool();
+		auto zoomToSelectionPressed = obj->property(PROPERTY_ZOOM_TO_SELECTION_PRESSED).toBool();
 
 		QWidget *w = qobject_cast<QWidget*>(obj);
 
@@ -3166,17 +3197,18 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 
 		case QEvent::MouseButtonPress:
-			if( !grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton) ) {
+			if( !grabbed && panViewPressed ) {
 				pressed = true;
 				startPoint = ((QMouseEvent*)e)->pos();
 				ret = true;
 			}
-			if( !pressed && (((QMouseEvent*)e)->button() == Qt::LeftButton) ) {
+			if( !pressed && zoomToSelectionPressed ) {
 				grabbed = true;
 				grabbedPoint = ((QMouseEvent*)e)->pos();
 				grabbedEndPoint = grabbedPoint;
 				ret = true;
 			}
+			/*
 			if (grabbed && (((QMouseEvent*)e)->button() == Qt::RightButton)) {
 				grabbed = false;
 
@@ -3186,6 +3218,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 				ret = true;
 			}
+			//*/
 			break;
 
 		case QEvent::MouseMove:
@@ -3223,11 +3256,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 
 		case QEvent::MouseButtonRelease:
-			if (pressed && ((QMouseEvent*)e)->button() == Qt::RightButton) {
+			if (pressed && panViewPressed) {
 				pressed = false;
 				ret = true;
 			}
-			if (grabbed && ((QMouseEvent*)e)->button() == Qt::LeftButton) {
+			if (grabbed && zoomToSelectionPressed) {
 				grabbed = false;
 
 				if ((grabbedPoint.x() == grabbedEndPoint.x()) && (grabbedPoint.y() == grabbedEndPoint.y()) ) {
@@ -3291,16 +3324,18 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 		}
 
-		plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, startPoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, pressed);
-		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, grabbedPoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, grabbedEndPoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, grabbed);
-		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT, curvePoint);
-		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_VALID, curvePointValid);
-		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_COLOR, pointColor.name());
-		plotOverlay->setProperty(PROPERTY_MOUSE_CURVE_POINT_WIDTH, penWidth);
-		return ret; 
+		obj->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, startPoint);
+		obj->setProperty(PROPERTY_MOUSE_MOVE_PRESSED, pressed);
+		obj->setProperty(PROPERTY_MOUSE_GRAB_PRESSED_POINT, grabbedPoint);
+		obj->setProperty(PROPERTY_MOUSE_GRAB_END_POINT, grabbedEndPoint);
+		obj->setProperty(PROPERTY_MOUSE_GRAB_PRESSED, grabbed);
+		obj->setProperty(PROPERTY_MOUSE_CURVE_POINT, curvePoint);
+		obj->setProperty(PROPERTY_MOUSE_CURVE_POINT_VALID, curvePointValid);
+		obj->setProperty(PROPERTY_MOUSE_CURVE_POINT_COLOR, pointColor.name());
+		obj->setProperty(PROPERTY_MOUSE_CURVE_POINT_WIDTH, penWidth);
+		obj->setProperty(PROPERTY_PAN_VIEW_PRESSED, panViewPressed);
+		obj->setProperty(PROPERTY_ZOOM_TO_SELECTION_PRESSED, zoomToSelectionPressed);
+		return ret;
 	}));
 
 	plot->axisWidget(QwtPlot::yLeft)->installEventFilter(new PlotEventFilter(w, [=]() {
