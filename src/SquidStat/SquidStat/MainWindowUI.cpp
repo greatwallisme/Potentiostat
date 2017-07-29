@@ -2937,7 +2937,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		stopExperiment->hide();
 	}
 
-	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
 
 	auto plotCanvas = plot->canvas();
 
@@ -2971,9 +2970,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
 	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
-	lay->addLayout(settingsLay, 1, 1, -1, 1);
-	lay->addWidget(plot, 1, 2, -1, 1);
-	lay->addLayout(plotButtonsLay, 1, 3, -1, 1);
+	lay->addLayout(settingsLay, 1, 1);
+	lay->addWidget(plot, 1, 2);
+	lay->addLayout(plotButtonsLay, 1, 3);
+	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
 	//lay->setColumnStretch(1, 1);
 	lay->setColumnStretch(2, 1);
 
