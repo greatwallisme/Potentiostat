@@ -1545,7 +1545,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	descriptionHelpLay->addWidget(descriptionWidget);
 	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-bottom"));
 
-	auto *paramsWidget = WDG();
+	auto *paramsWidget = OBJ_NAME(WDG(), "experiment-parameters-owner");
 	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
 
 	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
@@ -1559,13 +1559,16 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	pauseExpPbt->hide();
 	stopExpPbt->hide();
 
-	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	//auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	auto *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout()));
 
+	/*
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addWidget(pauseExpPbt);
 	buttonLay->addWidget(stopExpPbt);
 	buttonLay->addStretch(1);
+	//*/
 
 	auto paramsHeadWidget = WDG();
 	paramsHeadWidget->hide();
@@ -1580,11 +1583,21 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto hwList = OBJ_NAME(CMB(), "hw-list-combo");
 	hwList->setView(OBJ_NAME(new QListView, "combo-list"));
 
+	/*
 	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
 	paramsHeadWidgetLay->addWidget(hwList, 1, 0);
 	paramsHeadWidgetLay->addWidget(channelEdit, 1, 1);
+	//*/
 	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"), 2, 0, 1, 3);
 	paramsHeadWidgetLay->setColumnStretch(2, 1);
+
+	buttonLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
+	buttonLay->addWidget(hwList, 1, 0);
+	buttonLay->addWidget(channelEdit, 1, 1);
+	buttonLay->addWidget(startExpPbt, 1, 2);
+	buttonLay->addWidget(pauseExpPbt, 1, 3);
+	buttonLay->addWidget(stopExpPbt, 1, 4);
+	buttonLay->setColumnStretch(5, 1);
 
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
