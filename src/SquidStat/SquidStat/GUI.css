@@ -7,8 +7,8 @@
 QMainWindow {
 	min-width: 1366px;
 	min-height: 768px;
-	max-width: 1366px;
-	max-height: 768px;
+	/*max-width: 1366px;
+	max-height: 768px;*/
 }
 
 QWidget {
@@ -196,8 +196,6 @@ QPushButton#bar-button:open {
 #experiment-description-owner {
 	border: none;
 	border-right: 1px solid #e7e7e7;
-	max-width: 400px;
-	min-width: 400px;
 }
 #experiment-description-spacing-top {
 	min-height: 100px;
@@ -245,6 +243,10 @@ QPushButton#bar-button:open {
 	padding-right: 15px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
+#experiment-parameters-owner {
+	max-width: 666px;
+	min-width: 666px;
+}
 #hw-list-combo {
 	min-width: 150px;
 }
@@ -303,6 +305,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	min-height: 40px;
 	margin: 10px;
+	margin-left: 0px;
 	padding-left: 25px;
 	padding-right: 25px;
 	
@@ -334,12 +337,14 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	border-right: 1px solid #cbe6f1;
 	background-color: #e9f6fc;
-	max-width: 700px;
-	min-width: 700px;
 }
 #buider-parameters-owner {
 	border: none;
 	margin-right: 15px;
+}
+#node-params-owner {
+	max-width: 366px;
+	min-width: 366px;
 }
 /*//////////////          ELEMENTS LIST        ////////////////////*/
 #elements-list-holder {
@@ -701,10 +706,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 }
 #notes-dialog {
-	min-height: 600px;
-	max-height: 600px;
-	min-width: 550px;
-	max-width: 550px;
+	min-height: 950px;
+	/*max-height: 600px;*/
+	min-width: 660px;
+	/*max-width: 550px;*/
 	border: 1px solid #7b1a1e;
 }
 #experimental-notes-text-edit {
@@ -729,6 +734,18 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-right: 15px;
 	margin-top: 17px;
 	qproperty-alignment: 'AlignRight | AlignVCenter';
+}
+#notes-dialog QRadioButton,
+#notes-dialog QLabel,
+#notes-dialog QComboBox,
+#notes-dialog QLineEdit {
+	margin-top: 0px;
+	margin-bottom: 0px;
+	min-height: 30px;
+	max-height: 30px;
+}
+#notes-dialog #heading-label {
+	margin-top: 15px;
 }
 /*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
 #curve-params-dialog {

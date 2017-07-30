@@ -66,6 +66,8 @@
 #include <QToolTip>
 #include <QTimer>
 
+#include <QDesktopServices>
+
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
 
@@ -187,6 +189,8 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
+
+	ui.newDataTab.buildExperimentButton = pbt;
 
 	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
@@ -1176,6 +1180,27 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 		builder->RemoveSelection();
 	};
 
+	CONNECT(mw, &MainWindow::EditCustomExperiment, [=](const CustomExperiment &_ce) {
+		CustomExperiment ce = _ce;
+		tabBar->insertTab(tabBar->count() - 1, ce.name);
+
+		const QUuid id = QUuid::createUuid();
+		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
+
+		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 2);
+
+		builderTabs.builders[id].fileName = ce.fileName;
+		builderTabs.builders[id].name = ce.name;
+		builderTabs.builders[id].globalMult->setValue(ce.bc.repeats);
+
+		MainWindow::FillElementPointers(ce.bc, elementsPtrMap);
+
+		builderTabs.builders[id].builder->SetupNewContainer(ce.bc);
+
+		ui.newDataTab.buildExperimentButton->click();
+	});
+
 	CONNECT(tabBar, &QTabBar::tabBarClicked, [=](int index) {
 		if (index != tabBar->count() - 1) {
 			//QMessageBox::information(mw, QString(index), "");
@@ -1281,14 +1306,14 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	references["Ag/AgCl in 0.1M KCl"] = 0.2894;
 	references["Ag/AgCl in 1.0M KCl"] = 0.2368;
 	references["Ag/AgCl in saturated KCl"] = 0.1976;
-  references["Calomel in 0.1M KCl"] = 0.3337;
-  references["Calomel in 1.0M KCl"] = 0.2807;
-  references["Calomel in saturated KCl"] = 0.2415;
-  references["Lead sulphate"] = -0.2760;
-  references["Mercury sulphate in 0.5M H2SO4"] = 0.6820;
-  references["Mercury sulphate in saturated K2SO4"] = 0.6500;
-  references["Mercury oxide in 0.1M NaOH"] = 0.1650;
-  references["Mercury oxide in 1.0M NaOH"] = 0.1400;
+	references["Calomel in 0.1M KCl"] = 0.3337;
+	references["Calomel in 1.0M KCl"] = 0.2807;
+	references["Calomel in saturated KCl"] = 0.2415;
+	references["Lead sulphate"] = -0.2760;
+	references["Mercury sulphate in 0.5M H2SO4"] = 0.6820;
+	references["Mercury sulphate in saturated K2SO4"] = 0.6500;
+	references["Mercury oxide in 0.1M NaOH"] = 0.1650;
+	references["Mercury oxide in 1.0M NaOH"] = 0.1400;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
 
@@ -1310,11 +1335,15 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 
 	QVBoxLayout *dialogLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
 
-	auto scrolledWidget = WDG();
+	/*
+	auto scrolledWidget = OBJ_NAME(WDG(), "experimental-notes-scroll-area");
+	/*/
+	auto scrolledWidget = OBJ_NAME(WDG(), "experimental-notes-scrolled-widget");
 	auto scrollArea = OBJ_NAME(new QScrollArea, "experimental-notes-scroll-area");
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrolledWidget);
+	//*/
 
 	auto lay = new QGridLayout(scrolledWidget);
 
@@ -1343,7 +1372,7 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	lay->addWidget(solvent = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Electrolyte"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(electrolyte = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration<br>(moles per liter)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration (moles per liter)"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(electrolyteConcentration = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Atmosphere"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(atmosphere = LED(), row++, 1);
@@ -1358,6 +1387,7 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	buttonLay->addStretch(1);
 
 	dialogLay->addWidget(scrollArea);
+	//dialogLay->addWidget(scrolledWidget);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 6, 0, 1, -1);
 	dialogLay->addLayout(buttonLay);// , 7, 0, 1, -1);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 8, 0, 1, -1);
@@ -1545,7 +1575,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	descriptionHelpLay->addWidget(descriptionWidget);
 	descriptionHelpLay->addWidget(OBJ_NAME(WDG(), "experiment-description-spacing-bottom"));
 
-	auto *paramsWidget = WDG();
+	auto *paramsWidget = OBJ_NAME(WDG(), "experiment-parameters-owner");
 	auto *paramsWidgetLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsWidget)));
 
 	auto *startExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
@@ -1560,8 +1590,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	stopExpPbt->hide();
 
 	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	//auto *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout()));
 
-	buttonLay->addStretch(1);
+	//buttonLay->addStretch(1);
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addWidget(pauseExpPbt);
 	buttonLay->addWidget(stopExpPbt);
@@ -1580,18 +1611,31 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto hwList = OBJ_NAME(CMB(), "hw-list-combo");
 	hwList->setView(OBJ_NAME(new QListView, "combo-list"));
 
+	/*
 	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
 	paramsHeadWidgetLay->addWidget(hwList, 1, 0);
 	paramsHeadWidgetLay->addWidget(channelEdit, 1, 1);
+	//*/
 	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"), 2, 0, 1, 3);
 	paramsHeadWidgetLay->setColumnStretch(2, 1);
+
+
+	auto paramsFooterWidget = WDG();
+	paramsFooterWidget->hide();
+
+	auto paramsFooterWidgetLay = new QGridLayout(paramsFooterWidget);
+
+	paramsFooterWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
+	paramsFooterWidgetLay->addWidget(hwList, 1, 0);
+	paramsFooterWidgetLay->addWidget(channelEdit, 1, 1);
+	paramsFooterWidgetLay->addLayout(buttonLay, 2, 0, 1, 3);
 
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
 	paramsWidgetLay->addWidget(paramsHeadWidget, 1, 1);
-	paramsWidgetLay->addLayout(buttonLay, 3, 1);
+	paramsWidgetLay->addWidget(paramsFooterWidget, 3, 1);
 	paramsWidgetLay->setRowStretch(2, 1);
 
 	auto *scrollAreaWidget = WDG();
@@ -1741,6 +1785,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			mw->PrebuiltExperimentSelected(exp);
 
 			paramsHeadWidget->show();
+			paramsFooterWidget->show();
 
 			if (hwList->count()) {
 				mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
@@ -1752,6 +1797,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			pauseExpPbt->hide();
 			stopExpPbt->hide();
 			paramsHeadWidget->hide();
+			paramsFooterWidget->hide();
 		}
 	});
 
@@ -1861,6 +1907,7 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 	}
 
 	data.fileName = QFileInfo(dialogRet).fileName();
+	data.filePath = QFileInfo(dialogRet).absoluteFilePath();
 
 
 	for(int i = 0; i < 11; ++i) {
@@ -1988,6 +2035,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			tabName,
 			csvData.xAxisList,
 			csvData.yAxisList,
+			csvData.filePath,
 			&csvData.container);
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
@@ -2079,7 +2127,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			startParams.type,
 			startParams.exp->GetShortName(),
 			startParams.exp->GetXAxisParameters(startParams.type),
-			startParams.exp->GetYAxisParameters(startParams.type));
+			startParams.exp->GetYAxisParameters(startParams.type),
+			startParams.filePath);
 
 		auto &handler(dataTabs.plots[startParams.id][startParams.type]);
 
@@ -2860,7 +2909,7 @@ void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double per
 	handler.axisParams[axis].max.val -= (axisWidth * percentsMax);
 
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -2912,13 +2961,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
 	QPushButton *savePlotPbt;
+	QPushButton *openFilePbt;
 
 	auto buttonLay = new QGridLayout;
 	//buttonLay->addStretch(1);
 	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"), 0, 0);
 	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"), 1, 0);
 	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"), 2, 0);
-	buttonLay->addWidget(OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
+	buttonLay->addWidget(openFilePbt = OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
 	buttonLay->setColumnStretch(1, 1);
 	buttonLay->setRowStretch(4, 1);
 
@@ -2986,10 +3036,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.exp = 0;
 	plotHandler.data << DataMapVisualization();
 	plotHandler.data.first().saveFile = 0;
+	plotHandler.data.first().filePath = filePath;
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
 	
+	plotHandler.plotTabConnections << CONNECT(openFilePbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+		
+		if (handler.data.size()) {
+			QDesktopServices::openUrl(QUrl("file:///" + handler.data.first().filePath));
+		}
+	});
+
 	plotHandler.plotTabConnections << CONNECT(zoomInPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ZoomAxis(handler, QwtPlot::xBottom, 0.1);
