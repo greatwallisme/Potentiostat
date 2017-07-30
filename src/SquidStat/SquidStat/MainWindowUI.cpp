@@ -1082,6 +1082,9 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 			builderTabs.paramsLay->addWidget(builderTabs.userInputs);
 
 			builderTabs.paramsHeadWidget->show();
+			auto lbl = builderTabs.paramsHeadWidget->findChild<QLabel*>("heading-label");
+			lbl->setText(bc->elem.name + "<br>Parameters");
+			lbl->setWordWrap(true);
 		}
 		else {
 			builderTabs.paramsHeadWidget->hide();
