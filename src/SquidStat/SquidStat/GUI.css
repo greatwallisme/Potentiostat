@@ -305,6 +305,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	min-height: 40px;
 	margin: 10px;
+	margin-left: 0px;
 	padding-left: 25px;
 	padding-right: 25px;
 	
@@ -705,10 +706,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 }
 #notes-dialog {
-	min-height: 600px;
+	min-height: 950px;
 	/*max-height: 600px;*/
-	min-width: 550px;
-	max-width: 550px;
+	min-width: 660px;
+	/*max-width: 550px;*/
 	border: 1px solid #7b1a1e;
 }
 #experimental-notes-text-edit {
@@ -733,6 +734,18 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-right: 15px;
 	margin-top: 17px;
 	qproperty-alignment: 'AlignRight | AlignVCenter';
+}
+#notes-dialog QRadioButton,
+#notes-dialog QLabel,
+#notes-dialog QComboBox,
+#notes-dialog QLineEdit {
+	margin-top: 0px;
+	margin-bottom: 0px;
+	min-height: 30px;
+	max-height: 30px;
+}
+#notes-dialog #heading-label {
+	margin-top: 15px;
 }
 /*//////////////       CURVE PARAMS DIALOG     ////////////////////*/
 #curve-params-dialog {

@@ -1310,8 +1310,10 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 
 	QVBoxLayout *dialogLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
 
-	auto scrolledWidget = WDG();
 	/*
+	auto scrolledWidget = OBJ_NAME(WDG(), "experimental-notes-scroll-area");
+	/*/
+	auto scrolledWidget = OBJ_NAME(WDG(), "experimental-notes-scrolled-widget");
 	auto scrollArea = OBJ_NAME(new QScrollArea, "experimental-notes-scroll-area");
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
@@ -1345,7 +1347,7 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	lay->addWidget(solvent = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Electrolyte"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(electrolyte = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration<br>(moles per liter)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(OBJ_NAME(LBL("Electrolyte concentration (moles per liter)"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(electrolyteConcentration = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Atmosphere"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(atmosphere = LED(), row++, 1);
@@ -1359,8 +1361,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
 	buttonLay->addStretch(1);
 
-	//dialogLay->addWidget(scrollArea);
-	dialogLay->addWidget(scrolledWidget);
+	dialogLay->addWidget(scrollArea);
+	//dialogLay->addWidget(scrolledWidget);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 6, 0, 1, -1);
 	dialogLay->addLayout(buttonLay);// , 7, 0, 1, -1);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 8, 0, 1, -1);
@@ -1565,7 +1567,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 	//auto *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout()));
 
-	buttonLay->addStretch(1);
+	//buttonLay->addStretch(1);
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addWidget(pauseExpPbt);
 	buttonLay->addWidget(stopExpPbt);
