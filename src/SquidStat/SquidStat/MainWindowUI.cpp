@@ -2141,6 +2141,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		ui.newDataTab.newDataTabButton->click();
 		docTabs->setCurrentIndex(docTabs->count() - 2);
+		docTabs->tabBar()->setTabIcon(docTabs->count() - 2, QIcon(":/GUI/Resources/green-dot.png"));
 	});
 
 	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
@@ -2155,6 +2156,21 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			}
 
 			handler.plot->replot();
+
+			for (int i = 0; i < docTabs->count()-1; ++i) {
+				auto wdg = docTabs->widget(i);
+				auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+				if (0 == plot) {
+					continue;
+				}
+
+				if (handler.plot != plot) {
+					continue;
+				}
+
+				docTabs->tabBar()->setTabIcon(i, QIcon());
+			}
 		}
 	});
 
