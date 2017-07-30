@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/GUI">
+        <file alias="ConstPower">Resources/element.png</file>
+    </qresource>
+</RCC>

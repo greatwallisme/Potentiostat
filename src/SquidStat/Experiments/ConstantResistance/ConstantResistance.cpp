@@ -10,7 +10,7 @@
 #define RESISTANCE_UNITS_OBJ_NAME "target-resistance-units"
 #define VMIN_OBJ_NAME       "minimum-voltage"
 #define T_MAX_OBJ_NAME      "maximum-time"
-#define T_MAX_UNITS         "time-units"
+#define T_MAX_UNITS_OBJ_NAME         "time-units"
 #define SAMPLING_INT_OBJ_NAME "sampling-interval"
 
 #define RESISTANCE_DEFAULT	1000
@@ -38,7 +38,8 @@ QString ConstantResistance::GetDescription() const {
 }
 QStringList ConstantResistance::GetCategory() const {
   return QStringList() <<
-    "Basic voltammetry";
+    "Energy storage"
+    "Charge-discharge";
 }
 ExperimentTypeList ConstantResistance::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
@@ -55,8 +56,6 @@ QWidget* ConstantResistance::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	
-  //TODO: add current ranging input
 
 	_INSERT_RIGHT_ALIGN_COMMENT("Load resistance = ", row, 0);
 	_INSERT_TEXT_INPUT(RESISTANCE_DEFAULT, RESISTANCE_OBJ_NAME, row, 1);
@@ -74,7 +73,7 @@ QWidget* ConstantResistance::CreateUserInput() const {
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Maximum duration = ", row, 0);
   _INSERT_TEXT_INPUT(T_MAX_DEFAULT, T_MAX_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(T_MAX_UNITS, row, 2);
+  _START_DROP_DOWN(T_MAX_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");
   _ADD_DROP_DOWN_ITEM("min");
   _ADD_DROP_DOWN_ITEM("hr");
@@ -104,7 +103,7 @@ NodesData ConstantResistance::GetNodesData(QWidget *wdg, const CalibrationData &
 	GET_SELECTED_DROP_DOWN(resistanceUnits_str, RESISTANCE_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(VMin, VMIN_OBJ_NAME);
   GET_TEXT_INPUT_VALUE_DOUBLE(tmax, T_MAX_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(tmaxUnits_str, T_MAX_UNITS);
+  GET_SELECTED_DROP_DOWN(tmaxUnits_str, T_MAX_UNITS_OBJ_NAME);
   GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_INT_OBJ_NAME);
 
   resistance *= ExperimentCalcHelperClass::GetUnitsMultiplier(resistanceUnits_str);

@@ -57,9 +57,6 @@ QWidget* ConstantPower::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	
-  //TODO: add current ranging input
-
 	_INSERT_RIGHT_ALIGN_COMMENT("Load power = ", row, 0);
 	_INSERT_TEXT_INPUT(POWER_DEFAULT, POWER_OBJ_NAME, row, 1);
   _START_DROP_DOWN(POWER_UNITS_OBJ_NAME, row, 2);
