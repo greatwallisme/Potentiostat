@@ -472,6 +472,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 			break;
 		}
 		curParam.file = saveFile;
+		curParam.filePath = QFileInfo(dialogRet).absoluteFilePath();
 
 		startParams << curParam;
 	}

@@ -29,6 +29,7 @@ struct StartExperimentParameters {
 	CalibrationData cal;
 	HardwareVersion hwVer;
 	ExperimentNotes notes;
+	QString filePath;
 };
 
 class MainWindow : public QMainWindow {

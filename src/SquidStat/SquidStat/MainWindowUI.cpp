@@ -66,6 +66,8 @@
 #include <QToolTip>
 #include <QTimer>
 
+#include <QDesktopServices>
+
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
 
@@ -1882,6 +1884,7 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 	}
 
 	data.fileName = QFileInfo(dialogRet).fileName();
+	data.filePath = QFileInfo(dialogRet).absoluteFilePath();
 
 
 	for(int i = 0; i < 11; ++i) {
@@ -2009,6 +2012,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			tabName,
 			csvData.xAxisList,
 			csvData.yAxisList,
+			csvData.filePath,
 			&csvData.container);
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
@@ -2100,7 +2104,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			startParams.type,
 			startParams.exp->GetShortName(),
 			startParams.exp->GetXAxisParameters(startParams.type),
-			startParams.exp->GetYAxisParameters(startParams.type));
+			startParams.exp->GetYAxisParameters(startParams.type),
+			startParams.filePath);
 
 		auto &handler(dataTabs.plots[startParams.id][startParams.type]);
 
@@ -2881,7 +2886,7 @@ void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double per
 	handler.axisParams[axis].max.val -= (axisWidth * percentsMax);
 
 }
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const DataMap *loadedContainerPtr) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -2933,13 +2938,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
 	QPushButton *savePlotPbt;
+	QPushButton *openFilePbt;
 
 	auto buttonLay = new QGridLayout;
 	//buttonLay->addStretch(1);
 	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"), 0, 0);
 	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"), 1, 0);
 	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"), 2, 0);
-	buttonLay->addWidget(OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
+	buttonLay->addWidget(openFilePbt = OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
 	buttonLay->setColumnStretch(1, 1);
 	buttonLay->setRowStretch(4, 1);
 
@@ -3007,10 +3013,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.exp = 0;
 	plotHandler.data << DataMapVisualization();
 	plotHandler.data.first().saveFile = 0;
+	plotHandler.data.first().filePath = filePath;
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
 	
+	plotHandler.plotTabConnections << CONNECT(openFilePbt, &QPushButton::clicked, [=]() {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+		
+		if (handler.data.size()) {
+			QDesktopServices::openUrl(QUrl("file:///" + handler.data.first().filePath));
+		}
+	});
+
 	plotHandler.plotTabConnections << CONNECT(zoomInPbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ZoomAxis(handler, QwtPlot::xBottom, 0.1);

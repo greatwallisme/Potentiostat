@@ -42,6 +42,7 @@ public:
 
 	struct CsvFileData {
 		QString fileName;
+		QString filePath;
 		ExperimentNotes notes;
 		QStringList xAxisList;
 		QStringList yAxisList;
@@ -118,7 +119,7 @@ private:
 	QWidget* CreateElementsListWidget();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const DataMap* = 0);
+	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -159,6 +160,7 @@ private:
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
 		QString name;
+		QString filePath;
 	};
 	struct PlotHandler {
 		QwtPlot* plot;
