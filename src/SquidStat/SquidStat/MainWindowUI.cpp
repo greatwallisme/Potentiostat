@@ -1281,14 +1281,14 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	references["Ag/AgCl in 0.1M KCl"] = 0.2894;
 	references["Ag/AgCl in 1.0M KCl"] = 0.2368;
 	references["Ag/AgCl in saturated KCl"] = 0.1976;
-  references["Calomel in 0.1M KCl"] = 0.3337;
-  references["Calomel in 1.0M KCl"] = 0.2807;
-  references["Calomel in saturated KCl"] = 0.2415;
-  references["Lead sulphate"] = -0.2760;
-  references["Mercury sulphate in 0.5M H2SO4"] = 0.6820;
-  references["Mercury sulphate in saturated K2SO4"] = 0.6500;
-  references["Mercury oxide in 0.1M NaOH"] = 0.1650;
-  references["Mercury oxide in 1.0M NaOH"] = 0.1400;
+	references["Calomel in 0.1M KCl"] = 0.3337;
+	references["Calomel in 1.0M KCl"] = 0.2807;
+	references["Calomel in saturated KCl"] = 0.2415;
+	references["Lead sulphate"] = -0.2760;
+	references["Mercury sulphate in 0.5M H2SO4"] = 0.6820;
+	references["Mercury sulphate in saturated K2SO4"] = 0.6500;
+	references["Mercury oxide in 0.1M NaOH"] = 0.1650;
+	references["Mercury oxide in 1.0M NaOH"] = 0.1400;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
 
@@ -1311,10 +1311,12 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	QVBoxLayout *dialogLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
 
 	auto scrolledWidget = WDG();
+	/*
 	auto scrollArea = OBJ_NAME(new QScrollArea, "experimental-notes-scroll-area");
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrolledWidget);
+	//*/
 
 	auto lay = new QGridLayout(scrolledWidget);
 
@@ -1357,7 +1359,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
 	buttonLay->addStretch(1);
 
-	dialogLay->addWidget(scrollArea);
+	//dialogLay->addWidget(scrollArea);
+	dialogLay->addWidget(scrolledWidget);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 6, 0, 1, -1);
 	dialogLay->addLayout(buttonLay);// , 7, 0, 1, -1);
 	dialogLay->addWidget(OBJ_NAME(WDG(), "notes-dialog-bottom-spacing"));// , 8, 0, 1, -1);
@@ -1559,16 +1562,14 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	pauseExpPbt->hide();
 	stopExpPbt->hide();
 
-	//auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
-	auto *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout()));
+	auto *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	//auto *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout()));
 
-	/*
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(startExpPbt);
 	buttonLay->addWidget(pauseExpPbt);
 	buttonLay->addWidget(stopExpPbt);
 	buttonLay->addStretch(1);
-	//*/
 
 	auto paramsHeadWidget = WDG();
 	paramsHeadWidget->hide();
@@ -1591,20 +1592,23 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	paramsHeadWidgetLay->addWidget(OBJ_NAME(LBL("Parameters"), "heading-label"), 2, 0, 1, 3);
 	paramsHeadWidgetLay->setColumnStretch(2, 1);
 
-	buttonLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
-	buttonLay->addWidget(hwList, 1, 0);
-	buttonLay->addWidget(channelEdit, 1, 1);
-	buttonLay->addWidget(startExpPbt, 1, 2);
-	buttonLay->addWidget(pauseExpPbt, 1, 3);
-	buttonLay->addWidget(stopExpPbt, 1, 4);
-	buttonLay->setColumnStretch(5, 1);
+
+	auto paramsFooterWidget = WDG();
+	paramsFooterWidget->hide();
+
+	auto paramsFooterWidgetLay = new QGridLayout(paramsFooterWidget);
+
+	paramsFooterWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
+	paramsFooterWidgetLay->addWidget(hwList, 1, 0);
+	paramsFooterWidgetLay->addWidget(channelEdit, 1, 1);
+	paramsFooterWidgetLay->addLayout(buttonLay, 2, 0, 1, 3);
 
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-left"), 1, 0, 2, 1);
 	paramsWidgetLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-right"), 1, 3, 2, 1);
 	paramsWidgetLay->addWidget(paramsHeadWidget, 1, 1);
-	paramsWidgetLay->addLayout(buttonLay, 3, 1);
+	paramsWidgetLay->addWidget(paramsFooterWidget, 3, 1);
 	paramsWidgetLay->setRowStretch(2, 1);
 
 	auto *scrollAreaWidget = WDG();
@@ -1754,6 +1758,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			mw->PrebuiltExperimentSelected(exp);
 
 			paramsHeadWidget->show();
+			paramsFooterWidget->show();
 
 			if (hwList->count()) {
 				mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
@@ -1765,6 +1770,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			pauseExpPbt->hide();
 			stopExpPbt->hide();
 			paramsHeadWidget->hide();
+			paramsFooterWidget->hide();
 		}
 	});
 
