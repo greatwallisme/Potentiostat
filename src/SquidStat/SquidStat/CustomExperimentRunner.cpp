@@ -70,7 +70,7 @@ QWidget* CustomExperimentRunner::CreateUserInput() const {
 	QString topWidgetName = TOP_WIDGET_NAME_PREFIX + _ce.fileName;
 	USER_INPUT_START(topWidgetName);
 
-	_INSERT_RIGHT_ALIGN_COMMENT("No parameters availabe", 0, 0);
+	//_INSERT_RIGHT_ALIGN_COMMENT("No parameters availabe", 0, 0);
 
 	QPushButton *editPbt;
 
