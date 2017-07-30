@@ -5,6 +5,7 @@
 
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
+#include "ExperimentReader.h"
 
 #include <AbstractExperiment.h>
 #include <AbstractBuilderElement.h>
@@ -89,6 +90,7 @@ signals:
 	void ExperimentCompleted(const QUuid&);
 	void ExperimentResumed(const QUuid&);
 	void ExperimentPaused(const QUuid&);
+	void EditCustomExperiment(const CustomExperiment&);
 
 private:
 	void CleanupCurrentHardware();

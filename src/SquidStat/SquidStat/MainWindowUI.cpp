@@ -190,6 +190,8 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
 
+	ui.newDataTab.buildExperimentButton = pbt;
+
 	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
 			return;
@@ -1177,6 +1179,27 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 		builder->RemoveSelection();
 	};
+
+	CONNECT(mw, &MainWindow::EditCustomExperiment, [=](const CustomExperiment &_ce) {
+		CustomExperiment ce = _ce;
+		tabBar->insertTab(tabBar->count() - 1, ce.name);
+
+		const QUuid id = QUuid::createUuid();
+		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
+
+		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 2);
+
+		builderTabs.builders[id].fileName = ce.fileName;
+		builderTabs.builders[id].name = ce.name;
+		builderTabs.builders[id].globalMult->setValue(ce.bc.repeats);
+
+		MainWindow::FillElementPointers(ce.bc, elementsPtrMap);
+
+		builderTabs.builders[id].builder->SetupNewContainer(ce.bc);
+
+		ui.newDataTab.buildExperimentButton->click();
+	});
 
 	CONNECT(tabBar, &QTabBar::tabBarClicked, [=](int index) {
 		if (index != tabBar->count() - 1) {

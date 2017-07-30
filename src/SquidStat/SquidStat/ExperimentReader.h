@@ -4,6 +4,7 @@
 #include <QList>
 #include <QByteArray>
 #include <QVector>
+#include <QMetaType>
 
 #include "ExternalStructures.h"
 #include "BuilderWidget.h"
@@ -14,6 +15,7 @@ struct CustomExperiment {
 	QUuid id;
 	BuilderContainer bc;
 };
+Q_DECLARE_METATYPE(CustomExperiment)
 
 namespace ExperimentReader {
 	CustomExperiment GenerateExperimentContainer(const QByteArray &jsonData);

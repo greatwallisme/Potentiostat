@@ -3,7 +3,15 @@
 #include "AbstractExperiment.h"
 #include "ExperimentReader.h"
 
-class CustomExperimentRunner : public AbstractExperiment {
+class CustomExperimentRunner : public QObject, public AbstractExperiment {
+	Q_OBJECT
+
+signals:
+	void EditButtonClicked(const CustomExperiment &myId);
+
+private slots:
+	void EditButtonSlot();
+
 public:
 	CustomExperimentRunner(const CustomExperiment&);
 

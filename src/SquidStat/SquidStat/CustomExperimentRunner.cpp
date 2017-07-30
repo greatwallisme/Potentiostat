@@ -72,12 +72,24 @@ QWidget* CustomExperimentRunner::CreateUserInput() const {
 
 	_INSERT_RIGHT_ALIGN_COMMENT("No parameters availabe", 0, 0);
 
+	QPushButton *editPbt;
+
+	auto buttonLay = new QVBoxLayout;
+	buttonLay->addWidget(editPbt = OBJ_NAME(PBT("Edit Experiment"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	lay->addLayout(buttonLay, 1, 0);
+
+	connect(editPbt, &QPushButton::clicked, this, &CustomExperimentRunner::EditButtonSlot);
+
 	_SET_ROW_STRETCH(1, 1);
 	_SET_COL_STRETCH(1, 1);
 
 	USER_INPUT_END();
 }
-
+void CustomExperimentRunner::EditButtonSlot() {
+	emit EditButtonClicked(_ce);
+}
 void TurnBranchIndexesIntoAbsolute(NodesData &nd) {
 	for (int i = 0; i < nd.size(); ++i) {
 		ExperimentNode_t *exp = (ExperimentNode_t*)nd[i].data();

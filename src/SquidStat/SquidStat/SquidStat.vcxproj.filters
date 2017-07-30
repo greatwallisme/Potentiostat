@@ -148,6 +148,12 @@
     <ClCompile Include="GeneratedFiles\Release\moc_BuilderWidget.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_CustomExperimentRunner.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_CustomExperimentRunner.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -179,9 +185,6 @@
     </ClInclude>
     <ClInclude Include="Disconnector.h">
       <Filter>_scr\MainWindow</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomExperimentRunner.h">
-      <Filter>_scr\Experiments</Filter>
     </ClInclude>
     <ClInclude Include="ExperimentCalcHelper.h">
       <Filter>_scr\ExternalStructures</Filter>
@@ -223,6 +226,9 @@
     </CustomBuild>
     <CustomBuild Include="BuilderWidget.h">
       <Filter>_scr\MainWindow</Filter>
+    </CustomBuild>
+    <CustomBuild Include="CustomExperimentRunner.h">
+      <Filter>_scr\Experiments</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

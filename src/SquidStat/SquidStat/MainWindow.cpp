@@ -19,6 +19,8 @@
 #include <QFileDialog>
 #include <QSettings>
 
+#include <Disconnector.h>
+
 #include <stdlib.h>
 
 #define PREBUILT_EXP_DIR		"./prebuilt/"
@@ -64,7 +66,8 @@ MainWindow::~MainWindow() {
 }
 void MainWindow::CleanupExperiments() {
 	foreach(auto exp, prebuiltExperiments.customExpMap) {
-		delete exp;
+		//delete exp;
+		((CustomExperimentRunner*)exp)->deleteLater();
 	}
 
 	foreach(auto exp, prebuiltExperiments.expList) {
@@ -667,7 +670,7 @@ void MainWindow::UpdateCustomExperimentList() {
 
 	foreach(auto &id, toDeleteIds) {
 		emit RemoveCustomExperiment(prebuiltExperiments.customExpMap.value(id));
-		delete prebuiltExperiments.customExpMap.value(id);
+		((CustomExperimentRunner*)prebuiltExperiments.customExpMap.value(id))->deleteLater();
 		prebuiltExperiments.customExpMap.remove(id);
 	}
 
@@ -677,6 +680,8 @@ void MainWindow::UpdateCustomExperimentList() {
 		auto newExp = new CustomExperimentRunner(ce);
 		prebuiltExperiments.customExpMap[ce.id] = newExp;
 		toAddExp << newExp;
+
+		connect(newExp, &CustomExperimentRunner::EditButtonClicked, this, &MainWindow::EditCustomExperiment);
 	}
 
 	emit AddNewCustomExperiments(toAddExp);

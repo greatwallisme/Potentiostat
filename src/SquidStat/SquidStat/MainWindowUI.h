@@ -139,6 +139,7 @@ private:
 		} runExperiment;
 		struct {
 			QPushButton *newDataTabButton;
+			QPushButton *buildExperimentButton;
 			QTabWidget *docTabs;
 		} newDataTab;
 		struct {
