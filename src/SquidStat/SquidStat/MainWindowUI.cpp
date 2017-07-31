@@ -3357,8 +3357,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 				double xMinPers = (double)topLeft.x() / rect.width();
 				double xMaxPers = (double)(rect.width() - bottomRight.x()) / rect.width();
-				double yMinPers = (double)topLeft.y() / rect.height();
-				double yMaxPers = (double)(rect.height() - bottomRight.y()) / rect.height();
+				double yMinPers = (double)(rect.height() - bottomRight.y()) / rect.height();
+				double yMaxPers = (double)topLeft.y() / rect.height();
 
 				ZoomAxis(handler, QwtPlot::xBottom, xMinPers, xMaxPers);
 				ZoomAxis(handler, QwtPlot::yLeft, yMinPers, yMaxPers);
