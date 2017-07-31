@@ -24,12 +24,17 @@
 
 class MyScrollArea : public QScrollArea {
 public:
-	MyScrollArea() : pressed(false), dragged(false) {}
+	MyScrollArea() : pressed(false), grabbed(false) {}
+
+public slots:
+	void EnsureVisible(int x, int y, int xmargin, int ymargin) {
+		this->ensureVisible(x, y, xmargin, ymargin);
+	}
 
 protected:
 	void mousePressEvent(QMouseEvent *me) {
 		pressed = true;
-		dragged = false;
+		grabbed = false;
 		pressButton = me->button();
 		pressPoint = me->pos();
 
@@ -42,10 +47,10 @@ protected:
 
 			auto length = qSqrt(moveVector.dx() * moveVector.dx() + moveVector.dy() * moveVector.dy());
 
-			if (dragged || (!dragged && (length > 3))) {
-				dragged = true;
+			if (grabbed || (!grabbed && (length > 3))) {
+				grabbed = true;
 
-				Dragging(moveVector.dx(), moveVector.dy());
+				Grabbing(moveVector.dx(), moveVector.dy());
 
 				pressPoint = pos;
 				me->accept();
@@ -59,7 +64,7 @@ protected:
 		}
 	}
 	void mouseReleaseEvent(QMouseEvent *e) {
-		if (dragged) {
+		if (grabbed) {
 			e->accept();
 		}
 		else {
@@ -67,11 +72,11 @@ protected:
 		}
 
 		pressed = false;
-		dragged = false;
+		grabbed = false;
 	}
 
 private:
-	void Dragging(int dx, int dy) {
+	void Grabbing(int dx, int dy) {
 		auto bar = this->verticalScrollBar();
 
 		if (bar) {
@@ -87,7 +92,7 @@ private:
 	QPoint pressPoint;
 	Qt::MouseButton pressButton;
 	bool pressed;
-	bool dragged;
+	bool grabbed;
 };
 
 class ElementEventFilter : public QObject {

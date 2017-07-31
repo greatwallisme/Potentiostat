@@ -511,6 +511,8 @@ void BuilderWidget::dragMoveEvent(QDragMoveEvent *e) {
 		}
 		auto pos = e->pos();
 
+		emit EnsureVisible(pos.x(), pos.y());
+
 		auto color = background.map.pixelColor(pos);
 		
 		if (!background.areas.contains(color)) {

@@ -447,9 +447,12 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
 	buildExpHolder->setWidget(buildExpHolderOwner);
-	
+
 	CONNECT(mult, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 		buildExpHolderOwner, &BuilderWidget::SetTotalRepeats);
+
+	CONNECT(buildExpHolderOwner, &BuilderWidget::EnsureVisible, 
+		buildExpHolder, &MyScrollArea::EnsureVisible);
 
 	return w;
 }

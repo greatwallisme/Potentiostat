@@ -189,9 +189,6 @@
     <ClInclude Include="ExperimentCalcHelper.h">
       <Filter>_scr\ExternalStructures</Filter>
     </ClInclude>
-    <ClInclude Include="UIEventFilters.hpp">
-      <Filter>_scr\MainWindow</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="SerialCommunicator.h">
@@ -229,6 +226,9 @@
     </CustomBuild>
     <CustomBuild Include="CustomExperimentRunner.h">
       <Filter>_scr\Experiments</Filter>
+    </CustomBuild>
+    <CustomBuild Include="UIEventFilters.hpp">
+      <Filter>_scr\MainWindow</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>
