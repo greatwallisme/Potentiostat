@@ -1296,10 +1296,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
-	ret.other.workingElectrode.first = "Working electrode";
-	ret.other.workingElectrodeArea.first = "Working electrode area (cm^2)";
-	ret.other.counterElectrode.first = "Counter electrode";
-	ret.other.counterElectrodeArea.first = "Counter electrode area (cm^2)";
+	ret.other.currentDensityWorkingElectrode.first = "Current density (working electrode)";
+	ret.other.currentDensityCounterElectrode.first = "Current density (counter electrode)";
 	ret.other.solvent.first = "Solvent";
 	ret.other.electrolyte.first = "Electrolyte";
 	ret.other.electrolyteConcentration.first = "Electrolyte concentration (moles per liter)";
@@ -1327,10 +1325,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	QLineEdit *potVsSheLed;
 	QTextEdit *notesTed;
 
-	QLineEdit* workingElectrode;
-	QLineEdit* workingElectrodeArea;
-	QLineEdit* counterElectrode;
-	QLineEdit* counterElectrodeArea;
+	QLineEdit* currentDensityWorkingElectrode;
+	QLineEdit* currentDensityCounterElectrode;
 	QLineEdit* solvent;
 	QLineEdit* electrolyte;
 	QLineEdit* electrolyteConcentration;
@@ -1363,14 +1359,10 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-right-spacing"), 0, 2, 6, 1);
 	lay->addWidget(OBJ_NAME(LBL("Other parameters"), "heading-label"), 6, 0, 1, 2);
 	int row = 7;
-	lay->addWidget(OBJ_NAME(LBL("Working electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(workingElectrode = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Working electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(workingElectrodeArea = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Counter electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(counterElectrode = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Counter electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(counterElectrodeArea = LED(), row++, 1);
+	lay->addWidget(OBJ_NAME(LBL("Current density (working electrode)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(currentDensityWorkingElectrode = LED(), row++, 1);
+	lay->addWidget(OBJ_NAME(LBL("Current density (counter electrode)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(currentDensityCounterElectrode = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Solvent"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(solvent = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Electrolyte"), "notes-dialog-right-comment"), row, 0);
@@ -1472,10 +1464,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 
 		#define COPY_NOTE_VALUE(a) ret.other.a.second = a->text();
 
-		COPY_NOTE_VALUE(workingElectrode);
-		COPY_NOTE_VALUE(workingElectrodeArea);
-		COPY_NOTE_VALUE(counterElectrode);
-		COPY_NOTE_VALUE(counterElectrodeArea);
+		COPY_NOTE_VALUE(currentDensityWorkingElectrode);
+		COPY_NOTE_VALUE(currentDensityCounterElectrode);
 		COPY_NOTE_VALUE(solvent);
 		COPY_NOTE_VALUE(electrolyte);
 		COPY_NOTE_VALUE(electrolyteConcentration);
@@ -1913,7 +1903,7 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 	data.filePath = QFileInfo(dialogRet).absoluteFilePath();
 
 
-	for(int i = 0; i < 11; ++i) {
+	for(int i = 0; i < (COUNT_OF_EXPERIMENT_NOTES_LINES + 1); ++i) {
 		readData.pop_front();
 	}
 
@@ -2139,6 +2129,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		handler.data.first().saveFile = startParams.file;
 		handler.data.first().cal = startParams.cal;
 		handler.data.first().hwVer = startParams.hwVer;
+		handler.data.first().notes = startParams.notes;
 
 		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, startParams.name);
 
@@ -2194,7 +2185,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
 			if (majorData.saveFile) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
@@ -2238,7 +2229,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
 			if (majorData.saveFile) {
 				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
 			}

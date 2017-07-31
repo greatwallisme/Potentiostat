@@ -255,7 +255,7 @@ QStringList CustomExperimentRunner::GetYAxisParameters(ExperimentType type) cons
 	return ret;
 }
 
-void CustomExperimentRunner::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+void CustomExperimentRunner::PUSH_NEW_DC_DATA_DEFINITION {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
@@ -307,7 +307,7 @@ void CustomExperimentRunner::SaveDcData(QFile &saveFile, const DataMap &containe
 	SAVE_DATA_END();
 }
 
-void CustomExperimentRunner::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void CustomExperimentRunner::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
 

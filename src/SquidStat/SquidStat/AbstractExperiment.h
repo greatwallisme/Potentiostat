@@ -16,16 +16,15 @@ struct ExperimentNotes {
 	QString description;
 	QPair<QString, QString> refElectrode;
 	struct {
-		QPair<QString, QString> workingElectrode;
-		QPair<QString, QString> workingElectrodeArea;
-		QPair<QString, QString> counterElectrode;
-		QPair<QString, QString> counterElectrodeArea;
+		QPair<QString, QString> currentDensityWorkingElectrode;
+		QPair<QString, QString> currentDensityCounterElectrode;
 		QPair<QString, QString> solvent;
 		QPair<QString, QString> electrolyte;
 		QPair<QString, QString> electrolyteConcentration;
 		QPair<QString, QString> atmosphere;
 	} other;
 };
+#define COUNT_OF_EXPERIMENT_NOTES_LINES 8
 
 typedef QList<qreal> DataList;
 struct DataStore {
@@ -44,6 +43,11 @@ enum ExperimentType : uint8_t {
 typedef QList<ExperimentType> ExperimentTypeList;
 
 
+#define PUSH_NEW_DC_DATA_DEFINITION \
+	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
+
+#define PUSH_NEW_AC_DATA_DEFINITION \
+	PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
 
 class AbstractExperiment {
 public:
@@ -62,11 +66,11 @@ public:
 	virtual QStringList GetXAxisParameters(ExperimentType) const = 0;
 	virtual QStringList GetYAxisParameters(ExperimentType) const = 0;
 	
-	virtual void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
+	virtual void PUSH_NEW_DC_DATA_DEFINITION {};
 	virtual void SaveDcDataHeader(QFile&, const ExperimentNotes&) const {};
 	virtual void SaveDcData(QFile&, const DataMap&) const {};
 
-	virtual void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const {};
+	virtual void PUSH_NEW_AC_DATA_DEFINITION {};
 	virtual void SaveAcDataHeader(QFile&, const ExperimentNotes&) const {};
 	virtual void SaveAcData(QFile&, const DataMap&) const {};
 };

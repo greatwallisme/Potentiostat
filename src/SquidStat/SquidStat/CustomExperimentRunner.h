@@ -28,11 +28,11 @@ public:
 	QStringList GetXAxisParameters(ExperimentType) const;
 	QStringList GetYAxisParameters(ExperimentType) const;
 
-	void PushNewDcData(const ExperimentalDcData&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
+	void PUSH_NEW_DC_DATA_DEFINITION;
 	void SaveDcDataHeader(QFile&, const ExperimentNotes &notes) const;
 	void SaveDcData(QFile&, const DataMap&) const;
 
-	void PushNewAcData(const QByteArray&, DataMap &, const CalibrationData&, const HardwareVersion&) const;
+	void PUSH_NEW_AC_DATA_DEFINITION;
 	void SaveAcDataHeader(QFile&, const ExperimentNotes &notes) const;
 	void SaveAcData(QFile&, const DataMap&) const;
 

@@ -157,6 +157,7 @@ private:
 		QFile *saveFile;
 		CalibrationData cal;
 		HardwareVersion hwVer;
+		ExperimentNotes notes;
 		QMap<QwtPlot::Axis, DataStore*> data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;
