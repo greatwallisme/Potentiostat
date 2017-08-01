@@ -144,6 +144,7 @@ private:
 		struct {
 			QWidget *listItemOverlay;
 			QWidget *listItemHolder;
+			QPushButton *addNewTabButton;
 		} buildExperiment;
 	} ui;
 		

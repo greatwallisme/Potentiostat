@@ -1004,17 +1004,19 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QPushButton *duplicatePbt;
 	QPushButton *openPbt;
 	QPushButton *savePbt;
+	QPushButton *newPbt;
 
 	auto topButtonOwner = OBJ_NAME(new QFrame, "builder-top-button-owner");
 	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
-	topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
+	//topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
 	topButtonOwnerLay->addStretch(1);
+	topButtonOwnerLay->addWidget(newPbt = OBJ_NAME(PBT("New"), "builder-new-file-button"));
+	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT("Load"), "builder-open-file-button"));
+	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT("Save"), "builder-save-file-button"));
 	topButtonOwnerLay->addWidget(duplicatePbt = OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
 	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
 	//topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
-	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT(""), "builder-save-file-button"));
-	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT(""), "builder-open-file-button"));
 
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
@@ -1025,6 +1027,8 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(id), 1, 1);
 
+	builderTabs.builders[id].connections <<
+	CONNECT(newPbt, &QPushButton::clicked, ui.buildExperiment.addNewTabButton, &QPushButton::click);
 
 	builderTabs.builders[id].connections <<
 	CONNECT(openPbt, &QPushButton::clicked, [=]() {
@@ -1125,6 +1129,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	tabHeaderLay->addWidget(tabFrame);
 	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
 	tabHeaderLay->addStretch(1);
+	ui.buildExperiment.addNewTabButton = addNewButton;
 
 	tabBarLayout->addLayout(tabHeaderLay);
 	tabBarLayout->addLayout(lay);
