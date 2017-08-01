@@ -7,6 +7,7 @@
 #include <qwt_scale_widget.h>
 #include <qwt_text_label.h>
 #include <qwt_plot_grid.h>
+#include <qwt_scale_engine.h>
 
 #include "UIHelper.hpp"
 
@@ -3023,10 +3024,39 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
+	QRadioButton *xLinRbt;
+	QRadioButton *xLogRbt;
+	QRadioButton *y1LinRbt;
+	QRadioButton *y1LogRbt;
+	QRadioButton *y2LinRbt;
+	QRadioButton *y2LogRbt;
+
 	settingsLay->addWidget(xCombo, 1, 1);
 	settingsLay->addWidget(y1Combo, 2, 1);
 	settingsLay->addWidget(y2Combo, 3, 1);
-	settingsLay->setColumnStretch(2, 1);
+	settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
+	settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
+	settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
+	settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
+	settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
+	settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	settingsLay->setColumnStretch(4, 1);
+
+	auto xButtonGroup = new QButtonGroup(w);
+	xButtonGroup->addButton(xLinRbt);
+	xButtonGroup->addButton(xLogRbt);
+
+	auto y1ButtonGroup = new QButtonGroup(w);
+	y1ButtonGroup->addButton(y1LinRbt);
+	y1ButtonGroup->addButton(y1LogRbt);
+
+	auto y2ButtonGroup = new QButtonGroup(w);
+	y2ButtonGroup->addButton(y2LinRbt);
+	y2ButtonGroup->addButton(y2LogRbt);
+
+	xLinRbt->click();
+	y1LinRbt->click();
+	y2LinRbt->click();
 
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
@@ -3057,7 +3087,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
-
 
 	auto plotCanvas = plot->canvas();
 
@@ -3515,6 +3544,31 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			plot->setTitle(titleText);
 		}
 	}));
+
+	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(xLogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1LinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1LogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2LinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2LogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {
