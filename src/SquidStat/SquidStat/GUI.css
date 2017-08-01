@@ -591,6 +591,8 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 600px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#new-data-window-placeholder {
+}
 #build-experiment-owner,
 #new-data-window-owner {
 	border: none;
@@ -601,6 +603,7 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab::pane {
 	/*border-top: 1px solid #ce2026;*/
 }
+#new-data-window-tab,
 #builder-tab {
 	border: none;
 	background-color: #ce2026;
@@ -619,14 +622,17 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab::tab-bar {
 	left: 25px;
 }
+#new-data-window-tab::tab,
 #builder-tab::tab {
 	margin-bottom: 1px;
 }
+#new-data-window-tab::tab,
 #builder-tab::tab,
 #plot-tab QTabBar::tab {
-	padding-top: 0px;
+	padding-top: 8px;
 	padding-right: 15px;
 	padding-left: 20px;
+	padding-bottom: 8px;
 	margin-top: 10px;
 	
 	background-color: #ffbec0;
@@ -639,13 +645,14 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-height: 21px;
 	max-height: 21px;
 }
+#new-data-window-tab::tab:selected,
 #builder-tab::tab:selected,
 #plot-tab QTabBar::tab:selected {
     color: #000000;
 	background-color: #ffffff;
 }
-#builder-tab::tab:last,
-#builder-tab::tab:only-one,
+/*#builder-tab::tab:last,
+#builder-tab::tab:only-one,*/
 #plot-tab QTabBar::tab:last,
 #plot-tab QTabBar::tab:only-one {
 	color: #ce2026;
@@ -661,11 +668,32 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	background-color: #ffbec0;
 }
-#builder-tab::tab:last:selected,
-#builder-tab::tab:only-one,
+/*#builder-tab::tab:last:selected,
+#builder-tab::tab:only-one,*/
 #plot-tab QTabBar::tab:last:selected,
 #plot-tab QTabBar::tab:only-one {
 	/*padding-bottom: 10px;*/
+}
+#builder-tab-add-new {
+	color: #ce2026;
+	
+	max-width: 35px;
+	min-width: 35px;	
+	min-height: 33px;
+	max-height: 33px;
+	
+	margin: 0px;
+	padding: 0px;
+	padding-top: 4px;
+	
+	margin-top: 9px;
+	
+	border: 1px solid #ce2026;
+	background-color: #ffbec0;
+	
+	qproperty-text: "";
+	qproperty-icon: url(:/GUI/Resources/new-tab.png);
+	qproperty-align
 }
 #close-document-pbt {
 	qproperty-text: "";
