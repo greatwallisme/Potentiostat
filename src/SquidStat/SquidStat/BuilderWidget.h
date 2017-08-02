@@ -123,6 +123,7 @@ signals:
 	void EnqueueUpdateBackgroundMap();
 	void ElementSelected(QWidget*);
 	void BuilderContainerSelected(BuilderContainer*);
+	void EnsureVisible(int x, int y, int xmargin = 50, int ymargin = 50);
 
 public slots:
 	void DeleteContainer(BuilderContainer*);

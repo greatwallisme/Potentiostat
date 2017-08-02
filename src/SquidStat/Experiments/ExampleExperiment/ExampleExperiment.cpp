@@ -389,7 +389,7 @@ QStringList ExampleExperiment::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void ExampleExperiment::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void ExampleExperiment::PUSH_NEW_DC_DATA_DEFINITION {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
 

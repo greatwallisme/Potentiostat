@@ -140,11 +140,11 @@ private:
 		struct {
 			QPushButton *newDataTabButton;
 			QPushButton *buildExperimentButton;
-			QTabWidget *docTabs;
 		} newDataTab;
 		struct {
 			QWidget *listItemOverlay;
 			QWidget *listItemHolder;
+			QPushButton *addNewTabButton;
 		} buildExperiment;
 	} ui;
 		
@@ -157,6 +157,7 @@ private:
 		QFile *saveFile;
 		CalibrationData cal;
 		HardwareVersion hwVer;
+		ExperimentNotes notes;
 		QMap<QwtPlot::Axis, DataStore*> data;
 		QwtPlotCurve *curve1;
 		QwtPlotCurve *curve2;

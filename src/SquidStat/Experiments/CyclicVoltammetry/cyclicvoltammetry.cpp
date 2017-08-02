@@ -288,7 +288,7 @@ QStringList CyclicVoltammetry::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void CyclicVoltammetry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+void CyclicVoltammetry::PUSH_NEW_DC_DATA_DEFINITION {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedDCData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);

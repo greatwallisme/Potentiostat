@@ -79,10 +79,8 @@
 	}									\
 	notesStr += spacer + "Description" + listSeparator + "\"" + QString(notes.description).replace(QChar('"'), "\"\"") + "\"" + "\n"; \
 	PUT_NOTES_VALUE(notes.refElectrode); \
-	PUT_NOTES_VALUE(notes.other.workingElectrode);	\
-	PUT_NOTES_VALUE(notes.other.workingElectrodeArea); \
-	PUT_NOTES_VALUE(notes.other.counterElectrode); \
-	PUT_NOTES_VALUE(notes.other.counterElectrodeArea); \
+	PUT_NOTES_VALUE(notes.other.currentDensityWorkingElectrode);	\
+	PUT_NOTES_VALUE(notes.other.currentDensityCounterElectrode); \
 	PUT_NOTES_VALUE(notes.other.solvent); \
 	PUT_NOTES_VALUE(notes.other.electrolyte); \
 	PUT_NOTES_VALUE(notes.other.electrolyteConcentration); \

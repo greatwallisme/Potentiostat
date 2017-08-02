@@ -413,6 +413,9 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-width: 100px;
 	max-width: 100px;
 }
+#builder-new-file-button {
+	qproperty-icon: url(:/GUI/Resources/builder-new-file.png);
+}
 #builder-duplicate-button {
 	qproperty-icon: url(:/GUI/Resources/builder-duplicate.png);
 }
@@ -422,8 +425,10 @@ QLabel[experiment-params-widget="low-margin"] {
 #builder-select-all-button {
 	qproperty-icon: url(:/GUI/Resources/builder-select-all.png);
 }
+#builder-save-file-button,
+#builder-open-file-button,
+#builder-new-file-button,
 #builder-duplicate-button,
-#builder-select-all-button,
 #builder-delete-button {
 	border: 2px solid #00000000;
 	background-color: #00000000;
@@ -434,8 +439,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	qproperty-iconSize: 21px 21px;
 }
+#builder-save-file-button:hover,
+#builder-open-file-button:hover,
+#builder-new-file-button:hover,
 #builder-duplicate-button:hover,
-#builder-select-all-button:hover,
 #builder-delete-button:hover {
 	border-bottom: 2px solid #9ecfd3;
 }
@@ -445,6 +452,7 @@ QLabel[experiment-params-widget="low-margin"] {
 #builder-open-file-button {
 	qproperty-icon: url(:/GUI/Resources/builder-open-file.png);
 }
+/*
 #builder-save-file-button,
 #builder-open-file-button {
 	border: none;
@@ -452,6 +460,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	qproperty-iconSize: 40px 40px;
 }
+*/
 #exp-builder-right-buttons-replacement {
 	margin: 1px;
 	min-width: 68px;
@@ -591,6 +600,8 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 600px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#new-data-window-placeholder {
+}
 #build-experiment-owner,
 #new-data-window-owner {
 	border: none;
@@ -601,6 +612,7 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab::pane {
 	/*border-top: 1px solid #ce2026;*/
 }
+#new-data-window-tab,
 #builder-tab {
 	border: none;
 	background-color: #ce2026;
@@ -619,14 +631,17 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab::tab-bar {
 	left: 25px;
 }
+#new-data-window-tab::tab,
 #builder-tab::tab {
 	margin-bottom: 1px;
 }
+#new-data-window-tab::tab,
 #builder-tab::tab,
 #plot-tab QTabBar::tab {
-	padding-top: 0px;
+	padding-top: 8px;
 	padding-right: 15px;
 	padding-left: 20px;
+	padding-bottom: 8px;
 	margin-top: 10px;
 	
 	background-color: #ffbec0;
@@ -639,13 +654,14 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-height: 21px;
 	max-height: 21px;
 }
+#new-data-window-tab::tab:selected,
 #builder-tab::tab:selected,
 #plot-tab QTabBar::tab:selected {
     color: #000000;
 	background-color: #ffffff;
 }
-#builder-tab::tab:last,
-#builder-tab::tab:only-one,
+/*#builder-tab::tab:last,
+#builder-tab::tab:only-one,*/
 #plot-tab QTabBar::tab:last,
 #plot-tab QTabBar::tab:only-one {
 	color: #ce2026;
@@ -661,11 +677,32 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	background-color: #ffbec0;
 }
-#builder-tab::tab:last:selected,
-#builder-tab::tab:only-one,
+/*#builder-tab::tab:last:selected,
+#builder-tab::tab:only-one,*/
 #plot-tab QTabBar::tab:last:selected,
 #plot-tab QTabBar::tab:only-one {
 	/*padding-bottom: 10px;*/
+}
+#builder-tab-add-new {
+	color: #ce2026;
+	
+	max-width: 35px;
+	min-width: 35px;	
+	min-height: 33px;
+	max-height: 33px;
+	
+	margin: 0px;
+	padding: 0px;
+	padding-top: 4px;
+	
+	margin-top: 9px;
+	
+	border: 1px solid #ce2026;
+	background-color: #ffbec0;
+	
+	qproperty-text: "";
+	qproperty-icon: url(:/GUI/Resources/new-tab.png);
+	qproperty-align
 }
 #close-document-pbt {
 	qproperty-text: "";
@@ -706,7 +743,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 }
 #notes-dialog {
-	min-height: 950px;
+	min-height: 800px;
 	/*max-height: 600px;*/
 	min-width: 660px;
 	/*max-width: 550px;*/
@@ -887,6 +924,7 @@ QScrollBar:vertical {
      border: none;
      width: 10px;
      margin: 0px;
+	 background: #4fb8cbdc;
 }
 QScrollBar::handle:vertical {
 	background: #b8cbdc;

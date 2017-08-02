@@ -7,6 +7,7 @@
 #include <qwt_scale_widget.h>
 #include <qwt_text_label.h>
 #include <qwt_plot_grid.h>
+#include <qwt_scale_engine.h>
 
 #include "UIHelper.hpp"
 
@@ -447,9 +448,12 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	buildExpHolder->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	buildExpHolder->setWidgetResizable(true);
 	buildExpHolder->setWidget(buildExpHolderOwner);
-	
+
 	CONNECT(mult, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
 		buildExpHolderOwner, &BuilderWidget::SetTotalRepeats);
+
+	CONNECT(buildExpHolderOwner, &BuilderWidget::EnsureVisible, 
+		buildExpHolder, &MyScrollArea::EnsureVisible);
 
 	return w;
 }
@@ -1001,17 +1005,19 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QPushButton *duplicatePbt;
 	QPushButton *openPbt;
 	QPushButton *savePbt;
+	QPushButton *newPbt;
 
 	auto topButtonOwner = OBJ_NAME(new QFrame, "builder-top-button-owner");
 	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
-	topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
+	//topButtonOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-top-buttons-replacement"));
 	topButtonOwnerLay->addStretch(1);
+	topButtonOwnerLay->addWidget(newPbt = OBJ_NAME(PBT("New"), "builder-new-file-button"));
+	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT("Load"), "builder-open-file-button"));
+	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT("Save"), "builder-save-file-button"));
 	topButtonOwnerLay->addWidget(duplicatePbt = OBJ_NAME(PBT("Duplicate"), "builder-duplicate-button"));
 	topButtonOwnerLay->addWidget(deletePbt = OBJ_NAME(PBT("Delete"), "builder-delete-button"));
 	//topButtonOwnerLay->addWidget(OBJ_NAME(PBT("Select All"), "builder-select-all-button"));
 	topButtonOwnerLay->addStretch(1);
-	topButtonOwnerLay->addWidget(savePbt = OBJ_NAME(PBT(""), "builder-save-file-button"));
-	topButtonOwnerLay->addWidget(openPbt = OBJ_NAME(PBT(""), "builder-open-file-button"));
 
 	auto *expBuilderOwner = OBJ_NAME(WDG(), "experiment-builder-owner");
 	auto expBuilderOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(expBuilderOwner)));
@@ -1022,6 +1028,8 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	expBuilderOwnerLay->addWidget(OBJ_NAME(WDG(), "exp-builder-bottom-spacer"), 3, 0, 1, 3);
 	expBuilderOwnerLay->addWidget(CreateBuildExpHolderWidget(id), 1, 1);
 
+	builderTabs.builders[id].connections <<
+	CONNECT(newPbt, &QPushButton::clicked, ui.buildExperiment.addNewTabButton, &QPushButton::click);
 
 	builderTabs.builders[id].connections <<
 	CONNECT(openPbt, &QPushButton::clicked, [=]() {
@@ -1082,6 +1090,9 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 			builderTabs.paramsLay->addWidget(builderTabs.userInputs);
 
 			builderTabs.paramsHeadWidget->show();
+			auto lbl = builderTabs.paramsHeadWidget->findChild<QLabel*>("heading-label");
+			lbl->setText(bc->elem.name + "<br>Parameters");
+			lbl->setWordWrap(true);
 		}
 		else {
 			builderTabs.paramsHeadWidget->hide();
@@ -1107,23 +1118,31 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
 
+	QPushButton *addNewButton;
 	QTabBar *tabBar;
+
+	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+	
 	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
 	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
 	tabFrameLay->addWidget(builderTabs.tabBar = tabBar = OBJ_NAME(new QTabBar, "builder-tab"));
+	
+	tabHeaderLay->addWidget(tabFrame);
+	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
+	tabHeaderLay->addStretch(1);
+	ui.buildExperiment.addNewTabButton = addNewButton;
 
-	tabBarLayout->addWidget(tabFrame);
+	tabBarLayout->addLayout(tabHeaderLay);
 	tabBarLayout->addLayout(lay);
 
 	tabBar->setExpanding(false);
-	tabBar->addTab(QIcon(":/GUI/Resources/new-tab.png"), "");
+	tabBar->setMovable(true);
+	//tabBar->addTab(QIcon(":/GUI/Resources/new-tab.png"), "");
 
 	auto nodeListOwner = CreateElementsListWidget();
 
 	auto *nodeParamsOwner = OBJ_NAME(WDG(), "node-params-owner");
 	auto *nodeParamsOwnerLay = NO_SPACING(NO_MARGIN(new QGridLayout(nodeParamsOwner)));
-
-
 
 	auto paramsHeadWidget = WDG();
 	auto paramsHeadWidgetLay = new QGridLayout(paramsHeadWidget);
@@ -1201,14 +1220,9 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 		ui.newDataTab.buildExperimentButton->click();
 	});
 
-	CONNECT(tabBar, &QTabBar::tabBarClicked, [=](int index) {
-		if (index != tabBar->count() - 1) {
-			//QMessageBox::information(mw, QString(index), "");
-			return;
-		}
-		
+	CONNECT(addNewButton, &QPushButton::clicked, [=]() {
 		auto tabName = QString("New experiment");
-		tabBar->insertTab(tabBar->count() - 1, tabName);
+		tabBar->insertTab(tabBar->count(), tabName);
 
 		const QUuid id = QUuid::createUuid();
 
@@ -1216,15 +1230,21 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
 
-		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
-		//builderTabsLay->setCurrentIndex(tabBar->count() - 2);
-		tabBar->setCurrentIndex(tabBar->count() - 2);
+		builderTabsLay->insertWidget(tabBar->count() - 1, builderTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 1);
 	});
+
+	CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
+		auto wdg = builderTabsLay->widget(from);
+		builderTabsLay->removeWidget(wdg);
+		builderTabsLay->insertWidget(to, wdg);
+	});
+
 	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
 			return;
 		}
-		if (index >= tabBar->count() - 1) {
+		if (index >= tabBar->count()) {
 			tabBar->setCurrentIndex(prevCloseTabButtonPos);
 			return;
 		}
@@ -1244,7 +1264,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 		CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
 			int currentIndex = tabBar->currentIndex();
 
-			if ((-1 == currentIndex) || (currentIndex >= tabBar->count() - 1)) {
+			if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
 				return;
 			}
 
@@ -1265,7 +1285,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 				}
 			}
 
-			if ((prevCloseTabButtonPos == (tabBar->count() - 2)) && (tabBar->count() > 2)) {
+			if ((prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1)) {
 				--prevCloseTabButtonPos;
 			}
 
@@ -1279,13 +1299,13 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			builderTabsLay->removeWidget(wdg);
 			wdg->deleteLater();
 
-			if (tabBar->count() == 1) {
-				tabBar->tabBarClicked(tabBar->count() - 1);
+			if (tabBar->count() == 0) {
+				addNewButton->click();
 			}
 		});
 	});
 
-	tabBar->tabBarClicked(tabBar->count() - 1);
+	addNewButton->click();
 
 	return w;
 }
@@ -1293,10 +1313,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
-	ret.other.workingElectrode.first = "Working electrode";
-	ret.other.workingElectrodeArea.first = "Working electrode area (cm^2)";
-	ret.other.counterElectrode.first = "Counter electrode";
-	ret.other.counterElectrodeArea.first = "Counter electrode area (cm^2)";
+	ret.other.currentDensityWorkingElectrode.first = "Current density (working electrode)";
+	ret.other.currentDensityCounterElectrode.first = "Current density (counter electrode)";
 	ret.other.solvent.first = "Solvent";
 	ret.other.electrolyte.first = "Electrolyte";
 	ret.other.electrolyteConcentration.first = "Electrolyte concentration (moles per liter)";
@@ -1324,10 +1342,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	QLineEdit *potVsSheLed;
 	QTextEdit *notesTed;
 
-	QLineEdit* workingElectrode;
-	QLineEdit* workingElectrodeArea;
-	QLineEdit* counterElectrode;
-	QLineEdit* counterElectrodeArea;
+	QLineEdit* currentDensityWorkingElectrode;
+	QLineEdit* currentDensityCounterElectrode;
 	QLineEdit* solvent;
 	QLineEdit* electrolyte;
 	QLineEdit* electrolyteConcentration;
@@ -1360,14 +1376,10 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	lay->addWidget(OBJ_NAME(WDG(), "notes-dialog-right-spacing"), 0, 2, 6, 1);
 	lay->addWidget(OBJ_NAME(LBL("Other parameters"), "heading-label"), 6, 0, 1, 2);
 	int row = 7;
-	lay->addWidget(OBJ_NAME(LBL("Working electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(workingElectrode = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Working electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(workingElectrodeArea = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Counter electrode"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(counterElectrode = LED(), row++, 1);
-	lay->addWidget(OBJ_NAME(LBL("Counter electrode area (cm<sup>2</sup>)"), "notes-dialog-right-comment"), row, 0);
-	lay->addWidget(counterElectrodeArea = LED(), row++, 1);
+	lay->addWidget(OBJ_NAME(LBL("Current density (working electrode)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(currentDensityWorkingElectrode = LED(), row++, 1);
+	lay->addWidget(OBJ_NAME(LBL("Current density (counter electrode)"), "notes-dialog-right-comment"), row, 0);
+	lay->addWidget(currentDensityCounterElectrode = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Solvent"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(solvent = LED(), row++, 1);
 	lay->addWidget(OBJ_NAME(LBL("Electrolyte"), "notes-dialog-right-comment"), row, 0);
@@ -1469,10 +1481,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 
 		#define COPY_NOTE_VALUE(a) ret.other.a.second = a->text();
 
-		COPY_NOTE_VALUE(workingElectrode);
-		COPY_NOTE_VALUE(workingElectrodeArea);
-		COPY_NOTE_VALUE(counterElectrode);
-		COPY_NOTE_VALUE(counterElectrodeArea);
+		COPY_NOTE_VALUE(currentDensityWorkingElectrode);
+		COPY_NOTE_VALUE(currentDensityCounterElectrode);
 		COPY_NOTE_VALUE(solvent);
 		COPY_NOTE_VALUE(electrolyte);
 		COPY_NOTE_VALUE(electrolyteConcentration);
@@ -1910,7 +1920,7 @@ bool MainWindowUI::ReadCsvFile(const QString &dialogRet, MainWindowUI::CsvFileDa
 	data.filePath = QFileInfo(dialogRet).absoluteFilePath();
 
 
-	for(int i = 0; i < 11; ++i) {
+	for(int i = 0; i < (COUNT_OF_EXPERIMENT_NOTES_LINES + 1); ++i) {
 		readData.pop_front();
 	}
 
@@ -2006,25 +2016,50 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	w = OBJ_NAME(WDG(), "new-data-window-owner");
 
 	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
-	QTabWidget *docTabs = OBJ_NAME(new QTabWidget, "plot-tab");
-	ui.newDataTab.docTabs = docTabs;
-	
-	lay->addWidget(docTabs);
 
-	docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
+	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+
+	QPushButton *addNewButton;
+	QTabBar *tabBar;
+
+	auto stackedLayWdg = OBJ_NAME(WDG(), "new-data-window-placeholder");
+	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+
+	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
+	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
+	tabFrameLay->addWidget(tabBar = OBJ_NAME(new QTabBar, "new-data-window-tab"));
+
+	tabHeaderLay->addWidget(tabFrame);
+	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
+	tabHeaderLay->addStretch(1);
+
+	lay->addLayout(tabHeaderLay);
+	lay->addWidget(stackedLayWdg);
+
+	tabBar->setExpanding(false);
+	tabBar->setMovable(true);
+
+	tabBar->hide();
+
+	//QTabWidget *docTabs = OBJ_NAME(new QTabWidget, "plot-tab");
+	//docTabs->setMovable(true);
+	
+	//lay->addWidget(docTabs);
+
+	//docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
 
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
 
-	CONNECT(docTabs->tabBar(), &QTabBar::tabBarClicked, [=](int index) {
-		if (index != docTabs->count() - 1) {
-			return;
-		}
-		
+	CONNECT(addNewButton, &QPushButton::clicked, [=]() {
 		CsvFileData csvData;
 		if (!ReadCsvFile(mw, csvData)) {
 			return;
+		}
+
+		if (tabBar->isHidden()) {
+			tabBar->show();
 		}
 
 		QString tabName = csvData.fileName;
@@ -2038,38 +2073,40 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			csvData.filePath,
 			&csvData.container);
 
-		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, tabName);
-		ui.newDataTab.newDataTabButton->click();
-		docTabs->setCurrentIndex(docTabs->count() - 2);
+		tabBar->insertTab(tabBar->count(), tabName);
+		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 1);
 	});
 
-	CONNECT(docTabs, &QTabWidget::currentChanged, [=](int index) {
+	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
 			return;
 		}
-		if (index >= docTabs->count() - 1) {
-			docTabs->setCurrentIndex(prevCloseTabButtonPos);
+		if (index >= tabBar->count()) {
+			tabBar->setCurrentIndex(prevCloseTabButtonPos);
+			stackedLay->setCurrentIndex(prevCloseTabButtonPos);
 			return;
 		}
 
 		if (closeTabButton) {
-			docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 			QObject::disconnect(closeTabButtonConnection);
 			closeTabButton->deleteLater();
 		}
 
-		docTabs->tabBar()->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+		stackedLay->setCurrentIndex(index);
+		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
 		prevCloseTabButtonPos = index;
 
 		closeTabButtonConnection = 
 			CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
-				int currentIndex = docTabs->currentIndex();
+				int currentIndex = tabBar->currentIndex();
 
-				if ((-1 == currentIndex) || (currentIndex >= docTabs->count() - 1)) {
+				if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
 					return;
 				}
 
-				auto wdg = docTabs->widget(currentIndex);
+				auto wdg = stackedLay->widget(currentIndex);
 				auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 				if (0 != plot) {
@@ -2107,17 +2144,28 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 					}
 				}
 
-				if( (prevCloseTabButtonPos == (docTabs->count() - 2)) && (docTabs->count() > 2) ){
+				if( (prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1) ){
 					--prevCloseTabButtonPos;
 				}
 
-				docTabs->tabBar()->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+				tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 				QObject::disconnect(closeTabButtonConnection);
 				closeTabButton->deleteLater();
 				closeTabButton = 0;
-				docTabs->removeTab(currentIndex);
+				tabBar->removeTab(currentIndex);
+				stackedLay->removeWidget(wdg);
 				wdg->deleteLater();
+
+				if (0 == tabBar->count()) {
+					tabBar->hide();
+				}
 			});
+	});
+
+	CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
+		auto wdg = stackedLay->widget(from);
+		stackedLay->removeWidget(wdg);
+		stackedLay->insertWidget(to, wdg);
 	});
 
 	CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const StartExperimentParameters &startParams) {
@@ -2136,12 +2184,19 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		handler.data.first().saveFile = startParams.file;
 		handler.data.first().cal = startParams.cal;
 		handler.data.first().hwVer = startParams.hwVer;
+		handler.data.first().notes = startParams.notes;
 
-		docTabs->insertTab(docTabs->count() - 1, dataTabWidget, startParams.name);
+		tabBar->insertTab(tabBar->count(), startParams.name);
+		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+
+		if (tabBar->isHidden()) {
+			tabBar->show();
+		}
 
 		ui.newDataTab.newDataTabButton->click();
-		docTabs->setCurrentIndex(docTabs->count() - 2);
-		docTabs->tabBar()->setTabIcon(docTabs->count() - 2, QIcon(":/GUI/Resources/green-dot.png"));
+		tabBar->setCurrentIndex(tabBar->count() - 1);
+		stackedLay->setCurrentIndex(tabBar->count() - 1);
+		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
 	});
 
 	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
@@ -2157,8 +2212,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 			handler.plot->replot();
 
-			for (int i = 0; i < docTabs->count()-1; ++i) {
-				auto wdg = docTabs->widget(i);
+			for (int i = 0; i < tabBar->count(); ++i) {
+				auto wdg = stackedLay->widget(i);
 				auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 				if (0 == plot) {
@@ -2169,7 +2224,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 					continue;
 				}
 
-				docTabs->tabBar()->setTabIcon(i, QIcon());
+				tabBar->setTabIcon(i, QIcon());
 			}
 		}
 	});
@@ -2191,7 +2246,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
 			if (majorData.saveFile) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
@@ -2235,7 +2290,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer);
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
 			if (majorData.saveFile) {
 				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
 			}
@@ -2969,10 +3024,39 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
+	QRadioButton *xLinRbt;
+	QRadioButton *xLogRbt;
+	QRadioButton *y1LinRbt;
+	QRadioButton *y1LogRbt;
+	QRadioButton *y2LinRbt;
+	QRadioButton *y2LogRbt;
+
 	settingsLay->addWidget(xCombo, 1, 1);
 	settingsLay->addWidget(y1Combo, 2, 1);
 	settingsLay->addWidget(y2Combo, 3, 1);
-	settingsLay->setColumnStretch(2, 1);
+	settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
+	settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
+	settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
+	settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
+	settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
+	settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	settingsLay->setColumnStretch(4, 1);
+
+	auto xButtonGroup = new QButtonGroup(w);
+	xButtonGroup->addButton(xLinRbt);
+	xButtonGroup->addButton(xLogRbt);
+
+	auto y1ButtonGroup = new QButtonGroup(w);
+	y1ButtonGroup->addButton(y1LinRbt);
+	y1ButtonGroup->addButton(y1LogRbt);
+
+	auto y2ButtonGroup = new QButtonGroup(w);
+	y2ButtonGroup->addButton(y2LinRbt);
+	y2ButtonGroup->addButton(y2LogRbt);
+
+	xLinRbt->click();
+	y1LinRbt->click();
+	y2LinRbt->click();
 
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
@@ -3003,7 +3087,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
-
 
 	auto plotCanvas = plot->canvas();
 
@@ -3354,8 +3437,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 				double xMinPers = (double)topLeft.x() / rect.width();
 				double xMaxPers = (double)(rect.width() - bottomRight.x()) / rect.width();
-				double yMinPers = (double)topLeft.y() / rect.height();
-				double yMaxPers = (double)(rect.height() - bottomRight.y()) / rect.height();
+				double yMinPers = (double)(rect.height() - bottomRight.y()) / rect.height();
+				double yMaxPers = (double)topLeft.y() / rect.height();
 
 				ZoomAxis(handler, QwtPlot::xBottom, xMinPers, xMaxPers);
 				ZoomAxis(handler, QwtPlot::yLeft, yMinPers, yMaxPers);
@@ -3461,6 +3544,31 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			plot->setTitle(titleText);
 		}
 	}));
+
+	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(xLogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1LinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1LogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2LinRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2LogRbt, &QRadioButton::clicked, [=]() {
+		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
+		plot->replot();
+	});
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {

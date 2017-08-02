@@ -285,7 +285,7 @@ QStringList Chronopotentiometry::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void Chronopotentiometry::PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+void Chronopotentiometry::PUSH_NEW_DC_DATA_DEFINITION {
 	static QMap<DataMap*, qreal> timestampOffset;
 	qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);

@@ -186,7 +186,7 @@ QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void EISPotentiostatic::PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion) const {
+void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
 	
