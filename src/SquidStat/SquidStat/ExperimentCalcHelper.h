@@ -37,10 +37,48 @@ public:
 
 	/* AC methods */
   static currentRange_t GetMinCurrentRange_DACac(const cal_t * calData, double targetCurrentAmp);
-	static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double numCycles);
   static QList<double> calculateFrequencyList(double lowerFreq, double upperFreq, double pointsPerDecade);
   static void calcACSamplingParams(const cal_t * calData, ExperimentNode_t * pNode, double amplitude);
   static double calcNumberOfCycles(const ExperimentalAcData);
+
+  /* sinusoidal curve-fitting */
+  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double approxNumCycles);
+
+private:
+  /* matrix operations */
+  static double ** createMatrix(int rows, int cols);
+  static void deleteMatrix(double ** matrix, int rows);
+  static double ** invertMatrix(double ** matrix, int rows);
+  static double determinant(double ** matrix, int size);
+  static double ** getMinorMatrix(double ** matrix, int row, int col, int size);
+  static double ** matrixMult(double ** matrix1, int rows1, int cols1, double ** matrix2, int rows2, int cols2);
+
+  /* Newton-raphson method */
+  static void sinusoidLeastSquaresFit(double * xbuf, double * ybuf, int size, double * results);
+  static void NewtonRaphson(double * initialGuessParams, double * xbuf, double * ybuf, int length, double * resultsBuf);
+  static double * filterData(int16_t * rawData, int length, int rollingAvgSize);
+  static double y_model(double * paramsBuf, double x);
+  static double dedX(double * paramsBuf, double * xbuf, double * ybuf, int size, double(*dydX)(double *, double));
+  static double de2dXdY(double * paramsBuf, double * xbuf, double * ybuf, int size,
+    double(*dydX)(double *, double),
+    double(*dydY)(double *, double),
+    double(*dy2dXdY)(double *, double));
+
+  /* derivatives */
+  static double dydw(double * paramsBuf, double x);
+  static double dyda(double * paramsBuf, double x);
+  static double dydb(double * paramsBuf, double x);
+  static double dydc(double * paramsBuf, double x);
+  static double d2ydw2(double * paramsBuf, double x);
+  static double d2ydwda(double * paramsBuf, double x);
+  static double d2ydwdb(double * paramsBuf, double x);
+  static double d2ydwdc(double * paramsBuf, double x);
+  static double d2yda2(double * paramsBuf, double x);
+  static double d2ydadb(double * paramsBuf, double x);
+  static double d2ydadc(double * paramsBuf, double x);
+  static double d2ydb2(double * paramsBuf, double x);
+  static double d2ydbdc(double * paramsBuf, double x);
+  static double d2ydc2(double * paramsBuf, double x);
 };
 
 
