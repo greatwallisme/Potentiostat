@@ -243,6 +243,13 @@ QPushButton#bar-button:open {
 	padding-right: 15px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
+#run-exp-params-overlay {
+	border: none;
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #00000000, stop: 0.7 #00000000,
+                stop:1 #ffffff)
+
+}
 #experiment-parameters-owner {
 	max-width: 666px;
 	min-width: 666px;
