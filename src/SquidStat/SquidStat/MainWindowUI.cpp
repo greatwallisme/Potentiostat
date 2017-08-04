@@ -1173,6 +1173,14 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			scrollAreaOverlay->raise();
 		}
 	});
+	scrollArea->installEventFilter(new UniversalEventFilter(scrollArea, [=](QObject *obj, QEvent *e) -> bool {
+		if (e->type() == QEvent::Resize) {
+			if (vertBar->isHidden()) {
+				scrollAreaOverlay->hide();
+			}
+		}
+		return false;
+	}));
 	
 	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
@@ -1216,13 +1224,13 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	CONNECT(mw, &MainWindow::EditCustomExperiment, [=](const CustomExperiment &_ce) {
 		CustomExperiment ce = _ce;
-		tabBar->insertTab(tabBar->count() - 1, ce.name);
+		tabBar->insertTab(tabBar->count(), ce.name);
 
 		const QUuid id = QUuid::createUuid();
 		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
 
-		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
-		tabBar->setCurrentIndex(tabBar->count() - 2);
+		builderTabsLay->insertWidget(tabBar->count() - 1, builderTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 1);
 
 		builderTabs.builders[id].fileName = ce.fileName;
 		builderTabs.builders[id].name = ce.name;
@@ -1692,6 +1700,19 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			scrollAreaOverlay->raise();
 		}
 	});
+	vertBar->installEventFilter(new UniversalEventFilter(vertBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch(e->type()) {
+		case QEvent::Hide:
+			scrollAreaOverlay->hide();
+			break;
+
+		case QEvent::Show:
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+			break;
+		}
+		return false;
+	}));
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
 		hwList->addItems(newLines);
