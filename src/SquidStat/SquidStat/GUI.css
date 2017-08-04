@@ -1101,6 +1101,14 @@ QScrollBar::sub-page:horizontal {
 	margin-bottom: 100px;
 	padding: 0px;
 }
+QwtTextLabel {
+	margin-bottom: 1px;
+}
+QwtTextLabel > QLineEdit {
+	margin: 0px;
+	padding: 0px;
+	qproperty-alignment: AlignHCenter;
+}
 QwtPlot {
 	margin: 30px;
 	margin-top: 0px;

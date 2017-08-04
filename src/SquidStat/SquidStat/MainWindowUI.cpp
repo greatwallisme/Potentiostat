@@ -3196,6 +3196,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	grid->attach(plot);
 	grid->hide();
 
+	auto titleLabel = plot->titleLabel();
+	QLineEdit *titleLed = new QLineEdit(titleLabel);
+	titleLed->setGeometry(0, 0, titleLabel->width(), titleLabel->height());
+	titleLed->setText(plot->title().text());
+	titleLed->hide();
+
 	plotHandler.plotTabConnections << CONNECT(showGridlinesPbt, &QPushButton::clicked, [=]() {
 		if (grid->isVisible()) {
 			grid->hide();
@@ -3355,6 +3361,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 
 		case QEvent::MouseButtonPress:
+			titleLed->hide();
+
 			if( !grabbed && panViewPressed ) {
 				pressed = true;
 				startPoint = ((QMouseEvent*)e)->pos();
@@ -3536,7 +3544,46 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	}));
 
+	titleLabel->installEventFilter(new PlotOverlayEventFilter(titleLabel, titleLed));
+	titleLed->installEventFilter(new UniversalEventFilter(titleLed, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::FocusOut) {
+			titleLed->hide();
+		}
+
+		return ret;
+	}));
+	titleLabel->installEventFilter(new UniversalEventFilter(titleLabel, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::MouseButtonPress) {
+			titleLed->show();
+			titleLed->raise();
+			titleLed->setFocus();
+			ret = true;
+		}
+
+		return ret;
+	}));
+	w->installEventFilter(new UniversalEventFilter(w, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::MouseButtonPress) {
+			titleLed->hide();
+		}
+
+		return ret;
+	}));
+	plotHandler.plotTabConnections <<
+	CONNECT(titleLed, &QLineEdit::textChanged, [=](const QString &str) {
+		auto titleText = plot->title();
+		titleText.setText(str);
+		plot->setTitle(titleText);
+	});
+	/*
 	plot->titleLabel()->installEventFilter(new PlotEventFilter(w, [=]() {
+
 		QString newTitle = GetNewTitle(mw, plot->title().text());
 		if (!newTitle.isEmpty()) {
 			auto titleText = plot->title();
@@ -3544,6 +3591,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			plot->setTitle(titleText);
 		}
 	}));
+	//*/
 
 	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
 		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
