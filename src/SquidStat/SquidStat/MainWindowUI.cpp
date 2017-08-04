@@ -1173,11 +1173,16 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			scrollAreaOverlay->raise();
 		}
 	});
-	scrollArea->installEventFilter(new UniversalEventFilter(scrollArea, [=](QObject *obj, QEvent *e) -> bool {
-		if (e->type() == QEvent::Resize) {
-			if (vertBar->isHidden()) {
-				scrollAreaOverlay->hide();
-			}
+	vertBar->installEventFilter(new UniversalEventFilter(vertBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch (e->type()) {
+		case QEvent::Hide:
+			scrollAreaOverlay->hide();
+			break;
+
+		case QEvent::Show:
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+			break;
 		}
 		return false;
 	}));
