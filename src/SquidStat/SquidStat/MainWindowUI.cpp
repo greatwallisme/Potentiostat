@@ -3074,8 +3074,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	//settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 5, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
@@ -3092,24 +3092,34 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
-	QRadioButton *xLinRbt;
-	QRadioButton *xLogRbt;
-	QRadioButton *y1LinRbt;
-	QRadioButton *y1LogRbt;
-	QRadioButton *y2LinRbt;
-	QRadioButton *y2LogRbt;
+	//QRadioButton *xLinRbt;
+	//QRadioButton *xLogRbt;
+	//QRadioButton *y1LinRbt;
+	//QRadioButton *y1LogRbt;
+	//QRadioButton *y2LinRbt;
+	//QRadioButton *y2LogRbt;
+
+	QCheckBox *xChkBox;
+	QCheckBox *y1ChkBox;
+	QCheckBox *y2ChkBox;
 
 	settingsLay->addWidget(xCombo, 1, 1);
-	settingsLay->addWidget(y1Combo, 2, 1);
-	settingsLay->addWidget(y2Combo, 3, 1);
-	settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
-	settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
-	settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
-	settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
-	settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
-	settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	settingsLay->addWidget(y1Combo, 3, 1);
+	settingsLay->addWidget(y2Combo, 5, 1);
+	//settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
+	//settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
+	//settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
+	//settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
+	//settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
+	//settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	#define LINEAR_TEXT				"Linear"
+	#define LOGARITHMIC_TEXT		"Logarithmic"
+	settingsLay->addWidget(xChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 1);
+	settingsLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 4, 1);
+	settingsLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 6, 1);
 	settingsLay->setColumnStretch(4, 1);
 
+	/*
 	auto xButtonGroup = new QButtonGroup(w);
 	xButtonGroup->addButton(xLinRbt);
 	xButtonGroup->addButton(xLogRbt);
@@ -3122,9 +3132,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2ButtonGroup->addButton(y2LinRbt);
 	y2ButtonGroup->addButton(y2LogRbt);
 
-	xLinRbt->click();
+	//xLinRbt->click();
 	y1LinRbt->click();
 	y2LinRbt->click();
+	//*/
 
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
@@ -3140,8 +3151,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	buttonLay->setColumnStretch(1, 1);
 	buttonLay->setRowStretch(4, 1);
 
-	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
-	settingsLay->addLayout(buttonLay, 5, 0, -1, -1);
+	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
+	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 	//settingsLay->setRowStretch(6, 1);
 
 	auto controlButtonLay = new QHBoxLayout;
@@ -3649,6 +3660,52 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plot->setTitle(titleText);
 	});
 
+	plotHandler.plotTabConnections << CONNECT(xChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			xChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			xChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1ChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			y1ChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			y1ChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2ChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			y2ChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			y2ChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	/*
 	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
 		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
 		plot->replot();
@@ -3673,6 +3730,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
 		plot->replot();
 	});
+	//*/
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {

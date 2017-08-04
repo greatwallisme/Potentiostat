@@ -49,5 +49,9 @@
         <file>Resources/zoom-to-selection.png</file>
         <file>Resources/green-dot.png</file>
         <file>Resources/builder-new-file.png</file>
+        <file>Resources/checkbox-checked.png</file>
+        <file>Resources/checkbox-checked-hover.png</file>
+        <file>Resources/checkbox-unchecked.png</file>
+        <file>Resources/checkbox-unchecked-hover.png</file>
     </qresource>
 </RCC>
