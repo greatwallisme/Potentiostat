@@ -357,6 +357,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #elements-list-holder {
 	border: none;
 	background-color: #f8f9fb;
+	
+	margin-bottom: 30px;
 }
 #node-list-scroll-area {
 	border: none;
