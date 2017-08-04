@@ -68,6 +68,7 @@
 #include <QTimer>
 
 #include <QDesktopServices>
+#include <QSplitter>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -1165,6 +1166,15 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	scrollAreaOverlay->hide();
 
 	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::rangeChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
 		if (vertBar->value() == vertBar->maximum()) {
 			scrollAreaOverlay->hide();
@@ -1210,9 +1220,14 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	auto builderTabsPlacerholder = OBJ_NAME(WDG(), "experiment-builder-placeholder");
 	auto builderTabsLay = NO_SPACING(NO_MARGIN(new QStackedLayout(builderTabsPlacerholder)));
 
+
+	auto splitter = new QSplitter(Qt::Horizontal);
+	splitter->addWidget(builderTabsPlacerholder);
+	splitter->addWidget(nodeParamsOwner);
+	splitter->setChildrenCollapsible(false);
+
 	lay->addWidget(nodeListOwner);
-	lay->addWidget(builderTabsPlacerholder);
-	lay->addWidget(nodeParamsOwner);
+	lay->addWidget(splitter);
 
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
@@ -1703,6 +1718,15 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollAreaOverlay->hide();
 
 	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::rangeChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
 		if (vertBar->value() == vertBar->maximum()) {
 			scrollAreaOverlay->hide();
