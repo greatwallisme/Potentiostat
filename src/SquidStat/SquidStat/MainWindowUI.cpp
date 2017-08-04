@@ -1162,6 +1162,7 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
 	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
 	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+	scrollAreaOverlay->hide();
 
 	auto vertBar = scrollArea->verticalScrollBar();
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
@@ -1180,8 +1181,13 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			break;
 
 		case QEvent::Show:
-			scrollAreaOverlay->show();
-			scrollAreaOverlay->raise();
+			if (vertBar->value() == vertBar->maximum()) {
+				scrollAreaOverlay->hide();
+			}
+			else {
+				scrollAreaOverlay->show();
+				scrollAreaOverlay->raise();
+			}
 			break;
 		}
 		return false;
@@ -1694,6 +1700,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
 	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
 	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+	scrollAreaOverlay->hide();
 
 	auto vertBar = scrollArea->verticalScrollBar();
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
@@ -1712,8 +1719,13 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			break;
 
 		case QEvent::Show:
-			scrollAreaOverlay->show();
-			scrollAreaOverlay->raise();
+			if (vertBar->value() == vertBar->maximum()) {
+				scrollAreaOverlay->hide();
+			}
+			else {
+				scrollAreaOverlay->show();
+				scrollAreaOverlay->raise();
+			}
 			break;
 		}
 		return false;

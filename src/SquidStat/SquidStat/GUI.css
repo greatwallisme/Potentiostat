@@ -247,8 +247,9 @@ QPushButton#bar-button:open {
 	border: none;
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                 stop:0 #00000000, stop: 0.7 #00000000,
-                stop:1 #ffffff)
-
+                stop:1 #ffffff);
+				
+	margin-right: 10px;
 }
 #experiment-parameters-owner {
 	max-width: 666px;
