@@ -1158,6 +1158,34 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
+
+	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
+	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
+	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
+	vertBar->installEventFilter(new UniversalEventFilter(vertBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch (e->type()) {
+		case QEvent::Hide:
+			scrollAreaOverlay->hide();
+			break;
+
+		case QEvent::Show:
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+			break;
+		}
+		return false;
+	}));
 	
 	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-top"), 0, 0, 1, 3);
 	nodeParamsOwnerLay->addWidget(OBJ_NAME(WDG(), "experiment-params-spacing-bottom"), 4, 0, 1, 3);
@@ -1201,13 +1229,13 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	CONNECT(mw, &MainWindow::EditCustomExperiment, [=](const CustomExperiment &_ce) {
 		CustomExperiment ce = _ce;
-		tabBar->insertTab(tabBar->count() - 1, ce.name);
+		tabBar->insertTab(tabBar->count(), ce.name);
 
 		const QUuid id = QUuid::createUuid();
 		auto builderTabWidget = CreateBuildExperimentTabWidget(id);
 
-		builderTabsLay->insertWidget(tabBar->count() - 2, builderTabWidget);
-		tabBar->setCurrentIndex(tabBar->count() - 2);
+		builderTabsLay->insertWidget(tabBar->count() - 1, builderTabWidget);
+		tabBar->setCurrentIndex(tabBar->count() - 1);
 
 		builderTabs.builders[id].fileName = ce.fileName;
 		builderTabs.builders[id].name = ce.name;
@@ -1662,6 +1690,34 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
 	scrollArea->setWidgetResizable(true);
 	scrollArea->setWidget(scrollAreaWidget);
+
+	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
+	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
+	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+
+	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
+	vertBar->installEventFilter(new UniversalEventFilter(vertBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch(e->type()) {
+		case QEvent::Hide:
+			scrollAreaOverlay->hide();
+			break;
+
+		case QEvent::Show:
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+			break;
+		}
+		return false;
+	}));
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
 		hwList->addItems(newLines);
@@ -3196,6 +3252,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	grid->attach(plot);
 	grid->hide();
 
+	auto titleLabel = plot->titleLabel();
+	QLineEdit *titleLed = new QLineEdit(titleLabel);
+	titleLed->setGeometry(0, 0, titleLabel->width(), titleLabel->height());
+	titleLed->setText(plot->title().text());
+	titleLed->hide();
+
 	plotHandler.plotTabConnections << CONNECT(showGridlinesPbt, &QPushButton::clicked, [=]() {
 		if (grid->isVisible()) {
 			grid->hide();
@@ -3355,6 +3417,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 
 		case QEvent::MouseButtonPress:
+			titleLed->hide();
+
 			if( !grabbed && panViewPressed ) {
 				pressed = true;
 				startPoint = ((QMouseEvent*)e)->pos();
@@ -3536,14 +3600,42 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	}));
 
-	plot->titleLabel()->installEventFilter(new PlotEventFilter(w, [=]() {
-		QString newTitle = GetNewTitle(mw, plot->title().text());
-		if (!newTitle.isEmpty()) {
-			auto titleText = plot->title();
-			titleText.setText(newTitle);
-			plot->setTitle(titleText);
+	titleLabel->installEventFilter(new PlotOverlayEventFilter(titleLabel, titleLed));
+	titleLed->installEventFilter(new UniversalEventFilter(titleLed, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::FocusOut) {
+			titleLed->hide();
 		}
+
+		return ret;
 	}));
+	titleLabel->installEventFilter(new UniversalEventFilter(titleLabel, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::MouseButtonPress) {
+			titleLed->show();
+			titleLed->raise();
+			titleLed->setFocus();
+			ret = true;
+		}
+
+		return ret;
+	}));
+	w->installEventFilter(new UniversalEventFilter(w, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() == QEvent::MouseButtonPress) {
+			titleLed->hide();
+		}
+
+		return ret;
+	}));
+	plotHandler.plotTabConnections << CONNECT(titleLed, &QLineEdit::textChanged, [=](const QString &str) {
+		auto titleText = plot->title();
+		titleText.setText(str);
+		plot->setTitle(titleText);
+	});
 
 	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
 		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());

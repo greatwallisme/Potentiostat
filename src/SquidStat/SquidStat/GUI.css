@@ -243,6 +243,13 @@ QPushButton#bar-button:open {
 	padding-right: 15px;
 }
 /*//////////////      EXPERIMENT PARAMETERS     ////////////////////*/
+#run-exp-params-overlay {
+	border: none;
+	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                stop:0 #00000000, stop: 0.7 #00000000,
+                stop:1 #ffffff)
+
+}
 #experiment-parameters-owner {
 	max-width: 666px;
 	min-width: 666px;
@@ -350,6 +357,8 @@ QLabel[experiment-params-widget="low-margin"] {
 #elements-list-holder {
 	border: none;
 	background-color: #f8f9fb;
+	
+	margin-bottom: 30px;
 }
 #node-list-scroll-area {
 	border: none;
@@ -1100,6 +1109,14 @@ QScrollBar::sub-page:horizontal {
 	margin-right: 10px;
 	margin-bottom: 100px;
 	padding: 0px;
+}
+QwtTextLabel {
+	margin-bottom: 1px;
+}
+QwtTextLabel > QLineEdit {
+	margin: 0px;
+	padding: 0px;
+	qproperty-alignment: AlignHCenter;
 }
 QwtPlot {
 	margin: 30px;
