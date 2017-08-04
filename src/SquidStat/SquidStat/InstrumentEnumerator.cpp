@@ -136,7 +136,7 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 				if (hwVersionArrived) {
 					instrumentInfo.hwVer = hwVersion;
 
-          communicator.SendCommand((CommandID)INIT_DEFAULT_SAMPLING);
+					communicator.SendCommand((CommandID)INIT_DEFAULT_SAMPLING);
 
 					char *_end = (char*)&hwVersion + sizeof(HardwareVersion);
 					char *_ptr = hwVersion.hwName;
