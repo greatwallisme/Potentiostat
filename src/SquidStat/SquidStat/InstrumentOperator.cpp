@@ -69,7 +69,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
       break;
 
     case OVERCURRENT_WARNING:
-      LOG() << "The current has exceeded its set maximum limit!";
+      LOG() << "The current has exceeded its set maximum limit! New range: " << data[0];
       break;
 
     case ECE_OVERVOLTAGE_WARNING:

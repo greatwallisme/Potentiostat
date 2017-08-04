@@ -84,7 +84,7 @@ uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t H
   pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
   pNode->DCSweep_pot.VStep = 1;
   uint64_t dt;
-  double ticksPerStep = 1 / abs(dEdt) / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000;
+  double ticksPerStep = abs(1 / dEdt / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000);
   do
   {
     dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
@@ -162,7 +162,7 @@ uint32_t ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t 
   pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
   pNode->DCSweep_galv.IStep = 1;
   uint64_t dt;
-  double ticksPerStep = 1 / abs(dIdt) / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS;
+  double ticksPerStep = abs(1 / dIdt / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS);
   do
   {
     dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
@@ -529,12 +529,13 @@ double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData ac
 ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double approxNumCycles)
 {
   /* debugging only */
-  //std::ofstream fout;
-  //fout.open("C:/Users/Matt/Desktop/results.txt", std::ofstream::out);
-  //for (int i = 0; i < len; i++)
-  //{
-  //  fout << bufEWE[i] << '\t' << bufCurrent[i] << '\n';
-  //}
+  std::ofstream fout;
+  fout.open("C:/Users/Matt/Desktop/results.txt", std::ofstream::out | std::ofstream::app);
+  fout << "Next data set" << endl;
+  for (int i = 0; i < len; i++)
+  {
+    fout << bufEWE[i] << '\t' << bufCurrent[i] << '\n';
+  }
 
 
   //todo: add error analysis, THD

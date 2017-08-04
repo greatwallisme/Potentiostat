@@ -128,6 +128,9 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
 	if (VBiasVsOCPStr.contains("open circuit"))
 		VBiasVsOCP = true;
 
+  upperFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(upperFreqUnits_str);
+  lowerFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(lowerFreqUnits_str);
+
   QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDecade);
 
 	exp.isHead = false;
