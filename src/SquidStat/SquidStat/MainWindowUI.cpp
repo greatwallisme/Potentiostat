@@ -1664,7 +1664,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	auto channelEdit = CMB();
 	channelEdit->setView(OBJ_NAME(new QListView, "combo-list"));
-	channelEdit->addItem("Channel 1", 0);
+	//channelEdit->addItem("Channel 1", 0);
 	//channelEdit->addItem("Channel 2", 1);
 
 	auto hwList = OBJ_NAME(CMB(), "hw-list-combo");
@@ -1717,6 +1717,35 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
 	scrollAreaOverlay->hide();
 
+	auto hwLambda = [=](const QString &hwName) {
+		channelEdit->clear();
+		/*
+		if (!experimentList->selectionModel()->currentIndex().isValid()) {
+			return;
+		}
+		//*/
+		if (hwName.isEmpty()) {
+			return;
+		}
+
+		for (int i = 0; i < hwList->currentData().toInt(); ++i) {
+			channelEdit->addItem(QString("Channel %1").arg(i + 1), i);
+		}
+
+		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateCurrentExperimentState();
+	};
+
+	CONNECT(hwList, &QComboBox::currentTextChanged, hwLambda);
+
+	CONNECT(channelEdit, &QComboBox::currentTextChanged, [=](const QString &channelName) {
+		if (!experimentList->selectionModel()->currentIndex().isValid()) {
+			return;
+		}
+		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateCurrentExperimentState();
+	});
+
 	auto vertBar = scrollArea->verticalScrollBar();
 	CONNECT(vertBar, &QScrollBar::rangeChanged, [=]() {
 		if (vertBar->value() == vertBar->maximum()) {
@@ -1755,8 +1784,11 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		return false;
 	}));
 
-	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
-		hwList->addItems(newLines);
+	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &newLines) {
+		for (auto it = newLines.begin(); it != newLines.end(); ++it) {
+			hwList->addItem(it->first, it->second);
+		}
+		//hwList->addItems(newLines);
 	});
 
 	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &linesToDelete) {
@@ -1902,27 +1934,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			paramsFooterWidget->hide();
 		}
 	});
-
-	CONNECT(hwList, &QComboBox::currentTextChanged, [=](const QString &hwName) {
-		if (!experimentList->selectionModel()->currentIndex().isValid()) {
-			return;
-		}
-		if (hwName.isEmpty()) {
-			return;
-		}
-
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
-		mw->UpdateCurrentExperimentState();
-	});
-
-	CONNECT(channelEdit, &QComboBox::currentTextChanged, [=](const QString &channelName) {
-		if (!experimentList->selectionModel()->currentIndex().isValid()) {
-			return;
-		}
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
-		mw->UpdateCurrentExperimentState();
-	});
-	
+		
 	CONNECT(pauseExpPbt, &QPushButton::clicked, [=]() {
 		if (pauseExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
 			mw->PauseExperiment(hwList->currentText(), channelEdit->currentData().toInt());

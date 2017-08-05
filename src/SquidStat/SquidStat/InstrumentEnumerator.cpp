@@ -75,15 +75,17 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 		static QEventLoop eventLoop;
 		static CalibrationData calData;
 		static HardwareVersion hwVersion;
+		static uint8_t numChannels;
 		static bool handshakeResponseArrived;
 		static bool calibrationDataArrived;
 		static bool hwVersionArrived;
+		static bool numChannelsArrived;
 
 		handshakeResponseArrived = false;
-		calibrationDataArrived = false;
 		hwVersionArrived = false;
-		memset(&calData, 0x00, sizeof(CalibrationData));
+		numChannelsArrived = false;
 		memset(&hwVersion, 0x00, sizeof(HardwareVersion));
+		numChannels = 0;
 
 		QMetaObject::Connection connection = QObject::connect(&communicator, &SerialCommunicator::ResponseReceived,
 			[=](ResponseID resp, quint8 channel, const QByteArray &data) {
@@ -91,6 +93,14 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 					case HANDSHAKE_RESPONSE:
 						handshakeResponseArrived = true;
 						eventLoop.quit();
+						break;
+
+					case NUM_CHANNELS_RESP:
+						if (data.size() == 1) {
+							numChannels = (uint8_t)data.data()[0];
+							numChannelsArrived = true;
+							eventLoop.quit();
+						}
 						break;
 
 					case CAL_DATA:
@@ -115,10 +125,82 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 		);
 
 		communicator.SendCommand((CommandID)HANDSHAKE);
-
 		QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
 		eventLoop.exec();
 
+		if (!handshakeResponseArrived) {
+			QObject::disconnect(connection);
+			communicator.Stop();
+			continue;
+		}
+
+		communicator.SendCommand((CommandID)SEND_HW_DATA);
+		QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+		eventLoop.exec();
+
+		if (!hwVersionArrived) {
+			QObject::disconnect(connection);
+			communicator.Stop();
+			continue;
+		}
+
+		instrumentInfo.hwVer = hwVersion;
+
+		char *_end = (char*)&hwVersion + sizeof(HardwareVersion);
+		char *_ptr = hwVersion.hwName;
+		while (_ptr != _end) {
+			if (*_ptr == '\n') {
+				*_ptr = 0x00;
+				break;
+			}
+			++_ptr;
+		}
+		if (_ptr == _end) {
+			--_ptr;
+			*_ptr = 0x00;
+		}
+
+		instrumentInfo.name = QString(hwVersion.hwName) + " (" + instrumentInfo.port.name + ")";
+
+		communicator.SendCommand((CommandID)SEND_NUM_CHANNELS);
+		QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+		eventLoop.exec();
+
+		if (!numChannelsArrived) {
+			QObject::disconnect(connection);
+			communicator.Stop();
+			continue;
+		}
+
+		bool calDataOk = true;
+		for (int i = 0; i < numChannels; ++i) {
+			calibrationDataArrived = false;
+			memset(&calData, 0x00, sizeof(CalibrationData));
+			
+			communicator.SendCommand((CommandID)SEND_CAL_DATA, i);
+			QTimer::singleShot(1000, &eventLoop, &QEventLoop::quit);
+			eventLoop.exec();
+
+			if (!calibrationDataArrived) {
+				calDataOk = false;
+				break;
+			}
+
+			instrumentInfo.calData << calData;
+		}
+
+		if (!calDataOk) {
+			QObject::disconnect(connection);
+			communicator.Stop();
+			continue;
+		}
+
+		communicator.SendCommand((CommandID)INIT_DEFAULT_SAMPLING);
+
+		ret << instrumentInfo;
+
+
+		/*
 		if (handshakeResponseArrived) {
 			communicator.SendCommand((CommandID)SEND_CAL_DATA);
 
@@ -158,6 +240,7 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 				}
 			}
 		}
+		//*/
 
 		QObject::disconnect(connection);
 
