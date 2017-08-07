@@ -10,7 +10,7 @@ struct InstrumentInfo {
 		QString name;
 		QString serial;
 	} port;
-	CalibrationData calData;
+	QList<CalibrationData> calData;
 	HardwareVersion hwVer;
 	QString name;
 };

@@ -131,7 +131,7 @@ void MainWindow::RemoveInstruments(InstrumentList instruments) {
 	emit RemoveDisconnectedInstruments(removingInstrumentsNames);
 }
 void MainWindow::AddInstruments(InstrumentList instruments) {
-	QStringList addingInstrumentsNames;
+	QList<HardwareUiDescription> addingInstrumentsNames;
 
 	bool needToSetEnd = false;
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
@@ -147,7 +147,7 @@ void MainWindow::AddInstruments(InstrumentList instruments) {
 
 		hardware.handlers << handler;
 
-		addingInstrumentsNames << instrumentToAdd.name;
+		addingInstrumentsNames << HardwareUiDescription(instrumentToAdd.name, instrumentToAdd.calData.size());
 	}
 
 	if (needToSetEnd) {
@@ -412,8 +412,9 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		});
 	}
 
+	quint8 curChan = hardware.currentInstrument.channel;
 	InstrumentInfo &instrumentInfo(hardware.currentInstrument.handler->info);
-	auto nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData, instrumentInfo.hwVer);
+	auto nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData[curChan], instrumentInfo.hwVer);
 	if (nodesData.isEmpty()) {
 		LOG() << "Error while getting user input";
 		return;
@@ -439,7 +440,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		curParam.id = newId;
 		curParam.type = type;
 		curParam.exp = prebuiltExperiments.selectedExp;
-		curParam.cal = instrumentInfo.calData;
+		curParam.cal = instrumentInfo.calData[curChan];
 		curParam.hwVer = instrumentInfo.hwVer;
 		curParam.notes = notes;
 

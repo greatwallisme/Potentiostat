@@ -247,8 +247,9 @@ QPushButton#bar-button:open {
 	border: none;
 	background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                 stop:0 #00000000, stop: 0.7 #00000000,
-                stop:1 #ffffff)
-
+                stop:1 #ffffff);
+				
+	margin-right: 10px;
 }
 #experiment-parameters-owner {
 	max-width: 666px;
@@ -350,7 +351,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-right: 15px;
 }
 #node-params-owner {
-	max-width: 366px;
+	/*max-width: 366px;*/
 	min-width: 366px;
 }
 /*//////////////          ELEMENTS LIST        ////////////////////*/
@@ -609,6 +610,25 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 600px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#log-linear-check-box {
+	border: none;
+	font-size: 16px;
+	/*margin-left: 15px;*/
+	margin-right: 15px;
+	margin-top: 17px;
+}
+#log-linear-check-box::indicator:unchecked {
+	image: url(:/GUI/Resources/checkbox-unchecked.png);
+}
+/*#log-linear-check-box::indicator:unchecked:hover {
+	image: url(:/GUI/Resources/checkbox-unchecked-hover.png);
+}*/
+#log-linear-check-box::indicator:checked {
+	image: url(:/GUI/Resources/checkbox-checked.png);
+}
+/*#log-linear-check-box::indicator:checked:hover {
+	image: url(:/GUI/Resources/checkbox-checked-hover.png);
+}*/
 #new-data-window-placeholder {
 }
 #build-experiment-owner,

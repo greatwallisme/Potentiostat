@@ -113,6 +113,7 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
+	_SET_ROW_STRETCH(++row, 1);
 	USER_INPUT_END();
 }
 NodesData DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {

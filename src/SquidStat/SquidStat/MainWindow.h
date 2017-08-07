@@ -14,6 +14,7 @@
 #include <QList>
 #include <QUuid>
 #include <QFile>
+#include <QPair>
 
 class InstrumentEnumerator;
 class MainWindowUI;
@@ -32,6 +33,9 @@ struct StartExperimentParameters {
 	ExperimentNotes notes;
 	QString filePath;
 };
+
+typedef QPair<QString, quint8> HardwareUiDescription;
+Q_DECLARE_METATYPE(HardwareUiDescription)
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -81,7 +85,7 @@ signals:
 	void CreateNewDataWindow(const StartExperimentParameters&);
 
 	void RemoveDisconnectedInstruments(const QStringList&);
-	void AddNewInstruments(const QStringList&);
+	void AddNewInstruments(const QList<HardwareUiDescription>&);
 
 	void CurrentExperimentCompleted();
 	void CurrentExperimentResumed();

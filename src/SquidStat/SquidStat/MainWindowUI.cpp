@@ -68,6 +68,7 @@
 #include <QTimer>
 
 #include <QDesktopServices>
+#include <QSplitter>
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -1162,8 +1163,18 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
 	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
 	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+	scrollAreaOverlay->hide();
 
 	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::rangeChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
 		if (vertBar->value() == vertBar->maximum()) {
 			scrollAreaOverlay->hide();
@@ -1180,8 +1191,13 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 			break;
 
 		case QEvent::Show:
-			scrollAreaOverlay->show();
-			scrollAreaOverlay->raise();
+			if (vertBar->value() == vertBar->maximum()) {
+				scrollAreaOverlay->hide();
+			}
+			else {
+				scrollAreaOverlay->show();
+				scrollAreaOverlay->raise();
+			}
 			break;
 		}
 		return false;
@@ -1204,9 +1220,14 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 	auto builderTabsPlacerholder = OBJ_NAME(WDG(), "experiment-builder-placeholder");
 	auto builderTabsLay = NO_SPACING(NO_MARGIN(new QStackedLayout(builderTabsPlacerholder)));
 
+
+	auto splitter = new QSplitter(Qt::Horizontal);
+	splitter->addWidget(builderTabsPlacerholder);
+	splitter->addWidget(nodeParamsOwner);
+	splitter->setChildrenCollapsible(false);
+
 	lay->addWidget(nodeListOwner);
-	lay->addWidget(builderTabsPlacerholder);
-	lay->addWidget(nodeParamsOwner);
+	lay->addWidget(splitter);
 
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
@@ -1643,7 +1664,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	auto channelEdit = CMB();
 	channelEdit->setView(OBJ_NAME(new QListView, "combo-list"));
-	channelEdit->addItem("Channel 1", 0);
+	//channelEdit->addItem("Channel 1", 0);
 	//channelEdit->addItem("Channel 2", 1);
 
 	auto hwList = OBJ_NAME(CMB(), "hw-list-combo");
@@ -1694,8 +1715,47 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	auto scrollAreaOverlay = OBJ_NAME(new QWidget(scrollArea), "run-exp-params-overlay");
 	scrollArea->installEventFilter(new PlotOverlayEventFilter(scrollArea, scrollAreaOverlay));
 	scrollAreaOverlay->setAttribute(Qt::WA_TransparentForMouseEvents);
+	scrollAreaOverlay->hide();
+
+	auto hwLambda = [=](const QString &hwName) {
+		channelEdit->clear();
+		/*
+		if (!experimentList->selectionModel()->currentIndex().isValid()) {
+			return;
+		}
+		//*/
+		if (hwName.isEmpty()) {
+			return;
+		}
+
+		for (int i = 0; i < hwList->currentData().toInt(); ++i) {
+			channelEdit->addItem(QString("Channel %1").arg(i + 1), i);
+		}
+
+		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateCurrentExperimentState();
+	};
+
+	CONNECT(hwList, &QComboBox::currentTextChanged, hwLambda);
+
+	CONNECT(channelEdit, &QComboBox::currentTextChanged, [=](const QString &channelName) {
+		if (!experimentList->selectionModel()->currentIndex().isValid()) {
+			return;
+		}
+		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
+		mw->UpdateCurrentExperimentState();
+	});
 
 	auto vertBar = scrollArea->verticalScrollBar();
+	CONNECT(vertBar, &QScrollBar::rangeChanged, [=]() {
+		if (vertBar->value() == vertBar->maximum()) {
+			scrollAreaOverlay->hide();
+		}
+		else {
+			scrollAreaOverlay->show();
+			scrollAreaOverlay->raise();
+		}
+	});
 	CONNECT(vertBar, &QScrollBar::valueChanged, [=]() {
 		if (vertBar->value() == vertBar->maximum()) {
 			scrollAreaOverlay->hide();
@@ -1712,15 +1772,23 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			break;
 
 		case QEvent::Show:
-			scrollAreaOverlay->show();
-			scrollAreaOverlay->raise();
+			if (vertBar->value() == vertBar->maximum()) {
+				scrollAreaOverlay->hide();
+			}
+			else {
+				scrollAreaOverlay->show();
+				scrollAreaOverlay->raise();
+			}
 			break;
 		}
 		return false;
 	}));
 
-	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
-		hwList->addItems(newLines);
+	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &newLines) {
+		for (auto it = newLines.begin(); it != newLines.end(); ++it) {
+			hwList->addItem(it->first, it->second);
+		}
+		//hwList->addItems(newLines);
 	});
 
 	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &linesToDelete) {
@@ -1866,27 +1934,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			paramsFooterWidget->hide();
 		}
 	});
-
-	CONNECT(hwList, &QComboBox::currentTextChanged, [=](const QString &hwName) {
-		if (!experimentList->selectionModel()->currentIndex().isValid()) {
-			return;
-		}
-		if (hwName.isEmpty()) {
-			return;
-		}
-
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
-		mw->UpdateCurrentExperimentState();
-	});
-
-	CONNECT(channelEdit, &QComboBox::currentTextChanged, [=](const QString &channelName) {
-		if (!experimentList->selectionModel()->currentIndex().isValid()) {
-			return;
-		}
-		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
-		mw->UpdateCurrentExperimentState();
-	});
-	
+		
 	CONNECT(pauseExpPbt, &QPushButton::clicked, [=]() {
 		if (pauseExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
 			mw->PauseExperiment(hwList->currentText(), channelEdit->currentData().toInt());
@@ -3062,8 +3110,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	//settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 5, 0);
 
 	auto xCombo = CMB();
 	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
@@ -3080,24 +3128,34 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
-	QRadioButton *xLinRbt;
-	QRadioButton *xLogRbt;
-	QRadioButton *y1LinRbt;
-	QRadioButton *y1LogRbt;
-	QRadioButton *y2LinRbt;
-	QRadioButton *y2LogRbt;
+	//QRadioButton *xLinRbt;
+	//QRadioButton *xLogRbt;
+	//QRadioButton *y1LinRbt;
+	//QRadioButton *y1LogRbt;
+	//QRadioButton *y2LinRbt;
+	//QRadioButton *y2LogRbt;
+
+	QCheckBox *xChkBox;
+	QCheckBox *y1ChkBox;
+	QCheckBox *y2ChkBox;
 
 	settingsLay->addWidget(xCombo, 1, 1);
-	settingsLay->addWidget(y1Combo, 2, 1);
-	settingsLay->addWidget(y2Combo, 3, 1);
-	settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
-	settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
-	settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
-	settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
-	settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
-	settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	settingsLay->addWidget(y1Combo, 3, 1);
+	settingsLay->addWidget(y2Combo, 5, 1);
+	//settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
+	//settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
+	//settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
+	//settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
+	//settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
+	//settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	#define LINEAR_TEXT				"Linear"
+	#define LOGARITHMIC_TEXT		"Logarithmic"
+	settingsLay->addWidget(xChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 1);
+	settingsLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 4, 1);
+	settingsLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 6, 1);
 	settingsLay->setColumnStretch(4, 1);
 
+	/*
 	auto xButtonGroup = new QButtonGroup(w);
 	xButtonGroup->addButton(xLinRbt);
 	xButtonGroup->addButton(xLogRbt);
@@ -3110,9 +3168,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2ButtonGroup->addButton(y2LinRbt);
 	y2ButtonGroup->addButton(y2LogRbt);
 
-	xLinRbt->click();
+	//xLinRbt->click();
 	y1LinRbt->click();
 	y2LinRbt->click();
+	//*/
 
 	QPushButton *addDataPbt;
 	QPushButton *editLinesPbt;
@@ -3128,8 +3187,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	buttonLay->setColumnStretch(1, 1);
 	buttonLay->setRowStretch(4, 1);
 
-	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 4, 0, 1, -1);
-	settingsLay->addLayout(buttonLay, 5, 0, -1, -1);
+	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
+	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 	//settingsLay->setRowStretch(6, 1);
 
 	auto controlButtonLay = new QHBoxLayout;
@@ -3637,6 +3696,52 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plot->setTitle(titleText);
 	});
 
+	plotHandler.plotTabConnections << CONNECT(xChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			xChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			xChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y1ChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			y1ChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			y1ChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	plotHandler.plotTabConnections << CONNECT(y2ChkBox, &QCheckBox::stateChanged, [=](int state) {
+		switch (state) {
+		case Qt::Unchecked:
+			y2ChkBox->setText(LINEAR_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
+			break;
+
+		case Qt::Checked:
+			y2ChkBox->setText(LOGARITHMIC_TEXT);
+			plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
+			break;
+		}
+
+		plot->replot();
+	});
+	/*
 	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
 		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
 		plot->replot();
@@ -3661,6 +3766,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
 		plot->replot();
 	});
+	//*/
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {
