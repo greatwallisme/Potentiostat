@@ -29,9 +29,6 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
-    <Filter Include="_src\Interfaces">
-      <UniqueIdentifier>{dd65a052-13f6-49a1-a7f2-95b23a9fde3f}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GeneratedFiles\qrc_recources.cpp">
@@ -46,23 +43,12 @@
     <ClCompile Include="GeneratedFiles\Release\moc_Factory.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\SquidStat\ExperimentCalcHelper.cpp">
+    <ClCompile Include="..\..\Squidstat\ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="OpenCircuit.cpp">
+    <ClCompile Include="OpenCircuitElement.cpp">
       <Filter>_src</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\SquidStat\AbstractExperiment.h">
-      <Filter>_src\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\SquidStat\ExperimentFactoryInterface.h">
-      <Filter>_src\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="OpenCircuit.h">
-      <Filter>_src</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="recources.qrc">
@@ -71,5 +57,10 @@
     <CustomBuild Include="Factory.h">
       <Filter>_src</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OpenCircuitElement.h">
+      <Filter>_src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

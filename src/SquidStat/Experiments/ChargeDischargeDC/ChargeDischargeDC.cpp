@@ -42,10 +42,10 @@
 #define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 QString ChargeDischargeDC::GetShortName() const {
-	return "Charge/Discharge";
+	return "Charge/Discharge 1";
 }
 QString ChargeDischargeDC::GetFullName() const {
-	return "Charge/Discharge (DC only)";
+	return "Charge/Discharge (Const I, Const V, DC only)";
 }
 QString ChargeDischargeDC::GetDescription() const {
 	return "This experiment repeatedly charges and discharges the cell under test. For each charge and discharge phase, the cell undergoes a <b>constant current</b> segment and then a <b>constant voltage</b> segment.";
@@ -297,7 +297,6 @@ QStringList ChargeDischargeDC::GetXAxisParameters(ExperimentType type) const {
 		ret <<
 			PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_TIMESTAMP_NORMALIZED <<
-      PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT;
 	}
@@ -360,7 +359,6 @@ void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes 
 void ChargeDischargeDC::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	//SAVE_DATA(PLOT_VAR_TIMESTAMP);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
   SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_EWE);

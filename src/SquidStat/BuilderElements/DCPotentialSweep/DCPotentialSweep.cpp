@@ -147,7 +147,7 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   exp.DCSweep_pot.VStartVsOCP = VStartVsOCP;
   exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VEnd);
   exp.DCSweep_pot.VEndVsOCP = VEndVsOCP;
-  exp.DCSweep_pot.Imax = maxCurrent;
+  exp.DCSweep_pot.Imax = MAX_CURRENT;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

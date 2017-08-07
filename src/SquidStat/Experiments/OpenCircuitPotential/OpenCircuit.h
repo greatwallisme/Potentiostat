@@ -3,7 +3,7 @@
 #include <AbstractExperiment.h>
 #include <ExperimentCalcHelper.h>
 
-class LinearSweepVoltammetry : public AbstractExperiment {
+class OpenCircuit : public AbstractExperiment {
 public:
 	QString GetShortName() const;
 	QString GetFullName() const;

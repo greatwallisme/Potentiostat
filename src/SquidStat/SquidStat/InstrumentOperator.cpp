@@ -55,6 +55,10 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			emit ExperimentResumed();
 			break;
 
+    case EXPERIMENT_NODE_BEGINNING:
+      LOG() << "Node beginning";
+      break;
+
 		case EXPERIMENT_NODE_COMPLETE:
 			LOG() << "Node complete";
 			break;

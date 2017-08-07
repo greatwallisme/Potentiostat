@@ -1,7 +1,7 @@
 #include "Factory.h"
 
-#include "LinearSweepVoltammetry.h"
+#include "OpenCircuit.h"
 
 AbstractExperiment* Factory::CreateExperiment(const QVariant&) {
-	return new LinearSweepVoltammetry;
+	return new OpenCircuit;
 }
