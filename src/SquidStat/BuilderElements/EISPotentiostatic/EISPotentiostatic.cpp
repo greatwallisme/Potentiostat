@@ -35,7 +35,7 @@ QPixmap EISPotentiostatic::GetImage() const {
 	return QPixmap(":/GUI/EISPotentiostatic");
 }
 ExperimentType EISPotentiostatic::GetType() const {
-	return ET_DC;
+	return ET_AC;
 }
 QWidget* EISPotentiostatic::CreateUserInput(UserInput &inputs) const {
   USER_INPUT_START(TOP_WIDGET_NAME);
@@ -44,18 +44,18 @@ QWidget* EISPotentiostatic::CreateUserInput(UserInput &inputs) const {
   _INSERT_RIGHT_ALIGN_COMMENT("Upper frequency limit: ", row, 0);
   _INSERT_TEXT_INPUT(UPPER_FREQUENCY_DEFAULT, UPPER_FREQUENCY_OBJ_NAME, row, 1);
   _START_DROP_DOWN(UPPER_FREQUENCY_UNITS_OBJ, row, 2);
-  _ADD_DROP_DOWN_ITEM("mHz");
-  _ADD_DROP_DOWN_ITEM("Hz");
   _ADD_DROP_DOWN_ITEM("kHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("mHz");
   _END_DROP_DOWN();
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Lower frequency limit: ", row, 0);
   _INSERT_TEXT_INPUT(LOWER_FREQUENCY_DEFAULT, LOWER_FREQUENCY_OBJ_NAME, row, 1);
   _START_DROP_DOWN(LOWER_FREQUENCY_UNITS_OBJ, row, 2);
-  _ADD_DROP_DOWN_ITEM("mHz");
-  _ADD_DROP_DOWN_ITEM("Hz");
   _ADD_DROP_DOWN_ITEM("kHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("mHz");
   _END_DROP_DOWN();
 
   ++row;
@@ -104,6 +104,7 @@ NodesData EISPotentiostatic::GetNodesData(const UserInput &inputs, const Calibra
   exp.tMin = exp.tMax = 2 * SECONDS;
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
+  exp.currentRangeMode = AUTORANGE;
   exp.DCPoint_pot.VPointUserInput = biasVoltage;
   exp.DCPoint_pot.VPointVsOCP = biasVsOCP;
   exp.DCPoint_pot.dIdtMin = 0;

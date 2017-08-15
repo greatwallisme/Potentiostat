@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/Experiments">
+        <file alias="EISPotentiostatic">Resources/experiment.png</file>
+        <file alias="EISGalvanostatic">Resources/EIS galvanostatic.png</file>
+    </qresource>
+</RCC>

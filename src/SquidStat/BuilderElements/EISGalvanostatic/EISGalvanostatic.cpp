@@ -44,18 +44,18 @@ QWidget* EISGalvanostatic::CreateUserInput(UserInput &inputs) const {
   _INSERT_RIGHT_ALIGN_COMMENT("Upper frequency limit: ", row, 0);
   _INSERT_TEXT_INPUT(UPPER_FREQUENCY_DEFAULT, UPPER_FREQUENCY_OBJ_NAME, row, 1);
   _START_DROP_DOWN(UPPER_FREQUENCY_UNITS_OBJ, row, 2);
-  _ADD_DROP_DOWN_ITEM("mHz");
-  _ADD_DROP_DOWN_ITEM("Hz");
   _ADD_DROP_DOWN_ITEM("kHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("mHz");
   _END_DROP_DOWN();
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Lower frequency limit: ", row, 0);
   _INSERT_TEXT_INPUT(LOWER_FREQUENCY_DEFAULT, LOWER_FREQUENCY_OBJ_NAME, row, 1);
   _START_DROP_DOWN(LOWER_FREQUENCY_UNITS_OBJ, row, 2);
-  _ADD_DROP_DOWN_ITEM("mHz");
-  _ADD_DROP_DOWN_ITEM("Hz");
   _ADD_DROP_DOWN_ITEM("kHz");
+  _ADD_DROP_DOWN_ITEM("Hz");
+  _ADD_DROP_DOWN_ITEM("mHz");
   _END_DROP_DOWN();
 
   ++row;
@@ -104,8 +104,6 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
 
   QList<qreal> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDec);
 
-  //todo: add galv_point node?
-
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
@@ -126,9 +124,10 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
     exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
-    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, acAmp);   //todo: make this for galvanostatic amplitude
+    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, acAmp);
     exp.FRA_galv_node.IRange = exp.currentRangeMode;
     exp.FRA_galv_node.IBias = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.FRA_galv_node.IRange, biasCurrent);
+    exp.FRA_pot_node.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
 

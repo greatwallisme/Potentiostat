@@ -30,7 +30,7 @@ QStringList OpenCircuitElement::GetCategory() const {
 		"Basic voltammetry";
 }
 QPixmap OpenCircuitElement::GetImage() const {
-	return QPixmap(":/GUI/ConstantPotential");
+	return QPixmap(":/GUI/OpenCircuit");
 }
 ExperimentType OpenCircuitElement::GetType() const {
 	return ET_DC;

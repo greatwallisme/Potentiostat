@@ -132,9 +132,9 @@ uint32_t ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t H
   /* 3) Calculate ADCMult. If ADC sampling period is greater than maxSamplingInterval, reduce ADCBufSize */
   if (samplingInterval == 0) //if auto-calculate mode is selected, then use dt * DACdcBUF_SIZE
     samplingInterval = dt * pNode->samplingParams.DACMultEven;
-  while (round(samplingInterval / dt / FilterSize) > ADCbufsize)
+  while (round(samplingInterval * SECONDS / dt / FilterSize) > ADCbufsize)
     FilterSize++;
-  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint16_t) round(samplingInterval / dt / FilterSize);
+  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = (uint16_t) round(samplingInterval * SECONDS / dt / FilterSize);
 
   /* 4) Calculate Points Ignored (for dynamic sampling) */
   if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
@@ -428,9 +428,9 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange_DACac(const cal_t *
   int range = 7;
 
   while (1)
-  {
+  { 
     double inv_slope = calData->m_DACac * calData->m_DACdcP_I[range] / calData->m_DACdcP_V;
-    if (ABS(targetCurrentAmp) > inv_slope * OVERCURRENT_LIMIT * (3.3 / 10 / 2) && range > 0)
+    if (ABS(targetCurrentAmp) > inv_slope * OVERCURRENT_LIMIT_AC && range > 0)
       range--;
     else
       break;
@@ -492,8 +492,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     fSample = (n - 1) * fSignal / n;
   else
     fSample = fSignal * n;
-  //uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
-  uint64_t TimerPeriod = (uint64_t)(25.0e6 / fSample / ADCclkdiv);
+  uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
 
   while (1)
   {
@@ -505,8 +504,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     }
 
     /* Recalculate sampling frequency and ADCbufsize based on integer timer values */
-    //fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
-    fSample = 25.0e6 / ADCclkdiv / TimerPeriod;
+    fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
     if (pNode->FRA_pot_node.freqRange == HF_RANGE)
     {
       double denom = fSignal - fSample;
@@ -540,8 +538,17 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   pNode->FRA_pot_node.ADCacTimerPeriod = (uint32_t)TimerPeriod;
 
   /* (3) Calculate signal amplitude */
-  //TODO: get a frequency-dependant transfer function
-  pNode->FRA_pot_node.amplitude = MIN((int16_t) (amplitude * calData->m_DACac / 1000), DAC_AC_RESOLUTION);
+  if (pNode->nodeType == FRA_NODE_POT || pNode->nodeType == FRA_NODE_PSEUDOGALV)
+  {
+    pNode->FRA_pot_node.amplitudeTarget = amplitude;
+    pNode->FRA_pot_node.amplitudeBIN = MIN((int16_t)(amplitude / 1000 * calData->m_DACac), DAC_AC_RESOLUTION);
+  }
+  else if (pNode->nodeType == FRA_NODE_GALV)
+  {
+    pNode->FRA_galv_node.amplitudeTarget = amplitude;
+    double m_DACac_I = calData->m_DACac * (calData->m_DACdcP_I[pNode->currentRangeMode] / calData->m_DACdcP_V);
+    pNode->FRA_galv_node.amplitudeBIN = m_DACac_I * amplitude;
+  }
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
@@ -564,7 +571,10 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 {
   /* debugging only */
   std::ofstream fout;
-  fout.open("C:/Users/Matt/Desktop/results.txt", std::ofstream::out | std::ofstream::app);
+  QString filename = "C:/Users/Matt/Desktop/results";
+  filename.append(QString::number(frequency));
+  filename.append(".txt");
+  fout.open(filename.toStdString(), std::ofstream::out | std::ofstream::app);
   fout << "Next data set" << endl;
   for (int i = 0; i < len; i++)
   {
@@ -573,7 +583,8 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 
 
   //todo: add error analysis, THD
-  int rollingAvgNum = (int) round(((double)len) / approxNumCycles / 50);     //todo: replace 50 with frequency-dependent number
+  //int rollingAvgNum = (int) round(((double)len) / approxNumCycles / 50);     //todo: replace 50 with frequency-dependent number
+  int rollingAvgNum = 25;
   int newLen = len - rollingAvgNum;
   double * t_data = new double[newLen];
   double * filteredEWEdata = filterData(bufEWE, len, rollingAvgNum);
@@ -610,8 +621,6 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   pt.ImpedanceReal = pt.ImpedanceMag * cos(pt.phase * M_PI / 180);
   pt.ImpedanceImag = pt.ImpedanceMag * sin(pt.phase * M_PI / 180);
   return pt;
-  /*ComplexDataPoint_t pt;
-  return pt;*/
 }
 
 void ExperimentCalcHelperClass::sinusoidLeastSquaresFit(double * xbuf, double * ybuf, int size, double * results)

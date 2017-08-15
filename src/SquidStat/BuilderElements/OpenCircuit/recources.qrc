@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/GUI">
-        <file alias="ConstantPotential">Resources/element.png</file>
+        <file alias="OpenCircuit">Resources/element.png</file>
     </qresource>
 </RCC>

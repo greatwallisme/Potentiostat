@@ -1,26 +1,27 @@
-#include "EISPotentiostatic.h"
+#include "EISGalvanostatic.h"
 
 #include <ExternalStructures.h>
 #include <ExperimentUIHelper.h>
 
 #include <ExperimentCalcHelper.h>
 
-#define TOP_WIDGET_NAME			"EIS-Potentiostatic"
+#define TOP_WIDGET_NAME			"EIS-Galvanostatic"
 
 #define UPPER_FREQ_OBJ_NAME		"upper-frequency"
 #define LOWER_FREQ_OBJ_NAME		"lower-frequency"
 #define UPPER_FREQ_UNITS_OBJ_NAME "upper-frequency-units"
 #define LOWER_FREQ_UNITS_OBJ_NAME "lower-frequency-units"
 #define STEPS_PER_DEC_OBJ_NAME	"step-per-decade"
-#define DC_BIAS_OBJ_NAME		"DC-bias"
-#define DC_BIAS_VS_OCP_OBJ_NAME "DC-bias-vs-OCP"
+#define DC_BIAS_OBJ_NAME		"DC-bias-current"
+#define DC_BIAS_UNITS_OBJ_NAME "DC-bias-units"
 #define AC_AMP_OBJ_NAME			"AC-amplitude"
+#define AC_AMP_UNITS_OBJ_NAME "AC-amplitude-units"
 
-#define UPPER_FREQ_DEFAULT		1000000		//(in Hz)
-#define LOWER_FREQ_DEFAULT		0.001	//(in Hz)
+#define UPPER_FREQ_DEFAULT		1000		//(in kHz)
+#define LOWER_FREQ_DEFAULT		1	//(in kHz)
 #define STEPS_PER_DEC_DEFAULT	5
 #define DC_BIAS_DEFAULT			0
-#define AC_AMP_DEFAULT			10		//(in mA)
+#define AC_AMP_DEFAULT			0.1		//(in mA)
 
 #define PLOT_VAR_IMPEDANCE				"|Z|"
 #define PLOT_VAR_PHASE					"Phase"
@@ -29,32 +30,32 @@
 #define PLOT_VAR_NEG_IMP_IMAG			"-Z\""
 #define PLOT_VAR_FREQ					"Frequency"
 
-QString EISPotentiostatic::GetShortName() const {
-	return "EIS (Potentiostatic)";
+QString EISGalvanostatic::GetShortName() const {
+	return "EIS (Galvanostatic)";
 }
-QString EISPotentiostatic::GetFullName() const {
-	return "EIS (Potentiostatic)";
+QString EISGalvanostatic::GetFullName() const {
+	return "EIS (Galvanostatic)";
 }
-QString EISPotentiostatic::GetDescription() const {
+QString EISGalvanostatic::GetDescription() const {
 	return "This experiment records the complex impedance of the experimental cell in potentiostatic mode, starting from the <b>upper frequency</b> and sweeping downwards through the <b>lower frequency</b>, with a fixed number of frequency <b>steps per decade</b>. Important parameters include the <b>DC bias</b> and the <b>AC exitation amplitude</b>.";
 }
-QStringList EISPotentiostatic::GetCategory() const {
+QStringList EISGalvanostatic::GetCategory() const {
 	return QStringList() <<
 		"Impedance spectroscopy";
 
 }
-ExperimentTypeList EISPotentiostatic::GetTypes() const {
+ExperimentTypeList EISGalvanostatic::GetTypes() const {
 	return ExperimentTypeList() << ET_AC;
 }
-QPixmap EISPotentiostatic::GetImage() const {
-	return QPixmap(":/Experiments/EISPotentiostatic");
+QPixmap EISGalvanostatic::GetImage() const {
+	return QPixmap(":/Experiments/EISGalvanostatic");
 }
 /*
 #include <QIntValidator>
 #include <QDoubleValidator>
 #include <QRegExpValidator>
 //*/
-QWidget* EISPotentiostatic::CreateUserInput() const {
+QWidget* EISGalvanostatic::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
@@ -85,26 +86,27 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("DC bias = ", row, 0);
 	_INSERT_TEXT_INPUT(DC_BIAS_DEFAULT, DC_BIAS_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
-	_START_DROP_DOWN(DC_BIAS_VS_OCP_OBJ_NAME, row, 1);
-	_ADD_DROP_DOWN_ITEM("open circuit");
-	_ADD_DROP_DOWN_ITEM("reference");
-	_END_DROP_DOWN();
+  _START_DROP_DOWN(DC_BIAS_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("AC excitation amplitude = ", row, 0);
 	_INSERT_TEXT_INPUT(AC_AMP_DEFAULT, AC_AMP_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("mV", row, 2);
+  _START_DROP_DOWN(AC_AMP_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
+  _END_DROP_DOWN();
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
 	_SET_ROW_STRETCH(++row, 1);
 	USER_INPUT_END();
 }
-NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
+NodesData EISGalvanostatic::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
 	double upperFreq;
@@ -112,10 +114,10 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
   QString upperFreqUnits_str;
   QString lowerFreqUnits_str;
 	double stepsPerDecade;
-	double VBias;
-	bool VBiasVsOCP = false;
-	QString VBiasVsOCPStr;
+	double IBias;
+  QString IBiasUnits_str;
   double amplitude;
+  QString amplitudeUnits_str;
 
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperFreq, UPPER_FREQ_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerFreq, LOWER_FREQ_OBJ_NAME);
@@ -123,45 +125,44 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
   GET_SELECTED_DROP_DOWN(lowerFreqUnits_str, LOWER_FREQ_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(stepsPerDecade, STEPS_PER_DEC_OBJ_NAME);
   GET_TEXT_INPUT_VALUE_DOUBLE(amplitude, AC_AMP_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(VBias, DC_BIAS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(VBiasVsOCPStr, DC_BIAS_VS_OCP_OBJ_NAME);
-
-	if (VBiasVsOCPStr.contains("open circuit"))
-		VBiasVsOCP = true;
+  GET_SELECTED_DROP_DOWN(amplitudeUnits_str, AC_AMP_UNITS_OBJ_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(IBias, DC_BIAS_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(IBiasUnits_str, DC_BIAS_UNITS_OBJ_NAME);
 
   upperFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(upperFreqUnits_str);
   lowerFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(lowerFreqUnits_str);
+  amplitude *= ExperimentCalcHelperClass::GetUnitsMultiplier(amplitudeUnits_str);
+  IBias *= ExperimentCalcHelperClass::GetUnitsMultiplier(IBiasUnits_str);
+
+  currentRange_t DCcurrentRangeLimit = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, IBias);
+  currentRange_t ACcurrentRangeLimit = ExperimentCalcHelperClass::GetMinCurrentRange_DACac(&calData, amplitude);
 
   QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDecade);
 
-	exp.isHead = false;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_POINT_POT;
+  exp.isHead = false;
+  exp.isTail = false;
+  exp.nodeType = DCNODE_POINT_GALV;
+  exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
   exp.tMin = exp.tMax = 2 * SECONDS;
-  exp.currentRangeMode = AUTORANGE;
-  exp.DCPoint_pot.Imax = MAX_CURRENT;
-  exp.DCPoint_pot.Imin = 0;
-  exp.DCPoint_pot.dIdtMin = 0;
-  exp.DCPoint_pot.VPointUserInput = VBias;
-  exp.DCPoint_pot.VPointVsOCP = VBiasVsOCP;
-	exp.MaxPlays = 1;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
-	PUSH_NEW_NODE_DATA();
+  exp.DCPoint_galv.dVdtMin = 0;
+  exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.currentRangeMode, IBias);
+  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
+  PUSH_NEW_NODE_DATA();
 
   for (int i = 0; i < frequencyList.length(); i++)
   {
     exp.isHead = false;
     exp.isTail = false;
-    exp.nodeType = FRA_NODE_POT;
-    exp.currentRangeMode = AUTORANGE;
-    exp.FRA_pot_node.frequency = (float)frequencyList[i];
-    exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VBias);
-    exp.FRA_pot_node.VBiasVsOCP = VBiasVsOCP;
+    exp.nodeType = FRA_NODE_GALV;
+    exp.tMin = 0;
+    exp.tMax = 0xffffffffffffffff;
+    exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, amplitude);
-    if (i == 0)
-      exp.FRA_pot_node.firstTime = true;
-    else
-      exp.FRA_pot_node.firstTime = false;
+    exp.FRA_galv_node.IRange = exp.currentRangeMode;
+    exp.FRA_galv_node.IBias = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.FRA_galv_node.IRange, IBias);
+    exp.FRA_pot_node.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
 
@@ -171,7 +172,7 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
 	NODES_DATA_END();
 }
 
-QStringList EISPotentiostatic::GetXAxisParameters(ExperimentType type) const {
+QStringList EISGalvanostatic::GetXAxisParameters(ExperimentType type) const {
 	QStringList ret;
 
 	if (type == ET_AC) {
@@ -182,7 +183,7 @@ QStringList EISPotentiostatic::GetXAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
+QStringList EISGalvanostatic::GetYAxisParameters(ExperimentType type) const {
 	QStringList ret;
 
 	if (type == ET_AC) {
@@ -196,7 +197,7 @@ QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
+void EISGalvanostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
 	
@@ -207,7 +208,7 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
 }
-void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
+void EISGalvanostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
 	SAVE_AC_DATA_HEADER(PLOT_VAR_FREQ);
@@ -220,7 +221,7 @@ void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes 
 	SAVE_DATA_HEADER_END();
 }
 
-void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
+void EISGalvanostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
 	SAVE_DATA(PLOT_VAR_FREQ);

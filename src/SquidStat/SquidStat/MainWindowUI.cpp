@@ -202,7 +202,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		widgetsLayout->setCurrentWidget(GetBuildExperimentTab());
 	});
 
-	pbt = OBJ_PROP(OBJ_NAME(PBT("New Data Window"), "bar-button"), "order", "last");
+	pbt = OBJ_PROP(OBJ_NAME(PBT("View Data"), "bar-button"), "order", "last");
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);

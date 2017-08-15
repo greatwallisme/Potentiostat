@@ -37,7 +37,7 @@ ExperimentTypeList OpenCircuit::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap OpenCircuit::GetImage() const {
-	return QPixmap(":/Experiments/LinearSweepVoltammetry");
+	return QPixmap(":/Experiments/OpenCircuitPotential");
 }
 /*
 #include <QIntValidator>
