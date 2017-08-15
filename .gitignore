@@ -4,6 +4,7 @@ build-*/
 *.DS_Store
 *.user
 _out
+out/
 Build
 .vs/
 *.db
@@ -17,3 +18,4 @@ src/SquidStat/SquidStat/elements/*
 src/SquidStat/SquidStat/custom/*
 src/SquidStat/SquidStat/ExperimentValues.ini
 src/SquidStat/SquidStat/SquidStatParameters.ini
+data.7z

@@ -756,7 +756,7 @@ void MainWindow::LoadFonts() {
 	}
 
 	//QMessageBox::information(0, "", msg);
-	//*
+	/*
 	QFile f("FontList.txt");
 	if (f.open(QIODevice::WriteOnly)) {
 		f.write(msg.toLatin1());
