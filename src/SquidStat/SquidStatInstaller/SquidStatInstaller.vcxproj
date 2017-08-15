@@ -94,7 +94,11 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c create.cmd</Command>
+      <Command>@echo on
+echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+echo !!! SELECT RELEASE CONFIGURATION !!!
+echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+exit 1</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

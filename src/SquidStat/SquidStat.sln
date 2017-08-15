@@ -99,9 +99,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EISGalvanostatic", "Experiments\EISGalvanostatic\EISGalvanostatic.vcxproj", "{5D37C1B0-5314-4C1D-856F-CE602C55CC61}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SquidStatInstaller", "SquidStatInstaller\SquidStatInstaller.vcxproj", "{C4559F18-A0F4-4C51-BA01-34C57BEB2120}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B12702AD-ABFB-343A-A199-8E24837244A3} = {B12702AD-ABFB-343A-A199-8E24837244A3}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
