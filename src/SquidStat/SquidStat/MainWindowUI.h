@@ -78,6 +78,8 @@ private:
 			} symbol;
 
 			QwtPlotCurve::CurveStyle style;
+
+			QString title;
 		} curve[TOTAL_CURVES];
 	};
 
@@ -94,7 +96,7 @@ private:
 
 	struct PlotHandler;
 
-	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&);
+	static bool GetNewPen(QWidget *parent, QMap<QString, CurveParameters>&, const QString&, const QString&);
 	static bool GetNewAxisParams(QWidget *parent, AxisParameters &);
 	static bool ApplyNewAxisParams(QwtPlot::Axis, PlotHandler &handler);
 	static QString GetNewTitle(QWidget*, const QString&);

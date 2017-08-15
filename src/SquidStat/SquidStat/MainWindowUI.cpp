@@ -2501,7 +2501,7 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 
 	return ret;
 }
-bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams) {
+bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveParameters> &curveParams, const QString &primaryLineName, const QString &secondaryLineName) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 	
@@ -2526,14 +2526,22 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	auto optLay = new QHBoxLayout;
 	QRadioButton *primBut;
 	QRadioButton *secBut;
-	optLay->addWidget(primBut = RBT("Primary curve"));
-	optLay->addWidget(secBut = RBT("Secondary curve"));
+	//optLay->addWidget(primBut = RBT("Primary curve"));
+	//optLay->addWidget(secBut = RBT("Secondary curve"));
+	optLay->addWidget(primBut = new QRadioButton(primaryLineName));
+	optLay->addWidget(secBut = new QRadioButton(secondaryLineName));
 	lay->addLayout(optLay);
+
+	if (secondaryLineName == NONE_Y_AXIS_VARIABLE) {
+		primBut->hide();
+		secBut->hide();
+	}
 
 	auto stackLay = NO_SPACING(NO_MARGIN(new QStackedLayout));
 
 	QLabel *curveSettingLabel;
-	lay->addWidget(curveSettingLabel = OBJ_NAME(LBL("Primary Curve"), "heading-label"));
+	//lay->addWidget(curveSettingLabel = OBJ_NAME(LBL("Primary Curve"), "heading-label"));
+	lay->addWidget(curveSettingLabel = OBJ_NAME(new QLabel(primaryLineName), "heading-label"));
 
 	static CurveParameters currentParams;
 
@@ -2563,19 +2571,25 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 		QPushButton *colorPbt;
 		QLabel *widthLbl;
 		QSpinBox *widthSpin;
+		QLineEdit *legendLed;
 		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
 
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Line Style: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
-		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Dot Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
-		paramsLay->addWidget(widthLbl = OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 3, 2);
-		paramsLay->addWidget(colorPbt = PBT(""), 0, 1);
-		paramsLay->addWidget(spin = new QDoubleSpinBox, 1, 1);
-		paramsLay->addWidget(penStyleCmb = CMB(), 2, 1);
-		paramsLay->addWidget(curveSymbolCmb = CMB(), 3, 1);
-		paramsLay->addWidget(widthSpin = new QSpinBox, 3, 3);
-		paramsLay->addWidget(smallPlot = new QwtPlot, 0, 2, 3, 2);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Legend: "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Color (click): "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Line Style: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Dot Style: "), "experiment-params-comment"), "comment-placement", "left"), 4, 0);
+		paramsLay->addWidget(widthLbl = OBJ_PROP(OBJ_NAME(LBL("Width: "), "experiment-params-comment"), "comment-placement", "left"), 4, 2);
+		paramsLay->addWidget(legendLed = LED(), 0, 1);
+		paramsLay->addWidget(colorPbt = PBT(""), 1, 1);
+		paramsLay->addWidget(spin = new QDoubleSpinBox, 2, 1);
+		paramsLay->addWidget(penStyleCmb = CMB(), 3, 1);
+		paramsLay->addWidget(curveSymbolCmb = CMB(), 4, 1);
+		paramsLay->addWidget(widthSpin = new QSpinBox, 4, 3);
+		paramsLay->addWidget(smallPlot = new QwtPlot, 1, 2, 3, 2);
+
+		legendLed->setPlaceholderText("Auto");
+		legendLed->setText(currentParams.curve[what].title);
 
 		smallPlot->enableAxis(QwtPlot::yLeft, false);
 		smallPlot->enableAxis(QwtPlot::xBottom, false);
@@ -2658,6 +2672,10 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 				
 		stackLay->addWidget(paramsOwner);
 
+		dialogConn << CONNECT(legendLed, &QLineEdit::textChanged, [=]() {
+			currentParams.curve[what].title = legendLed->text();
+		});
+
 		dialogConn << CONNECT(curveSymbolCmb, &QComboBox::currentTextChanged, [=]() {
 			auto symbolStyle = (QwtSymbol::Style)curveSymbolCmb->currentData().value<int>();
 			auto symbol = new QwtSymbol(symbolStyle);
@@ -2732,11 +2750,13 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	primBut->setChecked(true);
 
 	dialogConn << CONNECT(primBut, &QRadioButton::clicked, [=]() {
-		curveSettingLabel->setText("Primary Curve");
+		//curveSettingLabel->setText("Primary Curve");
+		curveSettingLabel->setText(primaryLineName);
 		stackLay->setCurrentIndex(0);
 	});
 	dialogConn << CONNECT(secBut, &QRadioButton::clicked, [=]() {
-		curveSettingLabel->setText("Secondary Curve");
+		//curveSettingLabel->setText("Secondary Curve");
+		curveSettingLabel->setText(secondaryLineName);
 		stackLay->setCurrentIndex(1);
 	});
 
@@ -3873,6 +3893,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.width = 10;
 				currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.style = QwtSymbol::NoSymbol;
 			}
+			if (data.curve1->title().text() == y1Combo->currentText()) {
+				currentParams[data.name].curve[CurveParameters::PRIMARY].title = "";
+			}
+			else {
+				currentParams[data.name].curve[CurveParameters::PRIMARY].title = data.curve1->title().text();
+			}
 
 			currentParams[data.name].curve[CurveParameters::SECONDARY].pen.color = data.curve2->pen().color();
 			currentParams[data.name].curve[CurveParameters::SECONDARY].pen.width = data.curve2->pen().width();
@@ -3886,9 +3912,15 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.width = 10;
 				currentParams[data.name].curve[CurveParameters::SECONDARY].symbol.style = QwtSymbol::NoSymbol;
 			}
+			if (data.curve2->title().text() == y2Combo->currentText()) {
+				currentParams[data.name].curve[CurveParameters::SECONDARY].title = "";
+			}
+			else {
+				currentParams[data.name].curve[CurveParameters::SECONDARY].title = data.curve2->title().text();
+			}
 		}
 
-		if (GetNewPen(mw, currentParams)) {
+		if (GetNewPen(mw, currentParams, y1Combo->currentText(), y2Combo->currentText())) {
 			foreach(const DataMapVisualization &data, handler.data) {
 				data.curve1->setPen(currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color,
 					currentParams[data.name].curve[CurveParameters::PRIMARY].pen.width,
@@ -3898,6 +3930,20 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					currentParams[data.name].curve[CurveParameters::SECONDARY].pen.style);
 				data.curve1->setStyle(currentParams[data.name].curve[CurveParameters::PRIMARY].style);
 				data.curve2->setStyle(currentParams[data.name].curve[CurveParameters::SECONDARY].style);
+
+				if (currentParams[data.name].curve[CurveParameters::PRIMARY].title.isEmpty()) {
+					data.curve1->setTitle(y1Combo->currentText());
+				}
+				else {
+					data.curve1->setTitle(currentParams[data.name].curve[CurveParameters::PRIMARY].title);
+				}
+
+				if (currentParams[data.name].curve[CurveParameters::SECONDARY].title.isEmpty()) {
+					data.curve2->setTitle(y2Combo->currentText());
+				}
+				else {
+					data.curve2->setTitle(currentParams[data.name].curve[CurveParameters::SECONDARY].title);
+				}
 
 				auto symbol = new QwtSymbol(currentParams[data.name].curve[CurveParameters::PRIMARY].symbol.style);
 				symbol->setPen(currentParams[data.name].curve[CurveParameters::PRIMARY].pen.color, 1, Qt::SolidLine);
@@ -3965,7 +4011,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
 			it->data[QwtPlot::yLeft] = &it->container[curText];
 			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
-			it->curve1->setTitle(curText);
+			if(-1 != y1Combo->findText(it->curve1->title().text())) {
+				it->curve1->setTitle(curText);
+			}
 		}
 		handler.plot->replot();
 	});
@@ -3992,7 +4040,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				it->data[QwtPlot::yRight] = &it->container[curText];
 
 				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
-				it->curve2->setTitle(curText);
+				if (-1 != y2Combo->findText(it->curve2->title().text())) {
+					it->curve2->setTitle(curText);
+				}
 			}
 		}
 
