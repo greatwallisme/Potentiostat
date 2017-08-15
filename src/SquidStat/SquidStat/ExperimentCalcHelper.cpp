@@ -540,7 +540,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   /* (3) Calculate signal amplitude */
   if (pNode->nodeType == FRA_NODE_POT || pNode->nodeType == FRA_NODE_PSEUDOGALV)
   {
-    pNode->FRA_pot_node.amplitudeTarget = amplitude;
+    pNode->FRA_pot_node.amplitudeTarget = amplitude / 1000;
     pNode->FRA_pot_node.amplitudeBIN = MIN((int16_t)(amplitude / 1000 * calData->m_DACac), DAC_AC_RESOLUTION);
   }
   else if (pNode->nodeType == FRA_NODE_GALV)
