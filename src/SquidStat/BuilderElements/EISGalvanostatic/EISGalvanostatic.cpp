@@ -124,10 +124,11 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
     exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
-    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, acAmp);
+    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
+    exp.FRA_galv_node.amplitudeTarget = acAmp;
     exp.FRA_galv_node.IRange = exp.currentRangeMode;
     exp.FRA_galv_node.IBias = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.FRA_galv_node.IRange, biasCurrent);
-    exp.FRA_pot_node.firstTime = (i == 0);
+    exp.FRA_galv_node.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
 

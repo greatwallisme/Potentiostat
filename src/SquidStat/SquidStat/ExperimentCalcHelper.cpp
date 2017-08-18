@@ -458,7 +458,7 @@ QList<double> ExperimentCalcHelperClass::calculateFrequencyList(double lowerFreq
   return frequencies;
 }
 
-void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, ExperimentNode_t * pNode, double amplitude)
+void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, ExperimentNode_t * pNode)
 {
   pNode->FRA_pot_node.freqRange = pNode->FRA_pot_node.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
 
@@ -489,9 +489,11 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   uint32_t ADCclkdiv = 1;
 
   if (pNode->FRA_pot_node.freqRange == HF_RANGE)
-    fSample = (n - 1) * fSignal / n;
+    //fSample = (n - 1) * fSignal / n;
+    fSample = (n - 5) * fSignal / n;
   else
-    fSample = fSignal * n;
+    //fSample = fSignal * n;
+    fSample = fSignal * n / 4;
   uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
 
   while (1)
@@ -516,44 +518,33 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
       }
       else
       {
-        n = (uint32_t)x;
+        /*n = (uint32_t)x;
         if (ADCacBUF_SIZE / n > 1)
-          n *= ADCacBUF_SIZE / n;
+          n *= ADCacBUF_SIZE / n;*/
+        n = ADCacBUF_SIZE;
         break;
       }
     }
     else
     {
-      n = (uint32_t)round(fSample / fSignal);
+      n = ADCacBUF_SIZE; break;
+      /*n = (uint32_t)round(fSample / fSignal);
       if (n > ADCacBUF_SIZE)
       {
         TimerPeriod++;
         continue;
       }
       else
-        break;
+        break;*/
     }
   }
   pNode->FRA_pot_node.ADCacBufSize = n;
   pNode->FRA_pot_node.ADCacTimerPeriod = (uint32_t)TimerPeriod;
-
-  /* (3) Calculate signal amplitude */
-  if (pNode->nodeType == FRA_NODE_POT || pNode->nodeType == FRA_NODE_PSEUDOGALV)
-  {
-    pNode->FRA_pot_node.amplitudeTarget = amplitude / 1000;
-    pNode->FRA_pot_node.amplitudeBIN = MIN((int16_t)(amplitude / 1000 * calData->m_DACac), DAC_AC_RESOLUTION);
-  }
-  else if (pNode->nodeType == FRA_NODE_GALV)
-  {
-    pNode->FRA_galv_node.amplitudeTarget = amplitude;
-    double m_DACac_I = calData->m_DACac * (calData->m_DACdcP_I[pNode->currentRangeMode] / calData->m_DACdcP_V);
-    pNode->FRA_galv_node.amplitudeBIN = m_DACac_I * amplitude;
-  }
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
 {
-  double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
+  /*double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
   
   if (acDataHeader.freqRange == HF_RANGE)
   {
@@ -563,25 +554,13 @@ double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData ac
   else
   {
     return acDataHeader.ADCacBufSize / (samplingFreq / acDataHeader.frequency);
-  }
+  }*/
+  return 1;
 }
 
 /* Sinusoidal curve fitting */
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufEWE, int16_t * bufCurrent, double gainEWE, double gainI, uint16_t len, double approxNumCycles)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, uint16_t len, double approxNumCycles, const cal_t * calData, currentRange_t range)
 {
-  /* debugging only */
-  std::ofstream fout;
-  QString filename = "C:/Users/Matt/Desktop/results";
-  filename.append(QString::number(frequency));
-  filename.append(".txt");
-  fout.open(filename.toStdString(), std::ofstream::out | std::ofstream::app);
-  fout << "Next data set" << endl;
-  for (int i = 0; i < len; i++)
-  {
-    fout << bufEWE[i] << '\t' << bufCurrent[i] << '\n';
-  }
-
-
   //todo: add error analysis, THD
   //int rollingAvgNum = (int) round(((double)len) / approxNumCycles / 50);     //todo: replace 50 with frequency-dependent number
   int rollingAvgNum = 25;
@@ -598,28 +577,52 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   double resultsCurrent[4];
   sinusoidLeastSquaresFit(t_data, filteredEWEdata, newLen, resultsEWE);
   sinusoidLeastSquaresFit(t_data, filteredCurrentData, newLen, resultsCurrent);
+  resultsEWE[0] = resultsCurrent[0] = (resultsEWE[0] + resultsCurrent[0] ) / 2;
 
   /* Part 2: Newton-Raphson method */  //TODO: don't just have this iterate 10 times, set an error limit
   for (int i = 0; i < 10; i++)
   {
     NewtonRaphson(resultsEWE, t_data, filteredEWEdata, newLen, resultsEWE);
-    NewtonRaphson(resultsCurrent, t_data, filteredCurrentData, newLen, resultsCurrent);
+    resultsCurrent[0] = resultsEWE[0];
+    NewtonRaphson(resultsCurrent, t_data, filteredCurrentData, newLen, resultsCurrent, true);
   }
 
-  delete[] t_data;  //todo: check for memory leaks
-  delete[] filteredEWEdata;
-  delete[] filteredCurrentData;
+  /* debugging only */
+  if (frequency < 1000)
+  {
+    std::ofstream fout;
+    QString filename = "C:/Users/Matt/Desktop/results";
+    filename.append(QString::number(frequency));
+    filename.append(".txt");
+    fout.open(filename.toStdString(), std::ofstream::out);
+    fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
+    fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
+    for (int i = 0; i < len; i++)
+    {
+      fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
+    }
+  }
 
   ComplexDataPoint_t pt;
-  double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE;
-  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI;
+  double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE * (calData->m_eweP + calData->m_refP + calData->m_eweN + calData->m_refN) / 4;
+  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI * (calData->m_iP[(int)range], calData->m_iN[(int)range]) / 2;
   double phaseEWE = atan2(resultsEWE[2], resultsEWE[3]) * 180 / M_PI;
   double phaseCurrent = atan2(resultsCurrent[2], resultsCurrent[3]) * 180 / M_PI;
   pt.frequency = frequency;
-  pt.ImpedanceMag = MagEWE / MagCurrent;      //todo: incorporate calibration data
+  pt.ImpedanceMag = MagEWE / MagCurrent;
   pt.phase = phaseCurrent - phaseEWE;
+  if (pt.phase <= -180)
+    pt.phase += 360;
+  else if (pt.phase > 180)
+    pt.phase -= 360;
   pt.ImpedanceReal = pt.ImpedanceMag * cos(pt.phase * M_PI / 180);
   pt.ImpedanceImag = pt.ImpedanceMag * sin(pt.phase * M_PI / 180);
+  pt.error = getError(filteredEWEdata, resultsEWE, newLen) + getError(filteredCurrentData, resultsCurrent, newLen);
+
+  delete[] t_data;
+  delete[] filteredEWEdata;
+  delete[] filteredCurrentData;
+
   return pt;
 }
 
@@ -845,6 +848,16 @@ double * ExperimentCalcHelperClass::filterData(int16_t * rawData, int length, in
   return filteredData;
 }
 
+double ExperimentCalcHelperClass::getError(double * rawData, double * resultsBuf, int len)
+{
+  double sum = 0;
+  for (int i = 0; i < len; i++)
+  {
+    sum += pow(rawData[i] - y_model(resultsBuf, i), 2);
+  }
+  return sqrt(sum);
+}
+
 double ** ExperimentCalcHelperClass::createMatrix(int rows, int cols)
 {
   double ** matrix = new double*[rows];
@@ -956,60 +969,108 @@ double ** ExperimentCalcHelperClass::matrixMult(double ** matrix1, int rows1, in
   return result;
 }
 
-void ExperimentCalcHelperClass::NewtonRaphson(double * initialGuessParams, double * xbuf, double * ybuf, int length, double * resultsBuf)
+void ExperimentCalcHelperClass::NewtonRaphson(double * initialGuessParams, double * xbuf, double * ybuf, int length, double * resultsBuf, bool lockedFrequency)
 {
-  double ** doubleDerivMatrix = createMatrix(4, 4);
-
-  double(*ptrFnDblDerivs[4][4])(double *, double);
-  ptrFnDblDerivs[0][0] = d2ydw2;
-  ptrFnDblDerivs[0][1] = d2ydwda;
-  ptrFnDblDerivs[0][2] = d2ydwdb;
-  ptrFnDblDerivs[0][3] = d2ydwdc;
-  ptrFnDblDerivs[1][0] = d2ydwda;
-  ptrFnDblDerivs[1][1] = d2yda2;
-  ptrFnDblDerivs[1][2] = d2ydadb;
-  ptrFnDblDerivs[1][3] = d2ydadc;
-  ptrFnDblDerivs[2][0] = d2ydwdb;
-  ptrFnDblDerivs[2][1] = d2ydadb;
-  ptrFnDblDerivs[2][2] = d2ydb2;
-  ptrFnDblDerivs[2][3] = d2ydbdc;
-  ptrFnDblDerivs[3][0] = d2ydwdc;
-  ptrFnDblDerivs[3][1] = d2ydadc;
-  ptrFnDblDerivs[3][2] = d2ydbdc;
-  ptrFnDblDerivs[3][3] = d2ydc2;
-
-  double(*ptrFnDerivs[4])(double *, double);
-  ptrFnDerivs[0] = dydw;
-  ptrFnDerivs[1] = dyda;
-  ptrFnDerivs[2] = dydb;
-  ptrFnDerivs[3] = dydc;
-
-  for (int r = 0; r < 4; r++)
+  if (lockedFrequency == false)
   {
-    for (int c = 0; c < 4; c++)
+    double ** doubleDerivMatrix = createMatrix(4, 4);
+
+    double(*ptrFnDblDerivs[4][4])(double *, double);
+    ptrFnDblDerivs[0][0] = d2ydw2;
+    ptrFnDblDerivs[0][1] = d2ydwda;
+    ptrFnDblDerivs[0][2] = d2ydwdb;
+    ptrFnDblDerivs[0][3] = d2ydwdc;
+    ptrFnDblDerivs[1][0] = d2ydwda;
+    ptrFnDblDerivs[1][1] = d2yda2;
+    ptrFnDblDerivs[1][2] = d2ydadb;
+    ptrFnDblDerivs[1][3] = d2ydadc;
+    ptrFnDblDerivs[2][0] = d2ydwdb;
+    ptrFnDblDerivs[2][1] = d2ydadb;
+    ptrFnDblDerivs[2][2] = d2ydb2;
+    ptrFnDblDerivs[2][3] = d2ydbdc;
+    ptrFnDblDerivs[3][0] = d2ydwdc;
+    ptrFnDblDerivs[3][1] = d2ydadc;
+    ptrFnDblDerivs[3][2] = d2ydbdc;
+    ptrFnDblDerivs[3][3] = d2ydc2;
+
+    double(*ptrFnDerivs[4])(double *, double);
+    ptrFnDerivs[0] = dydw;
+    ptrFnDerivs[1] = dyda;
+    ptrFnDerivs[2] = dydb;
+    ptrFnDerivs[3] = dydc;
+
+    for (int r = 0; r < 4; r++)
     {
-      doubleDerivMatrix[r][c] = de2dXdY(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r], ptrFnDerivs[c], ptrFnDblDerivs[r][c]);
+      for (int c = 0; c < 4; c++)
+      {
+        doubleDerivMatrix[r][c] = de2dXdY(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r], ptrFnDerivs[c], ptrFnDblDerivs[r][c]);
+      }
     }
-  }
 
-  double ** singleDerivMatrix = createMatrix(4, 1);
-  for (int r = 0; r < 4; r++)
+    double ** singleDerivMatrix = createMatrix(4, 1);
+    for (int r = 0; r < 4; r++)
+    {
+      singleDerivMatrix[r][0] = dedX(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r]);
+    }
+
+    double ** dblDerivMatrInverse = invertMatrix(doubleDerivMatrix, 4);
+    double ** results = matrixMult(dblDerivMatrInverse, 4, 4, singleDerivMatrix, 4, 1);
+    for (int i = 0; i < 4; i++)
+    {
+      resultsBuf[i] = initialGuessParams[i] - results[i][0];
+    }
+
+    deleteMatrix(dblDerivMatrInverse, 4);
+    deleteMatrix(doubleDerivMatrix, 4);
+    deleteMatrix(singleDerivMatrix, 4);
+    deleteMatrix(results, 4);
+  }
+  else
   {
-    singleDerivMatrix[r][0] = dedX(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r]);
+    double ** doubleDerivMatrix = createMatrix(3, 3);
+
+    double(*ptrFnDblDerivs[3][3])(double *, double);
+    ptrFnDblDerivs[0][0] = d2yda2;
+    ptrFnDblDerivs[0][1] = d2ydadb;
+    ptrFnDblDerivs[0][2] = d2ydadc;
+    ptrFnDblDerivs[1][0] = d2ydadb;
+    ptrFnDblDerivs[1][1] = d2ydb2;
+    ptrFnDblDerivs[1][2] = d2ydbdc;
+    ptrFnDblDerivs[2][0] = d2ydadc;
+    ptrFnDblDerivs[2][1] = d2ydbdc;
+    ptrFnDblDerivs[2][2] = d2ydc2;
+
+    double(*ptrFnDerivs[3])(double *, double);
+    ptrFnDerivs[0] = dyda;
+    ptrFnDerivs[1] = dydb;
+    ptrFnDerivs[2] = dydc;
+
+    for (int r = 0; r < 3; r++)
+    {
+      for (int c = 0; c < 3; c++)
+      {
+        doubleDerivMatrix[r][c] = de2dXdY(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r], ptrFnDerivs[c], ptrFnDblDerivs[r][c]);
+      }
+    }
+
+    double ** singleDerivMatrix = createMatrix(3, 1);
+    for (int r = 0; r < 3; r++)
+    {
+      singleDerivMatrix[r][0] = dedX(initialGuessParams, xbuf, ybuf, length, ptrFnDerivs[r]);
+    }
+
+    double ** dblDerivMatrInverse = invertMatrix(doubleDerivMatrix, 3);
+    double ** results = matrixMult(dblDerivMatrInverse, 3, 3, singleDerivMatrix, 3, 1);
+    for (int i = 0; i < 3; i++)
+    {
+      resultsBuf[i + 1] = initialGuessParams[i + 1] - results[i][0];
+    }
+
+    deleteMatrix(dblDerivMatrInverse, 3);
+    deleteMatrix(doubleDerivMatrix, 3);
+    deleteMatrix(singleDerivMatrix, 3);
+    deleteMatrix(results, 3);
   }
-
-  double ** dblDerivMatrInverse = invertMatrix(doubleDerivMatrix, 4);
-  double ** results = matrixMult(dblDerivMatrInverse, 4, 4, singleDerivMatrix, 4, 1);
-  for (int i = 0; i < 4; i++)
-  {
-    resultsBuf[i] = initialGuessParams[i] - results[i][0];
-  }
-
-  deleteMatrix(dblDerivMatrInverse, 4);
-  deleteMatrix(doubleDerivMatrix, 4);
-  deleteMatrix(singleDerivMatrix, 4);
-  deleteMatrix(results, 4);
-
 }
 
 double ExperimentCalcHelperClass::y_model(double * paramsBuf, double x)

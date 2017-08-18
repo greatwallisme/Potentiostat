@@ -47,7 +47,7 @@ typedef QList<ExperimentType> ExperimentTypeList;
 	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
 
 #define PUSH_NEW_AC_DATA_DEFINITION \
-	PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData&, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
+	PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
 
 class AbstractExperiment {
 public:
