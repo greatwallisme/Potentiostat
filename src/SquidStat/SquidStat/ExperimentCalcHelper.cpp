@@ -538,7 +538,6 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
         break;*/
     }
   }
-  pNode->FRA_pot_node.ADCacBufSize = n;
   pNode->FRA_pot_node.ADCacTimerPeriod = (uint32_t)TimerPeriod;
 }
 
@@ -559,15 +558,13 @@ double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData ac
 }
 
 /* Sinusoidal curve fitting */
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, uint16_t len, double approxNumCycles, const cal_t * calData, currentRange_t range)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range)
 {
   //todo: add error analysis, THD
-  //int rollingAvgNum = (int) round(((double)len) / approxNumCycles / 50);     //todo: replace 50 with frequency-dependent number
-  int rollingAvgNum = 25;
-  int newLen = len - rollingAvgNum;
+  int newLen = ADCacBUF_SIZE - ADCacROLLING_AVG_SIZE;
   double * t_data = new double[newLen];
-  double * filteredEWEdata = filterData(bufEWE, len, rollingAvgNum);
-  double * filteredCurrentData = filterData(bufCurrent, len, rollingAvgNum);
+  double * filteredEWEdata = filterData(bufEWE, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
+  double * filteredCurrentData = filterData(bufCurrent, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
 
   for (int i = 0; i < newLen; i++)
     t_data[i] = i;
@@ -588,19 +585,16 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   }
 
   /* debugging only */
-  if (frequency < 1000)
+  std::ofstream fout;
+  QString filename = "C:/Users/Matt/Desktop/results";
+  filename.append(QString::number(frequency));
+  filename.append(".txt");
+  fout.open(filename.toStdString(), std::ofstream::out);
+  fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
+  fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
+  for (int i = 0; i < ADCacBUF_SIZE; i++)
   {
-    std::ofstream fout;
-    QString filename = "C:/Users/Matt/Desktop/results";
-    filename.append(QString::number(frequency));
-    filename.append(".txt");
-    fout.open(filename.toStdString(), std::ofstream::out);
-    fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
-    fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
-    for (int i = 0; i < len; i++)
-    {
-      fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
-    }
+    fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
   }
 
   ComplexDataPoint_t pt;

@@ -27,10 +27,9 @@
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
 		expData->frequency,											\
 		expData->data,												\
-		expData->data + expData->ADCacBufSize,						\
+    &expData->data[ADCacBUF_SIZE],          \
 		expData->gainVoltage,										\
 		expData->gainCurrent,										\
-		expData->ADCacBufSize,                      \
     numCycles, \
     calData, \
     expData->IRange);

@@ -42,7 +42,7 @@ public:
   static double calcNumberOfCycles(const ExperimentalAcData);
 
   /* sinusoidal curve-fitting */
-  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, uint16_t len, double approxNumCycles, const cal_t * calData, currentRange_t range);
+  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range);
 
 private:
   /* matrix operations */
