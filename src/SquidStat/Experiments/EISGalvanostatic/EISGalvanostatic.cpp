@@ -159,7 +159,8 @@ NodesData EISGalvanostatic::GetNodesData(QWidget *wdg, const CalibrationData &ca
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
     exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
-    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, amplitude);
+    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
+    exp.FRA_galv_node.amplitudeTarget = amplitude;
     exp.FRA_galv_node.IRange = exp.currentRangeMode;
     exp.FRA_galv_node.IBias = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.FRA_galv_node.IRange, IBias);
     exp.FRA_pot_node.firstTime = (i == 0);
@@ -199,7 +200,7 @@ QStringList EISGalvanostatic::GetYAxisParameters(ExperimentType type) const {
 }
 void EISGalvanostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
-	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
+	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
 	
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
 	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
