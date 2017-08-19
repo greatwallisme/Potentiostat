@@ -309,7 +309,7 @@ void CustomExperimentRunner::SaveDcData(QFile &saveFile, const DataMap &containe
 
 void CustomExperimentRunner::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
-	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
+	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
 
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
 	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);

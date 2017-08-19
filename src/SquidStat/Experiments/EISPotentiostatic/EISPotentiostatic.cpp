@@ -28,6 +28,7 @@
 #define PLOT_VAR_IMP_IMAG				"Z\""
 #define PLOT_VAR_NEG_IMP_IMAG			"-Z\""
 #define PLOT_VAR_FREQ					"Frequency"
+#define PLOT_VAR_ERROR        "Error (AU)"
 
 QString EISPotentiostatic::GetShortName() const {
 	return "EIS (Potentiostatic)";
@@ -157,11 +158,9 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
     exp.FRA_pot_node.frequency = (float)frequencyList[i];
     exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VBias);
     exp.FRA_pot_node.VBiasVsOCP = VBiasVsOCP;
-    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp, amplitude);
-    if (i == 0)
-      exp.FRA_pot_node.firstTime = true;
-    else
-      exp.FRA_pot_node.firstTime = false;
+    exp.FRA_pot_node.amplitudeTarget = amplitude / 1000;
+    ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
+    exp.FRA_pot_node.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
 
@@ -191,14 +190,15 @@ QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
 		PLOT_VAR_PHASE <<
 		PLOT_VAR_IMP_REAL <<
 		PLOT_VAR_IMP_IMAG <<
-		PLOT_VAR_NEG_IMP_IMAG;
+		PLOT_VAR_NEG_IMP_IMAG <<
+    PLOT_VAR_ERROR;
 	}
 
 	return ret;
 }
 void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
-	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw);
+	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
 	
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
 	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
@@ -206,6 +206,7 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
+  PUSH_BACK_DATA(PLOT_VAR_ERROR, dataPoint.error);
 }
 void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
@@ -216,6 +217,7 @@ void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes 
 	SAVE_AC_DATA_HEADER(PLOT_VAR_IMP_REAL);
 	SAVE_AC_DATA_HEADER(PLOT_VAR_IMP_IMAG);
 	SAVE_AC_DATA_HEADER(PLOT_VAR_NEG_IMP_IMAG);
+  SAVE_AC_DATA_HEADER(PLOT_VAR_ERROR);
 	
 	SAVE_DATA_HEADER_END();
 }
@@ -229,6 +231,7 @@ void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) co
 	SAVE_DATA(PLOT_VAR_IMP_REAL);
 	SAVE_DATA(PLOT_VAR_IMP_IMAG);
 	SAVE_DATA(PLOT_VAR_NEG_IMP_IMAG);
+  SAVE_DATA(PLOT_VAR_ERROR);
 
 	SAVE_DATA_END();
 }
