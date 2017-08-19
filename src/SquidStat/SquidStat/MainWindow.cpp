@@ -716,6 +716,30 @@ void MainWindow::SaveCustomExperiment(const QString &name, const BuilderContaine
 
 	UpdateCustomExperimentList();
 }
+void MainWindow::RequestCurrentHardwareList() {
+	InstrumentList list;
+
+	for (auto it = hardware.handlers.begin(); it != hardware.handlers.end(); ++it) {
+		list << it->info;
+	}
+
+	emit CurrentHardwareList(list);
+}
+void MainWindow::UpdateFirmware(const QString &instName) {
+	auto it = hardware.handlers.begin();
+
+	for (; it != hardware.handlers.end(); ++it) {
+		if (it->info.name == instName) {
+			break;
+		}
+	}
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	it->oper->SoftReset();
+}
 
 #include <QApplication>
 #include <QFile>

@@ -72,6 +72,9 @@ public slots:
 
 	void SaveCustomExperiment(const QString&, const BuilderContainer&, const QString &fileName);
 
+	void RequestCurrentHardwareList();
+	void UpdateFirmware(const QString&);
+
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, bool paused);
@@ -95,6 +98,8 @@ signals:
 	void ExperimentResumed(const QUuid&);
 	void ExperimentPaused(const QUuid&);
 	void EditCustomExperiment(const CustomExperiment&);
+
+	void CurrentHardwareList(const InstrumentList&);
 
 private:
 	void CleanupCurrentHardware();
