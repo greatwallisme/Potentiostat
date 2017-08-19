@@ -1,6 +1,7 @@
 #pragma once
 
 #include "HidCommunicator.h"
+#include "HexLoader.h"
 
 struct BootloaderInfo {
 	uint8_t major;
@@ -16,14 +17,14 @@ public:
 signals:
 	void BootloaderInfoReceived(const BootloaderInfo&);
 	void FirmwareCrcReceived(uint16_t);
-	void FlashEraised();
-	void FlashProgrammed();
+	void FlashErased();
+	void FlashProgramed();
 
 public slots:
 	void RequestBootloaderInfo();
-	void RequestFirmwareCrc(uint32_t startAddr, uint32_t length);
+	void RequestFirmwareCrc(const HexCrc&);
 	void EraseFlash();
-	void ProgrammFlash(uint16_t address, const QByteArray&);
+	void ProgramFlash(const QByteArray&);
 	void JumpToApplication();
 
 private slots:

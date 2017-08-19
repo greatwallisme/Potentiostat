@@ -114,6 +114,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
     <ClCompile Include="BootloaderOperator.cpp" />
     <ClCompile Include="BuilderWidget.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="CrcCalculator.cpp" />
     <ClCompile Include="CustomExperimentRunner.cpp" />
     <ClCompile Include="ExperimentCalcHelper.cpp" />
     <ClCompile Include="ExperimentReader.cpp" />
@@ -244,6 +245,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</Outputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTDIR)\bin\moc.exe"  "%(FullPath)" -o ".\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp"  -DUNICODE -DWIN32 -DWIN64 -DQT_NO_DEBUG -DNDEBUG -DQT_CORE_LIB -DQT_SERIALPORT_LIB -DQT_GUI_LIB -DQT_WIDGETS_LIB "-I." "-I$(QTDIR)\include" "-I.\GeneratedFiles\$(ConfigurationName)\." "-I$(QTDIR)\include\QtCore" "-I$(QTDIR)\include\QtSerialPort" "-I$(QTDIR)\include\QtGui" "-I$(QTDIR)\include\QtWidgets" "-I.\..\..\..\..\_arduino\retrofit_firmware"</Command>
     </CustomBuild>
+    <ClInclude Include="CrcCalculator.h" />
     <ClInclude Include="Disconnector.h" />
     <ClInclude Include="ExperimentCalcHelper.h" />
     <ClInclude Include="ExperimentUIHelper.h" />

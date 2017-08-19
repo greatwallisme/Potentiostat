@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 
+#include "HexLoader.h"
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
 #include "ExperimentReader.h"
@@ -73,7 +74,7 @@ public slots:
 	void SaveCustomExperiment(const QString&, const BuilderContainer&, const QString &fileName);
 
 	void RequestCurrentHardwareList();
-	void UpdateFirmware(const QString&, const QByteArray&);
+	void UpdateFirmware(const QString&, const HexRecords&);
 
 signals:
 	void HardwareFound(const InstrumentList&);

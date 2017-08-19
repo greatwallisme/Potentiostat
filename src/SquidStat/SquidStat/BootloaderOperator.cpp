@@ -46,11 +46,11 @@ void BootloaderOperator::DataReceived(const QByteArray &packet) {
 			break;
 
 		case ERASE_FLASH:
-			emit FlashEraised();
+			emit FlashErased();
 			break;
 
 		case PROGRAM_FLASH:
-			emit FlashProgrammed();
+			emit FlashProgramed();
 			break;
 
 		default:
@@ -64,7 +64,7 @@ void BootloaderOperator::RequestBootloaderInfo() {
 
 	hc->SendData(dataToSend);
 }
-void BootloaderOperator::RequestFirmwareCrc(uint32_t startAddr, uint32_t length) {
+void BootloaderOperator::RequestFirmwareCrc(const HexCrc &hexCrc) {
 	QByteArray dataToSend;
 	dataToSend.push_back(READ_CRC);
 
@@ -74,9 +74,9 @@ void BootloaderOperator::RequestFirmwareCrc(uint32_t startAddr, uint32_t length)
 		uint16_t crc;
 	} data;
 
-	data.startAddr = startAddr;
-	data.len = length;
-	data.crc = 0x0000;
+	data.startAddr = hexCrc.start;
+	data.len = hexCrc.length;
+	data.crc = hexCrc.crc;
 
 	dataToSend += QByteArray((char*)&data, sizeof(data));
 
@@ -93,8 +93,11 @@ void BootloaderOperator::JumpToApplication() {
 	dataToSend.push_back(JMP_TO_APP);
 
 	hc->SendData(dataToSend);
-
 }
-void BootloaderOperator::ProgrammFlash(uint16_t address, const QByteArray&) {
-	;
+void BootloaderOperator::ProgramFlash(const QByteArray &records) {
+	QByteArray dataToSend;
+	dataToSend.push_back(PROGRAM_FLASH);
+
+	dataToSend += records;
+	hc->SendData(dataToSend);
 }

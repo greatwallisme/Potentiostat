@@ -1,32 +1,14 @@
 #include "HidCommunicator.h"
 
-#include <Log.h>
+#include "CrcCalculator.h"
+#include "Log.h"
 
-#define RX_TIMER_INTERVAL_MS	100
+#define RX_TIMER_INTERVAL_MS	20
 
 #define BOOTLOADER_VID		0x04d8
 #define BOOTLOADER_PID		0x003c
 #define MANUFACTURER_NAME	"Admiral Instruments"
 #define PRODUCT_NAME		"Squidstat HID bootloader"
-
-static const unsigned short crc_table[16] = {
-	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
-	0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef
-};
-unsigned short CalculateCrc(char *data, unsigned int len) {
-	unsigned int i;
-	unsigned short crc = 0;
-
-	while (len--) {
-		i = (crc >> 12) ^ (*data >> 4);
-		crc = crc_table[i & 0x0F] ^ (crc << 4);
-		i = (crc >> 12) ^ (*data >> 0);
-		crc = crc_table[i & 0x0F] ^ (crc << 4);
-		data++;
-	}
-
-	return (crc & 0xFFFF);
-}
 
 #define SOH 01
 #define EOT 04
@@ -104,40 +86,8 @@ void HidCommunicator::SendData(const QByteArray &data) {
 	}
 
 	QByteArray dataToSend = data;
-
-	/*
-	dataToSend.push_back(cmd);
 	
-	switch (cmd) {
-		case PROGRAM_FLASH:
-			//if (ResetHexFilePtr)
-			//{
-			//	if (!HexManager.ResetHexFilePointer())
-			//	{
-			//		// Error in resetting the file pointer
-			//		return false;
-			//	}
-			//}
-			//HexRecLen = HexManager.GetNextHexRecord(&Buff[BuffLen], (sizeof(Buff) - 5));
-			//if (HexRecLen == 0)
-			//{
-			//	//Not a valid hex file.
-			//	return false;
-			//}
-
-			//BuffLen = BuffLen + HexRecLen;
-			//while (totalRecords)
-			//{
-			//	HexRecLen = HexManager.GetNextHexRecord(&Buff[BuffLen], (sizeof(Buff) - 5));
-			//	BuffLen = BuffLen + HexRecLen;
-			//	totalRecords--;
-			//}
-			break;
-
-	}
-	//*/
-
-	auto crc = CalculateCrc(dataToSend.data(), dataToSend.size());
+	auto crc = CrcCalculator::Get16(dataToSend.data(), dataToSend.size());
 	dataToSend.push_back((char)crc);
 	dataToSend.push_back((char)(crc >> 8));
 	
@@ -208,7 +158,7 @@ void HidCommunicator::TryToReceive() {
 						uint16_t crc = receivedData[receivedData.size() - 2] & 0x00FF;
 						crc |= ((receivedData[receivedData.size() - 1] << 8) & 0xFF00);
 
-						if (CalculateCrc(receivedData.data(), receivedData.size()-2) == crc) {
+						if (CrcCalculator::Get16(receivedData.data(), receivedData.size()-2) == crc) {
 							LOG() << "Packet found";
 							
 							receivedData.remove(receivedData.size() - 2, 2);
@@ -247,28 +197,3 @@ void HidCommunicator::TryToReceive() {
 		ptr++;
 	}
 }
-/*/
-bool HidCommunicator::WriteHexData(QString &hidPath, QByteArray &data) {
-	HidIniter hidIniter;
-
-	bool ret = false;
-
-	if (!hidIniter.IsInited()) {
-		return ret;
-	}
-
-	auto handle = hid_open_path(hidPath.toLocal8Bit().data());
-
-	if (!handle) {
-		return ret;
-	}
-
-	hid_set_nonblocking(handle, 1);
-
-	;
-
-	hid_close(handle);
-
-	return ret;
-}
-//*/

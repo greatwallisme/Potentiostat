@@ -1,7 +1,8 @@
-#include <HexLoader.h>
+#include "HexLoader.h"
+
+#include "CrcCalculator.h"
 
 #include <QFileInfo>
-
 #include <QRegExp>
 
 enum HexRecordType : uint8_t {
@@ -13,62 +14,49 @@ enum HexRecordType : uint8_t {
 	HRT_START_LINEAR_ADDRESS
 };
 
-struct HexRecord {
+
+struct RecordHeader {
 	uint8_t length;
-	uint16_t address;
+	uint8_t address[2];
 	HexRecordType type;
-	char data[0x100];
-	uint8_t crc;
+	char data[0];
 };
 
-bool ReadHexRecord(const QString &line, HexRecord &rec) {
+bool ReadHexRecord(const QString &line, QByteArray &rec) {
 	bool ret = false;
 
 	static QRegExp recordRx(":([0-9a-fA-F]{2}[0-9a-fA-F]{4}[0-9a-fA-F]{2}([0-9a-fA-F]{2})*[0-9a-fA-F]{2})");
 
-	if (-1 != recordRx.indexIn(line)) {
-		QByteArray lineData = QByteArray::fromHex(line.toLocal8Bit());
-		
-		if (lineData.size() != (5 + lineData[0])) {
-			return ret;
-		}
-
-		char *ptr = lineData.data();
-
-		rec.length = *ptr++;
-
-		rec.address = *ptr++;
-		rec.address <<= 8;
-		rec.address += ((uint16_t)*ptr++) & 0x00ff;
-
-		rec.type = (HexRecordType)*ptr++;
-
-		if (rec.length) {
-			memcpy(rec.data, ptr, rec.length);
-			ptr += rec.length;
-		}
-
-		rec.crc = *ptr++;
-
-
-		uint8_t crc = 0;
-		for (int i = 0; i < (lineData.size() - 1); ++i) {
-			crc += lineData[i];
-		}
-		crc = 0x00 - crc;
-
-		if (crc != rec.crc) {
-			return ret;
-		}
-
-		ret = true;
+	if (-1 == recordRx.indexIn(line)) {
+		return ret;
 	}
+
+	QByteArray lineData = QByteArray::fromHex(line.toLocal8Bit());
+
+	if (lineData.size() != (5 + lineData[0])) {
+		return ret;
+	}
+
+	char *ptr = lineData.data();
+	char *ptrEnd = ptr + lineData.size();
+
+	uint8_t crc = 0;
+	while (ptr != ptrEnd) {
+		crc += *ptr++;
+	}
+
+	if (crc) {
+		return ret;
+	}
+
+	rec = lineData;
+	ret = true;
 
 	return ret;
 }
 
-QByteArray HexLoader::ReadFile(const QString &fileName) {
-	QByteArray ret;
+HexRecords HexLoader::ReadFile(const QString &fileName) {
+	HexRecords ret;
 
 	QFileInfo fi(fileName);
 
@@ -87,48 +75,88 @@ QByteArray HexLoader::ReadFile(const QString &fileName) {
 	while ( (!hexFile.atEnd()) && (!needToBreak) ) {
 		QString line = hexFile.readLine();
 
-		HexRecord rec;
+		QByteArray rec;
 		if (!ReadHexRecord(line, rec)) {
 			ret.clear();
 			return ret;
 		}
 
-		switch (rec.type) {
-			case HRT_DATA: {
-				uint32_t address = addrOffset + rec.address;
-				uint32_t minArraySize = address + rec.length;
+		ret << rec;
+	}
 
-				uint32_t curSize = ret.size();
-				if (curSize < minArraySize) {
-					ret.resize(minArraySize);
-					memset(ret.data() + curSize, 0x00, minArraySize - curSize);
+	hexFile.close();
+
+	return ret;
+}
+
+HexCrc HexLoader::CalculateCrc(const HexRecords &hex) {
+	HexCrc ret = {0xffffffff, 0, 0};
+
+	uint32_t segAddr = 0;
+	uint32_t linAddr = 0;
+
+	QByteArray flash;
+
+	for (auto it = hex.begin(); it != hex.end(); ++it) {
+		RecordHeader *hdr = (RecordHeader*)it->data();
+
+		bool needToBreak = false;
+		switch (hdr->type) {
+			case HRT_DATA: {
+				uint32_t address = hdr->address[0];
+				address <<= 8;
+				address += ((uint32_t)hdr->address[1]) & 0x000000FF;
+				address += segAddr + linAddr;
+
+				if (address < ret.start) {
+					ret.start = address;
 				}
 
-				memcpy(ret.data() + address, rec.data, rec.length);
-			} break;
+				uint32_t minArraySize = address + hdr->length;
 
+				uint32_t curSize = flash.size();
+				if (curSize < minArraySize) {
+					flash.resize(minArraySize);
+					memset(flash.data() + curSize, 0xFF, minArraySize - curSize);
+				}
+
+				memcpy(flash.data() + address, hdr->data, hdr->length);
+			} break;
+			
 			case HRT_END_OF_FILE:
 				needToBreak = true;
 				break;
 
 			case HRT_EXTENDED_SEGMENT_ADDRESS:
-				if (rec.length != 2) {
-					ret.clear();
-					return ret;
-				}
+				linAddr = 0;
 
-				addrOffset = (uint32_t)rec.data[0];
-				addrOffset <<= 8;
-				addrOffset += (uint32_t)rec.data[1];
-				addrOffset <<= 8;
+				segAddr  = ((uint32_t)hdr->data[0]) & 0x000000FF;
+				segAddr <<= 8;
+				segAddr += ((uint32_t)hdr->data[1]) & 0x000000FF;
+				segAddr <<= 4;
 				break;
 
+			case HRT_EXTENDED_LINEAR_ADDRESS:
+				segAddr = 0;
+
+				linAddr = ((uint32_t)hdr->data[0]) & 0x000000FF;
+				linAddr <<= 8;
+				linAddr += ((uint32_t)hdr->data[1]) & 0x000000FF;
+				linAddr <<= 16;
+				break;
+			
 			default:
 				break;
-		};
+		}
+
+		if (needToBreak) {
+			break;
+		}
 	}
 
-	hexFile.close();
+	ret.length = flash.size();
+
+	ret.crc = CrcCalculator::Get16(flash.data(), flash.length());
 
 	return ret;
 }

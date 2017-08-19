@@ -178,6 +178,9 @@
     <ClCompile Include="HexLoader.cpp">
       <Filter>_scr\FirrmwareUpdater</Filter>
     </ClCompile>
+    <ClCompile Include="CrcCalculator.cpp">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -214,6 +217,9 @@
       <Filter>_scr\ExternalStructures</Filter>
     </ClInclude>
     <ClInclude Include="HexLoader.h">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClInclude>
+    <ClInclude Include="CrcCalculator.h">
       <Filter>_scr\FirrmwareUpdater</Filter>
     </ClInclude>
   </ItemGroup>
