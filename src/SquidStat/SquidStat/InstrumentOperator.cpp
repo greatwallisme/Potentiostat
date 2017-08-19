@@ -142,3 +142,11 @@ void InstrumentOperator::PauseExperiment(quint8 channel) {
 void InstrumentOperator::ResumeExperiment(quint8 channel) {
 	_communicator->SendCommand((CommandID)RESUME_EXPERIMENT, channel);
 }
+void InstrumentOperator::SoftReset() {
+#ifndef ENTER_BOOTLOADER_MODE
+	#define ENTER_BOOTLOADER_MODE 100
+#endif
+
+	_communicator->SendCommand((CommandID)ENTER_BOOTLOADER_MODE);
+
+}

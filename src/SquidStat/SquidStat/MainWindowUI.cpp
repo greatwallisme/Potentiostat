@@ -56,7 +56,7 @@
 #include <QMimeData>
 
 #include "ExperimentReader.h"
-
+#include "HexLoader.h"
 #include "UIEventFilters.hpp"
 
 #include <functional>
@@ -69,6 +69,10 @@
 
 #include <QDesktopServices>
 #include <QSplitter>
+#include <QMenu>
+#include <QMenuBar>
+
+#define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
 #define NONE_Y_AXIS_VARIABLE			"None"
@@ -108,13 +112,137 @@ MainWindowUI::~MainWindowUI() {
 }
 void MainWindowUI::CreateUI() {
 	CreateCentralWidget();
+	CreateMenu();
+}
+void MainWindowUI::CreateMenu() {
+	auto menuBar = new QMenuBar;
+
+	auto moreOptionsMenu = new QMenu("More Options");
+
+	moreOptionsMenu->addAction(GetUpgradeHardwareAction());
+
+	menuBar->addMenu(moreOptionsMenu);
+	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
+
+	CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
+
+	mw->setMenuBar(menuBar);
+}
+void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
+	QDialog* dialog = new QDialog(parent, Qt::SplashScreen);
+	QList<QMetaObject::Connection> dialogConn;
+	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
+
+	auto frame = OBJ_NAME(new QFrame, "update-firmware-dialog");
+	lay->addWidget(frame);
+
+	auto globalLay = NO_MARGIN(new QVBoxLayout(frame));
+
+	QListView *instrumentList;
+
+	globalLay->addWidget(OBJ_NAME(new QLabel("Update Firmware"), "heading-label"));
+	globalLay->addWidget(OBJ_PROP(OBJ_NAME(new QLabel("1) Choose which device you want to update:"), "experiment-params-comment"), "comment-placement", "right"));
+	globalLay->addWidget(instrumentList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
+	globalLay->addWidget(OBJ_PROP(OBJ_NAME(new QLabel("2) Select the .hex file to program into the hardware:"), "experiment-params-comment"), "comment-placement", "right"));
+
+	instrumentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+	QLineEdit *hexFileLed;
+	QPushButton *hexFilePbt;
+
+	auto hexLay = new QHBoxLayout;
+	hexLay->addWidget(hexFileLed = LED());
+	hexLay->addWidget(hexFilePbt = OBJ_NAME(PBT("Browse"), "secondary-button"));
+
+	hexFileLed->setReadOnly(true);
+	hexFileLed->setPlaceholderText("(No file selected)");
+
+	globalLay->addLayout(hexLay);
+
+	QPushButton *nextBut;
+	QPushButton *cancelBut;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addStretch(1);
+	buttonLay->addWidget(nextBut = OBJ_NAME(PBT("Next"), "secondary-button"));
+	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
+	buttonLay->addStretch(1);
+
+	globalLay->addLayout(buttonLay);
+
+	dialogConn << CONNECT(cancelBut, &QPushButton::clicked, dialog, &QDialog::reject);
+
+	dialogConn << CONNECT(hexFilePbt, &QPushButton::clicked, [=]() {
+		QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+		QString dirName = settings.value(FW_HEX_OPEN_PATH, "").toString();
+
+		QString filePath = QFileDialog::getOpenFileName(dialog, "Select firmware file", dirName, "Intel HEX (*.hex)");
+
+		if (filePath.isEmpty()) {
+			return;
+		}
+
+		settings.setValue(FW_HEX_OPEN_PATH, QFileInfo(filePath).absolutePath());
+		hexFileLed->setText(filePath);
+	});
+
+	dialogConn << CONNECT(mw, &MainWindow::CurrentHardwareList, [=](const InstrumentList &list) {
+		QStandardItemModel *model = new QStandardItemModel(list.size(), 1);
+		int row = 0;
+		for (auto it = list.begin(); it != list.end(); ++it) {
+			auto *item = new QStandardItem(it->name);
+			model->setItem(row++, item);
+		}
+		instrumentList->setModel(model);
+		
+		if (list.size()) {
+			instrumentList->selectionModel()->select(instrumentList->model()->index(0, 0), QItemSelectionModel::Select);
+		}
+	});
+	
+	dialogConn << CONNECT(nextBut, &QPushButton::clicked, [=]() {
+		auto index = instrumentList->currentIndex();
+
+		if (!index.isValid()) {
+			return;
+		}
+
+		auto fw = HexLoader::ReadFile(hexFileLed->text());
+
+		if (fw.isEmpty()) {
+			return;
+		}
+
+		auto instName = index.data(Qt::DisplayRole).toString();
+
+		mw->UpdateFirmware(instName, fw);
+	});
+
+	mw->RequestCurrentHardwareList();
+
+	dialog->exec();
+
+	foreach(auto conn, dialogConn) {
+		QObject::disconnect(conn);
+	}
+
+	dialog->deleteLater();
+}
+QAction* MainWindowUI::GetUpgradeHardwareAction() {
+	auto action = new QAction("Update Hardware");
+
+	CONNECT(action, &QAction::triggered, [=]() {
+		GetUpdateFirmwareDialog(mw);
+	});
+
+	return action;
 }
 void MainWindowUI::CreateCentralWidget() {
 	QWidget *centralWidget = OBJ_NAME(WDG(), "central-widget");
 	QGridLayout *centralLayout = NO_SPACING(NO_MARGIN(new QGridLayout(centralWidget)));
 	mw->setCentralWidget(centralWidget);
 
-	centralLayout->addWidget(GetApplyStyleButton(),		0, 0);
+	//centralLayout->addWidget(GetApplyStyleButton(),		0, 0);
 	centralLayout->addWidget(GetMainTabWidget(),		1, 0);
 }
 QWidget* MainWindowUI::GetApplyStyleButton() {

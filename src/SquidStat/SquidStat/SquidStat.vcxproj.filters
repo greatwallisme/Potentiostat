@@ -59,6 +59,9 @@
     <Filter Include="_scr\BuilderElements">
       <UniqueIdentifier>{086f936d-75b4-45bc-962f-69bc72677a14}</UniqueIdentifier>
     </Filter>
+    <Filter Include="_scr\FirrmwareUpdater">
+      <UniqueIdentifier>{b1e14474-d847-4a52-a13e-c98614c084ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -154,6 +157,27 @@
     <ClCompile Include="GeneratedFiles\Release\moc_CustomExperimentRunner.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="HidCommunicator.cpp">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_HidCommunicator.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_HidCommunicator.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_BootloaderOperator.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_BootloaderOperator.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="BootloaderOperator.cpp">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClCompile>
+    <ClCompile Include="HexLoader.cpp">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -188,6 +212,9 @@
     </ClInclude>
     <ClInclude Include="ExperimentCalcHelper.h">
       <Filter>_scr\ExternalStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="HexLoader.h">
+      <Filter>_scr\FirrmwareUpdater</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -229,6 +256,12 @@
     </CustomBuild>
     <CustomBuild Include="UIEventFilters.hpp">
       <Filter>_scr\MainWindow</Filter>
+    </CustomBuild>
+    <CustomBuild Include="HidCommunicator.h">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </CustomBuild>
+    <CustomBuild Include="BootloaderOperator.h">
+      <Filter>_scr\FirrmwareUpdater</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

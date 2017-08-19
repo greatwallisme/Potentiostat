@@ -1,16 +1,5 @@
 @echo off
-IF EXIST packages\com.adminst.squidstat\data\data.7z del packages\com.adminst.squidstat\data\data.7z
-IF EXIST SquidstatInstaller.exe del SquidstatInstaller.exe
-echo Archiving payload (may take couple minutes)...
-archivegen.exe .\packages\com.adminst.squidstat\data\data.7z .\..\..\..\out\Release\_SquidStat\* .\..\..\..\3rdparty\vc_redist.x86.exe .\..\..\..\3rdparty\vc_redist.x86.install.cmd
-echo Creating installer...
-binarycreator.exe --offline-only -p .\packages\ -c .\config\config.xml SquidstatInstaller
-IF EXIST .\..\..\..\out\SquidstatInstaller.exe del .\..\..\..\out\SquidstatInstaller.exe
-IF EXIST SquidstatInstaller.exe (
-	copy SquidstatInstaller.exe .\..\..\..\out\
-) else (
-	echo Error during installer creation!
-	exit 1
-)
-IF EXIST SquidstatInstaller.exe del SquidstatInstaller.exe
-echo Installer created!
+set PF_DIR=%ProgramFiles%
+if defined ProgramFiles(x86) set PF_DIR=%ProgramFiles(x86)%
+set PF_DIR=%PF_DIR%\Inno Setup 5
+"%PF_DIR%\ISCC.exe" installer_script.iss

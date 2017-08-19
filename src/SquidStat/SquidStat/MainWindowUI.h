@@ -104,9 +104,14 @@ private:
 	static bool GetUserAgreement(QWidget*, const QString &title, const QString &text, const QString &okText, const QString &cancelText);
 	bool GetOpenCustomExperiment(QWidget*, CustomExperiment&);
 
+	void GetUpdateFirmwareDialog(QWidget*);
+
 	static QwtPlotCurve* CreateCurve(int yAxisId, const QColor&);
 
+	void CreateMenu();
 	void CreateCentralWidget();
+
+	QAction* GetUpgradeHardwareAction();
 
 	QWidget* GetApplyStyleButton();
 

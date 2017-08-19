@@ -84,6 +84,37 @@ QRadioButton::indicator::checked {
 QLabel {
 	margin-top: 16px;
 }
+/*//////////////           MENU BAR         ////////////////////*/
+QMenuBar {
+	background-color: #7b1a1e;
+	border: none;
+}
+QMenu {
+	background-color: #7b1a1e;
+	border: 1px solid #430e11;
+}
+QMenu::item,
+QMenuBar::item {
+	background-color: #7b1a1e;
+	border: none;
+	
+	padding: 10px;
+	padding-left: 20px;
+	padding-right: 20px;
+	
+	color: #ffffff;
+}
+/*//////////////       UPDATE FW DIALOG     ////////////////////*/
+#update-firmware-dialog {
+	border: 1px solid #7b1a1e;
+	padding: 1px;
+	padding-right: 30px;
+	padding-left: 30px;
+	padding-bottom: 15px;
+}
+#update-firmware-dialog > QLineEdit {
+	margin: 0px;
+}
 /*//////////////         APPLY BUTTON       ////////////////////*/
 #apply-button {
 	background-color: #7b1a1e;
