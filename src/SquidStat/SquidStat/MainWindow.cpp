@@ -2,6 +2,8 @@
 
 #include <MainWindowUI.h>
 
+#include "HidCommunicator.h"
+#include "BootloaderOperator.h"
 #include "InstrumentEnumerator.h"
 #include "InstrumentOperator.h"
 #include "ExperimentReader.h"
@@ -22,6 +24,9 @@
 #include <Disconnector.h>
 
 #include <stdlib.h>
+
+#include <Disconnector.h>
+#include <QEventLoop>
 
 #define PREBUILT_EXP_DIR		"./prebuilt/"
 #define ELEMENTS_DIR			"./elements/"
@@ -738,7 +743,75 @@ void MainWindow::UpdateFirmware(const QString &instName) {
 		return;
 	}
 
-	it->oper->SoftReset();
+	auto oper = it->oper;
+	if (!oper) {
+		oper = new InstrumentOperator(it->info);
+	}
+	oper->SoftReset();
+	if (!it->oper) {
+		oper->deleteLater();
+	}
+
+
+	QThread::msleep(100);
+
+	auto hidPath = HidCommunicator::SearchForBootloaderHidPath();
+
+	if (hidPath.isEmpty()) {
+		LOG() << "No bootloader found";
+		return;
+	}
+
+	auto bootOp = new BootloaderOperator(hidPath, this);
+
+	static QEventLoop loop;
+	static bool signalFlag = false;
+	auto disconnector = new Disconnector(bootOp);
+
+	#define BREAK_LOOP()			\
+			signalFlag = true;		\
+			loop.quit();
+
+	#define WAIT_LOOP()										\
+		signalFlag = false;									\
+		QTimer::singleShot(1000, &loop, &QEventLoop::quit); \
+		loop.exec();
+
+	#define PERFORM_REQUEST(a)				\
+			attempts = 3;					\
+			while (attempts--) {			\
+				bootOp->a;					\
+				WAIT_LOOP();				\
+				if (signalFlag) {			\
+					break;					\
+				}							\
+			}								\
+			if (!signalFlag) {				\
+				LOG() << "No response to the command"; \
+				break;						\
+			}
+
+
+	*disconnector << connect(bootOp, &BootloaderOperator::BootloaderInfoReceived, [=](const BootloaderInfo &info) {
+		LOG() << "Bootloader version: maj -" << info.major << ", min -" << info.minor;
+		BREAK_LOOP();
+	});
+
+	*disconnector << connect(bootOp, &BootloaderOperator::FirmwareCrcReceived, [=](uint16_t crc) {
+		LOG() << "CRC is " << crc;
+		BREAK_LOOP();
+	});
+
+	int attempts;
+	do {
+		LOG() << "Requesting bootloader info";
+		PERFORM_REQUEST(RequestBootloaderInfo());
+		
+		LOG() << "Jump to application";
+		bootOp->JumpToApplication();
+	} while (0);
+
+	bootOp->deleteLater();
 }
 
 #include <QApplication>
