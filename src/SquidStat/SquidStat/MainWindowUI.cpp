@@ -56,7 +56,7 @@
 #include <QMimeData>
 
 #include "ExperimentReader.h"
-
+#include "HexLoader.h"
 #include "UIEventFilters.hpp"
 
 #include <functional>
@@ -207,9 +207,15 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 			return;
 		}
 
+		auto fw = HexLoader::ReadFile(hexFileLed->text());
+
+		if (fw.isEmpty()) {
+			return;
+		}
+
 		auto instName = index.data(Qt::DisplayRole).toString();
 
-		mw->UpdateFirmware(instName);
+		mw->UpdateFirmware(instName, fw);
 	});
 
 	mw->RequestCurrentHardwareList();

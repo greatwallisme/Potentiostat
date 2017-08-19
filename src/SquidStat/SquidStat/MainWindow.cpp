@@ -730,7 +730,7 @@ void MainWindow::RequestCurrentHardwareList() {
 
 	emit CurrentHardwareList(list);
 }
-void MainWindow::UpdateFirmware(const QString &instName) {
+void MainWindow::UpdateFirmware(const QString &instName, const QByteArray &fw) {
 	auto it = hardware.handlers.begin();
 
 	for (; it != hardware.handlers.end(); ++it) {

@@ -73,7 +73,7 @@ public slots:
 	void SaveCustomExperiment(const QString&, const BuilderContainer&, const QString &fileName);
 
 	void RequestCurrentHardwareList();
-	void UpdateFirmware(const QString&);
+	void UpdateFirmware(const QString&, const QByteArray&);
 
 signals:
 	void HardwareFound(const InstrumentList&);

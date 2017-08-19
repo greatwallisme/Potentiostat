@@ -175,6 +175,9 @@
     <ClCompile Include="BootloaderOperator.cpp">
       <Filter>_scr\FirrmwareUpdater</Filter>
     </ClCompile>
+    <ClCompile Include="HexLoader.cpp">
+      <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -209,6 +212,9 @@
     </ClInclude>
     <ClInclude Include="ExperimentCalcHelper.h">
       <Filter>_scr\ExternalStructures</Filter>
+    </ClInclude>
+    <ClInclude Include="HexLoader.h">
+      <Filter>_scr\FirrmwareUpdater</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
