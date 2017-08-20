@@ -3267,6 +3267,32 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
+
+	auto realTimeGroup = OBJ_NAME(new QGroupBox("Real time value section"), "collapsible-group-box");
+	auto realTimeGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroup)));
+	auto realTimeGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
+	auto realTimeGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroupFrame)));
+	realTimeGroupLay->addWidget(realTimeGroupFrame);
+
+	realTimeGroup->setCheckable(true);
+
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Working Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 0, 0);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Counter Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 1, 0);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Current = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 2, 0);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Redox State = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 3, 0);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Step = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 4, 0);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Elapsed Time = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 5, 0);
+
+	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
+	#define CLOSE_COLOR_TAG "</font>"
+
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "-0.301" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 0, 1);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "+0.102" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 1, 1);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "1.9" CLOSE_COLOR_TAG " mA"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 2, 1);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Oxidizing" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 3, 1);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Open Circuit" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 4, 1);
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "00:10:52" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 5, 1);
+
 	auto settingsGroup = OBJ_NAME(new QGroupBox("Graph options"), "collapsible-group-box");
 	auto settingsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroup)));
 	auto settingsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
@@ -3339,6 +3365,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"), 0, 3);
 	buttonLay->setRowStretch(1, 1);
 
+	
+	settingsLay->addWidget(realTimeGroup, 0, 0, 1, -1);
 	settingsLay->addWidget(settingsGroup, 1, 0, 1, -1);
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
 	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
@@ -3408,6 +3436,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
 	
+	plotHandler.plotTabConnections << CONNECT(realTimeGroup, &QGroupBox::toggled, [=](bool on) {
+		realTimeGroupFrame->setVisible(on);
+	});
+
 	plotHandler.plotTabConnections << CONNECT(settingsGroup, &QGroupBox::toggled, [=](bool on) {
 		settingsGroupFrame->setVisible(on);
 	});

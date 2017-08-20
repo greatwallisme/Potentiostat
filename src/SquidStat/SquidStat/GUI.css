@@ -645,7 +645,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	border-top: 1px solid #d1d1d1;
 	margin: 0px;
-	margin-top: 30px;
+	margin-top: 40px;
 	
 	font-family: "Segoe UI";
 	font-weight: bold;
@@ -656,6 +656,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	subcontrol-origin: margin;
 	
 	margin: 0px;
+	margin-top: 10px;
 	margin-left: 10px;
 }
 #collapsible-group-box::indicator {
@@ -670,6 +671,10 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 #collapsible-group-box-frame *[comment-placement="left"] {
 	margin-left: 15px;
+}
+#collapsible-group-box-frame *[add-name="real-time-values"] {
+	margin-top: 7px;
+	font-size: 15px;
 }
 #secondary-button[add-name="new-data-controls"] {
 	margin-left: 5px;
