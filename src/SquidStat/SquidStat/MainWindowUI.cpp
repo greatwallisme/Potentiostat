@@ -186,7 +186,17 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 		hexFileLed->setText(filePath);
 	});
 
-	dialogConn << CONNECT(mw, &MainWindow::CurrentHardwareList, [=](const InstrumentList &list) {
+	dialogConn << CONNECT(mw, &MainWindow::CurrentHardwareList, [=](const InstrumentList &_list) {
+		InstrumentList list(_list);
+		for (int i = 0; i < list.size();) {
+			if (list.at(i).hwVer.hwModel < PLUS_2_0) {
+				list.removeAt(i);
+			}
+			else {
+				++i;
+			}
+		}
+
 		QStandardItemModel *model = new QStandardItemModel(list.size(), 1);
 		int row = 0;
 		for (auto it = list.begin(); it != list.end(); ++it) {
