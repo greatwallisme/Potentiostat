@@ -641,12 +641,51 @@ QLabel[experiment-params-widget="low-margin"] {
 	max-width: 600px;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#collapsible-group-box {
+	border: none;
+	border-top: 1px solid #d1d1d1;
+	margin: 0px;
+	margin-top: 30px;
+	
+	font-family: "Segoe UI";
+	font-weight: bold;
+	font-size: 15px;
+	color: #4E5861;
+}
+#collapsible-group-box::title {
+	subcontrol-origin: margin;
+	
+	margin: 0px;
+	margin-left: 10px;
+}
+#collapsible-group-box::indicator {
+	image: url(:/GUI/Resources/group-collapse.png);
+}
+#collapsible-group-box::indicator:unchecked {
+	image: url(:/GUI/Resources/group-expand.png);
+}
+#collapsible-group-box-frame {
+	margin: 0px;
+	padding: 0px;
+}
+#collapsible-group-box-frame *[comment-placement="left"] {
+	margin-left: 15px;
+}
+#secondary-button[add-name="new-data-controls"] {
+	margin-left: 5px;
+	margin-right: 5px;
+	padding: 3px;
+	padding-left: 1px;
+	padding-right: 1px;
+}
 #log-linear-check-box {
 	border: none;
 	font-size: 16px;
-	/*margin-left: 15px;*/
+	margin-left: 15px;
 	margin-right: 15px;
 	margin-top: 17px;
+	
+	min-width: 85px;
 }
 #log-linear-check-box::indicator:unchecked {
 	image: url(:/GUI/Resources/checkbox-unchecked.png);
@@ -762,7 +801,6 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	qproperty-text: "";
 	qproperty-icon: url(:/GUI/Resources/new-tab.png);
-	qproperty-align
 }
 #close-document-pbt {
 	qproperty-text: "";

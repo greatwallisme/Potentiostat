@@ -71,6 +71,7 @@
 #include <QSplitter>
 #include <QMenu>
 #include <QMenuBar>
+#include <QGroupBox>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -3266,13 +3267,21 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
-	//settingsLay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
-	settingsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 5, 0);
+	auto settingsGroup = OBJ_NAME(new QGroupBox("Graph options"), "collapsible-group-box");
+	auto settingsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroup)));
+	auto settingsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
+	auto settingsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroupFrame)));
+	settingsGroupLay->addWidget(settingsGroupFrame);
+
+	settingsGroup->setCheckable(true);
+
+
+	settingsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
+	settingsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>1</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 2, 0);
+	settingsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Y<sub>2</sub> axis = "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
 
 	auto xCombo = CMB();
-	QListView *xComboList = OBJ_NAME(new QListView, "combo-list");
+	auto *xComboList = OBJ_NAME(new QListView, "combo-list");
 	xCombo->setView(xComboList);
 	xCombo->addItems(xAxisList);
 
@@ -3282,36 +3291,23 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y1Combo->addItems(yAxisList);
 
 	auto y2Combo = CMB();
-	QListView *y2ComboList = OBJ_NAME(new QListView, "combo-list");
+	auto *y2ComboList = OBJ_NAME(new QListView, "combo-list");
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
-
-	//QRadioButton *xLinRbt;
-	//QRadioButton *xLogRbt;
-	//QRadioButton *y1LinRbt;
-	//QRadioButton *y1LogRbt;
-	//QRadioButton *y2LinRbt;
-	//QRadioButton *y2LogRbt;
 
 	QCheckBox *xChkBox;
 	QCheckBox *y1ChkBox;
 	QCheckBox *y2ChkBox;
 
-	settingsLay->addWidget(xCombo, 1, 1);
-	settingsLay->addWidget(y1Combo, 3, 1);
-	settingsLay->addWidget(y2Combo, 5, 1);
-	//settingsLay->addWidget(xLinRbt = new QRadioButton("Linear"), 1, 2);
-	//settingsLay->addWidget(xLogRbt = new QRadioButton("Logarithmic"), 1, 3);
-	//settingsLay->addWidget(y1LinRbt = new QRadioButton("Linear"), 2, 2);
-	//settingsLay->addWidget(y1LogRbt = new QRadioButton("Logarithmic"), 2, 3);
-	//settingsLay->addWidget(y2LinRbt = new QRadioButton("Linear"), 3, 2);
-	//settingsLay->addWidget(y2LogRbt = new QRadioButton("Logarithmic"), 3, 3);
+	settingsGroupFrameLay->addWidget(xCombo, 1, 1);
+	settingsGroupFrameLay->addWidget(y1Combo, 2, 1);
+	settingsGroupFrameLay->addWidget(y2Combo, 3, 1);
 	#define LINEAR_TEXT				"Linear"
 	#define LOGARITHMIC_TEXT		"Logarithmic"
-	settingsLay->addWidget(xChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 1);
-	settingsLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 4, 1);
-	settingsLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 6, 1);
-	settingsLay->setColumnStretch(4, 1);
+	settingsGroupFrameLay->addWidget(xChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 1, 2);
+	settingsGroupFrameLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 2);
+	settingsGroupFrameLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 3, 2);
+	settingsGroupFrameLay->setColumnStretch(1, 1);
 
 	/*
 	auto xButtonGroup = new QButtonGroup(w);
@@ -3337,14 +3333,13 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *openFilePbt;
 
 	auto buttonLay = new QGridLayout;
-	//buttonLay->addStretch(1);
-	buttonLay->addWidget(addDataPbt = OBJ_NAME(PBT("Add Data File(s)"), "secondary-button"), 0, 0);
-	buttonLay->addWidget(editLinesPbt = OBJ_NAME(PBT("Edit Line Appearance"), "secondary-button"), 1, 0);
-	buttonLay->addWidget(savePlotPbt = OBJ_NAME(PBT("Save Plot as Image"), "secondary-button"), 2, 0);
-	buttonLay->addWidget(openFilePbt = OBJ_NAME(PBT("Open data in Excel"), "secondary-button"), 3, 0);
-	buttonLay->setColumnStretch(1, 1);
-	buttonLay->setRowStretch(4, 1);
+	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"), 0, 0);
+	buttonLay->addWidget(editLinesPbt = OBJ_PROP(OBJ_NAME(PBT("Edit Line\nAppearance"), "secondary-button"), "add-name", "new-data-controls"), 0, 1);
+	buttonLay->addWidget(savePlotPbt = OBJ_PROP(OBJ_NAME(PBT("Save Plot\nas Image"), "secondary-button"), "add-name", "new-data-controls"), 0, 2);
+	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"), 0, 3);
+	buttonLay->setRowStretch(1, 1);
 
+	settingsLay->addWidget(settingsGroup, 1, 0, 1, -1);
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
 	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 	//settingsLay->setRowStretch(6, 1);
@@ -3413,6 +3408,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
 	
+	plotHandler.plotTabConnections << CONNECT(settingsGroup, &QGroupBox::toggled, [=](bool on) {
+		settingsGroupFrame->setVisible(on);
+	});
+
 	plotHandler.plotTabConnections << CONNECT(openFilePbt, &QPushButton::clicked, [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		

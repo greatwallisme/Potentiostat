@@ -53,5 +53,7 @@
         <file>Resources/checkbox-checked-hover.png</file>
         <file>Resources/checkbox-unchecked.png</file>
         <file>Resources/checkbox-unchecked-hover.png</file>
+        <file>Resources/group-collapse.png</file>
+        <file>Resources/group-expand.png</file>
     </qresource>
 </RCC>
