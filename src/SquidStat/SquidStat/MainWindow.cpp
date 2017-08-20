@@ -842,13 +842,6 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 
 		auto hexCrc = HexLoader::CalculateCrc(fw);
 
-		#define BOOT_SECTOR_BEGIN 0x9FC00000
-		#define APPLICATION_START 0x9D000000
-		#define PA_TO_VFA(x)	(x-APPLICATION_START)
-		#define PA_TO_KVA0(x)   (x|0x80000000)
-
-		hexCrc.start = PA_TO_KVA0(hexCrc.start);
-
 		LOG() << "Requesting firmware CRC";
 		PERFORM_REQUEST(RequestFirmwareCrc(hexCrc));
 

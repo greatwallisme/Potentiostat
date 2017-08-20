@@ -86,18 +86,29 @@ HexRecords HexLoader::ReadFile(const QString &fileName) {
 
 	hexFile.close();
 
+	auto hexCrc = CalculateCrc(ret);
+
 	return ret;
 }
 
+
+#define BOOT_SECTOR_BEGIN 0x9FC00000
+#define APPLICATION_START 0x9D000000
+#define PA_TO_VFA(x)	(x-APPLICATION_START)
+#define PA_TO_KVA0(x)   (x|0x80000000)
+
 HexCrc HexLoader::CalculateCrc(const HexRecords &hex) {
-	HexCrc ret = {0xffffffff, 0, 0};
+	HexCrc ret;
 
 	uint32_t segAddr = 0;
 	uint32_t linAddr = 0;
+	uint32_t minAddress = 0xffffffff;
 
 	QByteArray flash;
 
 	for (auto it = hex.begin(); it != hex.end(); ++it) {
+		QString temp(QString(it->toHex()).replace(QRegExp("([0-9a-fA-F]{2})([0-9a-fA-F]{4})([0-9a-fA-F]{2})(([0-9a-fA-F]{2})*)([0-9a-fA-F]{2})"), "\\1 \\2 \\3 | \\4 | \\6"));
+
 		RecordHeader *hdr = (RecordHeader*)it->data();
 
 		bool needToBreak = false;
@@ -107,20 +118,25 @@ HexCrc HexLoader::CalculateCrc(const HexRecords &hex) {
 				address <<= 8;
 				address += ((uint32_t)hdr->address[1]) & 0x000000FF;
 				address += segAddr + linAddr;
+				address = PA_TO_KVA0(address);
 
-				if (address < ret.start) {
-					ret.start = address;
+				if (address < BOOT_SECTOR_BEGIN) {
+					if (address < minAddress) {
+						minAddress = address;
+					}
+
+					address = PA_TO_VFA(address);
+
+					uint32_t minArraySize = address + hdr->length;
+
+					uint32_t curSize = flash.size();
+					if (curSize < minArraySize) {
+						flash.resize(minArraySize);
+						memset(flash.data() + curSize, 0xFF, minArraySize - curSize);
+					}
+
+					memcpy(flash.data() + address, hdr->data, hdr->length);
 				}
-
-				uint32_t minArraySize = address + hdr->length;
-
-				uint32_t curSize = flash.size();
-				if (curSize < minArraySize) {
-					flash.resize(minArraySize);
-					memset(flash.data() + curSize, 0xFF, minArraySize - curSize);
-				}
-
-				memcpy(flash.data() + address, hdr->data, hdr->length);
 			} break;
 			
 			case HRT_END_OF_FILE:
@@ -154,9 +170,9 @@ HexCrc HexLoader::CalculateCrc(const HexRecords &hex) {
 		}
 	}
 
+	ret.start = minAddress;
 	ret.length = flash.size();
-
-	ret.crc = CrcCalculator::Get16(flash.data(), flash.length());
+	ret.crc = CrcCalculator::Get16(flash.data() + PA_TO_VFA(minAddress), flash.length() - PA_TO_VFA(minAddress));
 
 	return ret;
 }
