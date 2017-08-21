@@ -203,6 +203,7 @@ private:
 
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
+		QMap<QUuid, QMap<QString, QLabel*>> realTimeLabels;
 	} dataTabs;
 
 	MainWindow *mw;

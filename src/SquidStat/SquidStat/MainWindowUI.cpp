@@ -3276,6 +3276,18 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	realTimeGroup->setCheckable(true);
 
+	QStringList realTimeValueNames;
+	realTimeValueNames << xAxisList << yAxisList;
+	realTimeValueNames.removeDuplicates();
+	
+	int row = 0;
+	foreach(const QString valueName, realTimeValueNames) {
+		realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(valueName + " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
+		realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][valueName] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
+		++row;
+	}
+
+	/*
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Working Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 0, 0);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Counter Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 1, 0);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Current = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 2, 0);
@@ -3283,8 +3295,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Step = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 4, 0);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Elapsed Time = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 5, 0);
 
-	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
-	#define CLOSE_COLOR_TAG "</font>"
 
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "-0.301" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 0, 1);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "+0.102" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 1, 1);
@@ -3292,6 +3302,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Oxidizing" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 3, 1);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Open Circuit" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 4, 1);
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "00:10:52" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 5, 1);
+	//*/
 
 	auto settingsGroup = OBJ_NAME(new QGroupBox("Graph options"), "collapsible-group-box");
 	auto settingsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroup)));
@@ -3435,7 +3446,41 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
-	
+
+	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
+	#define CLOSE_COLOR_TAG "</font>"
+
+	plotHandler.plotTabConnections <<
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, bool paused) {
+		if (curId != id) {
+			return;
+		}
+
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_DC)) {
+			return;
+		}
+
+		if (paused) {
+			return;
+		}
+
+		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
+		DataMapVisualization &majorData(handler.data.first());
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
+				if (majorData.container.contains(curVal)) {
+					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + majorData.container[curVal].data.last() + CLOSE_COLOR_TAG);
+				}
+			}
+		}
+	});
+
 	plotHandler.plotTabConnections << CONNECT(realTimeGroup, &QGroupBox::toggled, [=](bool on) {
 		realTimeGroupFrame->setVisible(on);
 	});
