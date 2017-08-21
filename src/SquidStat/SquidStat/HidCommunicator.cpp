@@ -107,8 +107,25 @@ void HidCommunicator::SendData(const QByteArray &data) {
 	dataToSend.push_front((char)SOH);
 	dataToSend.push_back((char)EOT);
 
-	if (hid_write(handler, (unsigned char*)dataToSend.data(), dataToSend.size()) < 0) {
-		LOG() << "Unable to write, error: " << QString::fromWCharArray(hid_error(handler));
+	#define USB_BUFFER_SIZE 64
+
+	char buffToWrite[USB_BUFFER_SIZE + 1];
+	quint32 sizeToWrite = dataToSend.size();
+	char *ptrToWrite = dataToSend.data();
+
+	while (sizeToWrite) {
+		uint32_t currSize = (sizeToWrite > USB_BUFFER_SIZE) ? USB_BUFFER_SIZE : sizeToWrite;
+
+		memset(buffToWrite, 0xff, sizeof(buffToWrite));
+		buffToWrite[0] = 0x00;
+		memcpy(buffToWrite + 1, ptrToWrite, currSize);
+
+		if (hid_write(handler, (unsigned char*)buffToWrite, sizeof(buffToWrite)) < 0) {
+			LOG() << "Unable to write, error: " << QString::fromWCharArray(hid_error(handler));
+		}
+
+		sizeToWrite -= currSize;
+		ptrToWrite += currSize;
 	}
 
 	LOG() << "Command sent";
