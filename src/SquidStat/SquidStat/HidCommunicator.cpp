@@ -128,7 +128,7 @@ void HidCommunicator::SendData(const QByteArray &data) {
 		ptrToWrite += currSize;
 	}
 
-	LOG() << "Command sent";
+	//LOG() << "Command sent";
 }
 void HidCommunicator::TryToReceive() {
 	if (!handler) {
@@ -176,22 +176,22 @@ void HidCommunicator::TryToReceive() {
 						crc |= ((receivedData[receivedData.size() - 1] << 8) & 0xFF00);
 
 						if (CrcCalculator::Get16(receivedData.data(), receivedData.size()-2) == crc) {
-							LOG() << "Packet found";
+							//LOG() << "Packet found";
 							
 							receivedData.remove(receivedData.size() - 2, 2);
 							if (receivedData.size()) {
 								emit DataReceived(receivedData);
 							}
 							else {
-								LOG() << "Packet is zero-sized, skip";
+								//LOG() << "Packet is zero-sized, skip";
 							}
 						}
 						else {
-							LOG() << "Wrong CRC, skip packet";
+							//LOG() << "Wrong CRC, skip packet";
 						}
 					}
 					else {
-						LOG() << "";
+						//LOG() << "";
 					}
 				}
 				break;
