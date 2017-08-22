@@ -317,31 +317,31 @@ QStringList ChargeDischargeDC::GetYAxisParameters(ExperimentType type) const {
 
 	return ret;
 }
-void ChargeDischargeDC::PUSH_NEW_DC_DATA_DEFINITION {
-	static QMap<DataMap*, qreal> timestampOffset;
-	qreal timestamp = (qreal)expData.timestamp / SECONDS;
+void ChargeDischargeDC::PUSH_NEW_DC_DATA_DEFINITION{
+  static QMap<DataMap*, qreal> timestampOffset;
+  qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
+  if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
+    PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
+  }
+  else {
+    qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
+    newVal += (container[PLOT_VAR_CURRENT].data.last() + processedData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 2. / 3600.0;
+    PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
+  }
 
-	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
-	}
-	else {
-		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedData.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 2. / 3600.0;
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
-	}
-
-	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
+  PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
   PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, processedData.ECE);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
+  PUSH_BACK_DATA(PLOT_VAR_ECE, processedData.ECE);
+  PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
 
-	if (!timestampOffset.contains(&container)) {
-		timestampOffset[&container] = timestamp;
-	}
-	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+  if (!timestampOffset.contains(&container)) {
+    timestampOffset[&container] = timestamp;
+  }
+  PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
   PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
+
 void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
@@ -358,14 +358,12 @@ void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes 
 }
 
 void ChargeDischargeDC::SaveDcData(QFile &saveFile, const DataMap &container) const {
-	SAVE_DATA_START();
-
-	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
+  SAVE_DATA_START();
+  SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
   SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
-	SAVE_DATA(PLOT_VAR_EWE);
-	SAVE_DATA(PLOT_VAR_CURRENT);
-	SAVE_DATA(PLOT_VAR_ECE);
-	SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
-
-	SAVE_DATA_END();
+  SAVE_DATA(PLOT_VAR_EWE);
+  SAVE_DATA(PLOT_VAR_CURRENT);
+  SAVE_DATA(PLOT_VAR_ECE);
+  SAVE_DATA(PLOT_VAR_CURRENT_INTEGRAL);
+  SAVE_DATA_END();
 }

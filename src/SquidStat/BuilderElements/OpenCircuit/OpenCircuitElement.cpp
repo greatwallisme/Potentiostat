@@ -97,10 +97,7 @@ NodesData OpenCircuitElement::GetNodesData(const UserInput &inputs, const Calibr
   exp.tMax = duration * SECONDS;
   exp.MaxPlays = 1;
   exp.currentRangeMode = AUTORANGE;
-
-  //TODO: send filtersize SOMEWHERE to ignore N points
-  int filtersize = ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
-
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
   exp.DCocp.dVdtMin = (float) dVdtMin;
   exp.DCocp.Vmax = (float) VMax;
   exp.DCocp.Vmin = (float) VMin;

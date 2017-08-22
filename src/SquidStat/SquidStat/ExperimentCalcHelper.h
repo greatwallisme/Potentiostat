@@ -23,11 +23,11 @@
 class ExperimentCalcHelperClass
 {
 public:
-	static uint32_t GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, double t_sample_period);
-  static uint32_t GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-    double dEdt, double samplingInterval = 0);
-  static uint32_t GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-    double dIdt, currentRange_t currentRange, double samplingInterval = 0);
+	static void GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, const double targetSamplingInterval);
+  static void GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
+    double dEdt, const double targetSamplingInterval = 0);
+  static void GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
+    double dIdt, currentRange_t currentRange, const double samplingInterval = 0);
   static void GetSamplingParameters_pulse(HardwareModel_t HWversion, quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode);
 	static currentRange_t GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent);
 	static int16_t GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent);

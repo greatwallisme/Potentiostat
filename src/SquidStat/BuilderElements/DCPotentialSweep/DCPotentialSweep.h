@@ -15,5 +15,4 @@ public:
 private:
   uint32_t numIgnoredPoints;
   uint32_t ignoredPointsCounter;
-  void setNumIgnoredPoints(uint32_t numPoints);
 };

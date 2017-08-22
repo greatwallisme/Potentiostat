@@ -22,8 +22,6 @@ public:
 
 	void SaveAcDataHeader(QFile&, const ExperimentNotes &notes) const;
 	void SaveAcData(QFile&, const DataMap&) const;
-private:
-	int hardwareVersion; //TODO: this is a placeholder member
 };
 
 #endif // EIS_GALVANOSTATIC_H

@@ -2488,9 +2488,10 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
 		DataMapVisualization &majorData(handler.data.first());
 
-		if (handler.exp) {
-			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
-			if (majorData.saveFile) {
+    if (handler.exp) {
+      handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
+      //if (majorData.saveFile && ((majorData.container[0].data.size() - 1) % expData.decimation_num == 0)) {
+      if (majorData.saveFile) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
 		}

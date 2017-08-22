@@ -106,10 +106,7 @@ NodesData DCCurrentSweep::GetNodesData(const UserInput &inputs, const Calibratio
 	exp.tMin = 0;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRange;
-  
-  //TODO: send filtersize SOMEWHERE to ignore N points
-  uint32_t filtersize = ExperimentCalcHelperClass::GetSamplingParams_galvSweep(hwVersion.hwModel, &calData, &exp, dIdt, currentRange, sampInterval);  //todo
-  
+  ExperimentCalcHelperClass::GetSamplingParams_galvSweep(hwVersion.hwModel, &calData, &exp, dIdt, currentRange, sampInterval);
   exp.DCSweep_galv.IStart = ExperimentCalcHelperClass::GetBINCurrent(&calData, currentRange, IStart);
   exp.DCSweep_galv.IEnd = ExperimentCalcHelperClass::GetBINCurrent(&calData, currentRange, IEnd);
   exp.DCSweep_galv.Irange = currentRange;

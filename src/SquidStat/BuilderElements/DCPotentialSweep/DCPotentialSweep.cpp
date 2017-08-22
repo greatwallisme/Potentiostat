@@ -138,11 +138,7 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
 	exp.tMin = 0;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-
-  //TODO: do something else with numPoints to deal with the fact that its a const function
-  uint32_t numPoints = ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dVdt, samplingInterval);
-  (const_cast<DCPotentialSweepElement*>(this))->setNumIgnoredPoints(numPoints);
-
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dVdt, samplingInterval);
 	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VStart);
   exp.DCSweep_pot.VStartVsOCP = VStartVsOCP;
   exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VEnd);
@@ -152,9 +148,4 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
 	PUSH_NEW_NODE_DATA();
 
 	NODES_DATA_END();
-}
-
-void DCPotentialSweepElement::setNumIgnoredPoints(uint32_t numPoints)
-{
-  numIgnoredPoints = numPoints;
 }

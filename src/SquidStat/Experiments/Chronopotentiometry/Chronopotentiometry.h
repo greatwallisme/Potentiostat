@@ -23,10 +23,6 @@ public:
 
 	void SaveDcDataHeader(QFile&, const ExperimentNotes&notes) const;
 	void SaveDcData(QFile&, const DataMap&) const;
-private:
-	int hardwareVersion; //TODO: this is a placeholder member
-	void getSamplingParameters(double t_period, ExperimentNode_t * pNode) const;
-
 };
 
 #endif // CHRONOPOTENTIOMETRY_H

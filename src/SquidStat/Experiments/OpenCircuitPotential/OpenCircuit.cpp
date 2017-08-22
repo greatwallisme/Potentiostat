@@ -92,9 +92,7 @@ NodesData OpenCircuit::GetNodesData(QWidget *wdg, const CalibrationData &calData
   exp.nodeType = DCNODE_OCP;
   exp.tMin = 0;
   exp.tMax = duration * SECONDS;
-  
-  //TODO: send filtersize SOMEWHERE to ignore N points
-  int filtersize = ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
   
   exp.DCocp.dVdtMin = 0;
   exp.DCocp.Vmax = 32767;
