@@ -3472,12 +3472,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		DataMapVisualization &majorData(handler.data.first());
 
 		auto curStamp = QDateTime::currentMSecsSinceEpoch();
-		if (curStamp > handler.plotCounter.stamp) {
+		if (curStamp > handler.plotCounter.realTimeValueStamp) {
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
-				if (majorData.container.contains(curVal)) {
-					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + majorData.container[curVal].data.last() + CLOSE_COLOR_TAG);
+				if (majorData.container.keys().contains(curVal)) {
+					QString text = QString("%1%2%3").
+						arg(OPEN_COLOR_TAG).
+						arg(majorData.container[curVal].data.last(), 0, 'f', 6).
+						arg(CLOSE_COLOR_TAG);
+					dataTabs.realTimeLabels[id][curVal]->setText(text);
 				}
 			}
+			handler.plotCounter.realTimeValueStamp = curStamp + 50;
 		}
 	});
 

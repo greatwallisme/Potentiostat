@@ -180,6 +180,7 @@ private:
 		QList<DataMapVisualization> data;
 		struct {
 			quint64 stamp;
+			quint64 realTimeValueStamp;
 		} plotCounter;
 	};
 
