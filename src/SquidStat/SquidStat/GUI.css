@@ -672,6 +672,13 @@ QLabel[experiment-params-widget="low-margin"] {
 #collapsible-group-box-frame *[comment-placement="left"] {
 	margin-left: 15px;
 }
+#collapsible-group-box-frame QCheckBox {
+	margin-top: 10px;
+}
+#collapsible-group-box-frame QComboBox,
+#collapsible-group-box-frame QLabel {
+	margin-top: 7px;
+}
 #collapsible-group-box-frame *[add-name="real-time-values"] {
 	margin-top: 7px;
 	font-size: 15px;

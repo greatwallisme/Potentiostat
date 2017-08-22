@@ -384,6 +384,22 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		});
 
 		hardware.currentInstrument.handler->connections <<
+		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentNodeBeginning, this, [=](quint8 channel, const ExperimentNode_t &node) {
+			auto oper = qobject_cast<InstrumentOperator*>(sender());
+			if (0 == oper) {
+				LOG() << "Unexpected InstrumentOperator pointer";
+				return;
+			}
+
+			auto handler = SearchForHandler(oper);
+			if (handler == hardware.handlers.end()) {
+				LOG() << "Hardware handler not found";
+				return;
+			}
+			emit ExperimentNodeBeginning(handler->experiment.id, channel, node);
+		});
+
+		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalDcDataReceived, this, [=](quint8 channel, const ExperimentalDcData &expData) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {

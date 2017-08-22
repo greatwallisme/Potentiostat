@@ -3286,6 +3286,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][valueName] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 		++row;
 	}
+	#define STEP_VALUE_LBL_NAME			"Step"
+	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(STEP_VALUE_LBL_NAME " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
+	realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][STEP_VALUE_LBL_NAME] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 
 	/*
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Working Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 0, 0);
@@ -3450,6 +3453,52 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
 	#define CLOSE_COLOR_TAG "</font>"
 
+	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
+	
+	plotHandler.plotTabConnections <<
+	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
+		if (curId != id) {
+			return;
+		}
+
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		QString nodeTypeStr = "";
+
+		switch (node.nodeType) {
+			NODE_TYPE_STR_FILL(END_EXPERIMENT_NODE, "END_EXPERIMENT_NODE")
+			NODE_TYPE_STR_FILL(DCNODE_OCP, "DCNODE_OCP")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_POT, "DCNODE_SWEEP_POT")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_GALV, "DCNODE_SWEEP_GALV")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_POT, "DCNODE_POINT_POT")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_GALV, "DCNODE_POINT_GALV")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_POT, "DCNODE_NORMALPULSE_POT")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_GALV, "DCNODE_NORMALPULSE_GALV")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_POT, "DCNODE_DIFFPULSE_POT")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_GALV, "DCNODE_DIFFPULSE_GALV")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_POT, "DCNODE_SQRWAVE_POT")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_GALV, "DCNODE_SQRWAVE_GALV")
+			NODE_TYPE_STR_FILL(DCNODE_SINEWAVE, "DCNODE_SINEWAVE")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_RESISTANCE, "DCNODE_CONST_RESISTANCE")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_POWER, "DCNODE_CONST_POWER")
+			NODE_TYPE_STR_FILL(DCNODE_MAX_POWER, "DCNODE_MAX_POWER")
+			NODE_TYPE_STR_FILL(FRA_NODE_POT, "FRA_NODE_POT")
+			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "FRA_NODE_GALV")
+			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "FRA_NODE_PSEUDOGALV")
+			NODE_TYPE_STR_FILL(DUMMY_NODE, "DUMMY_NODE")
+
+			default: break;
+		}
+
+		QString text = QString("%1%2%3").
+			arg(OPEN_COLOR_TAG).
+			arg(nodeTypeStr).
+			arg(CLOSE_COLOR_TAG);
+		dataTabs.realTimeLabels[id][QString(STEP_VALUE_LBL_NAME)]->setText(text);
+	});
+
 	plotHandler.plotTabConnections <<
 	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, bool paused) {
 		if (curId != id) {
@@ -3464,20 +3513,58 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			return;
 		}
 
-		if (paused) {
-			return;
-		}
-
 		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
 		DataMapVisualization &majorData(handler.data.first());
 
 		auto curStamp = QDateTime::currentMSecsSinceEpoch();
 		if (curStamp > handler.plotCounter.realTimeValueStamp) {
+			DataMap container;
+			if (!handler.exp) {
+				return;
+			}
+			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
-				if (majorData.container.keys().contains(curVal)) {
+				if (container.keys().contains(curVal)) {
 					QString text = QString("%1%2%3").
 						arg(OPEN_COLOR_TAG).
-						arg(majorData.container[curVal].data.last(), 0, 'f', 6).
+						arg(container[curVal].data.last(), 0, 'f', 6).
+						arg(CLOSE_COLOR_TAG);
+					dataTabs.realTimeLabels[id][curVal]->setText(text);
+				}
+			}
+			handler.plotCounter.realTimeValueStamp = curStamp + 50;
+		}
+	});
+	
+	plotHandler.plotTabConnections <<
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &curId, quint8 channel, const QByteArray &expData, bool paused) {
+		if (curId != id) {
+			return;
+		}
+
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_AC)) {
+			return;
+		}
+
+		PlotHandler &handler(dataTabs.plots[id][ET_AC]);
+		DataMapVisualization &majorData(handler.data.first());
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.realTimeValueStamp) {
+			DataMap container;
+			if (!handler.exp) {
+				return;
+			}
+			handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
+			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
+				if (container.keys().contains(curVal)) {
+					QString text = QString("%1%2%3").
+						arg(OPEN_COLOR_TAG).
+						arg(container[curVal].data.last(), 0, 'f', 6).
 						arg(CLOSE_COLOR_TAG);
 					dataTabs.realTimeLabels[id][curVal]->setText(text);
 				}
