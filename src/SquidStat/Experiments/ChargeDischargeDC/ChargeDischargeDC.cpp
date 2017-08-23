@@ -321,6 +321,7 @@ void ChargeDischargeDC::PUSH_NEW_DC_DATA_DEFINITION{
   static QMap<DataMap*, qreal> timestampOffset;
   qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
+  
   if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
     PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, 0);
   }

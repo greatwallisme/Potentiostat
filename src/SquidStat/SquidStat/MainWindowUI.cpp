@@ -1501,8 +1501,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	static bool dialogCanceled;
 	dialogCanceled = true;
 
-	ret.other.currentDensityWorkingElectrode.first = "Current density (working electrode)";
-	ret.other.currentDensityCounterElectrode.first = "Current density (counter electrode)";
+	ret.other.currentDensityWorkingElectrode.first = "Electrode area (working electrode)";
+	ret.other.currentDensityCounterElectrode.first = "Electrode area (counter electrode)";
 	ret.other.solvent.first = "Solvent";
 	ret.other.electrolyte.first = "Electrolyte";
 	ret.other.electrolyteConcentration.first = "Electrolyte concentration (moles per liter)";
@@ -2490,8 +2490,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
     if (handler.exp) {
       handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
-      //if (majorData.saveFile && ((majorData.container[0].data.size() - 1) % expData.decimation_num == 0)) {
-      if (majorData.saveFile) {
+      if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
+      //if (majorData.saveFile) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
 		}

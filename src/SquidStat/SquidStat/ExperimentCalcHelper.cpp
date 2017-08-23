@@ -489,11 +489,11 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   uint32_t ADCclkdiv = 1;
 
   if (pNode->FRA_pot_node.freqRange == HF_RANGE)
-    //fSample = (n - 1) * fSignal / n;
-    fSample = (n - 5) * fSignal / n;
+    fSample = (n - 1) * fSignal / n;
+    //fSample = (n - 5) * fSignal / n;
   else
-    //fSample = fSignal * n;
-    fSample = fSignal * n / 4;
+    fSample = fSignal * n;
+    //fSample = fSignal * n / 4;
   uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
 
   while (1)
@@ -563,8 +563,8 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   //todo: add error analysis, THD
   int newLen = ADCacBUF_SIZE - ADCacROLLING_AVG_SIZE;
   double * t_data = new double[newLen];
-  double * filteredEWEdata = filterData(bufEWE, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
   double * filteredCurrentData = filterData(bufCurrent, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
+  double * filteredEWEdata = filterData(bufEWE, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
 
   for (int i = 0; i < newLen; i++)
     t_data[i] = i;
@@ -572,9 +572,13 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   /* Part 1: least squares regression first guess*/
   double resultsEWE[4];
   double resultsCurrent[4];
-  sinusoidLeastSquaresFit(t_data, filteredEWEdata, newLen, resultsEWE);
   sinusoidLeastSquaresFit(t_data, filteredCurrentData, newLen, resultsCurrent);
-  resultsEWE[0] = resultsCurrent[0] = (resultsEWE[0] + resultsCurrent[0] ) / 2;
+  //sinusoidLeastSquaresFit(t_data, filteredEWEdata, newLen, resultsEWE);
+  //resultsEWE[0] = resultsCurrent[0] = (resultsEWE[0] + resultsCurrent[0] ) / 2;
+  for (int i = 0; i < 4; i++)
+    resultsEWE[i] = resultsCurrent[i];
+  /*note: instead of fitting EWE and Current separately with "sinusoidLeastSquaresFit," just fit Current, and use the single result
+  as the starting point for both sets of data for the Newton-Raphson method */
 
   /* Part 2: Newton-Raphson method */  //TODO: don't just have this iterate 10 times, set an error limit
   for (int i = 0; i < 10; i++)
