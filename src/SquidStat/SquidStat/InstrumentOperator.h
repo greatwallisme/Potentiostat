@@ -33,6 +33,7 @@ signals:
 	void ExperimentPaused();
 	void ExperimentResumed();
 	void NodeDownloaded();
+	void ExperimentNodeBeginning(quint8 channel, const ExperimentNode_t&);
 
 private:
 	SerialCommunicator *_communicator;

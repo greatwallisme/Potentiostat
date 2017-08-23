@@ -180,6 +180,7 @@ private:
 		QList<DataMapVisualization> data;
 		struct {
 			quint64 stamp;
+			quint64 realTimeValueStamp;
 		} plotCounter;
 	};
 
@@ -203,6 +204,7 @@ private:
 
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
+		QMap<QUuid, QMap<QString, QLabel*>> realTimeLabels;
 	} dataTabs;
 
 	MainWindow *mw;

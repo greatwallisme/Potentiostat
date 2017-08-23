@@ -80,6 +80,7 @@ signals:
 	void HardwareFound(const InstrumentList&);
 	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, bool paused);
 	void AcDataArrived(const QUuid&, quint8 channel, const QByteArray &expData, bool paused);
+	void ExperimentNodeBeginning(const QUuid&, quint8 channel, const ExperimentNode_t&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 	void BuilderElementsFound(const QList<AbstractBuilderElement*>&);
