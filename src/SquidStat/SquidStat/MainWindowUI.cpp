@@ -3244,6 +3244,23 @@ void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double per
 	handler.axisParams[axis].max.val -= (axisWidth * percentsMax);
 
 }
+
+
+QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = { 
+	{ QString(REAL_TIME_ELAPSED_TIME), [=](qreal val) -> QString {
+		QString ret("%1:%2:%3");
+
+		int intVal = val;
+
+		int s = intVal % 60;
+		int m = (intVal / 60) % 60;
+		int h = (intVal / 60) / 60;
+
+		return ret.arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+	} }
+};
+auto *valueDisplayHandlerPtr = &valueDisplayHandler;
+
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
@@ -3455,7 +3472,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define CLOSE_COLOR_TAG "</font>"
 
 	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
-	
+
 	plotHandler.plotTabConnections <<
 	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
 		if (curId != id) {
@@ -3526,11 +3543,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
-					QString text = QString("%1%2%3").
-						arg(OPEN_COLOR_TAG).
-						arg(container[curVal].data.last(), 0, 'f', 6).
-						arg(CLOSE_COLOR_TAG);
-					dataTabs.realTimeLabels[id][curVal]->setText(text);
+					QString text;
+
+					if (valueDisplayHandlerPtr->keys().contains(curVal)) {
+						text = (*valueDisplayHandlerPtr)[curVal](container[curVal].data.last());
+					}
+					else {
+						text = QString("%1").arg(container[curVal].data.last(), 0, 'f', 6);
+					}
+
+					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
 			handler.plotCounter.realTimeValueStamp = curStamp + 50;
@@ -3563,11 +3585,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
-					QString text = QString("%1%2%3").
-						arg(OPEN_COLOR_TAG).
-						arg(container[curVal].data.last(), 0, 'f', 6).
-						arg(CLOSE_COLOR_TAG);
-					dataTabs.realTimeLabels[id][curVal]->setText(text);
+					QString text;
+
+					if (valueDisplayHandlerPtr->keys().contains(curVal)) {
+						text = (*valueDisplayHandlerPtr)[curVal](container[curVal].data.last());
+					}
+					else {
+						text = QString("%1").arg(container[curVal].data.last(), 0, 'f', 6);
+					}
+
+					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
 			handler.plotCounter.realTimeValueStamp = curStamp + 50;

@@ -43,6 +43,11 @@ enum ExperimentType : uint8_t {
 typedef QList<ExperimentType> ExperimentTypeList;
 
 
+#define REAL_TIME_WORKING_ELECTRODE		"Working electrode (V)"
+#define REAL_TIME_CURRENT				"Current (mA)"
+#define REAT_TIME_COUNTER_ELECTRODE		"Counter electrode (V)"
+#define REAL_TIME_ELAPSED_TIME			"Elapsed time (s)"
+
 #define PUSH_NEW_DC_DATA_DEFINITION \
 	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
 
