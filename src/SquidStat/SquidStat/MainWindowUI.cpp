@@ -3257,9 +3257,26 @@ QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = {
 		int h = (intVal / 60) / 60;
 
 		return ret.arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+	} },
+	{ QString(REAL_TIME_WORKING_ELECTRODE), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'f', 3);
+	} },
+	{ QString(REAT_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'f', 3);
+	} },
+	{ QString(REAL_TIME_CURRENT), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'e', 3);
 	} }
 };
 auto *valueDisplayHandlerPtr = &valueDisplayHandler;
+
+QStringList valueHideList = {
+	QString(REAL_TIME_ELAPSED_TIME_HR),
+	QString(REAL_TIME_CURRENT_INTEGRAL)
+};
 
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
@@ -3299,7 +3316,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeValueNames.removeDuplicates();
 	
 	int row = 0;
-	foreach(const QString valueName, realTimeValueNames) {
+	foreach(const QString &valueName, realTimeValueNames) {
+		if (valueHideList.contains(valueName)) {
+			continue;
+		}
 		realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(valueName + " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
 		realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][valueName] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 		++row;
