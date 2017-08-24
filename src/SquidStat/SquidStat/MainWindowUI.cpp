@@ -72,6 +72,8 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QGroupBox>
+#include <QStandardPaths>
+#include <QDesktopWidget>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -990,7 +992,8 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 
 	QList<CustomExperiment> cExpList;
 	{
-		auto expFileInfos = QDir(CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+		QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+		auto expFileInfos = QDir(appDataPath +  "/" CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
 		foreach(const QFileInfo &expFileInfo, expFileInfos) {
 			auto filePath = expFileInfo.absoluteFilePath();
 
@@ -1098,11 +1101,12 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		if (GetUserAgreement(parent, title, text, okText, cancelText)) {
 			auto curId = index.data(Qt::UserRole).toUuid();
 			
+			QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 			foreach(auto &ce, cExpList) {
 				if (curId == ce.id) {
 					fileList->model()->removeRow(index.row());
 
-					if (QFile(CUSTOM_EXP_DIR + ce.fileName).remove()) {
+					if (QFile(appDataPath + "/" CUSTOM_EXP_DIR + ce.fileName).remove()) {
 						mw->UpdateCustomExperimentList();
 					}
 					break;
@@ -1522,6 +1526,10 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	references["Mercury oxide in 1.0M NaOH"] = 0.1400;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
+
+	QRect screenSize = QDesktopWidget().availableGeometry(parent);
+	dialog->setFixedHeight(screenSize.height() < 800 ? screenSize.height() * 0.80 : 800);
+	dialog->setFixedWidth(660);
 
 	auto electrodeCombo = CMB();
 	QRadioButton *commRefRadio;
@@ -3575,7 +3583,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
-			handler.plotCounter.realTimeValueStamp = curStamp + 50;
+			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
 	});
 	
@@ -3617,7 +3625,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
-			handler.plotCounter.realTimeValueStamp = curStamp + 50;
+			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
 	});
 
