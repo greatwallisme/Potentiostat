@@ -3568,7 +3568,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (!handler.exp) {
 				return;
 			}
+			
+			if (dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+				container[REAL_TIME_ELAPSED_TIME].data.push_back(dataTabs.realTimeElapsedTime[curId]);
+			}
+			
 			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
+			
+			if (!dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+				dataTabs.realTimeElapsedTime[curId] = container[REAL_TIME_ELAPSED_TIME].data.last();
+			}
+
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
 					QString text;
