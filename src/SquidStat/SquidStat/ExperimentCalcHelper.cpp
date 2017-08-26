@@ -336,7 +336,7 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWv
   while (1)
   {
     float slope = MAX(calData->m_iN[range], calData->m_iP[range]);
-    if (ABS(targetCurrent) > slope * OVERCURRENT_LIMIT + calData->b_i[range] && range > 0)
+    if (fabs(targetCurrent) > fabs(slope * OVERCURRENT_LIMIT + calData->b_i[range]) && range > 0)
       range--;
     else
       break;
@@ -463,10 +463,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   pNode->FRA_pot_node.freqRange = pNode->FRA_pot_node.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
 
   /* (1) Calculate signal gen clock frequency and signal gen register value */
-        //int wavegenClkdiv = 1 << (int) WAVEGENCLK_24KHZ;
-        //pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_24KHZ;
-        int wavegenClkdiv = 1 << (int) WAVEGENCLK_12_5MHZ;
-        pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_12_5MHZ;
+  int wavegenClkdiv = 1 << (int) WAVEGENCLK_24KHZ;
+  pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_24KHZ;
   double fSignal = pNode->FRA_pot_node.frequency;
 
   while (fSignal * SIGNAL_GEN_RESOLUTION * wavegenClkdiv >= 25e6)
@@ -490,10 +488,8 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
   if (pNode->FRA_pot_node.freqRange == HF_RANGE)
     fSample = (n - 1) * fSignal / n;
-    //fSample = (n - 5) * fSignal / n;
   else
-    fSample = fSignal * n;
-    //fSample = fSignal * n / 4;
+    fSample = fSignal * n / 2;
   uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
 
   while (1)
@@ -511,32 +507,16 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     {
       double denom = fSignal - fSample;
       double x = ABS(fSignal / denom);
-      if (fSample > fSignal || denom == 0 || x > ADCacBUF_SIZE)
+      if (fSample > fSignal || denom == 0 || x > ADCacBUF_SIZE / 1.5)   //debugging: try to get at least 1.5 cycles, for fitting
       {
         TimerPeriod++;
         continue;
       }
       else
-      {
-        /*n = (uint32_t)x;
-        if (ADCacBUF_SIZE / n > 1)
-          n *= ADCacBUF_SIZE / n;*/
-        n = ADCacBUF_SIZE;
         break;
-      }
     }
     else
-    {
-      n = ADCacBUF_SIZE; break;
-      /*n = (uint32_t)round(fSample / fSignal);
-      if (n > ADCacBUF_SIZE)
-      {
-        TimerPeriod++;
-        continue;
-      }
-      else
-        break;*/
-    }
+      break;
   }
   pNode->FRA_pot_node.ADCacTimerPeriod = (uint32_t)TimerPeriod;
 }
@@ -566,6 +546,14 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   double * filteredCurrentData = filterData(bufCurrent, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
   double * filteredEWEdata = filterData(bufEWE, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
 
+  /*double rawDataEWEDouble[ADCacBUF_SIZE];
+  double rawDataIDouble[ADCacBUF_SIZE];
+  for (int i = 0; i < ADCacBUF_SIZE; i++)
+  {
+    rawDataEWEDouble[i] = bufEWE[i];
+    rawDataIDouble[i] = bufCurrent[i];
+  }*/
+
   for (int i = 0; i < newLen; i++)
     t_data[i] = i;
 
@@ -584,12 +572,14 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   for (int i = 0; i < 10; i++)
   {
     NewtonRaphson(resultsEWE, t_data, filteredEWEdata, newLen, resultsEWE);
+            //NewtonRaphson(resultsEWE, t_data, rawDataEWEDouble, ADCacBUF_SIZE, resultsEWE);
     resultsCurrent[0] = resultsEWE[0];
     NewtonRaphson(resultsCurrent, t_data, filteredCurrentData, newLen, resultsCurrent, true);
+            //NewtonRaphson(resultsCurrent, t_data, rawDataIDouble, ADCacBUF_SIZE, resultsCurrent, true);
   }
 
   /* debugging only */
-  std::ofstream fout;
+  /*std::ofstream fout;
   QString filename = "C:/Users/Matt/Desktop/results";
   filename.append(QString::number(frequency));
   filename.append(".txt");
@@ -599,15 +589,15 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   for (int i = 0; i < ADCacBUF_SIZE; i++)
   {
     fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
-  }
+  }*/
 
   ComplexDataPoint_t pt;
   double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE * (calData->m_eweP + calData->m_refP + calData->m_eweN + calData->m_refN) / 4;
-  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI * (calData->m_iP[(int)range], calData->m_iN[(int)range]) / 2;
+  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI * (calData->m_iP[(int)range] + calData->m_iN[(int)range]) / 2 / 1000;
   double phaseEWE = atan2(resultsEWE[2], resultsEWE[3]) * 180 / M_PI;
   double phaseCurrent = atan2(resultsCurrent[2], resultsCurrent[3]) * 180 / M_PI;
   pt.frequency = frequency;
-  pt.ImpedanceMag = MagEWE / MagCurrent;
+  pt.ImpedanceMag = fabs(MagEWE / MagCurrent);
   pt.phase = phaseCurrent - phaseEWE;
   if (pt.phase <= -180)
     pt.phase += 360;

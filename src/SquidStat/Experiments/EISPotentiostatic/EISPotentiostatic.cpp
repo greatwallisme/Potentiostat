@@ -22,12 +22,12 @@
 #define DC_BIAS_DEFAULT			0
 #define AC_AMP_DEFAULT			10		//(in mA)
 
-#define PLOT_VAR_IMPEDANCE				"|Z|"
+#define PLOT_VAR_IMPEDANCE				"|Z| (Ohms)"
 #define PLOT_VAR_PHASE					"Phase"
-#define PLOT_VAR_IMP_REAL				"Z\'"
-#define PLOT_VAR_IMP_IMAG				"Z\""
-#define PLOT_VAR_NEG_IMP_IMAG			"-Z\""
-#define PLOT_VAR_FREQ					"Frequency"
+#define PLOT_VAR_IMP_REAL				"Z\'(Ohms)"
+#define PLOT_VAR_IMP_IMAG				"Z\"(Ohms)"
+#define PLOT_VAR_NEG_IMP_IMAG			"-Z\"(Ohms)"
+#define PLOT_VAR_FREQ					"Frequency (Hz)"
 #define PLOT_VAR_ERROR        "Error (AU)"
 
 QString EISPotentiostatic::GetShortName() const {
@@ -143,7 +143,7 @@ NodesData EISPotentiostatic::GetNodesData(QWidget *wdg, const CalibrationData &c
   exp.DCPoint_pot.Imax = MAX_CURRENT;
   exp.DCPoint_pot.Imin = 0;
   exp.DCPoint_pot.dIdtMin = 0;
-  exp.DCPoint_pot.VPointUserInput = VBias;
+  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VBias);
   exp.DCPoint_pot.VPointVsOCP = VBiasVsOCP;
 	exp.MaxPlays = 1;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
@@ -200,13 +200,16 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
 	
-	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
-	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
-	PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
-	PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
-	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
-	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
-  PUSH_BACK_DATA(PLOT_VAR_ERROR, dataPoint.error);
+  //if (dataPoint.error < 2000)
+  //{
+    PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
+    PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
+    PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
+    PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
+    PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
+    PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
+    PUSH_BACK_DATA(PLOT_VAR_ERROR, dataPoint.error);
+  //}
 }
 void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
@@ -223,15 +226,18 @@ void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes 
 }
 
 void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
-	SAVE_DATA_START();
+  if(container[PLOT_VAR_ERROR].data.count() > 0 && container[PLOT_VAR_ERROR].data.last() < 2000)
+  {
+    SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_FREQ);
-	SAVE_DATA(PLOT_VAR_IMPEDANCE);
-	SAVE_DATA(PLOT_VAR_PHASE);
-	SAVE_DATA(PLOT_VAR_IMP_REAL);
-	SAVE_DATA(PLOT_VAR_IMP_IMAG);
-	SAVE_DATA(PLOT_VAR_NEG_IMP_IMAG);
-  SAVE_DATA(PLOT_VAR_ERROR);
+    SAVE_DATA(PLOT_VAR_FREQ);
+    SAVE_DATA(PLOT_VAR_IMPEDANCE);
+    SAVE_DATA(PLOT_VAR_PHASE);
+    SAVE_DATA(PLOT_VAR_IMP_REAL);
+    SAVE_DATA(PLOT_VAR_IMP_IMAG);
+    SAVE_DATA(PLOT_VAR_NEG_IMP_IMAG);
+    SAVE_DATA(PLOT_VAR_ERROR);
 
-	SAVE_DATA_END();
+    SAVE_DATA_END();
+  }
 }
