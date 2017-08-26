@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>SquidStat</Name>
+    <Version>0.1.0</Version>
+    <Title>SquidStat Installer</Title>
+    <Publisher>Admiral Instruments</Publisher>
+    <StartMenuDir>Admiral Instruments</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/Admiral Instruments/SquidStat</TargetDir>
+</Installer>

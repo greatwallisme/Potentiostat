@@ -72,6 +72,8 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QGroupBox>
+#include <QStandardPaths>
+#include <QDesktopWidget>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -990,7 +992,8 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 
 	QList<CustomExperiment> cExpList;
 	{
-		auto expFileInfos = QDir(CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+		QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+		auto expFileInfos = QDir(appDataPath +  "/" CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
 		foreach(const QFileInfo &expFileInfo, expFileInfos) {
 			auto filePath = expFileInfo.absoluteFilePath();
 
@@ -1098,11 +1101,12 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		if (GetUserAgreement(parent, title, text, okText, cancelText)) {
 			auto curId = index.data(Qt::UserRole).toUuid();
 			
+			QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 			foreach(auto &ce, cExpList) {
 				if (curId == ce.id) {
 					fileList->model()->removeRow(index.row());
 
-					if (QFile(CUSTOM_EXP_DIR + ce.fileName).remove()) {
+					if (QFile(appDataPath + "/" CUSTOM_EXP_DIR + ce.fileName).remove()) {
 						mw->UpdateCustomExperimentList();
 					}
 					break;
@@ -1522,6 +1526,10 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	references["Mercury oxide in 1.0M NaOH"] = 0.1400;
 
 	QDialog* dialog = OBJ_NAME(new QDialog(parent, Qt::SplashScreen), "notes-dialog");
+
+	QRect screenSize = QDesktopWidget().availableGeometry(parent);
+	dialog->setFixedHeight(screenSize.height() < 800 ? screenSize.height() * 0.80 : 800);
+	dialog->setFixedWidth(660);
 
 	auto electrodeCombo = CMB();
 	QRadioButton *commRefRadio;
@@ -3257,9 +3265,26 @@ QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = {
 		int h = (intVal / 60) / 60;
 
 		return ret.arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+	} },
+	{ QString(REAL_TIME_WORKING_ELECTRODE), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'f', 3);
+	} },
+	{ QString(REAT_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'f', 3);
+	} },
+	{ QString(REAL_TIME_CURRENT), [=](qreal val) -> QString {
+		QString ret("%1");
+		return ret.arg(val, 0, 'e', 3);
 	} }
 };
 auto *valueDisplayHandlerPtr = &valueDisplayHandler;
+
+QStringList valueHideList = {
+	QString(REAL_TIME_ELAPSED_TIME_HR),
+	QString(REAL_TIME_CURRENT_INTEGRAL)
+};
 
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
 	QFont axisTitleFont("Segoe UI");
@@ -3299,7 +3324,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeValueNames.removeDuplicates();
 	
 	int row = 0;
-	foreach(const QString valueName, realTimeValueNames) {
+	foreach(const QString &valueName, realTimeValueNames) {
+		if (valueHideList.contains(valueName)) {
+			continue;
+		}
 		realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(valueName + " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
 		realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][valueName] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 		++row;
@@ -3540,7 +3568,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (!handler.exp) {
 				return;
 			}
+			
+			if (dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+				container[REAL_TIME_ELAPSED_TIME].data.push_back(dataTabs.realTimeElapsedTime[curId]);
+			}
+			
 			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
+			
+			if (!dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+				dataTabs.realTimeElapsedTime[curId] = container[REAL_TIME_ELAPSED_TIME].data.last();
+			}
+
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
 					QString text;
@@ -3555,7 +3593,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
-			handler.plotCounter.realTimeValueStamp = curStamp + 50;
+			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
 	});
 	
@@ -3597,7 +3635,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					dataTabs.realTimeLabels[id][curVal]->setText(QString(OPEN_COLOR_TAG) + text + CLOSE_COLOR_TAG);
 				}
 			}
-			handler.plotCounter.realTimeValueStamp = curStamp + 50;
+			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
 	});
 

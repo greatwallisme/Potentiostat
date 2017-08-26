@@ -205,6 +205,7 @@ private:
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
 		QMap<QUuid, QMap<QString, QLabel*>> realTimeLabels;
+		QMap<QUuid, qreal> realTimeElapsedTime;
 	} dataTabs;
 
 	MainWindow *mw;

@@ -102,7 +102,9 @@ copy $(SolutionDir)\..\..\3rdparty\hidapi-out\lib-release\hidapi.dll $(OutDir)\
 mkdir $(OutDir)\prebuilt\
 copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y
 mkdir $(OutDir)\elements\
-copy $(ProjectDir)\elements\*.dll $(OutDir)\elements\ /Y</Command>
+copy $(ProjectDir)\elements\*.dll $(OutDir)\elements\ /Y
+del $(OutDir)\prebuilt\ExampleExperiment.dll
+del $(OutDir)\elements\ExampleElement.dll</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rmdir prebuilt

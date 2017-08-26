@@ -27,6 +27,9 @@
 
 #include <Disconnector.h>
 #include <QEventLoop>
+#include <QStandardPaths>
+#include <QDesktopWidget>
+
 
 #define PREBUILT_EXP_DIR		"./prebuilt/"
 #define ELEMENTS_DIR			"./elements/"
@@ -58,6 +61,10 @@ MainWindow::MainWindow(QWidget *parent) :
 		this, &MainWindow::AddInstruments, Qt::QueuedConnection);
 
 	instrumentEnumerator->start();
+	
+	QRect screenSize = QDesktopWidget().availableGeometry(this);
+	this->setMinimumHeight(screenSize.height() < 768 ? screenSize.height() * 0.95 : 768);
+	this->setMinimumWidth(screenSize.width() < 1366 ? screenSize.width() * 0.95 : 1366);
 }
 MainWindow::~MainWindow() {
 	instrumentEnumerator->terminate();
@@ -632,7 +639,8 @@ void MainWindow::FillElementPointers(BuilderContainer &bc, const QMap<QString, A
 void MainWindow::UpdateCustomExperimentList() {
 	LOG() << "Loading custom experiments";
 
-	auto expFileInfos = QDir(CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
+	QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+	auto expFileInfos = QDir(appDataPath + "/" CUSTOM_EXP_DIR).entryInfoList(QStringList() << "*.json", QDir::Files | QDir::Readable);
 	
 	QList<CustomExperiment> cExpList;
 
@@ -717,14 +725,15 @@ void MainWindow::SaveCustomExperiment(const QString &name, const BuilderContaine
 
 	auto data = ExperimentWriter::GenerateJsonObject(ce);
 
-	QDir dir(CUSTOM_EXP_DIR);
+	QString appDataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+	QDir dir(appDataPath + "/" CUSTOM_EXP_DIR);
 	if (!dir.exists()) {
-		if (!QDir("./").mkdir(CUSTOM_EXP_DIR)) {
-			LOG() << "Unable to create path (" << CUSTOM_EXP_DIR << ").";
+		if (!QDir("./").mkpath(appDataPath + "/" CUSTOM_EXP_DIR)) {
+			LOG() << "Unable to create path (" << appDataPath + "/" CUSTOM_EXP_DIR << ").";
 		}
 	}
 
-	QFile file(CUSTOM_EXP_DIR + ce.fileName);
+	QFile file(appDataPath + "/" CUSTOM_EXP_DIR + ce.fileName);
 
 	if (!file.open(QIODevice::WriteOnly)) {
 		LOG() << "Unable to write experiment" << ce.name << "into file.";
