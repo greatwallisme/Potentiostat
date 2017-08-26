@@ -2,6 +2,7 @@
 IF EXIST packages\com.adminst.squidstat\data\data.7z del packages\com.adminst.squidstat\data\data.7z
 IF EXIST SquidStatInstaller.exe del SquidStatInstaller.exe
 echo Archiving payload (may take couple minutes)...
+IF NOT EXIST .\packages\com.adminst.squidstat\data mkdir .\packages\com.adminst.squidstat\data\
 archivegen.exe .\packages\com.adminst.squidstat\data\data.7z .\..\..\..\out\Release\_SquidStat\* .\..\..\..\3rdparty\vc_redist.x86.exe
 echo Creating installer...
 binarycreator.exe --offline-only -p .\packages\ -c .\config\config.xml SquidStatInstaller
