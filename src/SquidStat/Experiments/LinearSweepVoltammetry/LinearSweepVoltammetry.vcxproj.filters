@@ -52,6 +52,12 @@
     <ClCompile Include="..\..\SquidStat\ExperimentCalcHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_ExperimentTrigger.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ExperimentTrigger.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\SquidStat\AbstractExperiment.h">
@@ -70,6 +76,9 @@
     </CustomBuild>
     <CustomBuild Include="Factory.h">
       <Filter>_src</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\..\SquidStat\ExperimentTrigger.hpp">
+      <Filter>_src\Interfaces</Filter>
     </CustomBuild>
   </ItemGroup>
 </Project>

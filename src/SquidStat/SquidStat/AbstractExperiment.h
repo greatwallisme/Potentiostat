@@ -2,6 +2,7 @@
 
 #include <QMetaType>
 #include <ExternalStructures.h>
+#include <ExperimentTrigger.hpp>
 
 class QString;
 class QByteArray;
@@ -53,10 +54,10 @@ typedef QList<ExperimentType> ExperimentTypeList;
 #define REAL_TIME_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 #define PUSH_NEW_DC_DATA_DEFINITION \
-	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
+	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
 
 #define PUSH_NEW_AC_DATA_DEFINITION \
-	PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes) const
+	PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
 
 class AbstractExperiment {
 public:

@@ -17,6 +17,9 @@
 
 #define EXPERIMENT_VALUES_INI	 "ExperimentValues.ini"
 
+#define STOP_EXPERIMENT() \
+	trigger->StopCurrentExperiment();
+
 
 #define GET_DATA_PTR(expDataRaw) \
 	(ExperimentalAcData*)expDataRaw.data()

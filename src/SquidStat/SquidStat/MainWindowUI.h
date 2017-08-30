@@ -125,6 +125,8 @@ private:
 	QWidget* CreateBuildExpHolderWidget(const QUuid &id);
 	QWidget* CreateElementsListWidget();
 
+	QWidget* GetManualControlTab();
+
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0);
 

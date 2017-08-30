@@ -640,6 +640,11 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-width: 600px;
 	max-width: 600px;
 }
+/*//////////////         MANUAL  CONTROL       ////////////////////*/
+#manual-control-tab-owner {
+	border: none;
+	background-color: #ce2026;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #collapsible-group-box {
 	border: none;
@@ -1150,8 +1155,17 @@ QScrollBar::sub-page:horizontal {
 	border: none;
 	background-color: #00000000;
 	
-	qproperty-icon: url(:/GUI/Resources/zoom-to-selection.png);
-	qproperty-iconSize: 38px 38px;
+	/*qproperty-icon: url(:/GUI/Resources/zoom-to-selection.png);
+	qproperty-iconSize: 38px 38px;*/
+	background-image: url(:/GUI/Resources/zoom-to-selection.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-clip: border;
+	
+	min-width: 38px;
+	max-width: 38px;
+	min-height: 38px;
+	max-height: 38px;
 	
 	margin: 0px;
 	margin-right: 10px;
@@ -1159,13 +1173,23 @@ QScrollBar::sub-page:horizontal {
 	
 	margin-bottom: 3px;
 	margin-top: 3px;
+	margin-left: 5px;
 }
 #plot-pan-view-button {
 	border: none;
 	background-color: #00000000;
 	
-	qproperty-icon: url(:/GUI/Resources/pan-view.png);
-	qproperty-iconSize: 38px 38px;
+	/*qproperty-icon: url(:/GUI/Resources/pan-view.png);
+	qproperty-iconSize: 38px 38px;*/
+	background-image: url(:/GUI/Resources/pan-view.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-clip: border;
+	
+	min-width: 38px;
+	max-width: 38px;
+	min-height: 38px;
+	max-height: 38px;
 	
 	margin: 0px;
 	margin-right: 10px;
@@ -1173,6 +1197,7 @@ QScrollBar::sub-page:horizontal {
 	
 	margin-bottom: 3px;
 	margin-top: 3px;
+	margin-left: 5px;
 }
 #plot-reset-zoom-button {
 	border: none;
@@ -1210,6 +1235,12 @@ QScrollBar::sub-page:horizontal {
 	margin-right: 10px;
 	margin-bottom: 100px;
 	padding: 0px;
+}
+#plot-pan-view-button:checked  {
+	background-image: url(:/GUI/Resources/pan-view-selected.png);
+}
+#plot-zoom-to-selection-button:checked  {
+	background-image: url(:/GUI/Resources/zoom-to-selection-selected.png);
 }
 QwtTextLabel {
 	margin-bottom: 1px;

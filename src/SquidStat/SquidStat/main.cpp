@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 	QApplication a(argc, argv);
 	qInstallMessageHandler(LogMessageHandler);
 
+	a.setWindowIcon(QIcon(":/GUI/Resources/Squidstat.png"));
+
 	MainWindow w;
 
 	w.show();

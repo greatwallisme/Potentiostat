@@ -7,6 +7,7 @@
 #include "InstrumentStructures.h"
 #include "ExternalStructures.h"
 #include "ExperimentReader.h"
+#include "ExperimentTrigger.hpp"
 
 #include <AbstractExperiment.h>
 #include <AbstractBuilderElement.h>
@@ -78,8 +79,8 @@ public slots:
 
 signals:
 	void HardwareFound(const InstrumentList&);
-	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, bool paused);
-	void AcDataArrived(const QUuid&, quint8 channel, const QByteArray &expData, bool paused);
+	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *, bool paused);
+	void AcDataArrived(const QUuid&, quint8 channel, const QByteArray &expData, ExperimentTrigger *, bool paused);
 	void ExperimentNodeBeginning(const QUuid&, quint8 channel, const ExperimentNode_t&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
@@ -114,6 +115,7 @@ private:
 	struct InstrumentHandler {
 		InstrumentInfo info;
 		InstrumentOperator *oper;
+		ExperimentTrigger *trigger;
 		struct ExpDescriptor {
 			bool busy;
 			bool paused;

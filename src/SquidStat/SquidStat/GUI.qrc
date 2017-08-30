@@ -55,5 +55,8 @@
         <file>Resources/checkbox-unchecked-hover.png</file>
         <file>Resources/group-collapse.png</file>
         <file>Resources/group-expand.png</file>
+        <file>Resources/Squidstat.png</file>
+        <file>Resources/pan-view-selected.png</file>
+        <file>Resources/zoom-to-selection-selected.png</file>
     </qresource>
 </RCC>
