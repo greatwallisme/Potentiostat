@@ -200,8 +200,8 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
 	
-  //if (dataPoint.error < 2000)
-  //{
+  if (dataPoint.error < 2000)
+  {
     PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
     PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
     PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
@@ -209,7 +209,7 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
     PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
     PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
     PUSH_BACK_DATA(PLOT_VAR_ERROR, dataPoint.error);
-  //}
+  }
 }
 void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
