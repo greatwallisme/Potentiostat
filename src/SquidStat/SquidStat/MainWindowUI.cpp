@@ -3366,20 +3366,43 @@ QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
-	{ QString(REAT_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
+	{ QString(REAL_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
 	{ QString(REAL_TIME_CURRENT), [=](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'e', 3);
-	} }
+	} },
+    /* AC experimental values */
+  { QString(REAL_TIME_FREQUENCY), [=](qreal val) -> QString {
+    QString ret("%1");
+    return ret.arg(val, 0, 'f', 3);
+  } },
+  { QString(REAL_TIME_IMPEDANCE_MAG), [=](qreal val) -> QString {
+    QString ret("%1");
+    return ret.arg(val, 0, 'f', 3);
+  } },
+  { QString(REAL_TIME_IMPEDANCE_PHASE), [=](qreal val) -> QString {
+    QString ret("%1");
+    return ret.arg(val, 0, 'f', 3);
+  } },
+  { QString(REAL_TIME_IMPEDANCE_REAL), [=](qreal val) -> QString {
+    QString ret("%1");
+    return ret.arg(val, 0, 'f', 3);
+  } },
+  { QString(REAL_TIME_IMPEDANCE_IMAG), [=](qreal val) -> QString {
+    QString ret("%1");
+    return ret.arg(val, 0, 'f', 3);
+  } }
 };
 auto *valueDisplayHandlerPtr = &valueDisplayHandler;
 
 QStringList valueHideList = {
 	QString(REAL_TIME_ELAPSED_TIME_HR),
-	QString(REAL_TIME_CURRENT_INTEGRAL)
+	QString(REAL_TIME_CURRENT_INTEGRAL),
+  QString(REAL_TIME_NEG_IMP_IMAG),
+  QString(REAL_TIME_ERROR)
 };
 
 QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
@@ -3617,26 +3640,26 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		QString nodeTypeStr = "";
 
 		switch (node.nodeType) {
-			NODE_TYPE_STR_FILL(END_EXPERIMENT_NODE, "END_EXPERIMENT_NODE")
-			NODE_TYPE_STR_FILL(DCNODE_OCP, "DCNODE_OCP")
-			NODE_TYPE_STR_FILL(DCNODE_SWEEP_POT, "DCNODE_SWEEP_POT")
-			NODE_TYPE_STR_FILL(DCNODE_SWEEP_GALV, "DCNODE_SWEEP_GALV")
-			NODE_TYPE_STR_FILL(DCNODE_POINT_POT, "DCNODE_POINT_POT")
-			NODE_TYPE_STR_FILL(DCNODE_POINT_GALV, "DCNODE_POINT_GALV")
-			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_POT, "DCNODE_NORMALPULSE_POT")
-			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_GALV, "DCNODE_NORMALPULSE_GALV")
-			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_POT, "DCNODE_DIFFPULSE_POT")
-			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_GALV, "DCNODE_DIFFPULSE_GALV")
-			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_POT, "DCNODE_SQRWAVE_POT")
-			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_GALV, "DCNODE_SQRWAVE_GALV")
-			NODE_TYPE_STR_FILL(DCNODE_SINEWAVE, "DCNODE_SINEWAVE")
-			NODE_TYPE_STR_FILL(DCNODE_CONST_RESISTANCE, "DCNODE_CONST_RESISTANCE")
-			NODE_TYPE_STR_FILL(DCNODE_CONST_POWER, "DCNODE_CONST_POWER")
-			NODE_TYPE_STR_FILL(DCNODE_MAX_POWER, "DCNODE_MAX_POWER")
-			NODE_TYPE_STR_FILL(FRA_NODE_POT, "FRA_NODE_POT")
-			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "FRA_NODE_GALV")
-			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "FRA_NODE_PSEUDOGALV")
-			NODE_TYPE_STR_FILL(DUMMY_NODE, "DUMMY_NODE")
+			NODE_TYPE_STR_FILL(END_EXPERIMENT_NODE, "Experiment complete")
+			NODE_TYPE_STR_FILL(DCNODE_OCP, "Open circuit")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_POT, "Potential sweep")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_GALV, "Current sweep")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_POT, "Fixed potential")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_GALV, "Fixed current")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_POT, "Potential pulse (normal)")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_GALV, "Current pulse (normal)")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_POT, "Potential pulse (differential)")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_GALV, "Current pulse (differential)")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_POT, "Potential square wave")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_GALV, "Current square wave")
+			NODE_TYPE_STR_FILL(DCNODE_SINEWAVE, "Potential sine wave")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_RESISTANCE, "Constant resistance")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_POWER, "Constant power")
+			NODE_TYPE_STR_FILL(DCNODE_MAX_POWER, "Maximum power point")
+			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
+			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
+			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
 
 			default: break;
 		}
@@ -3700,7 +3723,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	});
 	
-	plotHandler.plotTabConnections <<
+  plotHandler.plotTabConnections <<
 	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &curId, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;

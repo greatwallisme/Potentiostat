@@ -23,7 +23,7 @@
 #define AC_AMP_DEFAULT			10		//(in mA)
 
 #define PLOT_VAR_IMPEDANCE				"|Z| (Ohms)"
-#define PLOT_VAR_PHASE					"Phase"
+#define PLOT_VAR_PHASE					"Phase (degrees)"
 #define PLOT_VAR_IMP_REAL				"Z\'(Ohms)"
 #define PLOT_VAR_IMP_IMAG				"Z\"(Ohms)"
 #define PLOT_VAR_NEG_IMP_IMAG			"-Z\"(Ohms)"

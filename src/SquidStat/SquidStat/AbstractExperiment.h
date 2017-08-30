@@ -43,15 +43,22 @@ enum ExperimentType : uint8_t {
 };
 typedef QList<ExperimentType> ExperimentTypeList;
 
-
+/* Real time values to display */
 #define REAL_TIME_WORKING_ELECTRODE		"Working electrode (V)"
 #define REAL_TIME_CURRENT				"Current (mA)"
-#define REAT_TIME_COUNTER_ELECTRODE		"Counter electrode (V)"
+#define REAL_TIME_COUNTER_ELECTRODE		"Counter electrode (V)"
 #define REAL_TIME_ELAPSED_TIME			"Elapsed time (s)"
+#define REAL_TIME_FREQUENCY         "Frequency (Hz)"
+#define REAL_TIME_IMPEDANCE_MAG     "|Z| (Ohms)"
+#define REAL_TIME_IMPEDANCE_PHASE   "Phase (degrees)"
+#define REAL_TIME_IMPEDANCE_REAL  "Z\'(Ohms)"
+#define REAL_TIME_IMPEDANCE_IMAG  "Z\"(Ohms)"
 
-
+/* Real time values to hide */
 #define REAL_TIME_ELAPSED_TIME_HR		"Elapsed time (hr)"
 #define REAL_TIME_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
+#define REAL_TIME_NEG_IMP_IMAG			"-Z\"(Ohms)"
+#define REAL_TIME_ERROR        "Error (AU)"
 
 #define PUSH_NEW_DC_DATA_DEFINITION \
 	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
