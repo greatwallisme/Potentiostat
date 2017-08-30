@@ -2480,7 +2480,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, bool paused) {
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2496,9 +2496,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
 		DataMapVisualization &majorData(handler.data.first());
 
-    if (handler.exp) {
-      handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
-      if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
+		if (handler.exp) {
+		  handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+		  if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
       //if (majorData.saveFile) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
@@ -2525,7 +2525,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, bool paused) {
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2542,7 +2542,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes);
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			if (majorData.saveFile) {
 				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
 			}
@@ -3546,7 +3546,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	});
 
 	plotHandler.plotTabConnections <<
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, bool paused) {
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}
@@ -3573,7 +3573,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				container[REAL_TIME_ELAPSED_TIME].data.push_back(dataTabs.realTimeElapsedTime[curId]);
 			}
 			
-			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
+			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			
 			if (!dataTabs.realTimeElapsedTime.keys().contains(curId)) {
 				dataTabs.realTimeElapsedTime[curId] = container[REAL_TIME_ELAPSED_TIME].data.last();
@@ -3598,7 +3598,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	});
 	
 	plotHandler.plotTabConnections <<
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &curId, quint8 channel, const QByteArray &expData, bool paused) {
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &curId, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}
@@ -3620,7 +3620,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (!handler.exp) {
 				return;
 			}
-			handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes);
+			handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
 					QString text;

@@ -181,6 +181,12 @@
     <ClCompile Include="CrcCalculator.cpp">
       <Filter>_scr\FirrmwareUpdater</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_ExperimentTrigger.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_ExperimentTrigger.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -221,6 +227,9 @@
     </ClInclude>
     <ClInclude Include="CrcCalculator.h">
       <Filter>_scr\FirrmwareUpdater</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -269,5 +278,16 @@
     <CustomBuild Include="BootloaderOperator.h">
       <Filter>_scr\FirrmwareUpdater</Filter>
     </CustomBuild>
+    <CustomBuild Include="ExperimentTrigger.hpp">
+      <Filter>_scr\Experiments</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GUI.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\Squidstat.ico" />
   </ItemGroup>
 </Project>

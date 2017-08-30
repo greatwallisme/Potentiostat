@@ -235,6 +235,10 @@ void LinearSweepVoltammetry::PUSH_NEW_DC_DATA_DEFINITION {
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
   PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
+
+  if (container[PLOT_VAR_TIMESTAMP_NORMALIZED].data.last() > 3) {
+	  STOP_EXPERIMENT();
+  }
 }
 void LinearSweepVoltammetry::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();

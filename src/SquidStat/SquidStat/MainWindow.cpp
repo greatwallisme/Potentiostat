@@ -309,6 +309,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		InstrumentOperator *instrumentOperator = new InstrumentOperator(hardware.currentInstrument.handler->info);
 		hardware.currentInstrument.handler->oper = instrumentOperator;
 
+		auto experimentTrigger = new ExperimentTrigger(instrumentOperator);
+		hardware.currentInstrument.handler->trigger = experimentTrigger;
+
+		connect(experimentTrigger, &ExperimentTrigger::StopExperiment,
+			this, static_cast<void(MainWindow::*)(const QUuid&)>(&MainWindow::StopExperiment));
+
 		hardware.currentInstrument.handler->connections <<
 		connect(instrumentOperator, &InstrumentOperator::ExperimentPaused, this, [=]() {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
@@ -420,7 +426,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 
-			emit DcDataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
+			emit DcDataArrived(handler->experiment.id, channel, expData, handler->trigger, handler->experiment.paused);
 		});
 		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalAcDataReceived, this, [=](quint8 channel, const QByteArray &expData) {
@@ -436,7 +442,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				return;
 			}
 			
-			emit AcDataArrived(handler->experiment.id, channel, expData, handler->experiment.paused);
+			emit AcDataArrived(handler->experiment.id, channel, expData, handler->trigger, handler->experiment.paused);
 		});
 	}
 
@@ -462,6 +468,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	QList<StartExperimentParameters> startParams;
 
 	QUuid newId = QUuid::createUuid();
+	hardware.currentInstrument.handler->trigger->SetUuid(newId);
 	bool ok = true;
 	foreach(auto type, types) {
 		StartExperimentParameters curParam;
