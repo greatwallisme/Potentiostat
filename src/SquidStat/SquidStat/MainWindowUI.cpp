@@ -1212,9 +1212,9 @@ QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 
 		builderTabs.tabBar->setTabText(builderTabs.tabBar->currentIndex(), name);
 
-		if (builderTabs.builders[id].fileName.isEmpty()) {
-			builderTabs.builders[id].fileName = QUuid::createUuid().toString() + ".json";
-		}
+		//if (builderTabs.builders[id].fileName.isEmpty()) {
+			builderTabs.builders[id].fileName = name + ".json";
+		//}
 
 		mw->SaveCustomExperiment(name, container, builderTabs.builders[id].fileName);
 	});
