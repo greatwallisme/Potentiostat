@@ -640,6 +640,11 @@ QLabel[experiment-params-widget="low-margin"] {
 	min-width: 600px;
 	max-width: 600px;
 }
+/*//////////////         MANUAL  CONTROL       ////////////////////*/
+#manual-control-tab-owner {
+	border: none;
+	background-color: #ce2026;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #collapsible-group-box {
 	border: none;

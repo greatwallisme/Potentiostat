@@ -297,6 +297,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 	widgetsLayout->addWidget(GetRunExperimentTab());
 	widgetsLayout->addWidget(GetBuildExperimentTab());
+	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
@@ -343,6 +344,19 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		widgetsLayout->setCurrentWidget(GetBuildExperimentTab());
 	});
 
+	pbt = OBJ_NAME(PBT("Manual Control"), "bar-button");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetManualControlTab());
+	});
+
 	pbt = OBJ_PROP(OBJ_NAME(PBT("View Data"), "bar-button"), "order", "last");
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
@@ -387,90 +401,16 @@ QWidget* MainWindowUI::GetSearchHardwareWidget() {
 	if (w) {
 		return w;
 	}
-
-	//QPushButton *searchByVendor;
-	//QPushButton *searchViaHandshake;
-	//QPushButton *selectHardware;
-	//QPushButton *requestCalibration;
-	//QComboBox *hwList;
-	//QLineEdit *channelEdit;
-
+	
 	w = WDG();
 	QGridLayout *lay = NO_SPACING(NO_MARGIN(new QGridLayout(w)));
-
-	//lay->addWidget(OBJ_NAME(LBL("Select hardware"), "heading-label"), 0, 0, 1, 2);
-	//lay->addWidget(OBJ_NAME(LBL("COM port:"), "regular-comment-label"), 1, 0);
-	//lay->addWidget(OBJ_NAME(LBL("Channel:"), "regular-comment-label"), 2, 0);
-	//lay->addWidget(hwList = CMB(), 1, 1);
-	//lay->addWidget(channelEdit = LED(), 2, 1);
-	//QListView *hwListComboList = OBJ_NAME(new QListView, "combo-list");
-	//hwList->setView(hwListComboList);
-
+	
 	QGridLayout *buttonLay = NO_SPACING(NO_MARGIN(new QGridLayout));
-	/*
-	buttonLay->addWidget(searchByVendor = OBJ_NAME(PBT("Search by vendor"), "secondary-button"), 0, 1);
-	buttonLay->addWidget(searchViaHandshake = OBJ_NAME(PBT("Search via handshake"), "secondary-button"), 0, 2);
-	//*/
-	//buttonLay->addWidget(selectHardware = OBJ_NAME(PBT("Select this hardware"), "secondary-button"), 1, 1);
-	//buttonLay->addWidget(requestCalibration = OBJ_NAME(PBT("Request calibration"), "secondary-button"), 1, 2);
+
 	buttonLay->setColumnStretch(0, 1);
 	buttonLay->setColumnStretch(3, 1);
 
 	lay->addLayout(buttonLay, 3, 0, 1, 2);
-
-
-	//CONNECT(searchByVendor, &QPushButton::clicked, mw, &MainWindow::SearchHwVendor);
-	//CONNECT(searchViaHandshake, &QPushButton::clicked, mw, &MainWindow::SearchHwHandshake);
-
-	/*
-	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QStringList &newLines) {
-		hwList->addItems(newLines);
-	});
-	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &linesToDelete) {
-		for (int i = 0; i < hwList->count();) {
-			if (linesToDelete.contains(hwList->itemText(i))) {
-				hwList->removeItem(i);
-			}
-			else {
-				++i;
-			}
-		}
-	});
-	//*/
-
-	/*
-	CONNECT(mw, &MainWindow::HardwareFound, [=](const InstrumentList &instrumentList) {
-		hwList->clear();
-
-		foreach(const InstrumentInfo &info, instrumentList) {
-			LOG() << info.serialPortName << ": " << info.serial;
-			hwList->addItem(info.serialPortName, QVariant::fromValue(info));
-		}
-	});
-	//*/
-
-	/*
-	CONNECT(hwList, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-		[=](int index) {
-			if (-1 != index) {
-				currentInstrument.instrumentInfo = hwList->itemData(index).value<InstrumentInfo>();
-			}
-		}
-	);
-
-	CONNECT(channelEdit, &QLineEdit::textChanged, [=](const QString &str) {
-		currentInstrument.channel = str.toInt();
-	});
-	//*/
-
-	/*
-	CONNECT(selectHardware, &QPushButton::clicked, [=]() {
-		mw->SelectHardware(hwList->currentText(), channelEdit->text().toInt());
-	});
-	//*/
-
-	//channelEdit->setValidator(new QIntValidator(0, MAX_CHANNEL_VALUE));
-	//channelEdit->setText("0");
 
 	return w;
 }
@@ -504,44 +444,7 @@ QWidget* MainWindowUI::GetPlotWidget() {
 	}
 
 	w = WDG();
-	/*
-	QVBoxLayout *lay = NO_MARGIN(NO_SPACING(new QVBoxLayout(w)));
 
-	QwtPlot *plot = new QwtPlot();
-	//plot->setAxisScale(QwtPlot::xBottom, 0, 100000);
-	plot->setAxisScale(QwtPlot::yLeft, 0, 1050);
-	//plot->setAxisAutoScale(QwtPlot::yLeft, true);
-	QwtText title;
-	title.setFont(QFont("Segoe UI", 14));
-	//title.setText("Frequency (Hz)");
-	title.setText("Timestamp (ms)");
-	plot->setAxisTitle(QwtPlot::xBottom, title);
-	//title.setText(QString("Impedance (`") + QChar(0x03a9) + QString(")"));
-	title.setText("Current (ewe)");
-	plot->setAxisTitle(QwtPlot::yLeft, title);
-
-	plot->insertLegend(new QwtLegend(), QwtPlot::TopLegend);
-
-	lay->addWidget(plot);
-
-	QwtPlotCurve *curve = new QwtPlotCurve("Impedance 'Filename.csv'");
-	curve->setLegendAttribute(QwtPlotCurve::LegendShowLine);
-	curve->setPen(QColor(42, 127, 220), 1);
-	curve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
-	curve->attach(plot);
-	//*/
-	/*
-	CONNECT(mw, &MainWindow::DataArrived, [=](quint8 channel, const ExperimentalData &expData) {
-		static QVector<qreal> xPlotData, yPlotData;
-		qreal x = expData.timestamp / 100000UL;
-		qreal y = expData.adcData.ewe;
-		xPlotData.append(x);
-		yPlotData.append(y);
-
-		curve->setSamples(xPlotData, yPlotData);
-		plot->replot();
-	});
-	//*/
 	return w;
 }
 QWidget* MainWindowUI::GetControlButtonsWidget() {
@@ -557,11 +460,6 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 	w = WDG();
 	w->setMinimumHeight(50);
 	QHBoxLayout *buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
-	//buttonLay->addWidget(startExperiment = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
-	//buttonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
-
-	//CONNECT(startExperiment, &QPushButton::clicked, mw, &MainWindow::StartExperiment);
-	//CONNECT(stopExperiment, &QPushButton::clicked, mw, &MainWindow::StopExperiment);
 
 	return w;
 }
@@ -599,7 +497,6 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 
 	return w;
 }
-
 QWidget* MainWindowUI::CreateElementsListWidget() {
 	static QWidget *w = 0;
 
@@ -2122,6 +2019,212 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	return w;
 }
+QWidget* MainWindowUI::GetManualControlTab() {
+	static QWidget *w = 0;
+
+	if (w != 0) {
+		return w;
+	}
+
+	w = OBJ_NAME(WDG(), "manual-control-tab-owner");
+
+	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
+
+	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+
+	QTabBar *tabBar;
+
+	auto stackedLayWdg = OBJ_NAME(WDG(), "manual-control-tab-placeholder");
+	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+
+	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
+	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
+	tabFrameLay->addWidget(tabBar = OBJ_NAME(new QTabBar, "new-data-window-tab"));
+
+	tabHeaderLay->addWidget(tabFrame);
+	tabHeaderLay->addStretch(1);
+
+	lay->addLayout(tabHeaderLay);
+	lay->addWidget(stackedLayWdg);
+
+	tabBar->setExpanding(false);
+	tabBar->setMovable(true);
+
+	tabBar->hide();
+
+	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
+		if (index < 0) {
+			return;
+		}
+
+		stackedLay->setCurrentIndex(index);
+	});
+
+	CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
+		auto wdg = stackedLay->widget(from);
+		stackedLay->removeWidget(wdg);
+		stackedLay->insertWidget(to, wdg);
+	});
+
+	CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
+		/*
+		for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it) {
+			PlotHandler &handler(it.value());
+			DataMapVisualization &majorData(handler.data.first());
+
+			if (majorData.saveFile) {
+				majorData.saveFile->close();
+				majorData.saveFile->deleteLater();
+				majorData.saveFile = 0;
+			}
+
+			handler.plot->replot();
+
+			for (int i = 0; i < tabBar->count(); ++i) {
+				auto wdg = stackedLay->widget(i);
+				auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+				if (0 == plot) {
+					continue;
+				}
+
+				if (handler.plot != plot) {
+					continue;
+				}
+
+				tabBar->setTabIcon(i, QIcon());
+			}
+		}
+		//*/
+	});
+
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+		/*
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_DC)) {
+			return;
+		}
+
+		if (paused) {
+			return;
+		}
+
+		PlotHandler &handler(dataTabs.plots[id][ET_DC]);
+		DataMapVisualization &majorData(handler.data.first());
+
+		if (handler.exp) {
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
+				//if (majorData.saveFile) {
+				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+			}
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
+			majorData.curve1->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]));
+
+			ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
+			majorData.curve2->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]));
+
+			ApplyNewAxisParams(QwtPlot::yRight, handler);
+		}
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			handler.plot->replot();
+			handler.plotCounter.stamp = curStamp + 50;
+		}
+		//*/
+	});
+
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+		/*
+		if (!dataTabs.plots.keys().contains(id)) {
+			return;
+		}
+
+		if (!dataTabs.plots[id].contains(ET_AC)) {
+			return;
+		}
+
+		if (paused) {
+			return;
+		}
+
+		PlotHandler &handler(dataTabs.plots[id][ET_AC]);
+		DataMapVisualization &majorData(handler.data.first());
+
+		if (handler.exp) {
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			if (majorData.saveFile) {
+				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+			}
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
+			majorData.curve1->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yLeft]));
+
+			ApplyNewAxisParams(QwtPlot::yLeft, handler);
+		}
+
+		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yRight]) {
+			majorData.curve2->setSamples(new ListSeriesData(*majorData.data[QwtPlot::xBottom], *majorData.data[QwtPlot::yRight]));
+
+			ApplyNewAxisParams(QwtPlot::yRight, handler);
+		}
+
+		ApplyNewAxisParams(QwtPlot::xBottom, handler);
+
+		auto curStamp = QDateTime::currentMSecsSinceEpoch();
+		if (curStamp > handler.plotCounter.stamp) {
+			handler.plot->replot();
+			handler.plotCounter.stamp = curStamp + 50;
+		}
+		//*/
+	});
+
+	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &hwList) {
+		foreach(auto &hwDescr, hwList) {
+			tabBar->insertTab(tabBar->count(), hwDescr.first);
+			stackedLay->insertWidget(tabBar->count(), WDG());
+		}
+
+		if (tabBar->isHidden()) {
+			tabBar->show();
+		}
+	});
+
+	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &names) {
+		foreach(auto &name, names) {
+			int currentIndex = -1;
+			for (int i = 0; i < tabBar->count(); ++i) {
+				if (tabBar->tabText(i) == name) {
+					currentIndex = i;
+					break;
+				}
+			}
+
+			if (-1 == currentIndex) {
+				continue;
+			}
+
+			auto wdg = stackedLay->widget(currentIndex);
+			tabBar->removeTab(currentIndex);
+			stackedLay->removeWidget(wdg);
+			wdg->deleteLater();
+		}
+	});
+
+	return w;
+}
 bool MainWindowUI::ReadCsvFile(QWidget *parent, QList<MainWindowUI::CsvFileData> &dataList) {
 	bool ret = false;
 
@@ -2291,14 +2394,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabBar->setMovable(true);
 
 	tabBar->hide();
-
-	//QTabWidget *docTabs = OBJ_NAME(new QTabWidget, "plot-tab");
-	//docTabs->setMovable(true);
 	
-	//lay->addWidget(docTabs);
-
-	//docTabs->addTab(WDG(), QIcon(":/GUI/Resources/new-tab.png"), "");
-
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
