@@ -3473,6 +3473,13 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	zoomInPbt->setToolTip("Zoom in");
 	zoomOutPbt->setToolTip("Zoom out");
 
+	zoomToSelectionPbt->setCheckable(true);
+	panViewPbt->setCheckable(true);
+
+	auto *cursorModeGroup = new QButtonGroup(w);
+	cursorModeGroup->addButton(zoomToSelectionPbt);
+	cursorModeGroup->addButton(panViewPbt);
+
 	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
 	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
@@ -3697,7 +3704,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plotOverlay->setProperty(PROPERTY_PAN_VIEW_PRESSED, false);
 		plotOverlay->setProperty(PROPERTY_ZOOM_TO_SELECTION_PRESSED, true);
 	});
-	
+
 	QwtPlotGrid *grid = new QwtPlotGrid();
 	grid->setPen(QColor("#7f4d565f"), 1, Qt::DashLine);
 	grid->attach(plot);
@@ -4449,6 +4456,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	title.setText(NONE_Y_AXIS_VARIABLE);
 	plot->setAxisTitle(QwtPlot::yRight, title);
-	
+
+	zoomToSelectionPbt->click();
+
 	return w;
 }

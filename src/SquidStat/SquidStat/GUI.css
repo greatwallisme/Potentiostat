@@ -1211,6 +1211,10 @@ QScrollBar::sub-page:horizontal {
 	margin-bottom: 100px;
 	padding: 0px;
 }
+#plot-pan-view-button:open,
+#plot-zoom-to-selection-button:open {
+	border: 1px solid black;
+}
 QwtTextLabel {
 	margin-bottom: 1px;
 }
