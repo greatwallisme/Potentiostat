@@ -3671,8 +3671,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		dataTabs.realTimeLabels[id][QString(STEP_VALUE_LBL_NAME)]->setText(text);
 	});
 
-	plotHandler.plotTabConnections <<
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	auto dcDataArrivedHandler = [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}
@@ -3721,10 +3720,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			}
 			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
-	});
+	};
 	
-  plotHandler.plotTabConnections <<
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &curId, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	auto acDataArrivedHandler = [=](const QUuid &curId, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}
@@ -3763,7 +3761,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			}
 			handler.plotCounter.realTimeValueStamp = curStamp + 300;
 		}
-	});
+	};
+  
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedHandler);
+	plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedHandler);
 
 	plotHandler.plotTabConnections << CONNECT(realTimeGroup, &QGroupBox::toggled, [=](bool on) {
 		realTimeGroupFrame->setVisible(on);
