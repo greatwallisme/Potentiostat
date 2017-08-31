@@ -187,6 +187,9 @@
     <ClCompile Include="GeneratedFiles\Release\moc_ExperimentTrigger.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="ManualExperimentRunner.cpp">
+      <Filter>_scr\Experiments</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -230,6 +233,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ManualExperimentRunner.h">
+      <Filter>_scr\Experiments</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

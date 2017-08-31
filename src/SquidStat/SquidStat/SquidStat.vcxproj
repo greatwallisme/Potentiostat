@@ -204,6 +204,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
     <ClCompile Include="MainWindowUI.cpp" />
     <ClCompile Include="SerialCommunicator.cpp" />
     <ClCompile Include="SerialThread.cpp" />
+    <ClCompile Include="ManualExperimentRunner.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AbstractBuilderElement.h" />
@@ -303,6 +304,7 @@ mklink /D /J elements $(OutDir)\..\elements</Command>
     <ClInclude Include="HexLoader.h" />
     <ClInclude Include="ListSeriesData.h" />
     <CustomBuild Include="UIEventFilters.hpp" />
+    <ClInclude Include="ManualExperimentRunner.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UIHelper.hpp" />
     <CustomBuild Include="MainWindowUI.h">

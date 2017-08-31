@@ -8,6 +8,7 @@
 #include "InstrumentOperator.h"
 #include "ExperimentReader.h"
 #include "CustomExperimentRunner.h"
+#include "ManualExperimentRunner.h"
 
 #include <ExperimentFactoryInterface.h>
 #include <BuilderElementFactoryInterface.h>
@@ -75,6 +76,8 @@ MainWindow::~MainWindow() {
 
 	CleanupExperiments();
 	CleanupBuilderElements();
+
+	delete ManualExperimentRunner::Instance();
 }
 void MainWindow::CleanupExperiments() {
 	foreach(auto exp, prebuiltExperiments.customExpMap) {
@@ -289,7 +292,7 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 
 	return ret;
 }
-void MainWindow::StartExperiment(QWidget *paramsWdg) {
+void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
@@ -300,7 +303,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		return;
 	}
 
-	if (0 == prebuiltExperiments.selectedExp) {
+	auto expPtr	= prebuiltExperiments.selectedExp;
+	if (isManualMode) {
+		expPtr = ManualExperimentRunner::Instance();
+	}
+
+	if (0 == expPtr) {
 		LOG() << "No experiment selected";
 		return;
 	}
@@ -448,7 +456,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 
 	quint8 curChan = hardware.currentInstrument.channel;
 	InstrumentInfo &instrumentInfo(hardware.currentInstrument.handler->info);
-	auto nodesData = prebuiltExperiments.selectedExp->GetNodesData(paramsWdg, instrumentInfo.calData[curChan], instrumentInfo.hwVer);
+	auto nodesData = expPtr->GetNodesData(paramsWdg, instrumentInfo.calData[curChan], instrumentInfo.hwVer);
 	if (nodesData.isEmpty()) {
 		LOG() << "Error while getting user input";
 		return;
@@ -463,7 +471,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
 	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
 
-	auto types = prebuiltExperiments.selectedExp->GetTypes();
+	auto types = expPtr->GetTypes();
 
 	QList<StartExperimentParameters> startParams;
 
@@ -474,12 +482,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 		StartExperimentParameters curParam;
 		curParam.id = newId;
 		curParam.type = type;
-		curParam.exp = prebuiltExperiments.selectedExp;
+		curParam.exp = expPtr;
 		curParam.cal = instrumentInfo.calData[curChan];
 		curParam.hwVer = instrumentInfo.hwVer;
 		curParam.notes = notes;
 
-		QString tabName = prebuiltExperiments.selectedExp->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
+		QString tabName = expPtr->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
 		if (types.count() > 1) {
 			switch (type) {
 				case ET_DC:
@@ -531,10 +539,10 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	foreach(auto &param, startParams) {
 		switch (param.type) {
 			case ET_DC:
-				prebuiltExperiments.selectedExp->SaveDcDataHeader(*param.file, param.notes);
+				expPtr->SaveDcDataHeader(*param.file, param.notes);
 				break;
 			case ET_AC:
-				prebuiltExperiments.selectedExp->SaveAcDataHeader(*param.file, param.notes);
+				expPtr->SaveAcDataHeader(*param.file, param.notes);
 				break;
 		}
 
