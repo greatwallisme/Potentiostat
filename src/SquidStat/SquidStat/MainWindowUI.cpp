@@ -3621,6 +3621,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve1 = curve1;
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
+	plotHandler.plotCounter.realTimeValueStamp = 0;
 
 	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
 	#define CLOSE_COLOR_TAG "</font>"
