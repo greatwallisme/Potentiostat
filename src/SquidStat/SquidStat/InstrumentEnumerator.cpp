@@ -194,6 +194,7 @@ InstrumentList RequestInstrumentData(InstrumentList &instrumentsCandidates) {
 			communicator.Stop();
 			continue;
 		}
+		instrumentInfo.channelAmount = instrumentInfo.calData.size();
 
 		communicator.SendCommand((CommandID)INIT_DEFAULT_SAMPLING);
 

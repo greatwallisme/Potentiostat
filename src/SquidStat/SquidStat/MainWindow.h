@@ -79,8 +79,8 @@ public slots:
 
 signals:
 	void HardwareFound(const InstrumentList&);
-	void DcDataArrived(const QUuid&, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *, bool paused);
-	void AcDataArrived(const QUuid&, quint8 channel, const QByteArray &expData, ExperimentTrigger *, bool paused);
+	void DcDataArrived(const QUuid&, const ExperimentalDcData &expData, ExperimentTrigger *, bool paused);
+	void AcDataArrived(const QUuid&, const QByteArray &expData, ExperimentTrigger *, bool paused);
 	void ExperimentNodeBeginning(const QUuid&, quint8 channel, const ExperimentNode_t&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
@@ -113,15 +113,17 @@ private:
 	InstrumentEnumerator *instrumentEnumerator;
 
 	struct InstrumentHandler {
-		InstrumentInfo info;
-		InstrumentOperator *oper;
-		ExperimentTrigger *trigger;
 		struct ExpDescriptor {
 			bool busy;
 			bool paused;
 			QUuid id;
-			quint8 channel;
-		} experiment;
+			//quint8 channel;
+		};
+
+		InstrumentInfo info;
+		InstrumentOperator *oper;
+		ExperimentTrigger *trigger;
+		QVector<ExpDescriptor> experiment;
 		QList<QMetaObject::Connection> connections;
 	};
 
@@ -148,6 +150,7 @@ private:
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
+	quint8 SearchForChannel(QList<InstrumentHandler>::iterator, const QUuid&);
 };
 
 #endif // MAINWINDOW_H

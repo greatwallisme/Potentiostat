@@ -10,6 +10,7 @@ struct InstrumentInfo {
 		QString name;
 		QString serial;
 	} port;
+	quint32 channelAmount;
 	QList<CalibrationData> calData;
 	HardwareVersion hwVer;
 	QString name;

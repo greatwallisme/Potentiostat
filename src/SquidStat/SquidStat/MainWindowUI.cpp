@@ -2098,7 +2098,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 		//*/
 	});
 
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		/*
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
@@ -2145,7 +2145,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 		//*/
 	});
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		/*
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
@@ -2576,7 +2576,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2621,7 +2621,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -3672,7 +3672,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		dataTabs.realTimeLabels[id][QString(STEP_VALUE_LBL_NAME)]->setText(text);
 	});
 
-	auto dcDataArrivedHandler = [=](const QUuid &curId, quint8 channel, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	auto dcDataArrivedHandler = [=](const QUuid &curId, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}
@@ -3723,7 +3723,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	};
 	
-	auto acDataArrivedHandler = [=](const QUuid &curId, quint8 channel, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	auto acDataArrivedHandler = [=](const QUuid &curId, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (curId != id) {
 			return;
 		}

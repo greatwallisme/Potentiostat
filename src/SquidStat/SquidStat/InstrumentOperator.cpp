@@ -44,15 +44,15 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_COMPLETE:
-			emit ExperimentCompleted();
+			emit ExperimentCompleted(channel);
 			break;
 		
 		case EXPERIMENT_PAUSED:
-			emit ExperimentPaused();
+			emit ExperimentPaused(channel);
 			break;
 		
 		case EXPERIMENT_RESUMED:
-			emit ExperimentResumed();
+			emit ExperimentResumed(channel);
 			break;
 
 		case EXPERIMENT_NODE_BEGINNING:
@@ -68,7 +68,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 
 		case DATA_RECEIVED_OK:
 			//LOG() << "DATA_RECEIVED_OK";
-			emit NodeDownloaded();
+			emit NodeDownloaded(channel);
 			break;
 
     case OVERCURRENT_ERROR:
@@ -102,35 +102,43 @@ void InstrumentOperator::StartExperiment(const NodesData &nodesData, quint8 chan
 	_communicator->SendCommand((CommandID)BEGIN_NEW_EXP_DOWNLOAD, channel, QByteArray((char*)&nodesCount, sizeof(nodesCount)));
 	foreach(auto node, nodesData) {
 		QEventLoop loop;
-		QSignalMapper mapper;
 		QTimer timer;
 		timer.setInterval(1000);
+
+		QEventLoop *loopPtr = &loop;
 
 		#define EXIT_BY_TIMER		1
 		#define EXIT_BY_RESPONCE	0
 
-		mapper.setMapping(this, EXIT_BY_RESPONCE);
-		mapper.setMapping(&timer, EXIT_BY_TIMER);
+		QList<QMetaObject::Connection> connections;
 
-		connect(&mapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped), &loop, &QEventLoop::exit);
-		connect(this, &InstrumentOperator::NodeDownloaded,
-			&mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
-		connect(&timer, &QTimer::timeout,
-			&mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
-		
+		connections << connect(this, &InstrumentOperator::NodeDownloaded, [=](quint8 nodeChannel) {
+			if (nodeChannel != channel) {
+				return;
+			}
+
+			loopPtr->exit(EXIT_BY_RESPONCE);
+		});
+		connections << connect(&timer, &QTimer::timeout, [=]() {
+			loopPtr->exit(EXIT_BY_TIMER);
+		});
+
 		_communicator->SendCommand((CommandID)APPEND_EXP_NODE, channel, node);
-		
+
 		timer.start();
 		int ret = loop.exec();
 		timer.stop();
 
+		foreach(auto conn, connections) {
+			disconnect(conn);
+		}
+
 		if (ret != EXIT_BY_RESPONCE) {
 			LOG() << "Error while downloading experiment.";
 
-			emit ExperimentCompleted();
+			emit ExperimentCompleted(channel);
 			return;
 		}
-		
 	}
 	_communicator->SendCommand((CommandID)END_NEW_EXP_DOWNLOAD, channel);
 

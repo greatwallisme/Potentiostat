@@ -119,8 +119,10 @@ void MainWindow::RemoveInstruments(InstrumentList instruments) {
 
 				InstrumentHandler &currentHandler(hardware.handlers[i]);
 
-				if (currentHandler.experiment.busy) {
-					emit ExperimentCompleted(currentHandler.experiment.id);
+				foreach(auto &expDescr, currentHandler.experiment) {
+					if (expDescr.busy) {
+						emit ExperimentCompleted(expDescr.id);
+					}
 				}
 
 				if (currentHandler.oper) {
@@ -157,12 +159,15 @@ void MainWindow::AddInstruments(InstrumentList instruments) {
 		InstrumentHandler handler;
 		handler.oper = 0;
 		handler.info = instrumentToAdd;
-		handler.experiment.busy = false;
-		handler.experiment.paused = false;
+		handler.experiment.resize(handler.info.channelAmount);
+		for (auto it = handler.experiment.begin(); it != handler.experiment.end(); ++it) {
+			it->busy = false;
+			it->paused = false;
+		}
 
 		hardware.handlers << handler;
 
-		addingInstrumentsNames << HardwareUiDescription(instrumentToAdd.name, instrumentToAdd.calData.size());
+		addingInstrumentsNames << HardwareUiDescription(instrumentToAdd.name, instrumentToAdd.channelAmount);
 	}
 
 	if (needToSetEnd) {
@@ -177,7 +182,9 @@ void MainWindow::CleanupCurrentHardware() {
 			continue;
 		}
 
-		it->oper->StopExperiment();
+		for (int i = 0; i < it->experiment.size(); ++i) {
+			it->oper->StopExperiment(i);
+		}
 
 		foreach(const QMetaObject::Connection &conn, it->connections) {
 			disconnect(conn);
@@ -251,15 +258,16 @@ void MainWindow::PrebuiltExperimentSelected(const AbstractExperiment *exp) {
 }
 void MainWindow::UpdateCurrentExperimentState() {
 	auto &currentHandler(hardware.currentInstrument.handler);
+	auto &currentChannel(hardware.currentInstrument.channel);
 	
 	if (currentHandler == hardware.handlers.end()) {
 		return;
 	}
 
-	if (currentHandler->experiment.busy) {
+	if (currentHandler->experiment[currentChannel].busy) {
 		emit CurrentHardwareBusy();
 
-		if (currentHandler->experiment.paused) {
+		if (currentHandler->experiment[currentChannel].paused) {
 			emit CurrentExperimentPaused();
 		}
 		else {
@@ -293,13 +301,16 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 	return ret;
 }
 void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
-	if (hardware.currentInstrument.handler == hardware.handlers.end()) {
+	auto &currentHandler(hardware.currentInstrument.handler);
+	auto currentChannel = hardware.currentInstrument.channel;
+
+	if (currentHandler == hardware.handlers.end()) {
 		LOG() << "No instruments selected";
 		return;
 	}
 
-	if (hardware.currentInstrument.handler->experiment.busy) {
-		LOG() << "Current instrument is busy now";
+	if (currentHandler->experiment[currentChannel].busy) {
+		LOG() << "Current channel is busy now";
 		return;
 	}
 
@@ -324,7 +335,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 			this, static_cast<void(MainWindow::*)(const QUuid&)>(&MainWindow::StopExperiment));
 
 		hardware.currentInstrument.handler->connections <<
-		connect(instrumentOperator, &InstrumentOperator::ExperimentPaused, this, [=]() {
+		connect(instrumentOperator, &InstrumentOperator::ExperimentPaused, this, [=](quint8 channel) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {
 				LOG() << "Unexpected InstrumentOperator pointer";
@@ -337,18 +348,18 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				return;
 			}
 
-			handler->experiment.paused = true;
+			handler->experiment[channel].paused = true;
 
 			LOG() << "Experiment paused";
 
-			emit ExperimentPaused(handler->experiment.id);
+			emit ExperimentPaused(handler->experiment[channel].id);
 			if (handler == hardware.currentInstrument.handler) {
 				emit CurrentExperimentPaused();
 			}
 		});
 
 		hardware.currentInstrument.handler->connections <<
-		connect(instrumentOperator, &InstrumentOperator::ExperimentResumed, this, [=]() {
+		connect(instrumentOperator, &InstrumentOperator::ExperimentResumed, this, [=](quint8 channel) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {
 				LOG() << "Unexpected InstrumentOperator pointer";
@@ -361,18 +372,18 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				return;
 			}
 
-			handler->experiment.paused = false;
+			handler->experiment[channel].paused = false;
 
 			LOG() << "Experiment resumed";
 
-			emit ExperimentResumed(handler->experiment.id);
+			emit ExperimentResumed(handler->experiment[channel].id);
 			if (handler == hardware.currentInstrument.handler) {
 				emit CurrentExperimentResumed();
 			}
 		});
 
 		hardware.currentInstrument.handler->connections <<
-		connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted, this, [=]() {
+		connect(instrumentOperator, &InstrumentOperator::ExperimentCompleted, this, [=](quint8 channel) {
 			auto oper = qobject_cast<InstrumentOperator*>(sender());
 			if (0 == oper) {
 				LOG() << "Unexpected InstrumentOperator pointer";
@@ -389,19 +400,19 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				QObject::disconnect(conn);
 			}
 
-			handler->experiment.busy = false;
-			handler->experiment.paused = false;
+			handler->experiment[channel].busy = false;
+			handler->experiment[channel].paused = false;
 
 			LOG() << "Experiment completed";
 			
-			emit ExperimentCompleted(handler->experiment.id);
+			emit ExperimentCompleted(handler->experiment[channel].id);
 			if (handler == hardware.currentInstrument.handler) {
 				emit CurrentExperimentCompleted();
 			}
 			
-			handler->experiment.id = QUuid();
-			handler->oper->deleteLater();
-			handler->oper = 0;
+			handler->experiment[channel].id = QUuid();
+			//handler->oper->deleteLater();
+			//handler->oper = 0;
 		});
 
 		hardware.currentInstrument.handler->connections <<
@@ -417,7 +428,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				LOG() << "Hardware handler not found";
 				return;
 			}
-			emit ExperimentNodeBeginning(handler->experiment.id, channel, node);
+			emit ExperimentNodeBeginning(handler->experiment[channel].id, channel, node);
 		});
 
 		hardware.currentInstrument.handler->connections <<
@@ -434,7 +445,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				return;
 			}
 
-			emit DcDataArrived(handler->experiment.id, channel, expData, handler->trigger, handler->experiment.paused);
+			emit DcDataArrived(handler->experiment[channel].id, expData, handler->trigger, handler->experiment[channel].paused);
 		});
 		hardware.currentInstrument.handler->connections <<
 		QObject::connect(instrumentOperator, &InstrumentOperator::ExperimentalAcDataReceived, this, [=](quint8 channel, const QByteArray &expData) {
@@ -450,13 +461,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				return;
 			}
 			
-			emit AcDataArrived(handler->experiment.id, channel, expData, handler->trigger, handler->experiment.paused);
+			emit AcDataArrived(handler->experiment[channel].id, expData, handler->trigger, handler->experiment[channel].paused);
 		});
 	}
 
-	quint8 curChan = hardware.currentInstrument.channel;
 	InstrumentInfo &instrumentInfo(hardware.currentInstrument.handler->info);
-	auto nodesData = expPtr->GetNodesData(paramsWdg, instrumentInfo.calData[curChan], instrumentInfo.hwVer);
+	auto nodesData = expPtr->GetNodesData(paramsWdg, instrumentInfo.calData[currentChannel], instrumentInfo.hwVer);
 	if (nodesData.isEmpty()) {
 		LOG() << "Error while getting user input";
 		return;
@@ -483,7 +493,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 		curParam.id = newId;
 		curParam.type = type;
 		curParam.exp = expPtr;
-		curParam.cal = instrumentInfo.calData[curChan];
+		curParam.cal = instrumentInfo.calData[currentChannel];
 		curParam.hwVer = instrumentInfo.hwVer;
 		curParam.notes = notes;
 
@@ -531,10 +541,11 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 		}
 		return;
 	}
-	
-	hardware.currentInstrument.handler->experiment.busy = true;
-	hardware.currentInstrument.handler->experiment.id = newId;
-	hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
+
+	hardware.currentInstrument.handler->experiment[currentChannel].busy = true;
+	hardware.currentInstrument.handler->experiment[currentChannel].paused = false;
+	hardware.currentInstrument.handler->experiment[currentChannel].id = newId;
+	//hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
 	foreach(auto &param, startParams) {
 		switch (param.type) {
@@ -565,11 +576,27 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(cons
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QUuid &id) {
 	auto it = hardware.handlers.begin();
 	for (; it != hardware.handlers.end(); ++it) {
-		if (it->experiment.id == id) {
+		bool found = false;
+		for (int i = 0; i < it->experiment.size(); ++i) {
+			if (it->experiment[i].id == id) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
 			break;
 		}
 	}
 	return it;
+}
+quint8 MainWindow::SearchForChannel(QList<MainWindow::InstrumentHandler>::iterator it, const QUuid &id) {
+	for (quint8 i = 0; i < it->experiment.size(); ++i) {
+		if (it->experiment[i].id == id) {
+			return i;
+		}
+	}
+
+	return -1;
 }
 void MainWindow::StopExperiment(const QString &name, quint8 channel) {
 	auto hwIt = SearchForHandler(name, channel);
@@ -577,7 +604,7 @@ void MainWindow::StopExperiment(const QString &name, quint8 channel) {
 		return;
 	}
 
-	StopExperiment(hwIt->experiment.id);
+	StopExperiment(hwIt->experiment[channel].id);
 }
 void MainWindow::PauseExperiment(const QString &name, quint8 channel) {
 	auto hwIt = SearchForHandler(name, channel);
@@ -585,7 +612,7 @@ void MainWindow::PauseExperiment(const QString &name, quint8 channel) {
 		return;
 	}
 
-	PauseExperiment(hwIt->experiment.id);
+	PauseExperiment(hwIt->experiment[channel].id);
 
 }
 void MainWindow::ResumeExperiment(const QString &name, quint8 channel) {
@@ -594,7 +621,7 @@ void MainWindow::ResumeExperiment(const QString &name, quint8 channel) {
 		return;
 	}
 
-	ResumeExperiment(hwIt->experiment.id);
+	ResumeExperiment(hwIt->experiment[channel].id);
 }
 void MainWindow::PauseExperiment(const QUuid &id) {
 	auto it = SearchForHandler(id);
@@ -603,11 +630,13 @@ void MainWindow::PauseExperiment(const QUuid &id) {
 		return;
 	}
 
-	if (!it->experiment.busy) {
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
 		return;
 	}
 
-	it->oper->PauseExperiment(it->experiment.channel);
+	it->oper->PauseExperiment(channel);
 }
 void MainWindow::ResumeExperiment(const QUuid &id) {
 	auto it = SearchForHandler(id);
@@ -616,11 +645,13 @@ void MainWindow::ResumeExperiment(const QUuid &id) {
 		return;
 	}
 
-	if (!it->experiment.busy) {
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
 		return;
 	}
 
-	it->oper->ResumeExperiment(it->experiment.channel);
+	it->oper->ResumeExperiment(channel);
 }
 void MainWindow::StopExperiment(const QUuid &id) {
 	auto it = SearchForHandler(id);
@@ -629,11 +660,13 @@ void MainWindow::StopExperiment(const QUuid &id) {
 		return;
 	}
 
-	if (!it->experiment.busy) {
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
 		return;
 	}
 
-	it->oper->StopExperiment(it->experiment.channel);
+	it->oper->StopExperiment(channel);
 }
 
 void MainWindow::FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {
