@@ -160,6 +160,24 @@ private:
 	struct {
 		QWidget *userInputs;
 	} prebuiltExperimentData;
+
+	struct {
+		enum WhatTab : quint8 {
+			NONE = 0,
+			PREBUILD,
+			MANUAL
+		};
+		struct {
+			QString hwName;
+			qint8 channel;
+		} prebuilt;
+		struct {
+			QString hwName;
+			QMap<QString, qint8> channel;
+		} manual;
+
+		WhatTab currentTab;
+	} selectedHardware;
 	
 	struct DataMapVisualization {
 		DataMap container;

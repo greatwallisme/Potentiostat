@@ -300,7 +300,7 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 
 	return ret;
 }
-void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
+void MainWindow::StartExperiment(QWidget *paramsWdg) {
 	auto &currentHandler(hardware.currentInstrument.handler);
 	auto currentChannel = hardware.currentInstrument.channel;
 
@@ -315,9 +315,6 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 	}
 
 	auto expPtr	= prebuiltExperiments.selectedExp;
-	if (isManualMode) {
-		expPtr = ManualExperimentRunner::Instance();
-	}
 
 	if (0 == expPtr) {
 		LOG() << "No experiment selected";
@@ -396,9 +393,11 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, bool isManualMode) {
 				return;
 			}
 
+			/*
 			foreach(auto conn, handler->connections) {
 				QObject::disconnect(conn);
 			}
+			//*/
 
 			handler->experiment[channel].busy = false;
 			handler->experiment[channel].paused = false;
