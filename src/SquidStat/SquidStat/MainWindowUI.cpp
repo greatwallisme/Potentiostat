@@ -1778,6 +1778,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
 		mw->UpdateCurrentExperimentState();
+
+		selectedHardware.prebuilt.hwName = hwList->currentText();
+		selectedHardware.prebuilt.channel = channelEdit->currentData().toInt();
 	};
 
 	CONNECT(hwList, &QComboBox::currentTextChanged, hwLambda);
@@ -1786,8 +1789,12 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		if (!experimentList->selectionModel()->currentIndex().isValid()) {
 			return;
 		}
+
 		mw->SelectHardware(hwList->currentText(), channelEdit->currentData().toInt());
 		mw->UpdateCurrentExperimentState();
+
+		selectedHardware.prebuilt.hwName = hwList->currentText();
+		selectedHardware.prebuilt.channel = channelEdit->currentData().toInt();
 	});
 
 	auto vertBar = scrollArea->verticalScrollBar();

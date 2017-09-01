@@ -59,7 +59,7 @@ public slots:
 	
 	void SelectHardware(const QString&, quint8 channel);
 
-	void StartExperiment(QWidget*, bool isManualMode = false);
+	void StartExperiment(QWidget*);
 	void StopExperiment(const QUuid&);
 	void PauseExperiment(const QUuid&);
 	void ResumeExperiment(const QUuid&);
