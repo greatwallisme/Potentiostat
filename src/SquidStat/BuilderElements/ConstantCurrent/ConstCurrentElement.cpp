@@ -12,11 +12,13 @@
 #define CONST_CURRENT_UNITS_OBJ_NAME "constant-current-units"
 #define DURATION_OBJ_NAME         "duration"
 #define DURATION_UNITS_OBJ_NAME   "duration-units"
+#define CAPACITY_OBJ_NAME     "capacity"
 #define SAMPLING_INTERVAL_OBJ_NAME		"sampling-interval"
 #define SAMPLING_INTERVAL_UNITS_OBJ_NAME   "sampling-interval-units"
 
 #define CONST_CURRENT_DEFAULT	10
 #define DURATION_DEFAULT  60
+#define CAPACITY_DEFAULT 10
 #define SAMPLING_INTERVAL_DEFAULT		0.5
 
 QString ConstCurrentElement::GetFullName() const {
@@ -46,7 +48,19 @@ QWidget* ConstCurrentElement::CreateUserInput(UserInput &inputs) const {
   _END_DROP_DOWN();
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
+  _INSERT_TEXT_INPUT(SAMPLING_INTERVAL_DEFAULT, SAMPLING_INTERVAL_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(SAMPLING_INTERVAL_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("min");
+  _ADD_DROP_DOWN_ITEM("hr");
+  _END_DROP_DOWN();
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("Ending conditions", row);
+
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Max duration: ", row, 0);
   _INSERT_TEXT_INPUT(DURATION_DEFAULT, DURATION_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DURATION_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");
@@ -54,14 +68,10 @@ QWidget* ConstCurrentElement::CreateUserInput(UserInput &inputs) const {
   _ADD_DROP_DOWN_ITEM("hr");
   _END_DROP_DOWN();
 
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
-	_INSERT_TEXT_INPUT(SAMPLING_INTERVAL_DEFAULT, SAMPLING_INTERVAL_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(SAMPLING_INTERVAL_UNITS_OBJ_NAME , row, 2);
-  _ADD_DROP_DOWN_ITEM("s");
-  _ADD_DROP_DOWN_ITEM("min");
-  _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Max capacity", row, 0);
+  _INSERT_TEXT_INPUT(CAPACITY_DEFAULT, CAPACITY_OBJ_NAME, row, 1);
+  _INSERT_LEFT_ALIGN_COMMENT("mAh", row, 2);
 
 	_SET_ROW_STRETCH(++row, 1);
 	_SET_COL_STRETCH(0, 3);
@@ -79,6 +89,9 @@ NodesData ConstCurrentElement::GetNodesData(const UserInput &inputs, const Calib
   duration *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[DURATION_UNITS_OBJ_NAME].toString());
   double samplingInterval = inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble();
   samplingInterval *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[SAMPLING_INTERVAL_UNITS_OBJ_NAME].toString());
+  double capacity = inputs[CAPACITY_OBJ_NAME].toDouble();
+  capacity *= 3600; //convert from mAh to mC
+  capacity = fabs(capacity);
 
   int numPtsToIgnore = 0;
   if (samplingInterval > 0.5)
@@ -99,6 +112,8 @@ NodesData ConstCurrentElement::GetNodesData(const UserInput &inputs, const Calib
   exp.DCPoint_galv.dVdtMin = 0;
   exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
   exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
+  exp.DCPoint_galv.CapacityMax = capacity;
+  exp.DCPoint_galv.isTrackingCapacity = capacity != 0;
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
