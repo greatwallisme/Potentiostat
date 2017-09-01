@@ -645,6 +645,27 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	background-color: #ce2026;
 }
+#channel-selecting-placeholder {
+	padding-top: 20px;
+	padding-left: 10px;
+}
+#select-channel-button {
+	border: 5px solid #ffbfc0;
+	background-color: #ffffff;
+	
+	font-size: 22px;
+	color: #ce2026;
+	
+	margin: 5px;
+	margin-right: 0px;
+	padding: 15px;
+	padding-top: 4px;
+	padding-bottom: 7px;
+}
+#select-channel-button:checked {
+	border: 5px solid #ce2026;
+	background-color: #ffbfc0;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
 #collapsible-group-box {
 	border: none;

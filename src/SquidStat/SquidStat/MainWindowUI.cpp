@@ -58,6 +58,7 @@
 #include "ExperimentReader.h"
 #include "HexLoader.h"
 #include "UIEventFilters.hpp"
+#include "ManualExperimentRunner.h"
 
 #include <functional>
 #include <QScrollBar>
@@ -74,6 +75,7 @@
 #include <QGroupBox>
 #include <QStandardPaths>
 #include <QDesktopWidget>
+#include <QSignalMapper>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -107,6 +109,9 @@ MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 {
 	prebuiltExperimentData.userInputs = 0;
 	builderTabs.userInputs = 0;
+	selectedHardware.prebuilt.exp = 0;
+	selectedHardware.manual.exp = ManualExperimentRunner::Instance();
+	selectedHardware.prebuilt.channel = 0;
 
 	mw->setObjectName("mainUI");
 	mw->ApplyStyle();
@@ -294,15 +299,17 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	lay->addWidget(barWidget);
 	lay->addLayout(widgetsLayout);
 
-	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 	widgetsLayout->addWidget(GetRunExperimentTab());
 	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
+	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
 	
-	auto *pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
+	QPushButton *pbt;
+	
+	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
 	pbt->setCheckable(true);
 	pbt->setChecked(true);
 	buttonGroup->addButton(pbt);
@@ -312,21 +319,11 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		if (!checked) {
 			return;
 		}
-		
-		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
-	});
-
-	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
-	pbt->setCheckable(true);
-	buttonGroup->addButton(pbt);
-	barLayout->addWidget(pbt);
-
-	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
-		if (!checked) {
-			return;
-		}
 
 		widgetsLayout->setCurrentWidget(GetRunExperimentTab());
+
+		mw->SelectHardware(selectedHardware.prebuilt.hwName, selectedHardware.prebuilt.channel);
+		mw->PrebuiltExperimentSelected(selectedHardware.prebuilt.exp);
 	});
 
 	pbt = OBJ_NAME(PBT("Build an Experiment"), "bar-button");
@@ -355,6 +352,10 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		}
 
 		widgetsLayout->setCurrentWidget(GetManualControlTab());
+
+		quint8 channel = selectedHardware.manual.channel.value(selectedHardware.manual.hwName, 0);
+		mw->SelectHardware(selectedHardware.manual.hwName, channel);
+		mw->PrebuiltExperimentSelected(selectedHardware.manual.exp);
 	});
 
 	pbt = OBJ_PROP(OBJ_NAME(PBT("View Data"), "bar-button"), "order", "last");
@@ -370,6 +371,19 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		}
 
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
+	});
+	
+	pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
 	});
 
 	barLayout->addStretch(1);
@@ -1968,6 +1982,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			paramsLay->addWidget(prebuiltExperimentData.userInputs);
 				
 			mw->PrebuiltExperimentSelected(exp);
+			selectedHardware.prebuilt.exp = exp;
 
 			paramsHeadWidget->show();
 			paramsFooterWidget->show();
@@ -2032,14 +2047,48 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	if (w != 0) {
 		return w;
 	}
-
+	
 	w = OBJ_NAME(WDG(), "manual-control-tab-owner");
+
+	static QMap<QString, qint8> channelAmountMap;
+	static QList<QPushButton*> channelSelectButtons;
+
+	auto channelSelectMapper = new QSignalMapper(w);
 
 	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	QTabBar *tabBar;
+
+	auto channelSelectWdg = OBJ_NAME(new QFrame(), "channel-selecting-placeholder");
+	auto channelSelectWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(channelSelectWdg)));
+
+	auto buttonGroup = new QButtonGroup(channelSelectWdg);
+	for(int i = 0; i < MAX_CHANNEL_VALUE; ++i) {
+		auto pbt = OBJ_NAME(new QPushButton(QString("Channel %1").arg(i + 1)), "select-channel-button");
+		pbt->setCheckable(true);
+		pbt->hide();
+
+		buttonGroup->addButton(pbt);
+		channelSelectMapper->setMapping(pbt, i);
+		CONNECT(pbt, &QPushButton::clicked, channelSelectMapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+		
+		channelSelectButtons << pbt;
+		
+		channelSelectWdgLay->addWidget(pbt);
+	}
+	if (channelSelectButtons.size()) {
+		channelSelectButtons.at(0)->setChecked(true);
+	}
+	channelSelectWdgLay->addStretch(1);
+	channelSelectWdg->hide();
+
+	auto startButtonWdg = OBJ_NAME(WDG(), "start-button-placeholder");
+	auto startButtonWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(startButtonWdg)));
+
+	QPushButton *startExpPbt;
+	startButtonWdgLay->addWidget(startExpPbt = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "manual-control-tab-placeholder");
 	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
@@ -2052,19 +2101,47 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	tabHeaderLay->addStretch(1);
 
 	lay->addLayout(tabHeaderLay);
+	lay->addWidget(channelSelectWdg);
 	lay->addWidget(stackedLayWdg);
+	lay->addWidget(startButtonWdg);
 
 	tabBar->setExpanding(false);
 	tabBar->setMovable(true);
 
 	tabBar->hide();
 
+	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
+		mw->StartExperiment(0);
+		mw->UpdateCurrentExperimentState();
+	});
+
+	CONNECT(channelSelectMapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped), [=] (int channel) {
+		auto name = tabBar->tabText(tabBar->currentIndex());
+
+		selectedHardware.manual.channel[name] = channel;
+		mw->SelectHardware(name, channel);
+	});
+
 	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
 			return;
 		}
 
+		selectedHardware.manual.hwName = tabBar->tabText(index);
 		stackedLay->setCurrentIndex(index);
+
+		auto channelCount = channelAmountMap.value(selectedHardware.manual.hwName, 0);
+		for (int i = 0; i < channelCount; ++i) {
+			channelSelectButtons.at(i)->show();
+		}
+		for (int i = channelCount; i < MAX_CHANNEL_VALUE; ++i) {
+			channelSelectButtons.at(i)->hide();
+		}
+
+		quint8 channel = selectedHardware.manual.channel.value(selectedHardware.manual.hwName, 0);
+
+		channelSelectButtons.at(channel)->setChecked(true);
+		mw->SelectHardware(selectedHardware.manual.hwName, channel);
 	});
 
 	CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
@@ -2200,17 +2277,23 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &hwList) {
 		foreach(auto &hwDescr, hwList) {
+			channelAmountMap[hwDescr.first] = hwDescr.second;
+
 			tabBar->insertTab(tabBar->count(), hwDescr.first);
 			stackedLay->insertWidget(tabBar->count(), WDG());
 		}
 
 		if (tabBar->isHidden()) {
 			tabBar->show();
+			channelSelectWdg->show();
+			startButtonWdg->show();
 		}
 	});
 
 	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &names) {
 		foreach(auto &name, names) {
+			channelAmountMap.remove(name);
+
 			int currentIndex = -1;
 			for (int i = 0; i < tabBar->count(); ++i) {
 				if (tabBar->tabText(i) == name) {
@@ -2227,6 +2310,12 @@ QWidget* MainWindowUI::GetManualControlTab() {
 			tabBar->removeTab(currentIndex);
 			stackedLay->removeWidget(wdg);
 			wdg->deleteLater();
+		}
+
+		if (tabBar->count() == 0) {
+			tabBar->hide();
+			channelSelectWdg->hide();
+			startButtonWdg->hide();
 		}
 	});
 

@@ -162,21 +162,16 @@ private:
 	} prebuiltExperimentData;
 
 	struct {
-		enum WhatTab : quint8 {
-			NONE = 0,
-			PREBUILD,
-			MANUAL
-		};
 		struct {
 			QString hwName;
 			qint8 channel;
+			const AbstractExperiment *exp;
 		} prebuilt;
 		struct {
 			QString hwName;
 			QMap<QString, qint8> channel;
+			const AbstractExperiment *exp;
 		} manual;
-
-		WhatTab currentTab;
 	} selectedHardware;
 	
 	struct DataMapVisualization {
