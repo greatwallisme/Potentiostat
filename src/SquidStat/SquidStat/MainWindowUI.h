@@ -126,7 +126,7 @@ private:
 	QWidget* GetManualControlTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0);
+	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0, QWidget * = 0);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -158,7 +158,7 @@ private:
 	struct {
 		QWidget *userInputs;
 	} prebuiltExperimentData;
-
+	
 	struct {
 		struct {
 			QString hwName;

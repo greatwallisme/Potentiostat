@@ -658,6 +658,7 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	margin: 5px;
 	margin-right: 0px;
+	margin-bottom: 20px;
 	padding: 15px;
 	padding-top: 4px;
 	padding-bottom: 7px;
@@ -670,19 +671,23 @@ QLabel[experiment-params-widget="low-margin"] {
 #collapsible-group-box {
 	border: none;
 	border-top: 1px solid #d1d1d1;
+	
 	margin: 0px;
-	margin-top: 40px;
+	margin-top: 25px;
+	margin-bottom: 1px;
 	
 	font-family: "Segoe UI";
 	font-weight: bold;
 	font-size: 15px;
 	color: #4E5861;
+	
+	min-width: 300px;
 }
 #collapsible-group-box::title {
 	subcontrol-origin: margin;
 	
 	margin: 0px;
-	margin-top: 10px;
+	margin-top: 1px;
 	margin-left: 10px;
 }
 #collapsible-group-box::indicator {

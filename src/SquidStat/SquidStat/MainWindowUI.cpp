@@ -2046,6 +2046,8 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	static QMap<QString, qint8> channelAmountMap;
 	static QList<QPushButton*> channelSelectButtons;
+	static QMap<QString, QWidget*> userInputs;
+	static QMap<QString, QUuid> ids;
 
 	auto channelSelectMapper = new QSignalMapper(w);
 
@@ -2105,7 +2107,8 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	tabBar->hide();
 
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
-		mw->StartExperiment(0);
+		auto curInstrName = tabBar->tabText(tabBar->currentIndex());
+		mw->StartExperiment(userInputs[curInstrName], ids[curInstrName]);
 		mw->UpdateCurrentExperimentState();
 	});
 
@@ -2134,7 +2137,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 		quint8 channel = selectedHardware.manual.channel.value(selectedHardware.manual.hwName, 0);
 
-		channelSelectButtons.at(channel)->setChecked(true);
+		channelSelectButtons.at(channel)->click();
 		mw->SelectHardware(selectedHardware.manual.hwName, channel);
 	});
 
@@ -2272,9 +2275,24 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &hwList) {
 		foreach(auto &hwDescr, hwList) {
 			channelAmountMap[hwDescr.first] = hwDescr.second;
+			
+			ids[hwDescr.first] = QUuid::createUuid();
+
+			QWidget *settingsWidget = ManualExperimentRunner::Instance()->CreateUserInput();
+
+			auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.first],
+				ET_DC,
+				"Manual mode",
+				QStringList(),
+				QStringList(),
+				"",
+				0,
+				settingsWidget);
+
+			userInputs[hwDescr.first] = settingsWidget;
 
 			tabBar->insertTab(tabBar->count(), hwDescr.first);
-			stackedLay->insertWidget(tabBar->count(), WDG());
+			stackedLay->insertWidget(tabBar->count(), dataWidget);
 		}
 
 		if (tabBar->isHidden()) {
@@ -2666,7 +2684,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	auto dcDataArrivedLambda = [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2709,7 +2727,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.plot->replot();
 			handler.plotCounter.stamp = curStamp + 50;
 		}
-	});
+	};
+	CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 
 	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
@@ -3495,7 +3514,7 @@ QStringList valueHideList = {
   QString(REAL_TIME_ERROR)
 };
 
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, QWidget *additionalSettingsWidget) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -3519,13 +3538,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
-
 	auto realTimeGroup = OBJ_NAME(new QGroupBox("Real time value section"), "collapsible-group-box");
 	auto realTimeGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroup)));
 	auto realTimeGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto realTimeGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroupFrame)));
 	realTimeGroupLay->addWidget(realTimeGroupFrame);
-
 	realTimeGroup->setCheckable(true);
 
 	QStringList realTimeValueNames;
@@ -3545,29 +3562,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(STEP_VALUE_LBL_NAME " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
 	realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][STEP_VALUE_LBL_NAME] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 
-	/*
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Working Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 0, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Counter Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 1, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Current = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 2, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Redox State = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 3, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Step = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 4, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Elapsed Time = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 5, 0);
-
-
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "-0.301" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 0, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "+0.102" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 1, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "1.9" CLOSE_COLOR_TAG " mA"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 2, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Oxidizing" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 3, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Open Circuit" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 4, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "00:10:52" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 5, 1);
-	//*/
-
 	auto settingsGroup = OBJ_NAME(new QGroupBox("Graph options"), "collapsible-group-box");
 	auto settingsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroup)));
 	auto settingsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto settingsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroupFrame)));
 	settingsGroupLay->addWidget(settingsGroupFrame);
-
 	settingsGroup->setCheckable(true);
 
 
@@ -3594,6 +3593,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QCheckBox *y1ChkBox;
 	QCheckBox *y2ChkBox;
 
+	QPushButton *addDataPbt;
+	QPushButton *editLinesPbt;
+	QPushButton *savePlotPbt;
+	QPushButton *openFilePbt;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(editLinesPbt = OBJ_PROP(OBJ_NAME(PBT("Edit Line\nAppearance"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(savePlotPbt = OBJ_PROP(OBJ_NAME(PBT("Save Plot\nas Image"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"));
+
 	settingsGroupFrameLay->addWidget(xCombo, 1, 1);
 	settingsGroupFrameLay->addWidget(y1Combo, 2, 1);
 	settingsGroupFrameLay->addWidget(y2Combo, 3, 1);
@@ -3603,43 +3613,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	settingsGroupFrameLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 2);
 	settingsGroupFrameLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 3, 2);
 	settingsGroupFrameLay->setColumnStretch(1, 1);
+	settingsGroupFrameLay->addLayout(buttonLay, 4, 0, 1, -1);
 
-	/*
-	auto xButtonGroup = new QButtonGroup(w);
-	xButtonGroup->addButton(xLinRbt);
-	xButtonGroup->addButton(xLogRbt);
-
-	auto y1ButtonGroup = new QButtonGroup(w);
-	y1ButtonGroup->addButton(y1LinRbt);
-	y1ButtonGroup->addButton(y1LogRbt);
-
-	auto y2ButtonGroup = new QButtonGroup(w);
-	y2ButtonGroup->addButton(y2LinRbt);
-	y2ButtonGroup->addButton(y2LogRbt);
-
-	//xLinRbt->click();
-	y1LinRbt->click();
-	y2LinRbt->click();
-	//*/
-
-	QPushButton *addDataPbt;
-	QPushButton *editLinesPbt;
-	QPushButton *savePlotPbt;
-	QPushButton *openFilePbt;
-
-	auto buttonLay = new QGridLayout;
-	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"), 0, 0);
-	buttonLay->addWidget(editLinesPbt = OBJ_PROP(OBJ_NAME(PBT("Edit Line\nAppearance"), "secondary-button"), "add-name", "new-data-controls"), 0, 1);
-	buttonLay->addWidget(savePlotPbt = OBJ_PROP(OBJ_NAME(PBT("Save Plot\nas Image"), "secondary-button"), "add-name", "new-data-controls"), 0, 2);
-	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"), 0, 3);
-	buttonLay->setRowStretch(1, 1);
-
-	
-	settingsLay->addWidget(realTimeGroup, 0, 0, 1, -1);
-	settingsLay->addWidget(settingsGroup, 1, 0, 1, -1);
+	if (additionalSettingsWidget) {
+		settingsLay->addWidget(additionalSettingsWidget, 0, 0, 1, -1);
+	}
+	settingsLay->addWidget(realTimeGroup, 2, 0, 1, -1);
+	settingsLay->addWidget(settingsGroup, 3, 0, 1, -1);
 	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
-	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
-	//settingsLay->setRowStretch(6, 1);
+	settingsLay->setRowStretch(8, 1);
+	//settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 
 	auto controlButtonLay = new QHBoxLayout;
 	QPushButton *pauseExperiment;
@@ -3648,7 +3631,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXP_BUTTON_TEXT), "control-button-blue"));
 	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
-	if (type == ET_SAVED) {
+	if ( (type == ET_SAVED) || (additionalSettingsWidget) ) {
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
@@ -3690,7 +3673,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	cursorModeGroup->addButton(panViewPbt);
 
 	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
-	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	if (!additionalSettingsWidget) {
+		lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	}
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
 	lay->addLayout(settingsLay, 1, 1);
 	lay->addWidget(plot, 1, 2);
@@ -3712,6 +3697,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.data.first().curve2 = curve2;
 	plotHandler.plotCounter.stamp = 0;
 	plotHandler.plotCounter.realTimeValueStamp = 0;
+
+	if (additionalSettingsWidget) {
+		plotHandler.exp = ManualExperimentRunner::Instance();
+	}
 
 	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
 	#define CLOSE_COLOR_TAG "</font>"
@@ -3791,7 +3780,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			
 			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			
-			if (!dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+			if (!dataTabs.realTimeElapsedTime.keys().contains(curId) && container.contains(REAL_TIME_ELAPSED_TIME)) {
 				dataTabs.realTimeElapsedTime[curId] = container[REAL_TIME_ELAPSED_TIME].data.last();
 			}
 

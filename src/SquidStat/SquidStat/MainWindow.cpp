@@ -300,7 +300,7 @@ QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(Inst
 
 	return ret;
 }
-void MainWindow::StartExperiment(QWidget *paramsWdg) {
+void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 	auto &currentHandler(hardware.currentInstrument.handler);
 	auto currentChannel = hardware.currentInstrument.channel;
 
@@ -484,7 +484,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 
 	QList<StartExperimentParameters> startParams;
 
-	QUuid newId = QUuid::createUuid();
+	QUuid newId = existingId.isNull() ? QUuid::createUuid() : existingId;
+	
 	hardware.currentInstrument.handler->trigger->SetUuid(newId);
 	bool ok = true;
 	foreach(auto type, types) {
@@ -556,7 +557,12 @@ void MainWindow::StartExperiment(QWidget *paramsWdg) {
 				break;
 		}
 
-		emit CreateNewDataWindow(param);
+		if (existingId.isNull()) {
+			emit CreateNewDataWindow(param);
+		}
+		else {
+			//emit UpdateDataWindow(param);
+		}
 	}
 
 	LOG() << "Start experiment";
