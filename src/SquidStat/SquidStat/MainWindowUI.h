@@ -111,8 +111,6 @@ private:
 	void CreateMenu();
 	void CreateCentralWidget();
 
-	QAction* GetUpgradeHardwareAction();
-
 	QWidget* GetApplyStyleButton();
 
 	QWidget* GetMainTabWidget();

@@ -127,13 +127,16 @@ void MainWindowUI::CreateMenu() {
 
 	auto moreOptionsMenu = new QMenu("More Options");
 
-	moreOptionsMenu->addAction(GetUpgradeHardwareAction());
+	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
 
 	menuBar->addMenu(moreOptionsMenu);
 	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
 
 	CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
-
+	
+	CONNECT(updateHardware, &QAction::triggered, [=]() {
+		GetUpdateFirmwareDialog(mw);
+	});
 	mw->setMenuBar(menuBar);
 }
 void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
@@ -245,15 +248,6 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 	}
 
 	dialog->deleteLater();
-}
-QAction* MainWindowUI::GetUpgradeHardwareAction() {
-	auto action = new QAction("Update Hardware");
-
-	CONNECT(action, &QAction::triggered, [=]() {
-		GetUpdateFirmwareDialog(mw);
-	});
-
-	return action;
 }
 void MainWindowUI::CreateCentralWidget() {
 	QWidget *centralWidget = OBJ_NAME(WDG(), "central-widget");

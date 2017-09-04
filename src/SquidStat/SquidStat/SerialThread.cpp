@@ -19,7 +19,7 @@ void SerialThread::run() {
 	connect(_serialPort, &QSerialPort::readyRead,
 		this, &SerialThread::DataArrived, Qt::QueuedConnection);
 
-	connect(_serialPort, &QSerialPort::errorOccurred, this, &SerialThread::ErrorOnSerial);
+	//connect(_serialPort, &QSerialPort::errorOccurred, this, &SerialThread::ErrorOnSerial);
 
 	_serialPort->open(QIODevice::ReadWrite);
 
