@@ -21,6 +21,8 @@ public slots:
 	void ResumeExperiment(quint8 channel);
 	void SoftReset();
 
+	void StartManualExperiment(quint8 channel);
+
 private slots:
 	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);
 

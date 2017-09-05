@@ -2046,7 +2046,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	static QMap<QString, qint8> channelAmountMap;
 	static QList<QPushButton*> channelSelectButtons;
-	static QMap<QString, QWidget*> userInputs;
+	//static QMap<QString, QWidget*> userInputs;
 	static QMap<QString, QUuid> ids;
 
 	auto channelSelectMapper = new QSignalMapper(w);
@@ -2080,11 +2080,11 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	channelSelectWdgLay->addStretch(1);
 	channelSelectWdg->hide();
 
-	auto startButtonWdg = OBJ_NAME(WDG(), "start-button-placeholder");
-	auto startButtonWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(startButtonWdg)));
+	//auto startButtonWdg = OBJ_NAME(WDG(), "start-button-placeholder");
+	//auto startButtonWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(startButtonWdg)));
 
-	QPushButton *startExpPbt;
-	startButtonWdgLay->addWidget(startExpPbt = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
+	//QPushButton *startExpPbt;
+	//startButtonWdgLay->addWidget(startExpPbt = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "manual-control-tab-placeholder");
 	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
@@ -2099,18 +2099,20 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	lay->addLayout(tabHeaderLay);
 	lay->addWidget(channelSelectWdg);
 	lay->addWidget(stackedLayWdg);
-	lay->addWidget(startButtonWdg);
+	//lay->addWidget(startButtonWdg);
 
 	tabBar->setExpanding(false);
 	tabBar->setMovable(true);
 
 	tabBar->hide();
 
+	/*
 	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
 		auto curInstrName = tabBar->tabText(tabBar->currentIndex());
 		mw->StartExperiment(userInputs[curInstrName], ids[curInstrName]);
 		mw->UpdateCurrentExperimentState();
 	});
+	//*/
 
 	CONNECT(channelSelectMapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped), [=] (int channel) {
 		auto name = tabBar->tabText(tabBar->currentIndex());
@@ -2278,18 +2280,18 @@ QWidget* MainWindowUI::GetManualControlTab() {
 			
 			ids[hwDescr.first] = QUuid::createUuid();
 
-			QWidget *settingsWidget = ManualExperimentRunner::Instance()->CreateUserInput();
+			//QWidget *settingsWidget = ManualExperimentRunner::Instance()->CreateUserInput();
 
 			auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.first],
 				ET_DC,
 				"Manual mode",
-				QStringList(),
-				QStringList(),
+				ManualExperimentRunner::Instance()->GetXAxisParameters(ET_DC),
+				ManualExperimentRunner::Instance()->GetYAxisParameters(ET_DC),
 				"",
 				0,
-				settingsWidget);
+				true);
 
-			userInputs[hwDescr.first] = settingsWidget;
+			//userInputs[hwDescr.first] = settingsWidget;
 
 			tabBar->insertTab(tabBar->count(), hwDescr.first);
 			stackedLay->insertWidget(tabBar->count(), dataWidget);
@@ -2298,7 +2300,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 		if (tabBar->isHidden()) {
 			tabBar->show();
 			channelSelectWdg->show();
-			startButtonWdg->show();
+			//startButtonWdg->show();
 		}
 	});
 
@@ -2327,7 +2329,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 		if (tabBar->count() == 0) {
 			tabBar->hide();
 			channelSelectWdg->hide();
-			startButtonWdg->hide();
+			//startButtonWdg->hide();
 		}
 	});
 
@@ -3514,7 +3516,7 @@ QStringList valueHideList = {
   QString(REAL_TIME_ERROR)
 };
 
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, QWidget *additionalSettingsWidget) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, bool isManualMode) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -3615,12 +3617,85 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	settingsGroupFrameLay->setColumnStretch(1, 1);
 	settingsGroupFrameLay->addLayout(buttonLay, 4, 0, 1, -1);
 
-	if (additionalSettingsWidget) {
-		settingsLay->addWidget(additionalSettingsWidget, 0, 0, 1, -1);
+	QGroupBox *advOptionsGroup;
+	QWidget *advOptionsGroupFrame;
+	QCheckBox *potGalvModeChk;
+	QCheckBox *openCircuitModeChk;
+	QComboBox *rangeCombo;
+	QPushButton *startManualExpPbt;
+	QPushButton *pauseManualExpPbt;
+	QPushButton *stopManualExpPbt;
+	QLineEdit *appliedPotLed;
+	QLineEdit *appliedCurLed;
+	QLineEdit *samplingIntLed;
+	QLabel *appliedPotLblLeft;
+	QLabel *appliedPotLblRight;
+	QLabel *appliedCurLblLeft;
+	QLabel *appliedCurLblRight;
+
+	#define POTENTIOSTATIC_TEXT "Potentiostatic"
+	#define GALVANOSTATIC_TEXT	"Galvanostatic"
+
+	if (isManualMode) {
+		advOptionsGroup = OBJ_NAME(new QGroupBox("Operating conditions"), "collapsible-group-box");
+		auto advOptionsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(advOptionsGroup)));
+		advOptionsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
+		auto advOptionsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(advOptionsGroupFrame)));
+		advOptionsGroupLay->addWidget(advOptionsGroupFrame);
+		advOptionsGroup->setCheckable(true);
+
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Operating mode: "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		advOptionsGroupFrameLay->addWidget(appliedPotLblLeft = OBJ_PROP(OBJ_NAME(LBL("Applied potential: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+		advOptionsGroupFrameLay->addWidget(appliedCurLblLeft = OBJ_PROP(OBJ_NAME(LBL("Applied current: "), "experiment-params-comment"), "comment-placement", "left"), 4, 0);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Sampling interval: "), "experiment-params-comment"), "comment-placement", "left"), 5, 0);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Current range: "), "experiment-params-comment"), "comment-placement", "left"), 6, 0);
+
+		advOptionsGroupFrameLay->addWidget(potGalvModeChk = OBJ_NAME(new QCheckBox(POTENTIOSTATIC_TEXT), "log-linear-check-box"), 1, 0, 1, -1);
+		advOptionsGroupFrameLay->addWidget(openCircuitModeChk = OBJ_NAME(new QCheckBox("Open circuit"), "log-linear-check-box"), 2, 0, 1, -1);
+
+		rangeCombo = CMB();
+		auto *rangeComboList = OBJ_NAME(new QListView, "combo-list");
+		rangeCombo->setView(rangeComboList);
+		rangeCombo->addItems(QStringList() << "Autorange");
+
+		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("0"), 3, 1);
+		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("0"), 4, 1);
+		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0"), 5, 1);
+		advOptionsGroupFrameLay->addWidget(rangeCombo, 6, 1);
+
+		advOptionsGroupFrameLay->addWidget(appliedPotLblRight = OBJ_PROP(OBJ_NAME(LBL("V"), "experiment-params-comment"), "comment-placement", "right"), 3, 2);
+		advOptionsGroupFrameLay->addWidget(appliedCurLblRight = OBJ_PROP(OBJ_NAME(LBL("A"), "experiment-params-comment"), "comment-placement", "right"), 4, 2);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("s"), "experiment-params-comment"), "comment-placement", "right"), 5, 2);
+		
+		appliedCurLblLeft->hide();
+		appliedCurLblRight->hide();
+		appliedCurLed->hide();
+
+		startManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		startManualExpPbt->setIcon(QIcon(":/GUI/Resources/start.png"));
+		startManualExpPbt->setIconSize(QPixmap(":/GUI/Resources/start.png").size());
+
+		pauseManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Pause Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		stopManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Stop Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+
+		pauseManualExpPbt->hide();
+		stopManualExpPbt->hide();
+
+		auto *startButtonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+		startButtonLay->addWidget(startManualExpPbt);
+		startButtonLay->addWidget(pauseManualExpPbt);
+		startButtonLay->addWidget(stopManualExpPbt);
+		startButtonLay->addStretch(1);
+
+		advOptionsGroupFrameLay->addLayout(startButtonLay, 7, 0, 1, -1);
+
+		advOptionsGroupFrameLay->setColumnStretch(1, 1);
+
+		settingsLay->addWidget(advOptionsGroup, 0, 0, 1, -1);
 	}
 	settingsLay->addWidget(realTimeGroup, 2, 0, 1, -1);
 	settingsLay->addWidget(settingsGroup, 3, 0, 1, -1);
-	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
+	//settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
 	settingsLay->setRowStretch(8, 1);
 	//settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 
@@ -3631,7 +3706,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXP_BUTTON_TEXT), "control-button-blue"));
 	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
-	if ( (type == ET_SAVED) || (additionalSettingsWidget) ) {
+	if ( (type == ET_SAVED) || (isManualMode) ) {
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
@@ -3672,12 +3747,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	cursorModeGroup->addButton(zoomToSelectionPbt);
 	cursorModeGroup->addButton(panViewPbt);
 
-	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
-	if (!additionalSettingsWidget) {
+	auto settingsOwner = OBJ_NAME(new QFrame, "collapsible-settings-owner");
+	settingsOwner->setLayout(settingsLay);
+	
+	QScrollArea *settingsArea = OBJ_NAME(new QScrollArea(), "collapsible-settings-scroll-area");
+	settingsArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	settingsArea->setWidgetResizable(true);
+	settingsArea->setWidget(settingsOwner);
+
+	if (!isManualMode) {
 		lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
 	}
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
-	lay->addLayout(settingsLay, 1, 1);
+	lay->addWidget(settingsArea, 1, 1);
 	lay->addWidget(plot, 1, 2);
 	lay->addLayout(plotButtonsLay, 1, 3);
 	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
@@ -3698,7 +3780,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.plotCounter.stamp = 0;
 	plotHandler.plotCounter.realTimeValueStamp = 0;
 
-	if (additionalSettingsWidget) {
+	if (isManualMode) {
 		plotHandler.exp = ManualExperimentRunner::Instance();
 	}
 
@@ -3706,6 +3788,47 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	#define CLOSE_COLOR_TAG "</font>"
 
 	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
+
+	if (isManualMode) {
+		plotHandler.plotTabConnections << CONNECT(advOptionsGroup, &QGroupBox::toggled, [=](bool on) {
+			advOptionsGroupFrame->setVisible(on);
+		});
+		plotHandler.plotTabConnections << CONNECT(potGalvModeChk, &QCheckBox::stateChanged, [=](int state) {
+			switch (state) {
+			case Qt::Unchecked:
+				potGalvModeChk->setText(POTENTIOSTATIC_TEXT);
+				appliedCurLblLeft->hide();
+				appliedCurLblRight->hide();
+				appliedCurLed->hide();
+				appliedPotLblLeft->show();
+				appliedPotLblRight->show();
+				appliedPotLed->show();
+				break;
+
+			case Qt::Checked:
+				potGalvModeChk->setText(GALVANOSTATIC_TEXT);
+				appliedCurLblLeft->show();
+				appliedCurLblRight->show();
+				appliedCurLed->show();
+				appliedPotLblLeft->hide();
+				appliedPotLblRight->hide();
+				appliedPotLed->hide();
+				break;
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(openCircuitModeChk, &QCheckBox::stateChanged, [=](int state) {
+		});
+		plotHandler.plotTabConnections << CONNECT(rangeCombo, &QComboBox::currentTextChanged, [=]() {
+		});
+		plotHandler.plotTabConnections << CONNECT(appliedPotLed, &QLineEdit::textChanged, [=](const QString&) {
+		});
+		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString&) {
+		});
+		plotHandler.plotTabConnections << CONNECT(startManualExpPbt, &QPushButton::clicked, [=]() {
+			mw->StartManualExperiment(id);
+			mw->UpdateCurrentExperimentState();
+		});
+	}
 
 	plotHandler.plotTabConnections <<
 	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
@@ -4340,32 +4463,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 		plot->replot();
 	});
-	/*
-	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(xLogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y1LinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y1LogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y2LinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y2LogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	//*/
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {

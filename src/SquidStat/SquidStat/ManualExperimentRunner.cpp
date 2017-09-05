@@ -2,15 +2,18 @@
 
 #include "ExperimentUIHelper.h"
 
+#include <ExperimentCalcHelper.h>
+
 #include <QGroupBox>
 
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
-#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Timestamp (normalized)"
-#define PLOT_VAR_EWE					"Ewe"
-#define PLOT_VAR_CURRENT				"Current"
-#define PLOT_VAR_ECE					"Ece"
-#define PLOT_VAR_CURRENT_INTEGRAL		"Integral d(Current)/d(time)"
+#define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
+#define PLOT_VAR_ELAPSED_TIME_HR		"Elapsed time (hr)"
+#define PLOT_VAR_EWE					"Working electrode (V)"
+#define PLOT_VAR_CURRENT				"Current (mA)"
+#define PLOT_VAR_ECE					"Counter electrode (V)"
+#define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
 
 #define TOP_WIDGET_NAME "manual-mode-experiment"
 
@@ -47,12 +50,6 @@ QPixmap ManualExperimentRunner::GetImage() const {
 QWidget* ManualExperimentRunner::CreateUserInput() const {
 	auto *ret = WDG();
 	OBJ_NAME(ret, TOP_WIDGET_NAME);
-	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(ret)));
-
-	auto advOptionsGroup = OBJ_NAME(new QGroupBox("Advanced options (optional)"), "collapsible-group-box");
-	advOptionsGroup->setCheckable(true);
-
-	lay->addWidget(advOptionsGroup);
 
 	return ret;
 }
@@ -113,10 +110,10 @@ QStringList ManualExperimentRunner::GetXAxisParameters(ExperimentType type) cons
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_TIMESTAMP <<
-			PLOT_VAR_TIMESTAMP_NORMALIZED <<
 			PLOT_VAR_EWE <<
-			PLOT_VAR_CURRENT;
+			PLOT_VAR_CURRENT <<
+			PLOT_VAR_ELAPSED_TIME_HR <<
+			PLOT_VAR_TIMESTAMP_NORMALIZED;
 	}
 
 	return ret;
@@ -126,8 +123,8 @@ QStringList ManualExperimentRunner::GetYAxisParameters(ExperimentType type) cons
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_EWE <<
 			PLOT_VAR_CURRENT <<
+			PLOT_VAR_EWE <<
 			PLOT_VAR_ECE <<
 			PLOT_VAR_CURRENT_INTEGRAL;
 	}
@@ -135,33 +132,35 @@ QStringList ManualExperimentRunner::GetYAxisParameters(ExperimentType type) cons
 	return ret;
 }
 
-void ManualExperimentRunner::PUSH_NEW_DC_DATA_DEFINITION{
+void ManualExperimentRunner::PUSH_NEW_DC_DATA_DEFINITION {
 	static QMap<DataMap*, qreal> timestampOffset;
-	qreal timestamp = (qreal)expData.timestamp / 100000000UL;
+	qreal timestamp = (qreal)expData.timestamp / SECONDS;
+	ProcessedDCData processedDCdata = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
 
 	if (container[PLOT_VAR_CURRENT_INTEGRAL].data.isEmpty()) {
-		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, expData.ADCrawData.current / timestamp);
+		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, processedDCdata.current / timestamp / 3600.0);
 	}
 	else {
 		qreal newVal = container[PLOT_VAR_CURRENT_INTEGRAL].data.last();
-		newVal += (container[PLOT_VAR_CURRENT].data.last() + expData.ADCrawData.current) * (timestamp + container[PLOT_VAR_TIMESTAMP].data.last()) / 2.;
+		newVal += (container[PLOT_VAR_CURRENT].data.last() + processedDCdata.current) * (timestamp - container[PLOT_VAR_TIMESTAMP].data.last()) / 3600.0 / 2.;
 		PUSH_BACK_DATA(PLOT_VAR_CURRENT_INTEGRAL, newVal);
 	}
 
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
-	PUSH_BACK_DATA(PLOT_VAR_EWE, expData.ADCrawData.ewe);
-	PUSH_BACK_DATA(PLOT_VAR_ECE, expData.ADCrawData.ece);
-	PUSH_BACK_DATA(PLOT_VAR_CURRENT, expData.ADCrawData.current);
+	PUSH_BACK_DATA(PLOT_VAR_EWE, processedDCdata.EWE);
+	PUSH_BACK_DATA(PLOT_VAR_ECE, processedDCdata.ECE);
+	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedDCdata.current);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;
 	}
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED, timestamp - timestampOffset[&container]);
+	PUSH_BACK_DATA(PLOT_VAR_ELAPSED_TIME_HR, (timestamp - timestampOffset[&container]) / 3600);
 }
 void ManualExperimentRunner::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
 	SAVE_DATA_HEADER_START();
 
-	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
+	SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_CURRENT);
@@ -173,7 +172,7 @@ void ManualExperimentRunner::SaveDcDataHeader(QFile &saveFile, const ExperimentN
 void ManualExperimentRunner::SaveDcData(QFile &saveFile, const DataMap &container) const {
 	SAVE_DATA_START();
 
-	SAVE_DATA(PLOT_VAR_TIMESTAMP);
+	SAVE_DATA(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DATA(PLOT_VAR_TIMESTAMP_NORMALIZED);
 	SAVE_DATA(PLOT_VAR_EWE);
 	SAVE_DATA(PLOT_VAR_CURRENT);

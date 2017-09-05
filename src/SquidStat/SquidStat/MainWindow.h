@@ -77,6 +77,8 @@ public slots:
 	void RequestCurrentHardwareList();
 	void UpdateFirmware(const QString&, const HexRecords&);
 
+	void StartManualExperiment(const QUuid&);
+
 signals:
 	void HardwareFound(const InstrumentList&);
 	void DcDataArrived(const QUuid&, const ExperimentalDcData &expData, ExperimentTrigger *, bool paused);
@@ -151,6 +153,8 @@ private:
 	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
 	quint8 SearchForChannel(QList<InstrumentHandler>::iterator, const QUuid&);
+	
+	void CreateLogicForInstrument(InstrumentHandler&);
 };
 
 #endif // MAINWINDOW_H

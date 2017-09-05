@@ -157,3 +157,6 @@ void InstrumentOperator::SoftReset() {
 	_communicator->SendCommand((CommandID)RESET_TO_BOOTLOADER);
 
 }
+void InstrumentOperator::StartManualExperiment(quint8 channel) {
+	_communicator->SendCommand((CommandID)SET_MANUAL_MODE);
+}

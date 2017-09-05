@@ -668,6 +668,13 @@ QLabel[experiment-params-widget="low-margin"] {
 	background-color: #ffbfc0;
 }
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#collapsible-settings-scroll-area {
+	border: none;
+	margin-bottom: 20px;
+}
+#collapsible-settings-owner {
+	border: none;
+}
 #collapsible-group-box {
 	border: none;
 	border-top: 1px solid #d1d1d1;
@@ -703,8 +710,17 @@ QLabel[experiment-params-widget="low-margin"] {
 #collapsible-group-box-frame *[comment-placement="left"] {
 	margin-left: 15px;
 }
+#collapsible-group-box-frame QPushButton {
+	margin-left: 25px;
+	margin-top: 30px;
+	margin-bottom: 20px;
+}
+#collapsible-group-box-frame QLineEdit {
+	margin-top: 7px;
+}
 #collapsible-group-box-frame QCheckBox {
 	margin-top: 10px;
+	margin-left: 25px;
 }
 #collapsible-group-box-frame QComboBox,
 #collapsible-group-box-frame QLabel {
