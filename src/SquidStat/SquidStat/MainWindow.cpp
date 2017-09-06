@@ -842,16 +842,18 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, quint32 value) {
 		return;
 	}
 
+	/////////////////////////////////////////
 	Manual::SamplingParams params;
-	params.ADCbufsize = 500;
-	params.timerDiv = 10;
-	params.timerPeriod = 100;
+	params.timerDiv = 0;
+	params.timerPeriod = 390625;
+	params.ADCbufsize = 256;
+	/////////////////////////////////////////
 
 	//params = ExperimentCalcHelperClass::DoSomeMagic(value);
 
 	it->oper->SetManualSamplingParams(channel, params);
 }
-void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, quint16 setpoint, quint8 range) {
+void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, qint16 setpoint, quint8 range) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -869,9 +871,14 @@ void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, quint16 setpoint, qui
 	params.g_setpoint = setpoint;
 	params.range = range;
 
+	/////////////////////////////////////////
+	params.g_setpoint = 1024;
+	params.range = 0;
+	/////////////////////////////////////////
+
 	it->oper->SetManualGalvanoSetpoint(channel, params);
 }
-void MainWindow::SetManualPotentioSetpoint(const QUuid &id, quint16 setpoint) {
+void MainWindow::SetManualPotentioSetpoint(const QUuid &id, qint16 setpoint) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -887,6 +894,11 @@ void MainWindow::SetManualPotentioSetpoint(const QUuid &id, quint16 setpoint) {
 
 	Manual::PotentioSetpoint params;
 	params.setpoint = setpoint;
+
+	/////////////////////////////////////////
+	params.setpoint = -1024;
+	/////////////////////////////////////////
+
 
 	it->oper->SetManualPotentioSetpoint(channel, params);
 }
@@ -922,6 +934,10 @@ void MainWindow::SetCurrentRangingMode(const QUuid &id, quint8 range) {
 
 	Manual::RangingMode params;
 	params.currentRangeMode = range;
+
+	/////////////////////////////////////////
+	params.currentRangeMode = 0;
+	/////////////////////////////////////////
 
 	it->oper->SetCurrentRangingMode(channel, params);
 }

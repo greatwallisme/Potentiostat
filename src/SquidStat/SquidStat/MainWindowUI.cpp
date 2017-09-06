@@ -3853,7 +3853,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->show();
 				appliedPotLblRight->show();
 				appliedPotLed->show();
-				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
 				break;
 
 			case Qt::Checked:
@@ -3864,7 +3864,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->hide();
 				appliedPotLblRight->hide();
 				appliedPotLed->hide();
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 				break;
 			}
 		});
@@ -3878,10 +3878,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			case Qt::Checked:
 				openCircuitModeChk->setText(CELL_ON_TEXT);
 				if (potGalvModeChk->isChecked()) {
-					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 				}
 				else {
-					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
 				}
 				break;
 			}
@@ -3893,10 +3893,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::textChanged, [=](const QString&) {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString &text) {
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
@@ -3908,10 +3908,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
 
 			if (potGalvModeChk->isChecked()) {
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 			}
 			else {
-				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
 			}
 		});
 		plotHandler.plotTabConnections << CONNECT(pauseManualExpPbt, &QPushButton::clicked, [=]() {
