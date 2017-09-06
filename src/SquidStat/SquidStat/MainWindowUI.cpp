@@ -1845,7 +1845,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &newLines) {
 		for (auto it = newLines.begin(); it != newLines.end(); ++it) {
-			hwList->addItem(it->first, it->second);
+			hwList->addItem(it->name, it->channelAmount);
 		}
 		//hwList->addItems(newLines);
 	});
@@ -2047,7 +2047,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	static QMap<QString, qint8> channelAmountMap;
 	static QList<QPushButton*> channelSelectButtons;
 	//static QMap<QString, QWidget*> userInputs;
-	static QMap<QString, QUuid> ids;
+	static QMap<QString, QList<QUuid>> ids;
 
 	auto channelSelectMapper = new QSignalMapper(w);
 
@@ -2119,6 +2119,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 		selectedHardware.manual.channel[name] = channel;
 		mw->SelectHardware(name, channel);
+		mw->UpdateCurrentExperimentState();
 	});
 
 	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
@@ -2276,25 +2277,37 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &hwList) {
 		foreach(auto &hwDescr, hwList) {
-			channelAmountMap[hwDescr.first] = hwDescr.second;
-			
-			ids[hwDescr.first] = QUuid::createUuid();
+			channelAmountMap[hwDescr.name] = hwDescr.channelAmount;
 
-			//QWidget *settingsWidget = ManualExperimentRunner::Instance()->CreateUserInput();
+			auto wdg = WDG();
+			auto dataLayout = NO_MARGIN(NO_SPACING(new QStackedLayout(wdg)));
 
-			auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.first],
-				ET_DC,
-				"Manual mode",
-				ManualExperimentRunner::Instance()->GetXAxisParameters(ET_DC),
-				ManualExperimentRunner::Instance()->GetYAxisParameters(ET_DC),
-				"",
-				0,
-				true);
+			auto mapper = new QSignalMapper(wdg);
 
-			//userInputs[hwDescr.first] = settingsWidget;
+			for (int i = 0; i < hwDescr.channelAmount; ++i) {
+				ids[hwDescr.name] << QUuid::createUuid();
 
-			tabBar->insertTab(tabBar->count(), hwDescr.first);
-			stackedLay->insertWidget(tabBar->count(), dataWidget);
+				auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.name].at(i),
+					ET_DC,
+					hwDescr.name + QString(" - channel #%1").arg(i+1),
+					ManualExperimentRunner::Instance()->GetXAxisParameters(ET_DC),
+					ManualExperimentRunner::Instance()->GetYAxisParameters(ET_DC),
+					"",
+					0,
+					true,
+					hwDescr.hwModel);
+
+				mapper->setMapping(channelSelectButtons.at(i), i);
+				CONNECT(channelSelectButtons.at(i), &QPushButton::clicked,
+					mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+
+				dataLayout->addWidget(dataWidget);
+			}
+			CONNECT(mapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped),
+				dataLayout, &QStackedLayout::setCurrentIndex);
+
+			tabBar->insertTab(tabBar->count(), hwDescr.name);
+			stackedLay->insertWidget(tabBar->count(), wdg);
 		}
 
 		if (tabBar->isHidden()) {
@@ -2703,9 +2716,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-		  handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-		  if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
-      //if (majorData.saveFile) {
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
 				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 			}
 		}
@@ -3516,7 +3528,7 @@ QStringList valueHideList = {
   QString(REAL_TIME_ERROR)
 };
 
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, bool isManualMode) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, bool isManualMode, HardwareModel_t hwModel) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -3631,10 +3643,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QLabel *appliedPotLblLeft;
 	QLabel *appliedPotLblRight;
 	QLabel *appliedCurLblLeft;
-	QLabel *appliedCurLblRight;
+	QComboBox *appliedCurLblRight;
 
 	#define POTENTIOSTATIC_TEXT "Potentiostatic"
 	#define GALVANOSTATIC_TEXT	"Galvanostatic"
+	#define OCP_MODE_TEXT		"Open circuit"
+	#define CELL_ON_TEXT		"Cell On"
 
 	if (isManualMode) {
 		advOptionsGroup = OBJ_NAME(new QGroupBox("Operating conditions"), "collapsible-group-box");
@@ -3651,20 +3665,56 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Current range: "), "experiment-params-comment"), "comment-placement", "left"), 6, 0);
 
 		advOptionsGroupFrameLay->addWidget(potGalvModeChk = OBJ_NAME(new QCheckBox(POTENTIOSTATIC_TEXT), "log-linear-check-box"), 1, 0, 1, -1);
-		advOptionsGroupFrameLay->addWidget(openCircuitModeChk = OBJ_NAME(new QCheckBox("Open circuit"), "log-linear-check-box"), 2, 0, 1, -1);
+		advOptionsGroupFrameLay->addWidget(openCircuitModeChk = OBJ_NAME(new QCheckBox(OCP_MODE_TEXT), "log-linear-check-box"), 2, 0, 1, -1);
 
 		rangeCombo = CMB();
 		auto *rangeComboList = OBJ_NAME(new QListView, "combo-list");
 		rangeCombo->setView(rangeComboList);
-		rangeCombo->addItems(QStringList() << "Autorange");
+		rangeCombo->addItem("Autorange", currentRange_t::AUTORANGE);
+		switch (hwModel) {
+		case HardwareModel_t::PRIME:
+			rangeCombo->addItem("5mA - 100mA", currentRange_t::RANGE0);
+			rangeCombo->addItem("200uA - 5mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("10uA - 200uA", currentRange_t::RANGE2);
+			rangeCombo->addItem("0 - 10uA", currentRange_t::RANGE3);
+			break;
+		case HardwareModel_t::SOLO_2_0:
+		case HardwareModel_t::PLUS_2_0:
+			rangeCombo->addItem("1A", currentRange_t::RANGE0);
+			rangeCombo->addItem("100mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("10mA", currentRange_t::RANGE2);
+			rangeCombo->addItem("1mA", currentRange_t::RANGE3);
+			rangeCombo->addItem("100uA", currentRange_t::RANGE4);
+			rangeCombo->addItem("10uA", currentRange_t::RANGE5);
+			rangeCombo->addItem("1uA", currentRange_t::RANGE6);
+			rangeCombo->addItem("100nA", currentRange_t::RANGE7);
+			break;
+		case HardwareModel_t::PRIME_2_0:
+			rangeCombo->addItem("100mA", currentRange_t::RANGE0);
+			rangeCombo->addItem("10mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("1mA", currentRange_t::RANGE2);
+			rangeCombo->addItem("100uA", currentRange_t::RANGE3);
+			rangeCombo->addItem("10uA", currentRange_t::RANGE4);
+			rangeCombo->addItem("1uA", currentRange_t::RANGE5);
+			rangeCombo->addItem("100nA", currentRange_t::RANGE6);
+			rangeCombo->addItem("10nA", currentRange_t::RANGE7);
+			break;
+		}
 
 		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("0"), 3, 1);
 		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("0"), 4, 1);
 		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0"), 5, 1);
 		advOptionsGroupFrameLay->addWidget(rangeCombo, 6, 1);
 
+		appliedCurLblRight = CMB();
+		auto *appliedCurLblRightList = OBJ_NAME(new QListView, "combo-list");
+		appliedCurLblRight->setView(appliedCurLblRightList);
+		appliedCurLblRight->addItem("mA", currentRange_t::RANGE0);
+		appliedCurLblRight->addItem("uA", currentRange_t::RANGE1);
+		appliedCurLblRight->addItem("nA", currentRange_t::RANGE2);
+
 		advOptionsGroupFrameLay->addWidget(appliedPotLblRight = OBJ_PROP(OBJ_NAME(LBL("V"), "experiment-params-comment"), "comment-placement", "right"), 3, 2);
-		advOptionsGroupFrameLay->addWidget(appliedCurLblRight = OBJ_PROP(OBJ_NAME(LBL("A"), "experiment-params-comment"), "comment-placement", "right"), 4, 2);
+		advOptionsGroupFrameLay->addWidget(appliedCurLblRight, 4, 2);
 		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("s"), "experiment-params-comment"), "comment-placement", "right"), 5, 2);
 		
 		appliedCurLblLeft->hide();
@@ -3803,6 +3853,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->show();
 				appliedPotLblRight->show();
 				appliedPotLed->show();
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
 				break;
 
 			case Qt::Checked:
@@ -3813,20 +3864,85 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->hide();
 				appliedPotLblRight->hide();
 				appliedPotLed->hide();
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
 				break;
 			}
 		});
 		plotHandler.plotTabConnections << CONNECT(openCircuitModeChk, &QCheckBox::stateChanged, [=](int state) {
+			switch (state) {
+			case Qt::Unchecked:
+				openCircuitModeChk->setText(OCP_MODE_TEXT);
+				mw->SetManualOcp(id);
+				break;
+
+			case Qt::Checked:
+				openCircuitModeChk->setText(CELL_ON_TEXT);
+				if (potGalvModeChk->isChecked()) {
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+				}
+				else {
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+				}
+				break;
+			}
 		});
 		plotHandler.plotTabConnections << CONNECT(rangeCombo, &QComboBox::currentTextChanged, [=]() {
+			mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedPotLed, &QLineEdit::textChanged, [=](const QString&) {
+			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
 		});
-		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString&) {
+		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::textChanged, [=](const QString&) {
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString &text) {
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(startManualExpPbt, &QPushButton::clicked, [=]() {
 			mw->StartManualExperiment(id);
 			mw->UpdateCurrentExperimentState();
+
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
+
+			if (potGalvModeChk->isChecked()) {
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toUInt(), appliedCurLblRight->currentData().toUInt());
+			}
+			else {
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(pauseManualExpPbt, &QPushButton::clicked, [=]() {
+			if (pauseManualExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
+				mw->PauseExperiment(id);
+			}
+			else {
+				mw->ResumeExperiment(id);
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(stopManualExpPbt, &QPushButton::clicked, [=]() {
+			mw->StopExperiment(id);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentHardwareBusy, [=]() {
+			pauseManualExpPbt->show();
+			stopManualExpPbt->show();
+			startManualExpPbt->hide();
+		});
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentResumed, [=]() {
+			pauseManualExpPbt->setText(PAUSE_EXP_BUTTON_TEXT);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentPaused, [=]() {
+			pauseManualExpPbt->setText(RESUME_EXP_BUTTON_TEXT);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentCompleted, [=]() {
+			pauseManualExpPbt->hide();
+			stopManualExpPbt->hide();
+			startManualExpPbt->show();
 		});
 	}
 

@@ -10,6 +10,9 @@
 #include "CustomExperimentRunner.h"
 #include "ManualExperimentRunner.h"
 
+#define _MATH_DEFINES_DEFINED
+#include "ExperimentCalcHelper.h"
+
 #include <ExperimentFactoryInterface.h>
 #include <BuilderElementFactoryInterface.h>
 
@@ -168,7 +171,12 @@ void MainWindow::AddInstruments(InstrumentList instruments) {
 		hardware.handlers << handler;
 		CreateLogicForInstrument(hardware.handlers.last());
 
-		addingInstrumentsNames << HardwareUiDescription(instrumentToAdd.name, instrumentToAdd.channelAmount);
+		HardwareUiDescription hwUiDescr;
+		hwUiDescr.name = instrumentToAdd.name;
+		hwUiDescr.channelAmount = instrumentToAdd.channelAmount;
+		hwUiDescr.hwModel = instrumentToAdd.hwVer.hwModel;
+
+		addingInstrumentsNames << hwUiDescr;
 	}
 
 	if (needToSetEnd) {
@@ -414,7 +422,7 @@ void MainWindow::UpdateCurrentExperimentState() {
 	}
 }
 void MainWindow::SelectHardware(const QString &name, quint8 channel) {
-	auto hwIt = SearchForHandler(name, channel);
+	auto hwIt = SearchForHandler(name/*, channel*/);
 	if (hwIt == hardware.handlers.end()) {
 		return;
 	}
@@ -697,7 +705,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 	LOG() << "Start experiment";
 	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
 }
-QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QString &name, quint8 channel) {
+QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QString &name/*, quint8 channel*/) {
 	auto hwIt = hardware.handlers.begin();
 	for (; hwIt != hardware.handlers.end(); ++hwIt) {
 		if (name == hwIt->info.name) {
@@ -733,7 +741,7 @@ quint8 MainWindow::SearchForChannel(QList<MainWindow::InstrumentHandler>::iterat
 	return -1;
 }
 void MainWindow::StopExperiment(const QString &name, quint8 channel) {
-	auto hwIt = SearchForHandler(name, channel);
+	auto hwIt = SearchForHandler(name/*, channel*/);
 	if (hwIt == hardware.handlers.end()) {
 		return;
 	}
@@ -741,7 +749,7 @@ void MainWindow::StopExperiment(const QString &name, quint8 channel) {
 	StopExperiment(hwIt->experiment[channel].id);
 }
 void MainWindow::PauseExperiment(const QString &name, quint8 channel) {
-	auto hwIt = SearchForHandler(name, channel);
+	auto hwIt = SearchForHandler(name/*, channel*/);
 	if (hwIt == hardware.handlers.end()) {
 		return;
 	}
@@ -750,7 +758,7 @@ void MainWindow::PauseExperiment(const QString &name, quint8 channel) {
 
 }
 void MainWindow::ResumeExperiment(const QString &name, quint8 channel) {
-	auto hwIt = SearchForHandler(name, channel);
+	auto hwIt = SearchForHandler(name/*, channel*/);
 	if (hwIt == hardware.handlers.end()) {
 		return;
 	}
@@ -803,6 +811,25 @@ void MainWindow::StopExperiment(const QUuid &id) {
 	it->oper->StopExperiment(channel);
 }
 void MainWindow::StartManualExperiment(const QUuid &id) {
+	auto it(hardware.currentInstrument.handler);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = hardware.currentInstrument.channel;
+
+	if (it->experiment[channel].busy) {
+		return;
+	}
+
+	it->experiment[channel].busy = true;
+	it->experiment[channel].paused = false;
+	it->experiment[channel].id = id;
+
+	it->oper->StartManualExperiment(channel);
+}
+void MainWindow::SetManualSamplingParams(const QUuid &id, quint32 value) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -811,12 +838,94 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 
 	auto channel = SearchForChannel(it, id);
 
-	if (it->experiment[channel].busy) {
+	if (!it->experiment[channel].busy) {
 		return;
 	}
 
-	it->oper->StopExperiment(channel);
+	Manual::SamplingParams params;
+	params.ADCbufsize = 500;
+	params.timerDiv = 10;
+	params.timerPeriod = 100;
+
+	//params = ExperimentCalcHelperClass::DoSomeMagic(value);
+
+	it->oper->SetManualSamplingParams(channel, params);
 }
+void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, quint16 setpoint, quint8 range) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+
+	Manual::GalvanoSetpoint params;
+	params.g_setpoint = setpoint;
+	params.range = range;
+
+	it->oper->SetManualGalvanoSetpoint(channel, params);
+}
+void MainWindow::SetManualPotentioSetpoint(const QUuid &id, quint16 setpoint) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+
+	Manual::PotentioSetpoint params;
+	params.setpoint = setpoint;
+
+	it->oper->SetManualPotentioSetpoint(channel, params);
+}
+void MainWindow::SetManualOcp(const QUuid &id) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+
+	it->oper->SetManualOcp(channel);
+}
+void MainWindow::SetCurrentRangingMode(const QUuid &id, quint8 range) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+
+	Manual::RangingMode params;
+	params.currentRangeMode = range;
+
+	it->oper->SetCurrentRangingMode(channel, params);
+}
+
 void MainWindow::FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {
 	if (bc.type == BuilderContainer::ELEMENT) {
 		bc.elem.ptr = elemMap.value(bc.elem.name, 0);

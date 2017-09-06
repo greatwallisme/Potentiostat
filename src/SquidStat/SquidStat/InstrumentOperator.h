@@ -22,6 +22,11 @@ public slots:
 	void SoftReset();
 
 	void StartManualExperiment(quint8 channel);
+	void SetManualSamplingParams(quint8 channel, const Manual::SamplingParams&);
+	void SetManualGalvanoSetpoint(quint8 channel, const Manual::GalvanoSetpoint&);
+	void SetManualPotentioSetpoint(quint8 channel, const Manual::PotentioSetpoint&);
+	void SetManualOcp(quint8 channel);
+	void SetCurrentRangingMode(quint8 channel, const Manual::RangingMode&);
 
 private slots:
 	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);

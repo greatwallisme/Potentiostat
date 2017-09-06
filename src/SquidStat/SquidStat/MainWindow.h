@@ -36,7 +36,13 @@ struct StartExperimentParameters {
 	QString filePath;
 };
 
-typedef QPair<QString, quint8> HardwareUiDescription;
+struct HardwareUiDescription {
+	QString name;
+	quint8 channelAmount;
+	HardwareModel_t hwModel;
+};
+
+//typedef QPair<QString, quint8> HardwareUiDescription;
 Q_DECLARE_METATYPE(HardwareUiDescription)
 
 class MainWindow : public QMainWindow {
@@ -78,6 +84,11 @@ public slots:
 	void UpdateFirmware(const QString&, const HexRecords&);
 
 	void StartManualExperiment(const QUuid&);
+	void SetManualSamplingParams(const QUuid&, quint32 value);
+	void SetManualGalvanoSetpoint(const QUuid&, quint16 setpoint, quint8 range);
+	void SetManualPotentioSetpoint(const QUuid&, quint16 setpoint);
+	void SetManualOcp(const QUuid&);
+	void SetCurrentRangingMode(const QUuid&, quint8 range);
 
 signals:
 	void HardwareFound(const InstrumentList&);
@@ -150,7 +161,7 @@ private:
 	} builderElements;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
-	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name/*, quint8 channel*/);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
 	quint8 SearchForChannel(QList<InstrumentHandler>::iterator, const QUuid&);
 	

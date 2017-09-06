@@ -158,5 +158,23 @@ void InstrumentOperator::SoftReset() {
 
 }
 void InstrumentOperator::StartManualExperiment(quint8 channel) {
-	_communicator->SendCommand((CommandID)SET_MANUAL_MODE);
+	_communicator->SendCommand((CommandID)SET_MANUAL_MODE, channel);
+}
+
+#define TO_BYTE_ARRAY(a)	QByteArray((char*)&a, sizeof(a))
+
+void InstrumentOperator::SetManualSamplingParams(quint8 channel, const Manual::SamplingParams &params) {
+	_communicator->SendCommand((CommandID)MANUAL_SAMPLING_PARAMS_SET, channel, TO_BYTE_ARRAY(params));
+}
+void InstrumentOperator::SetManualGalvanoSetpoint(quint8 channel, const Manual::GalvanoSetpoint &params) {
+	_communicator->SendCommand((CommandID)MANUAL_GALV_SETPOINT_SET, channel, TO_BYTE_ARRAY(params));
+}
+void InstrumentOperator::SetManualPotentioSetpoint(quint8 channel, const Manual::PotentioSetpoint &params) {
+	_communicator->SendCommand((CommandID)MANUAL_POT_SETPOINT_SET, channel, TO_BYTE_ARRAY(params));
+}
+void InstrumentOperator::SetManualOcp(quint8 channel) {
+	_communicator->SendCommand((CommandID)MANUAL_OCP_SET, channel);
+}
+void InstrumentOperator::SetCurrentRangingMode(quint8 channel, const Manual::RangingMode &params) {
+	_communicator->SendCommand((CommandID)MANUAL_CURRENT_RANGING_MODE_SET, channel, TO_BYTE_ARRAY(params));
 }

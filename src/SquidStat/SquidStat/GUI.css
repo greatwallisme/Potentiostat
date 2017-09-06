@@ -717,6 +717,7 @@ QLabel[experiment-params-widget="low-margin"] {
 }
 #collapsible-group-box-frame QLineEdit {
 	margin-top: 7px;
+	margin-left: 5px;
 }
 #collapsible-group-box-frame QCheckBox {
 	margin-top: 10px;
@@ -725,6 +726,7 @@ QLabel[experiment-params-widget="low-margin"] {
 #collapsible-group-box-frame QComboBox,
 #collapsible-group-box-frame QLabel {
 	margin-top: 7px;
+	margin-left: 5px;
 }
 #collapsible-group-box-frame *[add-name="real-time-values"] {
 	margin-top: 7px;
