@@ -75,12 +75,12 @@ MainWindow::~MainWindow() {
 	instrumentEnumerator->deleteLater();
 
 	CleanupCurrentHardware();
-    delete ui;
 
 	CleanupExperiments();
 	CleanupBuilderElements();
 
 	delete ManualExperimentRunner::Instance();
+	delete ui;
 }
 void MainWindow::CleanupExperiments() {
 	foreach(auto exp, prebuiltExperiments.customExpMap) {
@@ -908,7 +908,7 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	LOG() << "Manual experiment started";
 	it->oper->StartManualExperiment(channel);
 }
-void MainWindow::SetManualSamplingParams(const QUuid &id, quint32 value) {
+void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -921,14 +921,13 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, quint32 value) {
 		return;
 	}
 
-	/////////////////////////////////////////
 	Manual::SamplingParams params;
-	params.timerDiv = 0;
-	params.timerPeriod = 390625;
-	params.ADCbufsize = 256;
-	/////////////////////////////////////////
+	ExperimentNode_t node;
 
-	//params = ExperimentCalcHelperClass::DoSomeMagic(value);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(it->info.hwVer.hwModel, &node, value);
+	params.timerDiv = node.samplingParams.ADCTimerDiv;
+	params.timerPeriod = node.samplingParams.ADCTimerPeriod;
+	params.ADCbufsize = node.samplingParams.ADCBufferSizeOdd;
 
 	it->oper->SetManualSamplingParams(channel, params);
 }
@@ -951,8 +950,8 @@ void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, qint16 setpoint, quin
 	params.range = range;
 
 	/////////////////////////////////////////
-	params.g_setpoint = 1024;
-	params.range = 0;
+	//params.g_setpoint = 1024;
+	//params.range = 0;
 	/////////////////////////////////////////
 
 	it->oper->SetManualGalvanoSetpoint(channel, params);
@@ -975,7 +974,7 @@ void MainWindow::SetManualPotentioSetpoint(const QUuid &id, qint16 setpoint) {
 	params.setpoint = setpoint;
 
 	/////////////////////////////////////////
-	params.setpoint = -1024;
+	//params.setpoint = -1024;
 	/////////////////////////////////////////
 
 

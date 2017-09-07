@@ -3712,9 +3712,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 		}
 
-		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("0"), 3, 1);
-		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("0"), 4, 1);
-		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0"), 5, 1);
+		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("-1024"), 3, 1);
+		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("1024"), 4, 1);
+		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0.1"), 5, 1);
 		advOptionsGroupFrameLay->addWidget(rangeCombo, 6, 1);
 
 		appliedCurLblRight = CMB();
@@ -3960,13 +3960,13 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
 		});
 		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString &text) {
-			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 		});
 		plotHandler.plotTabConnections << CONNECT(startManualExpPbt, &QPushButton::clicked, [=]() {
 			mw->StartManualExperiment(id);
 			mw->UpdateCurrentExperimentState();
 
-			mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 			if (potGalvModeChk->isChecked()) {
 				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
@@ -3984,7 +3984,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				mw->ResumeManualExperiment(id);
 				mw->UpdateCurrentExperimentState();
 
-				mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
+				mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 				if (potGalvModeChk->isChecked()) {
 					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());

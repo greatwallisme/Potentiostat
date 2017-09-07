@@ -84,7 +84,7 @@ public slots:
 	void UpdateFirmware(const QString&, const HexRecords&);
 
 	void StartManualExperiment(const QUuid&);
-	void SetManualSamplingParams(const QUuid&, quint32 value);
+	void SetManualSamplingParams(const QUuid&, double value);
 	void SetManualGalvanoSetpoint(const QUuid&, qint16 setpoint, quint8 range);
 	void SetManualPotentioSetpoint(const QUuid&, qint16 setpoint);
 	void SetManualOcp(const QUuid&);
