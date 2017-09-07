@@ -822,11 +822,90 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	if (it->experiment[channel].busy) {
 		return;
 	}
+	
+	InstrumentInfo &instrumentInfo(it->info);
+
+	ExperimentNotes notes;
+
+	if (!MainWindowUI::GetExperimentNotes(this, notes)) {
+		return;
+	}
+
+	QSettings settings(SQUID_STAT_PARAMETERS_INI, QSettings::IniFormat);
+	QString dirName = settings.value(DATA_SAVE_PATH, "").toString();
+
+	auto expPtr = ManualExperimentRunner::Instance();
+	auto types = expPtr->GetTypes();
+
+	QList<StartExperimentParameters> startParams;
+
+	hardware.currentInstrument.handler->trigger->SetUuid(id);
+	bool ok = true;
+	foreach(auto type, types) {
+		StartExperimentParameters curParam;
+		curParam.id = id;
+		curParam.type = type;
+		curParam.exp = expPtr;
+		curParam.cal = instrumentInfo.calData[channel];
+		curParam.hwVer = instrumentInfo.hwVer;
+		curParam.notes = notes;
+
+		QString tabName = expPtr->GetShortName() + " (" + QDateTime::currentDateTime().toString(Qt::SystemLocaleShortDate) + ")";
+		if (types.count() > 1) {
+			switch (type) {
+			case ET_DC:
+				tabName = "DC - " + tabName;
+				break;
+			case ET_AC:
+				tabName = "AC - " + tabName;
+				break;
+			}
+		}
+		curParam.name = tabName;
+		tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|\\.]"), "_");
+
+		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Data files (*.csv)");
+
+		if (dialogRet.isEmpty()) {
+			ok = false;
+			break;
+		}
+
+		dirName = QFileInfo(dialogRet).absolutePath();
+		settings.setValue(DATA_SAVE_PATH, dirName);
+
+		auto saveFile = new QFile(this);
+		saveFile->setFileName(QFileInfo(dialogRet).absoluteFilePath());
+		if (!saveFile->open(QIODevice::WriteOnly)) {
+			saveFile->deleteLater();
+			ok = false;
+			break;
+		}
+		curParam.file = saveFile;
+		curParam.filePath = QFileInfo(dialogRet).absoluteFilePath();
+
+		startParams << curParam;
+	}
+
+	if (!ok) {
+		foreach(auto &param, startParams) {
+			param.file->close();
+			param.file->deleteLater();
+		}
+		return;
+	}
+
+	if (startParams.empty()) {
+		return;
+	}
+
+	emit SetManualStartParams(startParams.first());
 
 	it->experiment[channel].busy = true;
 	it->experiment[channel].paused = false;
 	it->experiment[channel].id = id;
 
+	LOG() << "Manual experiment started";
 	it->oper->StartManualExperiment(channel);
 }
 void MainWindow::SetManualSamplingParams(const QUuid &id, quint32 value) {
@@ -940,6 +1019,86 @@ void MainWindow::SetCurrentRangingMode(const QUuid &id, quint8 range) {
 	/////////////////////////////////////////
 
 	it->oper->SetCurrentRangingMode(channel, params);
+}
+void MainWindow::StopManualExperiment(const QUuid &id) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+
+	/////////////////////////////////////////
+	Manual::SamplingParams params;
+	params.timerDiv = 0;
+	params.timerPeriod = 390625;
+	params.ADCbufsize = 128;
+	/////////////////////////////////////////
+
+	SetManualOcp(id);
+	it->oper->SetManualSamplingParams(channel, params);
+
+	it->experiment[channel].busy = false;
+
+	it->experiment[channel].busy = false;
+	it->experiment[channel].paused = false;
+
+
+	LOG() << "Manual experiment completed";
+	emit ExperimentCompleted(id);
+
+	it->experiment[channel].id = QUuid();
+}
+void MainWindow::PauseManualExperiment(const QUuid &id) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+	it->experiment[channel].paused = true;
+
+	/////////////////////////////////////////
+	Manual::SamplingParams params;
+	params.timerDiv = 0;
+	params.timerPeriod = 390625;
+	params.ADCbufsize = 128;
+	/////////////////////////////////////////
+
+	//params = ExperimentCalcHelperClass::DoSomeMagic(value);
+
+	SetManualOcp(id);
+	it->oper->SetManualSamplingParams(channel, params);
+
+	LOG() << "Manual experiment paused";
+	emit ExperimentPaused(id);
+}
+void MainWindow::ResumeManualExperiment(const QUuid &id) {
+	auto it = SearchForHandler(id);
+
+	if (it == hardware.handlers.end()) {
+		return;
+	}
+
+	auto channel = SearchForChannel(it, id);
+
+	if (!it->experiment[channel].busy) {
+		return;
+	}
+	it->experiment[channel].paused = false;
+
+	LOG() << "Manual experiment resumed";
+	emit ExperimentResumed(id);
 }
 
 void MainWindow::FillElementPointers(BuilderContainer &bc, const QMap<QString, AbstractBuilderElement*> &elemMap) {

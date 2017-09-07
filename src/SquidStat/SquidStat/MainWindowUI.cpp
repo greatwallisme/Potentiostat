@@ -2319,6 +2319,15 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &names) {
 		foreach(auto &name, names) {
+			foreach(auto curId, ids[name]) {
+				auto &handlers(dataTabs.plots[curId]);
+
+				for (auto it = handlers.begin(); it != handlers.end(); ++it) {
+					foreach(auto conn, it->plotTabConnections) {
+						QObject::disconnect(conn);
+					}
+				}
+			}
 			channelAmountMap.remove(name);
 
 			int currentIndex = -1;
@@ -2742,9 +2751,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.plotCounter.stamp = curStamp + 50;
 		}
 	};
-	CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	auto acDataArrivedLambda = [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2786,7 +2794,10 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.plot->replot();
 			handler.plotCounter.stamp = curStamp + 50;
 		}
-	});
+	};
+
+	CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
+	CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
 
 	return w;
 }
@@ -3830,14 +3841,64 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.plotCounter.stamp = 0;
 	plotHandler.plotCounter.realTimeValueStamp = 0;
 
+	/*
 	if (isManualMode) {
 		plotHandler.exp = ManualExperimentRunner::Instance();
 	}
+	//*/
 
 	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
 	#define CLOSE_COLOR_TAG "</font>"
 
 	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
+
+	auto y1ComboHandler = [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->data[QwtPlot::yLeft] = &it->container[curText];
+			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
+			if (-1 != y1Combo->findText(it->curve1->title().text())) {
+				it->curve1->setTitle(curText);
+			}
+		}
+		handler.plot->replot();
+	};
+	auto y2ComboHandler = [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yRight, title);
+
+		if (curText == NONE_Y_AXIS_VARIABLE) {
+			handler.plot->enableAxis(QwtPlot::yRight, false);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->detach();
+			}
+		}
+		else {
+			handler.plot->enableAxis(QwtPlot::yRight);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->attach(handler.plot);
+
+				it->data[QwtPlot::yRight] = &it->container[curText];
+
+				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
+				if (-1 != y2Combo->findText(it->curve2->title().text())) {
+					it->curve2->setTitle(curText);
+				}
+			}
+		}
+
+		handler.plot->replot();
+	};
 
 	if (isManualMode) {
 		plotHandler.plotTabConnections << CONNECT(advOptionsGroup, &QGroupBox::toggled, [=](bool on) {
@@ -3916,14 +3977,26 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		});
 		plotHandler.plotTabConnections << CONNECT(pauseManualExpPbt, &QPushButton::clicked, [=]() {
 			if (pauseManualExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
-				mw->PauseExperiment(id);
+				mw->PauseManualExperiment(id);
+				mw->UpdateCurrentExperimentState();
 			}
 			else {
-				mw->ResumeExperiment(id);
+				mw->ResumeManualExperiment(id);
+				mw->UpdateCurrentExperimentState();
+
+				mw->SetManualSamplingParams(id, samplingIntLed->text().toInt());
+
+				if (potGalvModeChk->isChecked()) {
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				}
+				else {
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				}
 			}
 		});
 		plotHandler.plotTabConnections << CONNECT(stopManualExpPbt, &QPushButton::clicked, [=]() {
-			mw->StopExperiment(id);
+			mw->StopManualExperiment(id);
+			mw->UpdateCurrentExperimentState();
 		});
 
 		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentHardwareBusy, [=]() {
@@ -3944,6 +4017,50 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			stopManualExpPbt->hide();
 			startManualExpPbt->show();
 		});
+
+		auto setManualStartParams = [=](const StartExperimentParameters &startParams) {
+			PlotHandler &handler(dataTabs.plots[startParams.id][startParams.type]);
+
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve1->detach();
+				delete it->curve1;
+				it->curve2->detach();
+				delete it->curve2;
+			}
+			handler.data.clear();
+			
+			handler.exp = startParams.exp;
+			handler.plotCounter.stamp = 0;
+			handler.plotCounter.realTimeValueStamp = 0;
+			handler.data << DataMapVisualization();
+
+			DataMapVisualization &currentData(handler.data.first());
+
+			currentData.saveFile = startParams.file;
+			currentData.filePath = QFileInfo(startParams.file->fileName()).absoluteFilePath();
+			currentData.curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);;
+			currentData.curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);;
+			currentData.cal = startParams.cal;
+			currentData.hwVer = startParams.hwVer;
+			currentData.notes = startParams.notes;
+			
+			currentData.data[QwtPlot::xBottom] = &currentData.container[handler.varCombo[QwtPlot::xBottom]->currentText()];
+			currentData.data[QwtPlot::yLeft] = &currentData.container[handler.varCombo[QwtPlot::yLeft]->currentText()];
+			currentData.data[QwtPlot::yRight] = &currentData.container[handler.varCombo[QwtPlot::yRight]->currentText()];
+
+			currentData.curve1->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]));
+			currentData.curve2->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]));
+
+			currentData.curve1->setTitle(handler.varCombo[QwtPlot::yLeft]->currentText());
+			currentData.curve2->setTitle(handler.varCombo[QwtPlot::yRight]->currentText());
+
+			currentData.curve1->attach(handler.plot);
+
+			if (handler.varCombo[QwtPlot::yRight]->currentText() != NONE_Y_AXIS_VARIABLE) {
+				currentData.curve2->attach(handler.plot);
+			}
+		};
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::SetManualStartParams, setManualStartParams);
 	}
 
 	plotHandler.plotTabConnections <<
@@ -4792,54 +4909,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		handler.plot->replot();
 	});
 
-	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id][type]);
-
-		QwtText title;
-		title.setFont(axisTitleFont);
-		title.setText(curText);
-		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
-
-		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			it->data[QwtPlot::yLeft] = &it->container[curText];
-			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
-			if(-1 != y1Combo->findText(it->curve1->title().text())) {
-				it->curve1->setTitle(curText);
-			}
-		}
-		handler.plot->replot();
-	});
-
-	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id][type]);
-
-		QwtText title;
-		title.setFont(axisTitleFont);
-		title.setText(curText);
-		handler.plot->setAxisTitle(QwtPlot::yRight, title);
-
-		if (curText == NONE_Y_AXIS_VARIABLE) {
-			handler.plot->enableAxis(QwtPlot::yRight, false);
-			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-				it->curve2->detach();
-			}
-		}
-		else {
-			handler.plot->enableAxis(QwtPlot::yRight);
-			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-				it->curve2->attach(handler.plot);
-
-				it->data[QwtPlot::yRight] = &it->container[curText];
-
-				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
-				if (-1 != y2Combo->findText(it->curve2->title().text())) {
-					it->curve2->setTitle(curText);
-				}
-			}
-		}
-
-		handler.plot->replot();
-	});
+	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, y1ComboHandler);
+	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, y2ComboHandler);
 
 	dataTabs.plots[id][type] = plotHandler;
 	DataMapVisualization &majorData(dataTabs.plots[id][type].data.first());

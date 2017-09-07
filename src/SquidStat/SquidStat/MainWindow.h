@@ -89,6 +89,9 @@ public slots:
 	void SetManualPotentioSetpoint(const QUuid&, qint16 setpoint);
 	void SetManualOcp(const QUuid&);
 	void SetCurrentRangingMode(const QUuid&, quint8 range);
+	void StopManualExperiment(const QUuid&);
+	void PauseManualExperiment(const QUuid&);
+	void ResumeManualExperiment(const QUuid&);
 
 signals:
 	void HardwareFound(const InstrumentList&);
@@ -116,6 +119,8 @@ signals:
 	void EditCustomExperiment(const CustomExperiment&);
 
 	void CurrentHardwareList(const InstrumentList&);
+
+	void SetManualStartParams(const StartExperimentParameters&);
 
 private:
 	void CleanupCurrentHardware();

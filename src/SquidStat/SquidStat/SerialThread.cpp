@@ -36,6 +36,9 @@ void SerialThread::ErrorOnSerial(QSerialPort::SerialPortError error) {
 	this->quit();
 }
 void SerialThread::DataToSend(const QByteArray &data) {
+	if (!_serialPort->isWritable()) {
+		return;
+	}
 	_serialPort->write(data);
   //_serialPort->waitForBytesWritten();
 }
