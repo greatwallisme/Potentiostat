@@ -123,7 +123,7 @@ NodesData DiffPulseVoltammetry_galv::GetNodesData(const UserInput &inputs, const
   exp.nodeType = DCNODE_DIFFPULSE_GALV;
   exp.tMin = 0;
   exp.tMax = 0xFFFFFFFFFFFFFFFF;
-  currentRange_t range = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, MAX(ABS(startCurrent),ABS(IFinal)));
+  currentRange_t range = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, MAX(fabs(startCurrent),fabs(IFinal)));
   exp.currentRangeMode = exp.DCPulseDiff_galv.Irange = range;
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, (qint32)round(pulsePeriod), (qint32)round(pulseWidth), &exp);
   exp.DCPulseDiff_galv.IStart = ExperimentCalcHelperClass::GetBINCurrent(&calData, range, startCurrent);

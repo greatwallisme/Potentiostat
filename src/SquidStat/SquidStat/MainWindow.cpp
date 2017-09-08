@@ -924,6 +924,8 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 	Manual::SamplingParams params;
 	ExperimentNode_t node;
 
+  value = value <= 0.0001 ? 1 : value;
+
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(it->info.hwVer.hwModel, &node, value);
 	params.timerDiv = node.samplingParams.ADCTimerDiv;
 	params.timerPeriod = node.samplingParams.ADCTimerPeriod;
@@ -931,7 +933,7 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 
 	it->oper->SetManualSamplingParams(channel, params);
 }
-void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, qint16 setpoint, quint8 range) {
+void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, double setpoint) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -946,8 +948,9 @@ void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, qint16 setpoint, quin
 	}
 
 	Manual::GalvanoSetpoint params;
-	params.g_setpoint = setpoint;
-	params.range = range;
+  
+	params.range = ExperimentCalcHelperClass::GetMinCurrentRange(it->info.hwVer.hwModel, &it->info.calData[channel], setpoint);
+  params.g_setpoint = ExperimentCalcHelperClass::GetBINCurrent(&it->info.calData[channel], (currentRange_t)params.range, setpoint);
 
 	/////////////////////////////////////////
 	//params.g_setpoint = 1024;
@@ -956,7 +959,7 @@ void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, qint16 setpoint, quin
 
 	it->oper->SetManualGalvanoSetpoint(channel, params);
 }
-void MainWindow::SetManualPotentioSetpoint(const QUuid &id, qint16 setpoint) {
+void MainWindow::SetManualPotentioSetpoint(const QUuid &id, double setpoint) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -971,7 +974,7 @@ void MainWindow::SetManualPotentioSetpoint(const QUuid &id, qint16 setpoint) {
 	}
 
 	Manual::PotentioSetpoint params;
-	params.setpoint = setpoint;
+	params.setpoint = ExperimentCalcHelperClass::GetBINVoltageForDAC(&it->info.calData[channel], setpoint);
 
 	/////////////////////////////////////////
 	//params.setpoint = -1024;

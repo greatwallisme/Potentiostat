@@ -59,6 +59,7 @@ struct ResponsePacket {
 	char data[0];
 };
 
+#pragma pack(push, 1)
 namespace Manual {
 	struct SamplingParams {
 		uint8_t timerDiv;
@@ -79,5 +80,7 @@ namespace Manual {
 		uint8_t currentRangeMode;
 	};
 }
+
+#pragma pack(pop)
 
 #pragma pack(pop)

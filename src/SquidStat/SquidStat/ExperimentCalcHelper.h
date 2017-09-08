@@ -28,7 +28,7 @@ public:
     double dEdt, const double targetSamplingInterval = 0);
   static void GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
     double dIdt, currentRange_t currentRange, const double samplingInterval = 0);
-  static void GetSamplingParameters_pulse(HardwareModel_t HWversion, quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode);
+  static void GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode);
 	static currentRange_t GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent);
 	static int16_t GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent);
 	static int16_t GetBINVoltageForDAC(const cal_t * calData, double targetVoltage);
