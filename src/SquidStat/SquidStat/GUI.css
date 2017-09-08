@@ -645,23 +645,56 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	background-color: #ce2026;
 }
+#channel-selecting-placeholder {
+	padding-top: 20px;
+	padding-left: 10px;
+}
+#select-channel-button {
+	border: 5px solid #ffbfc0;
+	background-color: #ffffff;
+	
+	font-size: 22px;
+	color: #ce2026;
+	
+	margin: 5px;
+	margin-right: 0px;
+	margin-bottom: 20px;
+	padding: 15px;
+	padding-top: 4px;
+	padding-bottom: 7px;
+}
+#select-channel-button:checked {
+	border: 5px solid #ce2026;
+	background-color: #ffbfc0;
+}
 /*//////////////         NEW DATA WINDOW       ////////////////////*/
+#collapsible-settings-scroll-area {
+	border: none;
+	margin-bottom: 20px;
+}
+#collapsible-settings-owner {
+	border: none;
+}
 #collapsible-group-box {
 	border: none;
 	border-top: 1px solid #d1d1d1;
+	
 	margin: 0px;
-	margin-top: 40px;
+	margin-top: 25px;
+	margin-bottom: 1px;
 	
 	font-family: "Segoe UI";
 	font-weight: bold;
 	font-size: 15px;
 	color: #4E5861;
+	
+	min-width: 300px;
 }
 #collapsible-group-box::title {
 	subcontrol-origin: margin;
 	
 	margin: 0px;
-	margin-top: 10px;
+	margin-top: 1px;
 	margin-left: 10px;
 }
 #collapsible-group-box::indicator {
@@ -677,12 +710,23 @@ QLabel[experiment-params-widget="low-margin"] {
 #collapsible-group-box-frame *[comment-placement="left"] {
 	margin-left: 15px;
 }
+#collapsible-group-box-frame QPushButton {
+	margin-left: 25px;
+	margin-top: 30px;
+	margin-bottom: 20px;
+}
+#collapsible-group-box-frame QLineEdit {
+	margin-top: 7px;
+	margin-left: 5px;
+}
 #collapsible-group-box-frame QCheckBox {
 	margin-top: 10px;
+	margin-left: 25px;
 }
 #collapsible-group-box-frame QComboBox,
 #collapsible-group-box-frame QLabel {
 	margin-top: 7px;
+	margin-left: 5px;
 }
 #collapsible-group-box-frame *[add-name="real-time-values"] {
 	margin-top: 7px;

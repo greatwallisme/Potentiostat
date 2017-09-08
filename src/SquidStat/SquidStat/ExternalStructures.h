@@ -59,4 +59,25 @@ struct ResponsePacket {
 	char data[0];
 };
 
+namespace Manual {
+	struct SamplingParams {
+		uint8_t timerDiv;
+		uint32_t timerPeriod;
+		uint16_t ADCbufsize;
+	};
+
+	struct GalvanoSetpoint {
+		int16_t g_setpoint;
+		uint8_t range;
+	};
+
+	struct PotentioSetpoint {
+		int16_t setpoint;
+	};
+
+	struct RangingMode {
+		uint8_t currentRangeMode;
+	};
+}
+
 #pragma pack(pop)

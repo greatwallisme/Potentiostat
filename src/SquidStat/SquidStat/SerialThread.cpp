@@ -19,7 +19,7 @@ void SerialThread::run() {
 	connect(_serialPort, &QSerialPort::readyRead,
 		this, &SerialThread::DataArrived, Qt::QueuedConnection);
 
-	connect(_serialPort, &QSerialPort::errorOccurred, this, &SerialThread::ErrorOnSerial);
+	//connect(_serialPort, &QSerialPort::errorOccurred, this, &SerialThread::ErrorOnSerial);
 
 	_serialPort->open(QIODevice::ReadWrite);
 
@@ -36,6 +36,9 @@ void SerialThread::ErrorOnSerial(QSerialPort::SerialPortError error) {
 	this->quit();
 }
 void SerialThread::DataToSend(const QByteArray &data) {
+	if (!_serialPort->isWritable()) {
+		return;
+	}
 	_serialPort->write(data);
   //_serialPort->waitForBytesWritten();
 }

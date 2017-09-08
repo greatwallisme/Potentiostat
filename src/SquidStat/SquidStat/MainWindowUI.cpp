@@ -58,6 +58,7 @@
 #include "ExperimentReader.h"
 #include "HexLoader.h"
 #include "UIEventFilters.hpp"
+#include "ManualExperimentRunner.h"
 
 #include <functional>
 #include <QScrollBar>
@@ -74,6 +75,7 @@
 #include <QGroupBox>
 #include <QStandardPaths>
 #include <QDesktopWidget>
+#include <QSignalMapper>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -107,6 +109,9 @@ MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 {
 	prebuiltExperimentData.userInputs = 0;
 	builderTabs.userInputs = 0;
+	selectedHardware.prebuilt.exp = 0;
+	selectedHardware.manual.exp = ManualExperimentRunner::Instance();
+	selectedHardware.prebuilt.channel = 0;
 
 	mw->setObjectName("mainUI");
 	mw->ApplyStyle();
@@ -122,13 +127,16 @@ void MainWindowUI::CreateMenu() {
 
 	auto moreOptionsMenu = new QMenu("More Options");
 
-	moreOptionsMenu->addAction(GetUpgradeHardwareAction());
+	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
 
 	menuBar->addMenu(moreOptionsMenu);
 	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
 
 	CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
-
+	
+	CONNECT(updateHardware, &QAction::triggered, [=]() {
+		GetUpdateFirmwareDialog(mw);
+	});
 	mw->setMenuBar(menuBar);
 }
 void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
@@ -241,15 +249,6 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 
 	dialog->deleteLater();
 }
-QAction* MainWindowUI::GetUpgradeHardwareAction() {
-	auto action = new QAction("Update Hardware");
-
-	CONNECT(action, &QAction::triggered, [=]() {
-		GetUpdateFirmwareDialog(mw);
-	});
-
-	return action;
-}
 void MainWindowUI::CreateCentralWidget() {
 	QWidget *centralWidget = OBJ_NAME(WDG(), "central-widget");
 	QGridLayout *centralLayout = NO_SPACING(NO_MARGIN(new QGridLayout(centralWidget)));
@@ -294,15 +293,17 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	lay->addWidget(barWidget);
 	lay->addLayout(widgetsLayout);
 
-	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 	widgetsLayout->addWidget(GetRunExperimentTab());
 	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
+	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
 	
-	auto *pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
+	QPushButton *pbt;
+	
+	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
 	pbt->setCheckable(true);
 	pbt->setChecked(true);
 	buttonGroup->addButton(pbt);
@@ -312,21 +313,11 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		if (!checked) {
 			return;
 		}
-		
-		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
-	});
-
-	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
-	pbt->setCheckable(true);
-	buttonGroup->addButton(pbt);
-	barLayout->addWidget(pbt);
-
-	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
-		if (!checked) {
-			return;
-		}
 
 		widgetsLayout->setCurrentWidget(GetRunExperimentTab());
+
+		mw->SelectHardware(selectedHardware.prebuilt.hwName, selectedHardware.prebuilt.channel);
+		mw->PrebuiltExperimentSelected(selectedHardware.prebuilt.exp);
 	});
 
 	pbt = OBJ_NAME(PBT("Build an Experiment"), "bar-button");
@@ -355,6 +346,10 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		}
 
 		widgetsLayout->setCurrentWidget(GetManualControlTab());
+
+		quint8 channel = selectedHardware.manual.channel.value(selectedHardware.manual.hwName, 0);
+		mw->SelectHardware(selectedHardware.manual.hwName, channel);
+		mw->PrebuiltExperimentSelected(selectedHardware.manual.exp);
 	});
 
 	pbt = OBJ_PROP(OBJ_NAME(PBT("View Data"), "bar-button"), "order", "last");
@@ -370,6 +365,19 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		}
 
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
+	});
+	
+	pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
 	});
 
 	barLayout->addStretch(1);
@@ -1837,7 +1845,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &newLines) {
 		for (auto it = newLines.begin(); it != newLines.end(); ++it) {
-			hwList->addItem(it->first, it->second);
+			hwList->addItem(it->name, it->channelAmount);
 		}
 		//hwList->addItems(newLines);
 	});
@@ -1968,6 +1976,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 			paramsLay->addWidget(prebuiltExperimentData.userInputs);
 				
 			mw->PrebuiltExperimentSelected(exp);
+			selectedHardware.prebuilt.exp = exp;
 
 			paramsHeadWidget->show();
 			paramsFooterWidget->show();
@@ -2032,14 +2041,50 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	if (w != 0) {
 		return w;
 	}
-
+	
 	w = OBJ_NAME(WDG(), "manual-control-tab-owner");
+
+	static QMap<QString, qint8> channelAmountMap;
+	static QList<QPushButton*> channelSelectButtons;
+	//static QMap<QString, QWidget*> userInputs;
+	static QMap<QString, QList<QUuid>> ids;
+
+	auto channelSelectMapper = new QSignalMapper(w);
 
 	auto *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	QTabBar *tabBar;
+
+	auto channelSelectWdg = OBJ_NAME(new QFrame(), "channel-selecting-placeholder");
+	auto channelSelectWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(channelSelectWdg)));
+
+	auto buttonGroup = new QButtonGroup(channelSelectWdg);
+	for(int i = 0; i < MAX_CHANNEL_VALUE; ++i) {
+		auto pbt = OBJ_NAME(new QPushButton(QString("Channel %1").arg(i + 1)), "select-channel-button");
+		pbt->setCheckable(true);
+		pbt->hide();
+
+		buttonGroup->addButton(pbt);
+		channelSelectMapper->setMapping(pbt, i);
+		CONNECT(pbt, &QPushButton::clicked, channelSelectMapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+		
+		channelSelectButtons << pbt;
+		
+		channelSelectWdgLay->addWidget(pbt);
+	}
+	if (channelSelectButtons.size()) {
+		channelSelectButtons.at(0)->setChecked(true);
+	}
+	channelSelectWdgLay->addStretch(1);
+	channelSelectWdg->hide();
+
+	//auto startButtonWdg = OBJ_NAME(WDG(), "start-button-placeholder");
+	//auto startButtonWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(startButtonWdg)));
+
+	//QPushButton *startExpPbt;
+	//startButtonWdgLay->addWidget(startExpPbt = OBJ_NAME(PBT("Start Experiment"), "control-button-blue"));
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "manual-control-tab-placeholder");
 	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
@@ -2052,19 +2097,51 @@ QWidget* MainWindowUI::GetManualControlTab() {
 	tabHeaderLay->addStretch(1);
 
 	lay->addLayout(tabHeaderLay);
+	lay->addWidget(channelSelectWdg);
 	lay->addWidget(stackedLayWdg);
+	//lay->addWidget(startButtonWdg);
 
 	tabBar->setExpanding(false);
 	tabBar->setMovable(true);
 
 	tabBar->hide();
 
+	/*
+	CONNECT(startExpPbt, &QPushButton::clicked, [=]() {
+		auto curInstrName = tabBar->tabText(tabBar->currentIndex());
+		mw->StartExperiment(userInputs[curInstrName], ids[curInstrName]);
+		mw->UpdateCurrentExperimentState();
+	});
+	//*/
+
+	CONNECT(channelSelectMapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped), [=] (int channel) {
+		auto name = tabBar->tabText(tabBar->currentIndex());
+
+		selectedHardware.manual.channel[name] = channel;
+		mw->SelectHardware(name, channel);
+		mw->UpdateCurrentExperimentState();
+	});
+
 	CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
 			return;
 		}
 
+		selectedHardware.manual.hwName = tabBar->tabText(index);
 		stackedLay->setCurrentIndex(index);
+
+		auto channelCount = channelAmountMap.value(selectedHardware.manual.hwName, 0);
+		for (int i = 0; i < channelCount; ++i) {
+			channelSelectButtons.at(i)->show();
+		}
+		for (int i = channelCount; i < MAX_CHANNEL_VALUE; ++i) {
+			channelSelectButtons.at(i)->hide();
+		}
+
+		quint8 channel = selectedHardware.manual.channel.value(selectedHardware.manual.hwName, 0);
+
+		channelSelectButtons.at(channel)->click();
+		mw->SelectHardware(selectedHardware.manual.hwName, channel);
 	});
 
 	CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
@@ -2200,17 +2277,59 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	CONNECT(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription> &hwList) {
 		foreach(auto &hwDescr, hwList) {
-			tabBar->insertTab(tabBar->count(), hwDescr.first);
-			stackedLay->insertWidget(tabBar->count(), WDG());
+			channelAmountMap[hwDescr.name] = hwDescr.channelAmount;
+
+			auto wdg = WDG();
+			auto dataLayout = NO_MARGIN(NO_SPACING(new QStackedLayout(wdg)));
+
+			auto mapper = new QSignalMapper(wdg);
+
+			for (int i = 0; i < hwDescr.channelAmount; ++i) {
+				ids[hwDescr.name] << QUuid::createUuid();
+
+				auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.name].at(i),
+					ET_DC,
+					hwDescr.name + QString(" - channel #%1").arg(i+1),
+					ManualExperimentRunner::Instance()->GetXAxisParameters(ET_DC),
+					ManualExperimentRunner::Instance()->GetYAxisParameters(ET_DC),
+					"",
+					0,
+					true,
+					hwDescr.hwModel);
+
+				mapper->setMapping(channelSelectButtons.at(i), i);
+				CONNECT(channelSelectButtons.at(i), &QPushButton::clicked,
+					mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
+
+				dataLayout->addWidget(dataWidget);
+			}
+			CONNECT(mapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped),
+				dataLayout, &QStackedLayout::setCurrentIndex);
+
+			tabBar->insertTab(tabBar->count(), hwDescr.name);
+			stackedLay->insertWidget(tabBar->count(), wdg);
 		}
 
 		if (tabBar->isHidden()) {
 			tabBar->show();
+			channelSelectWdg->show();
+			//startButtonWdg->show();
 		}
 	});
 
 	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [=](const QStringList &names) {
 		foreach(auto &name, names) {
+			foreach(auto curId, ids[name]) {
+				auto &handlers(dataTabs.plots[curId]);
+
+				for (auto it = handlers.begin(); it != handlers.end(); ++it) {
+					foreach(auto conn, it->plotTabConnections) {
+						QObject::disconnect(conn);
+					}
+				}
+			}
+			channelAmountMap.remove(name);
+
 			int currentIndex = -1;
 			for (int i = 0; i < tabBar->count(); ++i) {
 				if (tabBar->tabText(i) == name) {
@@ -2227,6 +2346,12 @@ QWidget* MainWindowUI::GetManualControlTab() {
 			tabBar->removeTab(currentIndex);
 			stackedLay->removeWidget(wdg);
 			wdg->deleteLater();
+		}
+
+		if (tabBar->count() == 0) {
+			tabBar->hide();
+			channelSelectWdg->hide();
+			//startButtonWdg->hide();
 		}
 	});
 
@@ -2583,7 +2708,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 	});
 
-	CONNECT(mw, &MainWindow::DcDataArrived, [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
+	auto dcDataArrivedLambda = [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2601,13 +2726,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		if (handler.exp) {
 		  handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-		  if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
-      //if (majorData.saveFile) {
-      if (expData.decimation_num == 0)
-        handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-		  else if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
-				handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-			}
+      if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
+        if (expData.decimation_num == 0)
+          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+        else if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
+          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+        }
+      }
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -2629,9 +2754,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.plot->replot();
 			handler.plotCounter.stamp = curStamp + 50;
 		}
-	});
+	};
 
-	CONNECT(mw, &MainWindow::AcDataArrived, [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
+	auto acDataArrivedLambda = [=](const QUuid &id, const QByteArray &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
 			return;
 		}
@@ -2673,7 +2798,10 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			handler.plot->replot();
 			handler.plotCounter.stamp = curStamp + 50;
 		}
-	});
+	};
+
+	CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
+	CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
 
 	return w;
 }
@@ -3415,7 +3543,7 @@ QStringList valueHideList = {
   QString(REAL_TIME_ERROR)
 };
 
-QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr) {
+QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType type, const QString &expName, const QStringList &xAxisList, const QStringList &yAxisList, const QString &filePath, const DataMap *loadedContainerPtr, bool isManualMode, HardwareModel_t hwModel) {
 	QFont axisTitleFont("Segoe UI");
 	axisTitleFont.setPixelSize(22);
 	axisTitleFont.setBold(false);
@@ -3439,13 +3567,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto settingsLay = NO_SPACING(NO_MARGIN(new QGridLayout));
 
-
 	auto realTimeGroup = OBJ_NAME(new QGroupBox("Real time value section"), "collapsible-group-box");
 	auto realTimeGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroup)));
 	auto realTimeGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto realTimeGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroupFrame)));
 	realTimeGroupLay->addWidget(realTimeGroupFrame);
-
 	realTimeGroup->setCheckable(true);
 
 	QStringList realTimeValueNames;
@@ -3465,29 +3591,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(new QLabel(STEP_VALUE_LBL_NAME " = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), row, 0);
 	realTimeGroupFrameLay->addWidget(dataTabs.realTimeLabels[id][STEP_VALUE_LBL_NAME] = OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(""), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), row, 1);
 
-	/*
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Working Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 0, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Counter Electrode Potential = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 1, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Current = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 2, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Redox State = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 3, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Step = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 4, 0);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL("Elapsed Time = "), "experiment-params-comment"), "comment-placement", "left"), "add-name", "real-time-values"), 5, 0);
-
-
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "-0.301" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 0, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "+0.102" CLOSE_COLOR_TAG " V"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 1, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "1.9" CLOSE_COLOR_TAG " mA"), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 2, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Oxidizing" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 3, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "Open Circuit" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 4, 1);
-	realTimeGroupFrameLay->addWidget(OBJ_PROP(OBJ_PROP(OBJ_NAME(LBL(OPEN_COLOR_TAG "00:10:52" CLOSE_COLOR_TAG), "experiment-params-comment"), "comment-placement", "right"), "add-name", "real-time-values"), 5, 1);
-	//*/
-
 	auto settingsGroup = OBJ_NAME(new QGroupBox("Graph options"), "collapsible-group-box");
 	auto settingsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroup)));
 	auto settingsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto settingsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroupFrame)));
 	settingsGroupLay->addWidget(settingsGroupFrame);
-
 	settingsGroup->setCheckable(true);
 
 
@@ -3514,6 +3622,17 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QCheckBox *y1ChkBox;
 	QCheckBox *y2ChkBox;
 
+	QPushButton *addDataPbt;
+	QPushButton *editLinesPbt;
+	QPushButton *savePlotPbt;
+	QPushButton *openFilePbt;
+
+	auto buttonLay = new QHBoxLayout;
+	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(editLinesPbt = OBJ_PROP(OBJ_NAME(PBT("Edit Line\nAppearance"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(savePlotPbt = OBJ_PROP(OBJ_NAME(PBT("Save Plot\nas Image"), "secondary-button"), "add-name", "new-data-controls"));
+	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"));
+
 	settingsGroupFrameLay->addWidget(xCombo, 1, 1);
 	settingsGroupFrameLay->addWidget(y1Combo, 2, 1);
 	settingsGroupFrameLay->addWidget(y2Combo, 3, 1);
@@ -3523,43 +3642,127 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	settingsGroupFrameLay->addWidget(y1ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 2, 2);
 	settingsGroupFrameLay->addWidget(y2ChkBox = OBJ_NAME(new QCheckBox(LINEAR_TEXT), "log-linear-check-box"), 3, 2);
 	settingsGroupFrameLay->setColumnStretch(1, 1);
+	settingsGroupFrameLay->addLayout(buttonLay, 4, 0, 1, -1);
 
-	/*
-	auto xButtonGroup = new QButtonGroup(w);
-	xButtonGroup->addButton(xLinRbt);
-	xButtonGroup->addButton(xLogRbt);
+	QGroupBox *advOptionsGroup;
+	QWidget *advOptionsGroupFrame;
+	QCheckBox *potGalvModeChk;
+	QCheckBox *openCircuitModeChk;
+	QComboBox *rangeCombo;
+	QPushButton *startManualExpPbt;
+	QPushButton *pauseManualExpPbt;
+	QPushButton *stopManualExpPbt;
+	QLineEdit *appliedPotLed;
+	QLineEdit *appliedCurLed;
+	QLineEdit *samplingIntLed;
+	QLabel *appliedPotLblLeft;
+	QLabel *appliedPotLblRight;
+	QLabel *appliedCurLblLeft;
+	QComboBox *appliedCurLblRight;
 
-	auto y1ButtonGroup = new QButtonGroup(w);
-	y1ButtonGroup->addButton(y1LinRbt);
-	y1ButtonGroup->addButton(y1LogRbt);
+	#define POTENTIOSTATIC_TEXT "Potentiostatic"
+	#define GALVANOSTATIC_TEXT	"Galvanostatic"
+	#define OCP_MODE_TEXT		"Open circuit"
+	#define CELL_ON_TEXT		"Cell On"
 
-	auto y2ButtonGroup = new QButtonGroup(w);
-	y2ButtonGroup->addButton(y2LinRbt);
-	y2ButtonGroup->addButton(y2LogRbt);
+	if (isManualMode) {
+		advOptionsGroup = OBJ_NAME(new QGroupBox("Operating conditions"), "collapsible-group-box");
+		auto advOptionsGroupLay = NO_SPACING(NO_MARGIN(new QGridLayout(advOptionsGroup)));
+		advOptionsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
+		auto advOptionsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(advOptionsGroupFrame)));
+		advOptionsGroupLay->addWidget(advOptionsGroupFrame);
+		advOptionsGroup->setCheckable(true);
 
-	//xLinRbt->click();
-	y1LinRbt->click();
-	y2LinRbt->click();
-	//*/
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Operating mode: "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
+		advOptionsGroupFrameLay->addWidget(appliedPotLblLeft = OBJ_PROP(OBJ_NAME(LBL("Applied potential: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
+		advOptionsGroupFrameLay->addWidget(appliedCurLblLeft = OBJ_PROP(OBJ_NAME(LBL("Applied current: "), "experiment-params-comment"), "comment-placement", "left"), 4, 0);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Sampling interval: "), "experiment-params-comment"), "comment-placement", "left"), 5, 0);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Current range: "), "experiment-params-comment"), "comment-placement", "left"), 6, 0);
 
-	QPushButton *addDataPbt;
-	QPushButton *editLinesPbt;
-	QPushButton *savePlotPbt;
-	QPushButton *openFilePbt;
+		advOptionsGroupFrameLay->addWidget(potGalvModeChk = OBJ_NAME(new QCheckBox(POTENTIOSTATIC_TEXT), "log-linear-check-box"), 1, 0, 1, -1);
+		advOptionsGroupFrameLay->addWidget(openCircuitModeChk = OBJ_NAME(new QCheckBox(OCP_MODE_TEXT), "log-linear-check-box"), 2, 0, 1, -1);
 
-	auto buttonLay = new QGridLayout;
-	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"), 0, 0);
-	buttonLay->addWidget(editLinesPbt = OBJ_PROP(OBJ_NAME(PBT("Edit Line\nAppearance"), "secondary-button"), "add-name", "new-data-controls"), 0, 1);
-	buttonLay->addWidget(savePlotPbt = OBJ_PROP(OBJ_NAME(PBT("Save Plot\nas Image"), "secondary-button"), "add-name", "new-data-controls"), 0, 2);
-	buttonLay->addWidget(openFilePbt = OBJ_PROP(OBJ_NAME(PBT("Open data\nin Excel"), "secondary-button"), "add-name", "new-data-controls"), 0, 3);
-	buttonLay->setRowStretch(1, 1);
+		rangeCombo = CMB();
+		auto *rangeComboList = OBJ_NAME(new QListView, "combo-list");
+		rangeCombo->setView(rangeComboList);
+		rangeCombo->addItem("Autorange", currentRange_t::AUTORANGE);
+		switch (hwModel) {
+		case HardwareModel_t::PRIME:
+			rangeCombo->addItem("5mA - 100mA", currentRange_t::RANGE0);
+			rangeCombo->addItem("200uA - 5mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("10uA - 200uA", currentRange_t::RANGE2);
+			rangeCombo->addItem("0 - 10uA", currentRange_t::RANGE3);
+			break;
+		case HardwareModel_t::SOLO_2_0:
+		case HardwareModel_t::PLUS_2_0:
+			rangeCombo->addItem("1A", currentRange_t::RANGE0);
+			rangeCombo->addItem("100mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("10mA", currentRange_t::RANGE2);
+			rangeCombo->addItem("1mA", currentRange_t::RANGE3);
+			rangeCombo->addItem("100uA", currentRange_t::RANGE4);
+			rangeCombo->addItem("10uA", currentRange_t::RANGE5);
+			rangeCombo->addItem("1uA", currentRange_t::RANGE6);
+			rangeCombo->addItem("100nA", currentRange_t::RANGE7);
+			break;
+		case HardwareModel_t::PRIME_2_0:
+			rangeCombo->addItem("100mA", currentRange_t::RANGE0);
+			rangeCombo->addItem("10mA", currentRange_t::RANGE1);
+			rangeCombo->addItem("1mA", currentRange_t::RANGE2);
+			rangeCombo->addItem("100uA", currentRange_t::RANGE3);
+			rangeCombo->addItem("10uA", currentRange_t::RANGE4);
+			rangeCombo->addItem("1uA", currentRange_t::RANGE5);
+			rangeCombo->addItem("100nA", currentRange_t::RANGE6);
+			rangeCombo->addItem("10nA", currentRange_t::RANGE7);
+			break;
+		}
 
-	
-	settingsLay->addWidget(realTimeGroup, 0, 0, 1, -1);
-	settingsLay->addWidget(settingsGroup, 1, 0, 1, -1);
-	settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
-	settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
-	//settingsLay->setRowStretch(6, 1);
+		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("-1024"), 3, 1);
+		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("1024"), 4, 1);
+		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0.1"), 5, 1);
+		advOptionsGroupFrameLay->addWidget(rangeCombo, 6, 1);
+
+		appliedCurLblRight = CMB();
+		auto *appliedCurLblRightList = OBJ_NAME(new QListView, "combo-list");
+		appliedCurLblRight->setView(appliedCurLblRightList);
+		appliedCurLblRight->addItem("mA", currentRange_t::RANGE0);
+		appliedCurLblRight->addItem("uA", currentRange_t::RANGE1);
+		appliedCurLblRight->addItem("nA", currentRange_t::RANGE2);
+
+		advOptionsGroupFrameLay->addWidget(appliedPotLblRight = OBJ_PROP(OBJ_NAME(LBL("V"), "experiment-params-comment"), "comment-placement", "right"), 3, 2);
+		advOptionsGroupFrameLay->addWidget(appliedCurLblRight, 4, 2);
+		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("s"), "experiment-params-comment"), "comment-placement", "right"), 5, 2);
+		
+		appliedCurLblLeft->hide();
+		appliedCurLblRight->hide();
+		appliedCurLed->hide();
+
+		startManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		startManualExpPbt->setIcon(QIcon(":/GUI/Resources/start.png"));
+		startManualExpPbt->setIconSize(QPixmap(":/GUI/Resources/start.png").size());
+
+		pauseManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Pause Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		stopManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Stop Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+
+		pauseManualExpPbt->hide();
+		stopManualExpPbt->hide();
+
+		auto *startButtonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
+		startButtonLay->addWidget(startManualExpPbt);
+		startButtonLay->addWidget(pauseManualExpPbt);
+		startButtonLay->addWidget(stopManualExpPbt);
+		startButtonLay->addStretch(1);
+
+		advOptionsGroupFrameLay->addLayout(startButtonLay, 7, 0, 1, -1);
+
+		advOptionsGroupFrameLay->setColumnStretch(1, 1);
+
+		settingsLay->addWidget(advOptionsGroup, 0, 0, 1, -1);
+	}
+	settingsLay->addWidget(realTimeGroup, 2, 0, 1, -1);
+	settingsLay->addWidget(settingsGroup, 3, 0, 1, -1);
+	//settingsLay->addWidget(OBJ_NAME(WDG(), "settings-vertical-spacing"), 7, 0, 1, -1);
+	settingsLay->setRowStretch(8, 1);
+	//settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 
 	auto controlButtonLay = new QHBoxLayout;
 	QPushButton *pauseExperiment;
@@ -3568,7 +3771,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXP_BUTTON_TEXT), "control-button-blue"));
 	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
 
-	if (type == ET_SAVED) {
+	if ( (type == ET_SAVED) || (isManualMode) ) {
 		pauseExperiment->hide();
 		stopExperiment->hide();
 	}
@@ -3609,10 +3812,19 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	cursorModeGroup->addButton(zoomToSelectionPbt);
 	cursorModeGroup->addButton(panViewPbt);
 
-	//lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-top-spacing"), 0, 0, 1, 1);
-	lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	auto settingsOwner = OBJ_NAME(new QFrame, "collapsible-settings-owner");
+	settingsOwner->setLayout(settingsLay);
+	
+	QScrollArea *settingsArea = OBJ_NAME(new QScrollArea(), "collapsible-settings-scroll-area");
+	settingsArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	settingsArea->setWidgetResizable(true);
+	settingsArea->setWidget(settingsOwner);
+
+	if (!isManualMode) {
+		lay->addWidget(OBJ_NAME(new QLabel(expName), "heading-label"), 0, 0, 1, -1);
+	}
 	lay->addWidget(OBJ_NAME(WDG(), "new-data-tab-left-spacing"), 1, 0, -1, 1);
-	lay->addLayout(settingsLay, 1, 1);
+	lay->addWidget(settingsArea, 1, 1);
 	lay->addWidget(plot, 1, 2);
 	lay->addLayout(plotButtonsLay, 1, 3);
 	lay->addLayout(controlButtonLay, 2, 0, 1, -1);
@@ -3633,10 +3845,227 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	plotHandler.plotCounter.stamp = 0;
 	plotHandler.plotCounter.realTimeValueStamp = 0;
 
+	/*
+	if (isManualMode) {
+		plotHandler.exp = ManualExperimentRunner::Instance();
+	}
+	//*/
+
 	#define OPEN_COLOR_TAG "<font color=#1d1d1d>"
 	#define CLOSE_COLOR_TAG "</font>"
 
 	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
+
+	auto y1ComboHandler = [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
+
+		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+			it->data[QwtPlot::yLeft] = &it->container[curText];
+			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
+			if (-1 != y1Combo->findText(it->curve1->title().text())) {
+				it->curve1->setTitle(curText);
+			}
+		}
+		handler.plot->replot();
+	};
+	auto y2ComboHandler = [=](const QString &curText) {
+		PlotHandler &handler(dataTabs.plots[id][type]);
+
+		QwtText title;
+		title.setFont(axisTitleFont);
+		title.setText(curText);
+		handler.plot->setAxisTitle(QwtPlot::yRight, title);
+
+		if (curText == NONE_Y_AXIS_VARIABLE) {
+			handler.plot->enableAxis(QwtPlot::yRight, false);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->detach();
+			}
+		}
+		else {
+			handler.plot->enableAxis(QwtPlot::yRight);
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve2->attach(handler.plot);
+
+				it->data[QwtPlot::yRight] = &it->container[curText];
+
+				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
+				if (-1 != y2Combo->findText(it->curve2->title().text())) {
+					it->curve2->setTitle(curText);
+				}
+			}
+		}
+
+		handler.plot->replot();
+	};
+
+	if (isManualMode) {
+		plotHandler.plotTabConnections << CONNECT(advOptionsGroup, &QGroupBox::toggled, [=](bool on) {
+			advOptionsGroupFrame->setVisible(on);
+		});
+		plotHandler.plotTabConnections << CONNECT(potGalvModeChk, &QCheckBox::stateChanged, [=](int state) {
+			switch (state) {
+			case Qt::Unchecked:
+				potGalvModeChk->setText(POTENTIOSTATIC_TEXT);
+				appliedCurLblLeft->hide();
+				appliedCurLblRight->hide();
+				appliedCurLed->hide();
+				appliedPotLblLeft->show();
+				appliedPotLblRight->show();
+				appliedPotLed->show();
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				break;
+
+			case Qt::Checked:
+				potGalvModeChk->setText(GALVANOSTATIC_TEXT);
+				appliedCurLblLeft->show();
+				appliedCurLblRight->show();
+				appliedCurLed->show();
+				appliedPotLblLeft->hide();
+				appliedPotLblRight->hide();
+				appliedPotLed->hide();
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				break;
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(openCircuitModeChk, &QCheckBox::stateChanged, [=](int state) {
+			switch (state) {
+			case Qt::Unchecked:
+				openCircuitModeChk->setText(OCP_MODE_TEXT);
+				mw->SetManualOcp(id);
+				break;
+
+			case Qt::Checked:
+				openCircuitModeChk->setText(CELL_ON_TEXT);
+				if (potGalvModeChk->isChecked()) {
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				}
+				else {
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				}
+				break;
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(rangeCombo, &QComboBox::currentTextChanged, [=]() {
+			mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(appliedPotLed, &QLineEdit::textChanged, [=](const QString&) {
+			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::textChanged, [=](const QString&) {
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+		});
+		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString &text) {
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
+		});
+		plotHandler.plotTabConnections << CONNECT(startManualExpPbt, &QPushButton::clicked, [=]() {
+			mw->StartManualExperiment(id);
+			mw->UpdateCurrentExperimentState();
+
+			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
+
+			if (potGalvModeChk->isChecked()) {
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+			}
+			else {
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(pauseManualExpPbt, &QPushButton::clicked, [=]() {
+			if (pauseManualExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
+				mw->PauseManualExperiment(id);
+				mw->UpdateCurrentExperimentState();
+			}
+			else {
+				mw->ResumeManualExperiment(id);
+				mw->UpdateCurrentExperimentState();
+
+				mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
+
+				if (potGalvModeChk->isChecked()) {
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				}
+				else {
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				}
+			}
+		});
+		plotHandler.plotTabConnections << CONNECT(stopManualExpPbt, &QPushButton::clicked, [=]() {
+			mw->StopManualExperiment(id);
+			mw->UpdateCurrentExperimentState();
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentHardwareBusy, [=]() {
+			pauseManualExpPbt->show();
+			stopManualExpPbt->show();
+			startManualExpPbt->hide();
+		});
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentResumed, [=]() {
+			pauseManualExpPbt->setText(PAUSE_EXP_BUTTON_TEXT);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentPaused, [=]() {
+			pauseManualExpPbt->setText(RESUME_EXP_BUTTON_TEXT);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentCompleted, [=]() {
+			pauseManualExpPbt->hide();
+			stopManualExpPbt->hide();
+			startManualExpPbt->show();
+		});
+
+		auto setManualStartParams = [=](const StartExperimentParameters &startParams) {
+			PlotHandler &handler(dataTabs.plots[startParams.id][startParams.type]);
+
+			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
+				it->curve1->detach();
+				delete it->curve1;
+				it->curve2->detach();
+				delete it->curve2;
+			}
+			handler.data.clear();
+			
+			handler.exp = startParams.exp;
+			handler.plotCounter.stamp = 0;
+			handler.plotCounter.realTimeValueStamp = 0;
+			handler.data << DataMapVisualization();
+
+			DataMapVisualization &currentData(handler.data.first());
+
+			currentData.saveFile = startParams.file;
+			currentData.filePath = QFileInfo(startParams.file->fileName()).absoluteFilePath();
+			currentData.curve1 = CreateCurve(QwtPlot::yLeft, DEFAULT_MAJOR_CURVE_COLOR);;
+			currentData.curve2 = CreateCurve(QwtPlot::yRight, DEFAULT_MINOR_CURVE_COLOR);;
+			currentData.cal = startParams.cal;
+			currentData.hwVer = startParams.hwVer;
+			currentData.notes = startParams.notes;
+			
+			currentData.data[QwtPlot::xBottom] = &currentData.container[handler.varCombo[QwtPlot::xBottom]->currentText()];
+			currentData.data[QwtPlot::yLeft] = &currentData.container[handler.varCombo[QwtPlot::yLeft]->currentText()];
+			currentData.data[QwtPlot::yRight] = &currentData.container[handler.varCombo[QwtPlot::yRight]->currentText()];
+
+			currentData.curve1->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yLeft]));
+			currentData.curve2->setSamples(new ListSeriesData(*currentData.data[QwtPlot::xBottom], *currentData.data[QwtPlot::yRight]));
+
+			currentData.curve1->setTitle(handler.varCombo[QwtPlot::yLeft]->currentText());
+			currentData.curve2->setTitle(handler.varCombo[QwtPlot::yRight]->currentText());
+
+			currentData.curve1->attach(handler.plot);
+
+			if (handler.varCombo[QwtPlot::yRight]->currentText() != NONE_Y_AXIS_VARIABLE) {
+				currentData.curve2->attach(handler.plot);
+			}
+		};
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::SetManualStartParams, setManualStartParams);
+	}
 
 	plotHandler.plotTabConnections <<
 	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
@@ -3711,7 +4140,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			
 			handler.exp->PushNewDcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			
-			if (!dataTabs.realTimeElapsedTime.keys().contains(curId)) {
+			if (!dataTabs.realTimeElapsedTime.keys().contains(curId) && container.contains(REAL_TIME_ELAPSED_TIME)) {
 				dataTabs.realTimeElapsedTime[curId] = container[REAL_TIME_ELAPSED_TIME].data.last();
 			}
 
@@ -4271,32 +4700,6 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 		plot->replot();
 	});
-	/*
-	plotHandler.plotTabConnections << CONNECT(xLinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(xLogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y1LinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y1LogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y2LinRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLinearScaleEngine());
-		plot->replot();
-	});
-	plotHandler.plotTabConnections << CONNECT(y2LogRbt, &QRadioButton::clicked, [=]() {
-		plot->setAxisScaleEngine(QwtPlot::yRight, new QwtLogScaleEngine(10));
-		plot->replot();
-	});
-	//*/
 
 	plotHandler.plotTabConnections << CONNECT(pauseExperiment, &QPushButton::clicked, [=]() {
 		if (pauseExperiment->text() == PAUSE_EXP_BUTTON_TEXT) {
@@ -4510,54 +4913,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		handler.plot->replot();
 	});
 
-	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id][type]);
-
-		QwtText title;
-		title.setFont(axisTitleFont);
-		title.setText(curText);
-		handler.plot->setAxisTitle(QwtPlot::yLeft, title);
-
-		for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-			it->data[QwtPlot::yLeft] = &it->container[curText];
-			it->curve1->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yLeft]));
-			if(-1 != y1Combo->findText(it->curve1->title().text())) {
-				it->curve1->setTitle(curText);
-			}
-		}
-		handler.plot->replot();
-	});
-
-	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, [=](const QString &curText) {
-		PlotHandler &handler(dataTabs.plots[id][type]);
-
-		QwtText title;
-		title.setFont(axisTitleFont);
-		title.setText(curText);
-		handler.plot->setAxisTitle(QwtPlot::yRight, title);
-
-		if (curText == NONE_Y_AXIS_VARIABLE) {
-			handler.plot->enableAxis(QwtPlot::yRight, false);
-			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-				it->curve2->detach();
-			}
-		}
-		else {
-			handler.plot->enableAxis(QwtPlot::yRight);
-			for (auto it = handler.data.begin(); it != handler.data.end(); ++it) {
-				it->curve2->attach(handler.plot);
-
-				it->data[QwtPlot::yRight] = &it->container[curText];
-
-				it->curve2->setSamples(new ListSeriesData(*it->data[QwtPlot::xBottom], *it->data[QwtPlot::yRight]));
-				if (-1 != y2Combo->findText(it->curve2->title().text())) {
-					it->curve2->setTitle(curText);
-				}
-			}
-		}
-
-		handler.plot->replot();
-	});
+	plotHandler.plotTabConnections << CONNECT(y1Combo, &QComboBox::currentTextChanged, y1ComboHandler);
+	plotHandler.plotTabConnections << CONNECT(y2Combo, &QComboBox::currentTextChanged, y2ComboHandler);
 
 	dataTabs.plots[id][type] = plotHandler;
 	DataMapVisualization &majorData(dataTabs.plots[id][type].data.first());

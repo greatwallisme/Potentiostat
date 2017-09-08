@@ -136,9 +136,6 @@
     <ClCompile Include="ListSeriesData.cpp">
       <Filter>_scr\MainWindow</Filter>
     </ClCompile>
-    <ClCompile Include="ExperimentCalcHelper.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
     <ClCompile Include="CustomExperimentRunner.cpp">
       <Filter>_scr\Experiments</Filter>
     </ClCompile>
@@ -189,6 +186,9 @@
     </ClCompile>
     <ClCompile Include="ManualExperimentRunner.cpp">
       <Filter>_scr\Experiments</Filter>
+    </ClCompile>
+    <ClCompile Include="ExperimentCalcHelper.cpp">
+      <Filter>_scr\ExternalStructures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

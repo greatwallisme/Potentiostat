@@ -36,7 +36,13 @@ struct StartExperimentParameters {
 	QString filePath;
 };
 
-typedef QPair<QString, quint8> HardwareUiDescription;
+struct HardwareUiDescription {
+	QString name;
+	quint8 channelAmount;
+	HardwareModel_t hwModel;
+};
+
+//typedef QPair<QString, quint8> HardwareUiDescription;
 Q_DECLARE_METATYPE(HardwareUiDescription)
 
 class MainWindow : public QMainWindow {
@@ -59,7 +65,7 @@ public slots:
 	
 	void SelectHardware(const QString&, quint8 channel);
 
-	void StartExperiment(QWidget*);
+	void StartExperiment(QWidget*, const QUuid& = QUuid());
 	void StopExperiment(const QUuid&);
 	void PauseExperiment(const QUuid&);
 	void ResumeExperiment(const QUuid&);
@@ -76,6 +82,16 @@ public slots:
 
 	void RequestCurrentHardwareList();
 	void UpdateFirmware(const QString&, const HexRecords&);
+
+	void StartManualExperiment(const QUuid&);
+	void SetManualSamplingParams(const QUuid&, double value);
+	void SetManualGalvanoSetpoint(const QUuid&, qint16 setpoint, quint8 range);
+	void SetManualPotentioSetpoint(const QUuid&, qint16 setpoint);
+	void SetManualOcp(const QUuid&);
+	void SetCurrentRangingMode(const QUuid&, quint8 range);
+	void StopManualExperiment(const QUuid&);
+	void PauseManualExperiment(const QUuid&);
+	void ResumeManualExperiment(const QUuid&);
 
 signals:
 	void HardwareFound(const InstrumentList&);
@@ -103,6 +119,8 @@ signals:
 	void EditCustomExperiment(const CustomExperiment&);
 
 	void CurrentHardwareList(const InstrumentList&);
+
+	void SetManualStartParams(const StartExperimentParameters&);
 
 private:
 	void CleanupCurrentHardware();
@@ -148,9 +166,11 @@ private:
 	} builderElements;
 
 	QList<InstrumentHandler>::iterator SearchForHandler(InstrumentOperator*);
-	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name, quint8 channel);
+	QList<InstrumentHandler>::iterator SearchForHandler(const QString &name/*, quint8 channel*/);
 	QList<InstrumentHandler>::iterator SearchForHandler(const QUuid&);
 	quint8 SearchForChannel(QList<InstrumentHandler>::iterator, const QUuid&);
+	
+	void CreateLogicForInstrument(InstrumentHandler&);
 };
 
 #endif // MAINWINDOW_H

@@ -111,8 +111,6 @@ private:
 	void CreateMenu();
 	void CreateCentralWidget();
 
-	QAction* GetUpgradeHardwareAction();
-
 	QWidget* GetApplyStyleButton();
 
 	QWidget* GetMainTabWidget();
@@ -128,7 +126,7 @@ private:
 	QWidget* GetManualControlTab();
 
 	QWidget* GetNewDataWindowTab();
-	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0);
+	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0, bool isManualMode = false, HardwareModel_t = HardwareModel_t::PRIME);
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -160,23 +158,18 @@ private:
 	struct {
 		QWidget *userInputs;
 	} prebuiltExperimentData;
-
+	
 	struct {
-		enum WhatTab : quint8 {
-			NONE = 0,
-			PREBUILD,
-			MANUAL
-		};
 		struct {
 			QString hwName;
 			qint8 channel;
+			const AbstractExperiment *exp;
 		} prebuilt;
 		struct {
 			QString hwName;
 			QMap<QString, qint8> channel;
+			const AbstractExperiment *exp;
 		} manual;
-
-		WhatTab currentTab;
 	} selectedHardware;
 	
 	struct DataMapVisualization {
