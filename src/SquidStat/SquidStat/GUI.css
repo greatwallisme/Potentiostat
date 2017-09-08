@@ -728,6 +728,10 @@ QLabel[experiment-params-widget="low-margin"] {
 	margin-top: 7px;
 	margin-left: 5px;
 }
+#collapsible-group-box-frame QComboBox::disabled,
+#collapsible-group-box-frame QLineEdit::disabled {
+	background: #3f000000;
+}
 #collapsible-group-box-frame *[add-name="real-time-values"] {
 	margin-top: 7px;
 	font-size: 15px;

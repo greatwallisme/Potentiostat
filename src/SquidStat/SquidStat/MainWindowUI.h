@@ -53,6 +53,8 @@ public:
 	static bool ReadCsvFile(QWidget *parent, CsvFileData&);
 	static bool ReadCsvFile(QWidget *parent, QList<CsvFileData>&);
 
+	void DisconnectAll();
+
 private:
 	static bool ReadCsvFile(const QString &fileName,  CsvFileData&);
 	static bool GetColor(QWidget *parent, QColor&);
@@ -222,4 +224,5 @@ private:
 	} dataTabs;
 
 	MainWindow *mw;
+	QList<QMetaObject::Connection> connections;
 };

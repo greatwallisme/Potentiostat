@@ -122,6 +122,8 @@ signals:
 
 	void SetManualStartParams(const StartExperimentParameters&);
 
+	void CurrentExperimentIsNotManual();
+
 private:
 	void CleanupCurrentHardware();
 	void CleanupExperiments();
@@ -134,6 +136,7 @@ private:
 		struct ExpDescriptor {
 			bool busy;
 			bool paused;
+			bool isManual;
 			QUuid id;
 			//quint8 channel;
 		};
