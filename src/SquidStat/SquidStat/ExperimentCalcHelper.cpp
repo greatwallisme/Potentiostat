@@ -271,12 +271,12 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
   bool isEvenPeriodShorter;
   if (t_period - t_pulsewidth < t_pulsewidth)
   {
-    t_pulse = t_period - t_pulsewidth;
+    t_pulse = t_pulsewidth;
     isEvenPeriodShorter = true;
   }
   else
   {
-    t_pulse = t_pulsewidth;
+    t_pulse = t_period - t_pulsewidth;
     isEvenPeriodShorter = false;
   }
   uint16_t bufMult = 1;
@@ -290,18 +290,18 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
     {
       bufMult <<= 1;
     }
-  } while (dt / dt_min > 1);
+  } while (dt / dt_min > 1 && bufMult < DACbufsize && bufMult < ADCbufsize);
   pNode->samplingParams.ADCTimerPeriod = dt;
 
   if (isEvenPeriodShorter)
   {
-    pNode->samplingParams.DACMultEven = bufMult;
-    pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
+    pNode->samplingParams.DACMultOdd = bufMult;
+    pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * (t_period - t_pulsewidth) / t_pulsewidth;
   }
   else
   {
-    pNode->samplingParams.DACMultOdd = bufMult;
-    pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * ((t_period - t_pulsewidth) / t_pulsewidth);
+    pNode->samplingParams.DACMultEven = bufMult;
+    pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
   }
   pNode->samplingParams.PointsIgnored = bufMult / 2;
 
@@ -429,8 +429,7 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange_DACac(const cal_t *
 
   while (1)
   { 
-    double inv_slope = calData->m_DACac * calData->m_DACdcP_I[range] / calData->m_DACdcP_V;
-    if (ABS(targetCurrentAmp) > inv_slope * OVERCURRENT_LIMIT_AC && range > 0)
+    if (ABS(targetCurrentAmp * calData->m_DACdcP_I[range] / calData->m_DACdcP_V) > 3.3 / 2)
       range--;
     else
       break;
@@ -523,18 +522,28 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
 {
-  /*double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
-  
-  if (acDataHeader.freqRange == HF_RANGE)
+  double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
+  freq_range_t freqRange = acDataHeader.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
+  double num_cycles;
+
+  if (freqRange == HF_RANGE)
   {
     double n = acDataHeader.frequency / (acDataHeader.frequency - samplingFreq);
-    return acDataHeader.ADCacBufSize / n;
+    num_cycles = ADCacBUF_SIZE / n;
   }
   else
   {
-    return acDataHeader.ADCacBufSize / (samplingFreq / acDataHeader.frequency);
-  }*/
-  return 1;
+    num_cycles = ADCacBUF_SIZE / (samplingFreq / acDataHeader.frequency);
+  }
+
+  /* Account for unsynchronized ADC and signal gen clocks */
+  if (acDataHeader.frequency >= 2.0e5)
+    num_cycles *= 2;
+  else if (acDataHeader.frequency >= 5.0e3)
+    num_cycles *= 0.573345782 * log10(acDataHeader.frequency) - 1.192489631;
+  else
+    num_cycles *= 1;
+  return num_cycles;
 }
 
 /* Sinusoidal curve fitting */
@@ -561,25 +570,46 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   double resultsEWE[4];
   double resultsCurrent[4];
   sinusoidLeastSquaresFit(t_data, filteredCurrentData, newLen, resultsCurrent);
-  //sinusoidLeastSquaresFit(t_data, filteredEWEdata, newLen, resultsEWE);
-  //resultsEWE[0] = resultsCurrent[0] = (resultsEWE[0] + resultsCurrent[0] ) / 2;
-  for (int i = 0; i < 4; i++)
-    resultsEWE[i] = resultsCurrent[i];
-  /*note: instead of fitting EWE and Current separately with "sinusoidLeastSquaresFit," just fit Current, and use the single result
-  as the starting point for both sets of data for the Newton-Raphson method */
-
+  sinusoidLeastSquaresFit(t_data, filteredEWEdata, newLen, resultsEWE);
+  
   /* Part 2: Newton-Raphson method */  //TODO: don't just have this iterate 10 times, set an error limit
-  for (int i = 0; i < 10; i++)
+  double errorEWE = 0;
+  double errorI = 0;
+  double percentChange = 100;
+  int numTries = 0;
+  double fittedFreq = resultsEWE[0];
+  while(percentChange > 0.01 && numTries < 20)
   {
+    /* catch any guesses for frequency that are way off */
+    double fittedNumCyclesEWE = ADCacBUF_SIZE * resultsEWE[0] / 2 / M_PI;
+    double fittedNumCyclesCurrent = ADCacBUF_SIZE * resultsCurrent[0] / 2 / M_PI;
+    bool freqErrorEWE = (fittedNumCyclesEWE / approxNumCycles > 1.25) || (fittedNumCyclesEWE / approxNumCycles < 0.75);
+    bool freqErrorCurrent = (fittedNumCyclesCurrent / approxNumCycles > 1.25) || (fittedNumCyclesCurrent / approxNumCycles < 0.75);
+
+    if (freqErrorEWE && !freqErrorCurrent)
+      resultsEWE[0] = resultsCurrent[0];
+    else if (!freqErrorEWE && freqErrorCurrent)
+      resultsCurrent[0] = resultsEWE[0];
+    else if (freqErrorEWE && freqErrorCurrent)
+      resultsEWE[0] = resultsCurrent[0] = 2 * M_PI * approxNumCycles / ADCacBUF_SIZE;
+    else
+      resultsEWE[0] = resultsCurrent[0] = sqrt(resultsCurrent[0] * resultsEWE[0]);
+
+    /* fit using the Newton-Raphson method */
     NewtonRaphson(resultsEWE, t_data, filteredEWEdata, newLen, resultsEWE);
-            //NewtonRaphson(resultsEWE, t_data, rawDataEWEDouble, ADCacBUF_SIZE, resultsEWE);
-    resultsCurrent[0] = resultsEWE[0];
-    NewtonRaphson(resultsCurrent, t_data, filteredCurrentData, newLen, resultsCurrent, true);
-            //NewtonRaphson(resultsCurrent, t_data, rawDataIDouble, ADCacBUF_SIZE, resultsCurrent, true);
+    NewtonRaphson(resultsCurrent, t_data, filteredCurrentData, newLen, resultsCurrent);
+
+    errorEWE = getError(filteredEWEdata, resultsEWE, newLen);
+    errorI = getError(filteredCurrentData, resultsCurrent, newLen);
+
+    double newFreq = (errorEWE > errorI) ? (resultsEWE[0] = resultsCurrent[0]) : (resultsCurrent[0] = resultsEWE[0]);
+    percentChange = fabs(newFreq - fittedFreq) / fittedFreq * 100;
+    fittedFreq = newFreq;
+    numTries++;
   }
 
   /* debugging only */
-  /*std::ofstream fout;
+  std::ofstream fout;
   QString filename = "C:/Users/Matt/Desktop/results";
   filename.append(QString::number(frequency));
   filename.append(".txt");
@@ -589,16 +619,18 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   for (int i = 0; i < ADCacBUF_SIZE; i++)
   {
     fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
-  }*/
+  }
 
   ComplexDataPoint_t pt;
-  double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE * (calData->m_eweP + calData->m_refP + calData->m_eweN + calData->m_refN) / 4;
-  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI * (calData->m_iP[(int)range] + calData->m_iN[(int)range]) / 2 / 1000;
+  double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE;
+  double MagCurrent = sqrt(pow(resultsCurrent[2], 2) + pow(resultsCurrent[3], 2)) / gainI;
   double phaseEWE = atan2(resultsEWE[2], resultsEWE[3]) * 180 / M_PI;
   double phaseCurrent = atan2(resultsCurrent[2], resultsCurrent[3]) * 180 / M_PI;
   pt.frequency = frequency;
-  pt.ImpedanceMag = fabs(MagEWE / MagCurrent);
+  pt.ImpedanceMag = fabs(MagEWE / MagCurrent * (calData->m_DACdcP_I[range] / calData->m_DACdcP_V * 1000)); //yes, mIDACdc_I is in the numerator, since the units are inverted compared to m_ADC for I and V
   pt.phase = phaseCurrent - phaseEWE;
+  if (fittedFreq < 0)
+    pt.phase *= -1;
   if (pt.phase <= -180)
     pt.phase += 360;
   else if (pt.phase > 180)
