@@ -172,6 +172,7 @@ void MainWindow::AddInstruments(InstrumentList instruments) {
 		for (auto it = handler.experiment.begin(); it != handler.experiment.end(); ++it) {
 			it->busy = false;
 			it->paused = false;
+			it->isManual = false;
 		}
 
 		hardware.handlers << handler;
@@ -423,6 +424,10 @@ void MainWindow::UpdateCurrentExperimentState() {
 		else {
 			emit CurrentExperimentResumed();
 		}
+
+		if (!currentHandler->experiment[currentChannel].isManual) {
+			emit CurrentExperimentIsNotManual();
+		}
 	}
 	else {
 		emit CurrentExperimentCompleted();
@@ -551,6 +556,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 
 	hardware.currentInstrument.handler->experiment[currentChannel].busy = true;
 	hardware.currentInstrument.handler->experiment[currentChannel].paused = false;
+	hardware.currentInstrument.handler->experiment[currentChannel].isManual = false;
 	hardware.currentInstrument.handler->experiment[currentChannel].id = newId;
 	//hardware.currentInstrument.handler->experiment.channel = hardware.currentInstrument.channel;
 
@@ -773,6 +779,7 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 
 	it->experiment[channel].busy = true;
 	it->experiment[channel].paused = false;
+	it->experiment[channel].isManual = true;
 	it->experiment[channel].id = id;
 
 	LOG() << "Manual experiment started";

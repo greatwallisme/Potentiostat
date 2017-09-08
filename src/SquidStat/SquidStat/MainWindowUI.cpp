@@ -4014,6 +4014,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			pauseManualExpPbt->show();
 			stopManualExpPbt->show();
 			startManualExpPbt->hide();
+
+			advOptionsGroupFrame->setEnabled(true);
 		});
 		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentResumed, [=]() {
 			pauseManualExpPbt->setText(PAUSE_EXP_BUTTON_TEXT);
@@ -4027,6 +4029,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			pauseManualExpPbt->hide();
 			stopManualExpPbt->hide();
 			startManualExpPbt->show();
+
+			advOptionsGroupFrame->setEnabled(true);
+		});
+
+		plotHandler.plotTabConnections << CONNECT(mw, &MainWindow::CurrentExperimentIsNotManual, [=]() {
+			pauseManualExpPbt->hide();
+			stopManualExpPbt->hide();
+			startManualExpPbt->hide();
+
+			advOptionsGroupFrame->setEnabled(false);
 		});
 
 		auto setManualStartParams = [=](const StartExperimentParameters &startParams) {
