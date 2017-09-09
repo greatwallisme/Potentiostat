@@ -116,6 +116,7 @@ private:
 	QWidget* GetApplyStyleButton();
 
 	QWidget* GetMainTabWidget();
+	void ShowNotificationDialog(bool needToExec = true);
 
 	QWidget* GetOldSearchHardwareTab();
 	QWidget* GetRunExperimentTab();
@@ -155,6 +156,10 @@ private:
 			QWidget *listItemHolder;
 			QPushButton *addNewTabButton;
 		} buildExperiment;
+		struct {
+			QWidget *owner;
+			QWidget *mainTabBar;
+		} notificationDependencies;
 	} ui;
 		
 	struct {

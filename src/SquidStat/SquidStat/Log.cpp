@@ -1,5 +1,7 @@
 #include "Log.h"
 
+#include <QRegExp>
+
 static QObject *logParent = 0;
 
 void SetLogSignalEmitterParent(QObject *parent) {
@@ -12,6 +14,7 @@ LogSignalEmitter* GetLogSignalEmitter() {
 	if (0 == ret) {
 		if (logParent) {
 			ret = new LogSignalEmitter(logParent);
+			ret->moveToThread(logParent->thread());
 		}
 	}
 
@@ -29,7 +32,21 @@ void LogMessageHandler(QtMsgType type, const QMessageLogContext &context, const 
 LogSignalEmitter::LogSignalEmitter(QObject *parent) :
 	QObject(parent)
 {
+	connect(this, &LogSignalEmitter::MoveToNativeThread,
+		this, &LogSignalEmitter::NativeThreadEmitter, Qt::QueuedConnection);
 }
 void LogSignalEmitter::SendLogEmitter(const QString &str) {
+	emit MoveToNativeThread(str);
+}
+void LogSignalEmitter::NativeThreadEmitter(const QString &str) {
 	emit SendLog(str);
+
+	auto strs = str.split(" | ");
+
+	auto header = strs.at(0);
+	strs.removeAt(0);
+	strs.removeAt(0);
+	auto text = strs.join(" | ");
+
+	emit SendLogExtended(header, text);
 }

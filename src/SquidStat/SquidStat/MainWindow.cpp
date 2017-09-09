@@ -1291,6 +1291,7 @@ void MainWindow::LoadFonts() {
 	}
 	//*/
 }
+#include <QCommonStyle>
 void MainWindow::ApplyStyle() {
     QFile f("./GUI.css");
     if(!f.open(QIODevice::ReadOnly))

@@ -21,6 +21,12 @@ public:
 
 	void SendLogEmitter(const QString&);
 
+private slots:
+	void NativeThreadEmitter(const QString&);
+
 signals:
+	void MoveToNativeThread(const QString&);
+
 	void SendLog(const QString&);
+	void SendLogExtended(const QString&, const QString&);
 };

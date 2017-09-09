@@ -390,12 +390,160 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	auto *bellFrame = OBJ_NAME(new QFrame, "notification-bell-frame");
 	auto *bellFrameLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(bellFrame)));
 
-	auto *digitLabel = OBJ_NAME(new QLabel("123"), "notification-new-messages");
+	auto *digitLabel = OBJ_NAME(new QLabel("0"), "notification-new-messages");
+	digitLabel->hide();
 	bellFrameLayout->addWidget(digitLabel);
 
 	barLayout->addWidget(bellFrame);
+	
+	ui.notificationDependencies.owner = w;
+	ui.notificationDependencies.mainTabBar = barWidget;
+
+	ShowNotificationDialog(false);
+
+	bellFrame->installEventFilter(new UniversalEventFilter(bellFrame, [=](QObject *obj, QEvent *e) -> bool {
+		if (e->type() == QEvent::MouseButtonPress) {
+			auto me = (QMouseEvent*)e;
+
+			auto marg = bellFrame->contentsMargins();
+			auto pos = me->pos();
+
+
+			QPoint bottomRight = QPoint(bellFrame->width(), bellFrame->height());
+			bottomRight -= QPoint(marg.right(), 0);
+
+			QPoint topLeft = QPoint(0, 0);
+
+			if (!QRect(topLeft, bottomRight).contains(me->pos())) {
+				return false;
+			}
+			
+			digitLabel->setText("0");
+			digitLabel->hide();
+			ShowNotificationDialog();
+		}
+		return false;
+	}));
+	connections << CONNECT(GetLogSignalEmitter(), &LogSignalEmitter::SendLogExtended, [=]() {
+		digitLabel->show();
+		digitLabel->setText(QString("%1").arg(digitLabel->text().toUInt() + 1));
+	});
 
 	return w;
+}
+void MainWindowUI::ShowNotificationDialog(bool needToExec) {
+	static QWidget* dialog = 0;
+	static std::function<void(void)> handler = 0;
+
+	if (dialog) {
+		if (needToExec) {
+			handler();
+			dialog->show();
+		}
+		return;
+	}
+
+	dialog = OBJ_NAME(new QWidget(ui.notificationDependencies.owner, Qt::FramelessWindowHint | Qt::Popup), "notification-dialog");
+	dialog->setAttribute(Qt::WA_TranslucentBackground);
+
+	auto dialogLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(dialog)));
+
+	auto dialogMainWidget = OBJ_NAME(new QScrollArea(), "notification-dialog-main-widget");
+	dialogLay->addWidget(dialogMainWidget);
+
+	auto itemsOwner = OBJ_NAME(WDG(), "notification-dialog-items-owner");
+
+	dialogMainWidget->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+	dialogMainWidget->setWidgetResizable(true);
+	dialogMainWidget->setWidget(itemsOwner);
+
+	auto itemsLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(itemsOwner)));
+
+	itemsLayout->addStretch(1);
+
+	#define LEFT_MARGIN		15
+	auto updateDialogGeometry = [=]() {
+		auto mwGeom = mw->geometry();
+		int xPos = ui.notificationDependencies.owner->width() - dialog->width() - LEFT_MARGIN;
+		int yPos = mw->menuWidget()->height() + ui.notificationDependencies.mainTabBar->height() + 1;
+
+		dialog->setGeometry(mwGeom.x() + xPos, mwGeom.y() + yPos, dialog->width(), dialog->height());
+	};
+	handler = updateDialogGeometry;
+
+	dialog->installEventFilter(new UniversalEventFilter(dialog, [=](QObject*, QEvent *e) -> bool {
+		if (e->type() == QEvent::Resize) {
+			updateDialogGeometry();
+			
+			return true;
+		}
+		if (e->type() == QEvent::Hide) {
+			for (int i = 0; i < itemsLayout->count(); ++i) {
+				auto item = itemsLayout->itemAt(i);
+				auto w = item->widget();
+
+				if (!w) {
+					continue;
+				}
+
+				w->setStyleSheet("border-left: 2px solid white;");
+			}
+		}
+		return false;
+	}));
+	ui.notificationDependencies.owner->installEventFilter(new UniversalEventFilter(dialog, [=](QObject*, QEvent *e) -> bool {
+		if (e->type() == QEvent::Resize) {
+			updateDialogGeometry();
+
+			return true;
+		}
+		return false;
+	}));
+	ui.notificationDependencies.mainTabBar->installEventFilter(new UniversalEventFilter(dialog, [=](QObject*, QEvent *e) -> bool {
+		if (e->type() == QEvent::Resize) {
+			updateDialogGeometry();
+
+			return true;
+		}
+		return false;
+	}));
+
+	connections << CONNECT(GetLogSignalEmitter(), &LogSignalEmitter::SendLogExtended, [=](const QString &header, const QString &text) {
+		auto item = OBJ_NAME(new QFrame, "notification-dialog-item");
+		OBJ_PROP(item, "new-notification", "true");
+		item->setAttribute(Qt::WA_Hover);
+
+		auto itemLay = NO_SPACING(NO_MARGIN(new QGridLayout(item)));
+
+		QPushButton *deleteItem;
+		itemLay->addWidget(OBJ_NAME(new QLabel(header), "notification-dialog-item-header"), 1, 0);
+		itemLay->addWidget(OBJ_NAME(new QLabel(text), "notification-dialog-item-text"), 2, 0, 1, 2);
+		itemLay->addWidget(deleteItem = OBJ_NAME(PBT(""), "notification-dialog-item-delete-pbt"), 0, 1, 2, 1);
+		itemLay->setRowStretch(2, 1);
+
+		CONNECT(deleteItem, &QPushButton::clicked, item, &QObject::deleteLater);
+
+		deleteItem->hide();
+		item->installEventFilter(new UniversalEventFilter(item, [=](QObject *obj, QEvent *e) -> bool {
+			if (e->type() == QEvent::HoverEnter) {
+				deleteItem->show();
+				return true;
+			}
+			if (e->type() == QEvent::HoverLeave) {
+				deleteItem->hide();
+				return true;
+			}
+
+			return false;
+		}));
+
+		itemsLayout->insertWidget(0, item);
+	});
+
+	if (needToExec) {
+		updateDialogGeometry();
+		dialog->show();
+	}
 }
 QWidget* MainWindowUI::GetOldSearchHardwareTab() {
 	static QWidget *w = 0;
