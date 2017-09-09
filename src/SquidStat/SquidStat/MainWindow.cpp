@@ -442,7 +442,9 @@ void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 	hardware.currentInstrument.handler = hwIt;
 	hardware.currentInstrument.channel = channel;
 
-	//LOG() << "Start working with" << name;
+#ifndef QT_NO_DEBUG
+	LOG() << "Start working with" << name;
+#endif
 }
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(InstrumentOperator *oper) {
 	QList<MainWindow::InstrumentHandler>::iterator ret = hardware.handlers.begin();
@@ -1293,7 +1295,12 @@ void MainWindow::LoadFonts() {
 }
 #include <QCommonStyle>
 void MainWindow::ApplyStyle() {
+#ifndef QT_NO_DEBUG
     QFile f("./GUI.css");
+#else
+	QFile f(":/GUI/GUI.css");
+#endif
+
     if(!f.open(QIODevice::ReadOnly))
         return;
 

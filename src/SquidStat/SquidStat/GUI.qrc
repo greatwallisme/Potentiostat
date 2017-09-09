@@ -60,5 +60,6 @@
         <file>Resources/zoom-to-selection-selected.png</file>
         <file>Resources/bell.png</file>
         <file>Resources/delete-notification.png</file>
+        <file>GUI.css</file>
     </qresource>
 </RCC>

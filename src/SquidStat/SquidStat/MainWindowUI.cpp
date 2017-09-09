@@ -136,10 +136,13 @@ void MainWindowUI::CreateMenu() {
 	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
 
 	menuBar->addMenu(moreOptionsMenu);
+
+#ifndef QT_NO_DEBUG
 	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
 
 	connections << CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
-	
+#endif
+
 	connections << CONNECT(updateHardware, &QAction::triggered, [=]() {
 		GetUpdateFirmwareDialog(mw);
 	});
@@ -303,7 +306,9 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
-	//widgetsLayout->addWidget(GetOldSearchHardwareTab());
+#ifndef QT_NO_DEBUG
+	widgetsLayout->addWidget(GetOldSearchHardwareTab());
+#endif
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
 	
@@ -372,7 +377,8 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
 	});
-	/*
+
+#ifndef QT_NO_DEBUG
 	pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
@@ -385,7 +391,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
 	});
-	//*/
+#endif
 
 	barLayout->addStretch(1);
 
