@@ -3731,9 +3731,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			break;
 		}
 
-		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("-1024"), 3, 1);
-		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("1024"), 4, 1);
-		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("0.1"), 5, 1);
+		advOptionsGroupFrameLay->addWidget(appliedPotLed = new QLineEdit("0"), 3, 1);
+		advOptionsGroupFrameLay->addWidget(appliedCurLed = new QLineEdit("0"), 4, 1);
+		advOptionsGroupFrameLay->addWidget(samplingIntLed = new QLineEdit("1"), 5, 1);
 		advOptionsGroupFrameLay->addWidget(rangeCombo, 6, 1);
 
 		appliedCurLblRight = CMB();
@@ -3933,7 +3933,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->show();
 				appliedPotLblRight->show();
 				appliedPotLed->show();
-				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 				break;
 
 			case Qt::Checked:
@@ -3944,7 +3944,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->hide();
 				appliedPotLblRight->hide();
 				appliedPotLed->hide();
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 				break;
 			}
 		});
@@ -3958,10 +3958,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			case Qt::Checked:
 				openCircuitModeChk->setText(CELL_ON_TEXT);
 				if (potGalvModeChk->isChecked()) {
-					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 				}
 				else {
-					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 				}
 				break;
 			}
@@ -3969,16 +3969,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		plotHandler.plotTabConnections << CONNECT(rangeCombo, &QComboBox::currentTextChanged, [=]() {
 			mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
 		});
-		plotHandler.plotTabConnections << CONNECT(appliedPotLed, &QLineEdit::textChanged, [=](const QString&) {
-			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toUInt());
+		plotHandler.plotTabConnections << CONNECT(appliedPotLed, &QLineEdit::editingFinished, [=]() {
+			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 		});
-		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::textChanged, [=](const QString&) {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::editingFinished, [=]() {
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 		});
-		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::textChanged, [=](const QString &text) {
+		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::editingFinished, [=]() {
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 		});
 		plotHandler.plotTabConnections << CONNECT(startManualExpPbt, &QPushButton::clicked, [=]() {
@@ -3988,10 +3988,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 			if (potGalvModeChk->isChecked()) {
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 			}
 			else {
-				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 			}
 		});
 		plotHandler.plotTabConnections << CONNECT(pauseManualExpPbt, &QPushButton::clicked, [=]() {
@@ -4006,10 +4006,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 				if (potGalvModeChk->isChecked()) {
-					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toInt(), appliedCurLblRight->currentData().toUInt());
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
 				}
 				else {
-					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toInt());
+					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 				}
 			}
 		});
@@ -4438,7 +4438,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				}
 				
 				if (curvePointValid) {
-					auto tooltipText = QString("(%1; %2)").arg(curvePointSample.x(), 0, 'f', 2).arg(curvePointSample.y(), 0, 'f', 2);
+					auto tooltipText = QString("(%1; %2)").arg(curvePointSample.x(), 0, 'e', 3).arg(curvePointSample.y(), 0, 'e', 3);
 					//plotOverlay->setToolTip();
 					QToolTip::showText(plotOverlay->mapToGlobal(pos), tooltipText, plotOverlay, QRect(), 0);
 				}

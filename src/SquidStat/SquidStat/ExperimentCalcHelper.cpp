@@ -236,7 +236,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
   pNode->samplingParams.decimation_num = FilterSize;
 }
 
-void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, quint32 t_period, quint32 t_pulsewidth, ExperimentNode_t * pNode)
+void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode)
 {
   int dt_min = 50000;
   int ADCbufsize = 256;
@@ -282,15 +282,12 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
   uint16_t bufMult = 1;
 
   /* 2) Minimize dt */
-  uint32_t dt;
-  do
+  uint32_t dt = t_pulse * MILLISECONDS / bufMult;
+  while (dt / dt_min > 1 && bufMult < DACbufsize && bufMult < ADCbufsize)
   {
+    bufMult <<= 1;  //should this be bufMult++ ?
     dt = t_pulse * MILLISECONDS / bufMult;
-    if (dt / dt_min > 1 && bufMult < DACbufsize && bufMult < ADCbufsize)
-    {
-      bufMult <<= 1;
-    }
-  } while (dt / dt_min > 1 && bufMult < DACbufsize && bufMult < ADCbufsize);
+  }
   pNode->samplingParams.ADCTimerPeriod = dt;
 
   if (isEvenPeriodShorter)
@@ -303,7 +300,7 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
     pNode->samplingParams.DACMultEven = bufMult;
     pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
   }
-  pNode->samplingParams.PointsIgnored = bufMult / 2;
+  pNode->samplingParams.PointsIgnored = isEvenPeriodShorter ? pNode->samplingParams.DACMultEven / 2 : pNode->samplingParams.DACMultOdd / 2;
 
   /* 3) Calculate ADCMult */
   pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.DACMultEven;

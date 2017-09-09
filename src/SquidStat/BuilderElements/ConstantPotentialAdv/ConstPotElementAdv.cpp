@@ -152,7 +152,7 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 0;
+	exp.tMin = 10 * MILLISECONDS;
 	exp.tMax = (uint64_t)(duration * SECONDS);
   exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
