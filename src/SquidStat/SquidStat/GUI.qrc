@@ -58,5 +58,6 @@
         <file>Resources/Squidstat.png</file>
         <file>Resources/pan-view-selected.png</file>
         <file>Resources/zoom-to-selection-selected.png</file>
+        <file>Resources/bell.png</file>
     </qresource>
 </RCC>

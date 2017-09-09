@@ -160,6 +160,37 @@ QPushButton#bar-button:open {
 	border: none;
 	border: 1px solid #ce2026;
 }
+/*//////////////        NOTIFICATION AREA      ////////////////////*/
+#notification-bell-frame {
+	border: none;
+	background: url(:/GUI/Resources/bell.png) no-repeat center  left;
+		
+	min-height: 30px;
+	max-height: 30px;
+	
+	padding-bottom: 10px;
+	padding-left: 12px;
+	margin-right: 50px;
+}
+#notification-new-messages {
+	qproperty-text: "1";
+	qproperty-alignment: "AlignHCenter | AlignVCenter";
+	
+	margin: 0px;
+	padding: 0px;
+	
+	font-family: "Segoe UI Semibold";
+	font-size: 12px;
+	color: white;
+	
+	border: 1px solid #ff7b06;
+	border-radius: 9px;
+	background-color: #ff7b06;
+	
+	min-height: 18px;
+	max-height: 18px;
+	min-width: 18px;
+}
 /*//////////////        SELECT EXPERIMENT      ////////////////////*/
 #experiment-list-owner {
 	max-width: 300px;

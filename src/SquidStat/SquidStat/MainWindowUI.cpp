@@ -387,6 +387,14 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 	barLayout->addStretch(1);
 
+	auto *bellFrame = OBJ_NAME(new QFrame, "notification-bell-frame");
+	auto *bellFrameLayout = NO_SPACING(NO_MARGIN(new QVBoxLayout(bellFrame)));
+
+	auto *digitLabel = OBJ_NAME(new QLabel("123"), "notification-new-messages");
+	bellFrameLayout->addWidget(digitLabel);
+
+	barLayout->addWidget(bellFrame);
+
 	return w;
 }
 QWidget* MainWindowUI::GetOldSearchHardwareTab() {
