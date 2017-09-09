@@ -124,6 +124,7 @@ void MainWindowUI::DisconnectAll() {
 	}
 }
 void MainWindowUI::CreateUI() {
+	SetLogSignalEmitterParent(mw);
 	CreateCentralWidget();
 	CreateMenu();
 }
@@ -302,7 +303,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
-	widgetsLayout->addWidget(GetOldSearchHardwareTab());
+	//widgetsLayout->addWidget(GetOldSearchHardwareTab());
 
 	QButtonGroup *buttonGroup = new QButtonGroup(mw);
 	
@@ -371,7 +372,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
 	});
-	
+	/*
 	pbt = OBJ_PROP(OBJ_NAME(PBT("Search the Hardware"), "bar-button"), "order", "first");
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
@@ -384,6 +385,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 		widgetsLayout->setCurrentWidget(GetOldSearchHardwareTab());
 	});
+	//*/
 
 	barLayout->addStretch(1);
 
@@ -600,7 +602,6 @@ QWidget* MainWindowUI::GetLogWidget() {
 
 	log->setReadOnly(true);
 	
-	SetLogSignalEmitterParent(mw);
 	connections << CONNECT(GetLogSignalEmitter(), &LogSignalEmitter::SendLog, log, &QTextEdit::append);
 	
 	return w;

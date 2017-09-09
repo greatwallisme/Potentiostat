@@ -442,7 +442,7 @@ void MainWindow::SelectHardware(const QString &name, quint8 channel) {
 	hardware.currentInstrument.handler = hwIt;
 	hardware.currentInstrument.channel = channel;
 
-	LOG() << "Start working with" << name;
+	//LOG() << "Start working with" << name;
 }
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(InstrumentOperator *oper) {
 	QList<MainWindow::InstrumentHandler>::iterator ret = hardware.handlers.begin();
