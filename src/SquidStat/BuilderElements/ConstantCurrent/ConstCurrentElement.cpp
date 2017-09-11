@@ -12,12 +12,16 @@
 #define CONST_CURRENT_UNITS_OBJ_NAME "constant-current-units"
 #define DURATION_OBJ_NAME         "duration"
 #define DURATION_UNITS_OBJ_NAME   "duration-units"
+#define VMAX_OBJ_NAME             "Maximum-voltage"
+#define VMIN_OBJ_NAME             "Minimum-voltage"
 #define CAPACITY_OBJ_NAME     "capacity"
 #define SAMPLING_INTERVAL_OBJ_NAME		"sampling-interval"
 #define SAMPLING_INTERVAL_UNITS_OBJ_NAME   "sampling-interval-units"
 
 #define CONST_CURRENT_DEFAULT	10
 #define DURATION_DEFAULT  60
+#define VMAX_DEFAULT    5
+#define VMIN_DEFAULT  0
 #define CAPACITY_DEFAULT 10
 #define SAMPLING_INTERVAL_DEFAULT		0.5
 
@@ -60,6 +64,16 @@ QWidget* ConstCurrentElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_CENTERED_COMMENT("Ending conditions", row);
 
   ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit: ", row, 0);
+  _INSERT_TEXT_INPUT(VMAX_DEFAULT, VMAX_OBJ_NAME, row, 1);
+  _INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Lower voltage limit: ", row, 0);
+  _INSERT_TEXT_INPUT(VMIN_DEFAULT, VMIN_OBJ_NAME, row, 1);
+  _INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+  ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Max duration: ", row, 0);
   _INSERT_TEXT_INPUT(DURATION_DEFAULT, DURATION_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DURATION_UNITS_OBJ_NAME, row, 2);
@@ -89,31 +103,31 @@ NodesData ConstCurrentElement::GetNodesData(const UserInput &inputs, const Calib
   duration *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[DURATION_UNITS_OBJ_NAME].toString());
   double samplingInterval = inputs[SAMPLING_INTERVAL_OBJ_NAME].toDouble();
   samplingInterval *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[SAMPLING_INTERVAL_UNITS_OBJ_NAME].toString());
+  double Vmax = inputs[VMAX_OBJ_NAME].toDouble();
+  double Vmin = inputs[VMIN_OBJ_NAME].toDouble();
   double capacity = inputs[CAPACITY_OBJ_NAME].toDouble();
   capacity *= 3600; //convert from mAh to mC
   capacity = fabs(capacity);
 
-  int numPtsToIgnore = 0;
-  if (samplingInterval > 0.5)
-  {
-    numPtsToIgnore = samplingInterval / 0.5;
-    samplingInterval = 0.5;
-  }
+  /* Make sure Vmax and Vmin aren't swapped */
+  double tempV = MAX(Vmax, Vmin);
+  Vmin = MIN(Vmax, Vmin);
+  Vmax = tempV;
 
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_GALV;
-	exp.tMin = 0;
+	exp.tMin = 10 * MILLISECONDS;
 	exp.tMax = (uint64_t)(duration * SECONDS);
   exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval, 0.5);
   exp.DCPoint_galv.Irange = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, constCurrent);
   exp.DCPoint_galv.IPoint = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, constCurrent);
   exp.DCPoint_galv.dVdtMin = 0;
-  exp.DCPoint_galv.Vmax = MAX_VOLTAGE;
-  exp.DCPoint_galv.Vmin = -MAX_VOLTAGE;
+  exp.DCPoint_galv.Vmax = Vmax;
+  exp.DCPoint_galv.Vmin = Vmin;
   exp.DCPoint_galv.CapacityMax = capacity;
-  exp.DCPoint_galv.isTrackingCapacity = capacity != 0;
+  exp.DCPoint_galv.isTrackingCapacity = (capacity != 0);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

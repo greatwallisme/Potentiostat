@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/GUI">
+        <file alias="CVElement">Resources/element.png</file>
+    </qresource>
+</RCC>

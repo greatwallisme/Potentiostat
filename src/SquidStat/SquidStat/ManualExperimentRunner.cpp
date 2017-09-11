@@ -110,10 +110,10 @@ QStringList ManualExperimentRunner::GetXAxisParameters(ExperimentType type) cons
 
 	if (type == ET_DC) {
 		ret <<
+      PLOT_VAR_TIMESTAMP_NORMALIZED <<
+      PLOT_VAR_ELAPSED_TIME_HR <<
 			PLOT_VAR_EWE <<
-			PLOT_VAR_CURRENT <<
-			PLOT_VAR_ELAPSED_TIME_HR <<
-			PLOT_VAR_TIMESTAMP_NORMALIZED;
+			PLOT_VAR_CURRENT;
 	}
 
 	return ret;
@@ -123,8 +123,8 @@ QStringList ManualExperimentRunner::GetYAxisParameters(ExperimentType type) cons
 
 	if (type == ET_DC) {
 		ret <<
-			PLOT_VAR_CURRENT <<
 			PLOT_VAR_EWE <<
+      PLOT_VAR_CURRENT <<
 			PLOT_VAR_ECE <<
 			PLOT_VAR_CURRENT_INTEGRAL;
 	}

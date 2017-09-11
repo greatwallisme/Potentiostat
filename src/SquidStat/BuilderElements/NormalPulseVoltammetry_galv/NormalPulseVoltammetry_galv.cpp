@@ -106,7 +106,7 @@ NodesData NormalPulseVoltammetry_galv::GetNodesData(const UserInput &inputs, con
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_NORMALPULSE_GALV;
-  exp.tMin = 0;
+  exp.tMin = 5 * MILLISECONDS;
   exp.tMax = 0xFFFFFFFFFFFFFFFF;
  
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, (qint32)round(pulsePeriod), (qint32)round(pulseWidth), &exp);

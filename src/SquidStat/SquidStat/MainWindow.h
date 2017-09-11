@@ -85,7 +85,7 @@ public slots:
 
 	void StartManualExperiment(const QUuid&);
 	void SetManualSamplingParams(const QUuid&, double value);
-	void SetManualGalvanoSetpoint(const QUuid&, double setpoint);
+	void SetManualGalvanoSetpoint(const QUuid&, double setpoint, QString units_str);
 	void SetManualPotentioSetpoint(const QUuid&, double setpoint);
 	void SetManualOcp(const QUuid&);
 	void SetCurrentRangingMode(const QUuid&, quint8 range);

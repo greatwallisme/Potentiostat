@@ -24,7 +24,8 @@
 #define AC_AMP_DEFAULT			0.1		//(in mA)
 
 #define PLOT_VAR_IMPEDANCE				"|Z|"
-#define PLOT_VAR_PHASE					"Phase"
+#define PLOT_VAR_PHASE					"Phase (degrees)"
+#define PLOT_VAR_ABS_PHASE      "|Phase| (degrees)"
 #define PLOT_VAR_IMP_REAL				"Z\'"
 #define PLOT_VAR_IMP_IMAG				"Z\""
 #define PLOT_VAR_NEG_IMP_IMAG			"-Z\""
@@ -159,7 +160,7 @@ NodesData EISGalvanostatic::GetNodesData(QWidget *wdg, const CalibrationData &ca
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
     exp.currentRangeMode = (currentRange_t)MIN((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
-    exp.FRA_pot_node.frequency = (float)frequencyList[i];
+    exp.FRA_galv_node.frequency = (float)frequencyList[i];
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
     exp.FRA_galv_node.amplitudeTarget = amplitude;
     exp.FRA_galv_node.IRange = exp.currentRangeMode;
@@ -192,6 +193,7 @@ QStringList EISGalvanostatic::GetYAxisParameters(ExperimentType type) const {
 		ret <<
 		PLOT_VAR_IMPEDANCE <<
 		PLOT_VAR_PHASE <<
+    PLOT_VAR_ABS_PHASE <<
 		PLOT_VAR_IMP_REAL <<
 		PLOT_VAR_IMP_IMAG <<
 		PLOT_VAR_NEG_IMP_IMAG;
@@ -206,6 +208,7 @@ void EISGalvanostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
 	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
 	PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
+  PUSH_BACK_DATA(PLOT_VAR_ABS_PHASE, abs(dataPoint.phase));
 	PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);

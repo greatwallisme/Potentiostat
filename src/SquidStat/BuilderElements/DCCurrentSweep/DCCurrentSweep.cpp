@@ -103,7 +103,7 @@ NodesData DCCurrentSweep::GetNodesData(const UserInput &inputs, const Calibratio
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_GALV;
-	exp.tMin = 0;
+	exp.tMin = 5 * MILLISECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRange;
   ExperimentCalcHelperClass::GetSamplingParams_galvSweep(hwVersion.hwModel, &calData, &exp, dIdt, currentRange, sampInterval);

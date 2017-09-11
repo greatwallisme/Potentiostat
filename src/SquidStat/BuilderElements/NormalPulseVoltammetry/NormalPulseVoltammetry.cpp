@@ -133,7 +133,7 @@ NodesData NormalPulseVoltammetry::GetNodesData(const UserInput &inputs, const Ca
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_NORMALPULSE_POT;
-  exp.tMin = 0;
+  exp.tMin = 5 * MILLISECONDS;
   exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = RangeMode_str.contains("Auto") ? AUTORANGE : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, maxCurrent);
   ExperimentCalcHelperClass::GetSamplingParameters_pulse(hwVersion.hwModel, (qint32)round(pulsePeriod), (qint32)round(pulseWidth), &exp);

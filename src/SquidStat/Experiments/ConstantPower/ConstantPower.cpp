@@ -118,10 +118,10 @@ NodesData ConstantPower::GetNodesData(QWidget *wdg, const CalibrationData &calDa
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_CONST_POWER;
-  exp.tMin = 5 * MILLISECONDS;
+  exp.tMin = 10 * MILLISECONDS;
   exp.tMax = (uint64_t) (tmax * SECONDS);
   exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt, 0.05);
   exp.DCConstPower.power = power;
   exp.DCConstPower.ICtrl = 0;
   exp.DCConstPower.VMax = (float)VMax;

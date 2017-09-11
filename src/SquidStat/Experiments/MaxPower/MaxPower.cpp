@@ -111,7 +111,7 @@ NodesData MaxPower::GetNodesData(QWidget *wdg, const CalibrationData &calData, c
   exp.tMin = 10 * MILLISECONDS;
   exp.tMax = (uint64_t) (tmax * SECONDS);
   exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt, 0.05);
   exp.DCMaxPower.VMax = (float)VMax;
   exp.DCMaxPower.VMin = (float)VMin;
   exp.numPlays = 1;

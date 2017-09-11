@@ -94,7 +94,7 @@ NodesData ConstantPowerElement::GetNodesData(const UserInput &inputs, const Cali
   exp.tMin = 5 * MILLISECONDS;
   exp.tMax = (uint64_t)(tmax * SECONDS);
   exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt, 0.05);
   exp.DCConstPower.power = power;
   exp.DCConstPower.ICtrl = 0;
   exp.DCConstPower.VMax = (float)VMax;

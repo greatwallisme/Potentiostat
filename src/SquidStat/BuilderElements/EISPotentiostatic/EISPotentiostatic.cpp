@@ -97,15 +97,16 @@ NodesData EISPotentiostatic::GetNodesData(const UserInput &inputs, const Calibra
   upperFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[UPPER_FREQUENCY_UNITS_OBJ].toString());
   lowerFreq *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[LOWER_FREQUENCY_UNITS_OBJ].toString());
 
-  QList<qreal> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDec);
+  QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDec);
 
   exp.isHead = exp.isTail = false;
+  exp.MaxPlays = 1;
   exp.nodeType = DCNODE_POINT_POT;
   exp.tMin = exp.tMax = 2 * SECONDS;
   exp.currentRangeMode = AUTORANGE;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
   exp.currentRangeMode = AUTORANGE;
-  exp.DCPoint_pot.VPointUserInput = biasVoltage;
+  exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, biasVoltage);
   exp.DCPoint_pot.VPointVsOCP = biasVsOCP;
   exp.DCPoint_pot.dIdtMin = 0;
   exp.DCPoint_pot.Imax = MAX_CURRENT;

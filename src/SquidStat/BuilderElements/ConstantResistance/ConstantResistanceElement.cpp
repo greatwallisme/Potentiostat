@@ -87,7 +87,7 @@ NodesData ConstantResistanceElement::GetNodesData(const UserInput &inputs, const
   exp.tMin = 5 * MILLISECONDS;
   exp.tMax = (uint64_t)(tmax * SECONDS);
   exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt);
+  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt, 0.05);
   exp.DCConstResistance.resistance = resistance;
   exp.DCConstResistance.ICtrl = 0;
   exp.DCConstResistance.VMax = MAX_VOLTAGE;

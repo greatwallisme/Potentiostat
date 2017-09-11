@@ -1904,7 +1904,7 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 
 	auto paramsFooterWidgetLay = new QGridLayout(paramsFooterWidget);
 
-	paramsFooterWidgetLay->addWidget(OBJ_NAME(LBL("Select Channel"), "heading-label"), 0, 0, 1, 3);
+	paramsFooterWidgetLay->addWidget(OBJ_NAME(LBL("Select Device/Channel"), "heading-label"), 0, 0, 1, 3);
 	paramsFooterWidgetLay->addWidget(hwList, 1, 0);
 	paramsFooterWidgetLay->addWidget(channelEdit, 1, 1);
 	paramsFooterWidgetLay->addLayout(buttonLay, 2, 0, 1, 3);
@@ -3832,7 +3832,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	#define POTENTIOSTATIC_TEXT "Potentiostatic"
 	#define GALVANOSTATIC_TEXT	"Galvanostatic"
-	#define OCP_MODE_TEXT		"Open circuit"
+	#define OCP_MODE_TEXT		"Cell off (open circuit)"
 	#define CELL_ON_TEXT		"Cell On"
 
 	if (isManualMode) {
@@ -3906,12 +3906,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		appliedCurLblRight->hide();
 		appliedCurLed->hide();
 
-		startManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		startManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Start recording"), "primary-button"), "button-type", "experiment-start-pbt");
 		startManualExpPbt->setIcon(QIcon(":/GUI/Resources/start.png"));
 		startManualExpPbt->setIconSize(QPixmap(":/GUI/Resources/start.png").size());
 
-		pauseManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Pause Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
-		stopManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Stop Experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		pauseManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Pause experiment"), "primary-button"), "button-type", "experiment-start-pbt");
+		stopManualExpPbt = OBJ_PROP(OBJ_NAME(PBT("Stop experiment"), "primary-button"), "button-type", "experiment-start-pbt");
 
 		pauseManualExpPbt->hide();
 		stopManualExpPbt->hide();
@@ -3938,8 +3938,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	QPushButton *pauseExperiment;
 	QPushButton *stopExperiment;
 
-	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT(PAUSE_EXP_BUTTON_TEXT), "control-button-blue"));
-	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop Experiment"), "control-button-red"));
+	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT("Pause experiment"), "control-button-blue"));
+	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop experiment"), "control-button-red"));
 
 	if ( (type == ET_SAVED) || (isManualMode) ) {
 		pauseExperiment->hide();
@@ -4099,7 +4099,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblLeft->hide();
 				appliedPotLblRight->hide();
 				appliedPotLed->hide();
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 				break;
 			}
 		});
@@ -4113,7 +4113,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			case Qt::Checked:
 				openCircuitModeChk->setText(CELL_ON_TEXT);
 				if (potGalvModeChk->isChecked()) {
-					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 				}
 				else {
 					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
@@ -4128,10 +4128,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedCurLed, &QLineEdit::editingFinished, [=]() {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 		});
 		plotHandler.plotTabConnections << CONNECT(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 		});
 		plotHandler.plotTabConnections << CONNECT(samplingIntLed, &QLineEdit::editingFinished, [=]() {
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
@@ -4143,7 +4143,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 			if (potGalvModeChk->isChecked()) {
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 			}
 			else {
 				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
@@ -4161,7 +4161,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
 				if (potGalvModeChk->isChecked()) {
-					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble());
+					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 				}
 				else {
 					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());

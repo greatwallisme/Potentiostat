@@ -24,6 +24,7 @@
 
 #define PLOT_VAR_IMPEDANCE				"|Z| (Ohms)"
 #define PLOT_VAR_PHASE					"Phase (degrees)"
+#define PLOT_VAR_ABS_PHASE      "|Phase| (degrees)"
 #define PLOT_VAR_IMP_REAL				"Z\'(Ohms)"
 #define PLOT_VAR_IMP_IMAG				"Z\"(Ohms)"
 #define PLOT_VAR_NEG_IMP_IMAG			"-Z\"(Ohms)"
@@ -190,6 +191,7 @@ QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
 		ret <<
 		PLOT_VAR_IMPEDANCE <<
 		PLOT_VAR_PHASE <<
+    PLOT_VAR_ABS_PHASE <<
 		PLOT_VAR_IMP_REAL <<
 		PLOT_VAR_IMP_IMAG <<
 		PLOT_VAR_NEG_IMP_IMAG <<
@@ -207,6 +209,7 @@ void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
     PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
     PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
     PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
+    PUSH_BACK_DATA(PLOT_VAR_ABS_PHASE, abs(dataPoint.phase));
     PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
     PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
     PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);

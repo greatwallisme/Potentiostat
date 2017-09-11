@@ -29,6 +29,8 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case ADCAC_DATA: {
+      LOG() << "ADCAC_DATA";
+      auto *dataPtr = data.data();
 				int arrayDataLen = data.size() - sizeof(ExperimentalAcData);
 				if( ( arrayDataLen % (sizeof(int16_t)*2) ) == 0) {
 					emit ExperimentalAcDataReceived(channel, data);
@@ -44,6 +46,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_COMPLETE:
+      LOG() << "EXPERIMENT_COMPLETE";
 			emit ExperimentCompleted(channel);
 			break;
 		
@@ -56,7 +59,8 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_NODE_BEGINNING:
-			if (data.size() == sizeof(ExperimentNode_t)) {
+      LOG() << "EXPERIMENT_NODE_BEGINNING";
+      if (data.size() == sizeof(ExperimentNode_t)) {
 				ExperimentNode_t *node = (ExperimentNode_t*)data.data();
 				emit ExperimentNodeBeginning(channel, *node);
 			}
@@ -76,7 +80,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
       break;
 
     case OVERCURRENT_WARNING:
-      LOG() << "The current has exceeded its set maximum limit! New range: " << data[0];
+      LOG() << "The current has exceeded its set maximum limit! New range: " << QString::number(data[0]);
       break;
 
     case ECE_OVERVOLTAGE_WARNING:

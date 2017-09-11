@@ -102,12 +102,12 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
   currentRange_t DCcurrentRangeLimit = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, biasCurrent);
   currentRange_t ACcurrentRangeLimit = ExperimentCalcHelperClass::GetMinCurrentRange_DACac(&calData, acAmp);
 
-  QList<qreal> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDec);
+  QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDec);
 
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
-  exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
+  exp.currentRangeMode = exp.DCPoint_galv.Irange = (currentRange_t)MIN((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
   exp.tMin = exp.tMax = 2 * SECONDS;
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, 4);
   exp.DCPoint_galv.dVdtMin = 0;
@@ -123,7 +123,8 @@ NodesData EISGalvanostatic::GetNodesData(const UserInput &inputs, const Calibrat
     exp.nodeType = FRA_NODE_GALV;
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
-    exp.currentRangeMode = (currentRange_t)MAX((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
+    exp.currentRangeMode = (currentRange_t)MIN((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
+    exp.FRA_galv_node.frequency = (float) frequencyList[i];
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
     exp.FRA_galv_node.amplitudeTarget = acAmp;
     exp.FRA_galv_node.IRange = exp.currentRangeMode;

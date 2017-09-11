@@ -8,7 +8,7 @@
 
 /* DC methods */
 
-void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, const double targetSamplingInterval)
+void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, const double targetSamplingInterval, double MaxUpdateInterval)
 {
 	int dt_min = 50000;
   int ADCbufsize = 256;
@@ -45,7 +45,7 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
   {
     FilterSize++;
     transmitInterval = targetSamplingInterval / FilterSize * SECONDS;
-  } while (transmitInterval > 1 * SECONDS);
+  } while (transmitInterval > MaxUpdateInterval * SECONDS);
   pNode->samplingParams.decimation_num = FilterSize;
 
 	/* Minimize dt, maximize ADCBufferSizeEven and Odd */
@@ -404,6 +404,10 @@ double ExperimentCalcHelperClass::GetUnitsMultiplier(QString units_str)
     return 1;
 
   /* power units */
+  else if (units_str.contains("nW"))
+    return 1e-6;
+  else if (units_str.contains("uW"))
+    return 1e-3;
   else if (units_str.contains("mW"))
     return 1;
   else if (units_str.contains("W"))
@@ -606,17 +610,17 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   }
 
   /* debugging only */
-  std::ofstream fout;
-  QString filename = "C:/Users/Matt/Desktop/results";
-  filename.append(QString::number(frequency));
-  filename.append(".txt");
-  fout.open(filename.toStdString(), std::ofstream::out);
-  fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
-  fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
-  for (int i = 0; i < ADCacBUF_SIZE; i++)
-  {
-    fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
-  }
+  //std::ofstream fout;
+  //QString filename = "C:/Users/Matt/Desktop/results";
+  //filename.append(QString::number(frequency));
+  //filename.append(".txt");
+  //fout.open(filename.toStdString(), std::ofstream::out);
+  //fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
+  //fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
+  //for (int i = 0; i < ADCacBUF_SIZE; i++)
+  //{
+  //  fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
+  //}
 
   ComplexDataPoint_t pt;
   double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE;

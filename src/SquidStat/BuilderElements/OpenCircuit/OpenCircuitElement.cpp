@@ -93,7 +93,7 @@ NodesData OpenCircuitElement::GetNodesData(const UserInput &inputs, const Calibr
   exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_OCP;
-  exp.tMin = 0;
+  exp.tMin = 5 * MILLISECONDS;
   exp.tMax = duration * SECONDS;
   exp.MaxPlays = 1;
   exp.currentRangeMode = AUTORANGE;

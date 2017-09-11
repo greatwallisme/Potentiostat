@@ -158,7 +158,7 @@ NodesData ConstPotElementAdv::GetNodesData(const UserInput &inputs, const Calibr
   ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, samplingInterval);
 	exp.DCPoint_pot.VPointUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VPoint);
   exp.DCPoint_pot.VPointVsOCP = vsOCP;
-  exp.DCPoint_pot.Imax = upperCurrentLimit;
+  exp.DCPoint_pot.Imax = MAX_CURRENT;
   exp.DCPoint_pot.Imin = minimumCurrent;
   exp.DCPoint_pot.dIdtMin = dIdtMin;
 	exp.MaxPlays = 1;

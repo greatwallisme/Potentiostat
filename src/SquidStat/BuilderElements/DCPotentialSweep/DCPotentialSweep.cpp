@@ -135,7 +135,7 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 0;
+	exp.tMin = 5 * MILLISECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
   ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dVdt, samplingInterval);

@@ -71,8 +71,21 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_ADD_DROP_DOWN_ITEM("Discharge first");
 	_END_DROP_DOWN();
 
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
+  _INSERT_TEXT_INPUT(SAMP_INTERVAL_DEFAULT, SAMP_INTERVAL_OBJ_NAME, row, 1);
+  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Cycles = ", row, 0);
+  _INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
+  _INSERT_LEFT_ALIGN_COMMENT("", row, 2);
+
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Constant current charge</b>", row);
 	
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Charging current = ", row, 0);
@@ -88,6 +101,12 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Constant voltage charge</b>", row);
+
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Minimum charging current = ", row, 0);
 	_INSERT_TEXT_INPUT(MIN_CHG_CURRENT_DEFAULT, MIN_CHG_CURRENT_OBJ_NAME, row, 1);
@@ -99,6 +118,9 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Constant current discharge</b>", row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Discharging current = ", row, 0);
@@ -114,6 +136,12 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
 	_INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Constant voltage discharge</b>", row);
+
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Minimum discharging current = ", row, 0);
 	_INSERT_TEXT_INPUT(MIN_DISCHG_CURRENT_DEFAULT, MIN_DISCHG_CURRENT_OBJ_NAME, row, 1);
@@ -124,30 +152,20 @@ QWidget* ChargeDischargeDC::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
-	_INSERT_TEXT_INPUT(SAMP_INTERVAL_DEFAULT, SAMP_INTERVAL_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
-
-	++row;
 	_INSERT_VERTICAL_SPACING(row);
 
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Rest period</b>", row);
+
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Rest period duration = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
 	_INSERT_TEXT_INPUT(REST_PERIOD_DEFAULT, REST_PERIOD_OBJ, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Rest period sampling interval = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
 	_INSERT_TEXT_INPUT(REST_PERIOD_INT_DEFAULT, REST_PERIOD_INT_OBJ, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
-
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
-
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Cycles = ", row, 0);
-	_INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
@@ -207,13 +225,13 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = true;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_GALV;
-	exp.tMin = 1 * SECONDS;
+	exp.tMin = 2 * SECONDS;
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_galv.Irange = chargeFirst ? ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
-	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
-	exp.DCPoint_galv.Vmax = (float)upperVoltage;
-	exp.DCPoint_galv.Vmin = (float)lowerVoltage;
+	exp.DCPoint_galv.IPoint = chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, abs(chgCurrent)) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, -abs(dischgCurrent));
+	exp.DCPoint_galv.Vmax = (float) chargeFirst ? upperVoltage : MAX_VOLTAGE;
+	exp.DCPoint_galv.Vmin = (float) chargeFirst ? -MAX_VOLTAGE : lowerVoltage;
   exp.DCPoint_galv.dVdtMin = 0;
   exp.currentRangeMode = exp.DCPoint_galv.Irange;
 	exp.MaxPlays = 1;
@@ -222,10 +240,10 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
-	exp.tMin = 1 * SECONDS;
+	exp.tMin = 2 * SECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = AUTORANGE;
-	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
+	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval, 0.1);
   exp.DCPoint_pot.Imax = MAX_CURRENT;
 	exp.DCPoint_pot.Imin = chargeFirst ? ABS(minChgCurrent) : ABS(minDischgCurrent);
   exp.DCPoint_pot.dIdtMin = 0;
@@ -244,16 +262,16 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 
-	exp.isHead = true;
+	exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_GALV;
-	exp.tMin = 3e8;
+	exp.tMin = 2 * SECONDS;
 	exp.tMax = 0xffffffffffffffff;
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval);
 	exp.DCPoint_galv.Irange = !chargeFirst ? ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, chgCurrent) : ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, dischgCurrent);
-	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, chgCurrent) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, dischgCurrent);
-	exp.DCPoint_galv.Vmax = (float)upperVoltage;
-	exp.DCPoint_galv.Vmin = (float)lowerVoltage;
+	exp.DCPoint_galv.IPoint = !chargeFirst ? ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, abs(chgCurrent)) : ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.DCPoint_galv.Irange, -abs(dischgCurrent));
+	exp.DCPoint_galv.Vmax = chargeFirst ? MAX_VOLTAGE : (float)upperVoltage;
+	exp.DCPoint_galv.Vmin = chargeFirst ? (float)lowerVoltage : -MAX_VOLTAGE;
   exp.DCPoint_galv.dVdtMin = 0;
 	exp.MaxPlays = 1;
   exp.currentRangeMode = exp.DCPoint_galv.Irange;
@@ -276,6 +294,7 @@ NodesData ChargeDischargeDC::GetNodesData(QWidget *wdg, const CalibrationData &c
 
 	exp.isHead = false;
 	exp.isTail = true;
+  exp.branchHeadIndex = 0;
 	exp.nodeType = DCNODE_OCP;
   exp.DCocp.Vmin = -MAX_VOLTAGE;
   exp.DCocp.Vmax = MAX_VOLTAGE;
@@ -347,7 +366,7 @@ void ChargeDischargeDC::SaveDcDataHeader(QFile &saveFile, const ExperimentNotes 
 	SAVE_DATA_HEADER_START();
 
 	//SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP);
-  SAVE_DC_DATA_HEADER(PLOT_VAR_DATETIME);
+  //SAVE_DC_DATA_HEADER(PLOT_VAR_DATETIME);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_TIMESTAMP_NORMALIZED);
   SAVE_DC_DATA_HEADER(PLOT_VAR_ELAPSED_TIME_HR);
 	SAVE_DC_DATA_HEADER(PLOT_VAR_EWE);

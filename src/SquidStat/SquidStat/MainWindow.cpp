@@ -812,7 +812,7 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 
 	it->oper->SetManualSamplingParams(channel, params);
 }
-void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, double setpoint) {
+void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, double setpoint, QString units_str) {
 	auto it = SearchForHandler(id);
 
 	if (it == hardware.handlers.end()) {
@@ -828,6 +828,7 @@ void MainWindow::SetManualGalvanoSetpoint(const QUuid &id, double setpoint) {
 
 	Manual::GalvanoSetpoint params;
   
+  setpoint *= ExperimentCalcHelperClass::GetUnitsMultiplier(units_str);
 	params.range = ExperimentCalcHelperClass::GetMinCurrentRange(it->info.hwVer.hwModel, &it->info.calData[channel], setpoint);
   params.g_setpoint = ExperimentCalcHelperClass::GetBINCurrent(&it->info.calData[channel], (currentRange_t)params.range, setpoint);
 
