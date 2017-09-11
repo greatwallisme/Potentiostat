@@ -201,6 +201,8 @@ NodesData ChargeDischargeDC2::GetNodesData(QWidget *wdg, const CalibrationData &
 
   chgPower *= ExperimentCalcHelperClass::GetUnitsMultiplier(chgPowerUnits_str);
   resistance *= ExperimentCalcHelperClass::GetUnitsMultiplier(ResistanceUnits_str);
+  maxChgCapacity *= 3600;      //convert from mAh to mC
+  maxDischgCapacity *= 3600;
 
 	if (!firstPhase_str.contains("Discharge first"))
 	{
@@ -218,6 +220,8 @@ NodesData ChargeDischargeDC2::GetNodesData(QWidget *wdg, const CalibrationData &
     exp.DCConstPower.VMax = upperVoltage;
     exp.DCConstPower.VMin = -MAX_VOLTAGE;
     exp.DCConstPower.power = abs(chgPower);
+    exp.DCConstPower.CapacityMax = maxChgCapacity;
+    exp.DCConstPower.isTrackingCapacity = maxChgCapacity != 0;
     exp.currentRangeMode = AUTORANGE;
     exp.MaxPlays = 1;
     PUSH_NEW_NODE_DATA();
@@ -240,6 +244,8 @@ NodesData ChargeDischargeDC2::GetNodesData(QWidget *wdg, const CalibrationData &
     exp.DCConstResistance.resistance = abs(resistance);
     exp.DCConstResistance.VMin = lowerVoltage;
     exp.DCConstResistance.VMax = MAX_VOLTAGE;
+    exp.DCConstResistance.CapacityMax = maxDischgCapacity;
+    exp.DCConstResistance.isTrackingCapacity = maxDischgCapacity != 0;
     exp.MaxPlays = 1;
     exp.currentRangeMode = AUTORANGE;
     PUSH_NEW_NODE_DATA();
@@ -269,6 +275,8 @@ NodesData ChargeDischargeDC2::GetNodesData(QWidget *wdg, const CalibrationData &
     exp.DCConstResistance.resistance = abs(resistance);
     exp.DCConstResistance.VMin = lowerVoltage;
     exp.DCConstResistance.VMax = MAX_VOLTAGE;
+    exp.DCConstResistance.CapacityMax = maxDischgCapacity;
+    exp.DCConstResistance.isTrackingCapacity = maxDischgCapacity != 0;
     exp.MaxPlays = 1;
     exp.currentRangeMode = AUTORANGE;
     PUSH_NEW_NODE_DATA();
@@ -291,6 +299,8 @@ NodesData ChargeDischargeDC2::GetNodesData(QWidget *wdg, const CalibrationData &
     exp.DCConstPower.VMax = upperVoltage;
     exp.DCConstPower.VMin = -MAX_VOLTAGE;
     exp.DCConstPower.power = abs(chgPower);
+    exp.DCConstPower.CapacityMax = maxChgCapacity;
+    exp.DCConstPower.isTrackingCapacity = maxChgCapacity != 0;
     exp.currentRangeMode = AUTORANGE;
     exp.MaxPlays = 1;
     PUSH_NEW_NODE_DATA();
