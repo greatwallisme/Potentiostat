@@ -1139,9 +1139,24 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 		oper->deleteLater();
 	}
 
-	QThread::msleep(100);
+	static QEventLoop loop;
+	QString hidPath;
 
-	auto hidPath = HidCommunicator::SearchForBootloaderHidPath();
+	int searchAttempts = 20;
+	while (searchAttempts--) {
+		hidPath = HidCommunicator::SearchForBootloaderHidPath();
+
+		if (!hidPath.isEmpty()) {
+			break;
+		}
+
+		QTimer::singleShot(100, &loop, &QEventLoop::quit);
+		loop.exec();
+	}
+
+	//QThread::msleep(100);
+
+	//auto hidPath = HidCommunicator::SearchForBootloaderHidPath();
 
 	if (hidPath.isEmpty()) {
 		LOG() << "No bootloader found";
@@ -1150,11 +1165,10 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 
 	auto bootOp = new BootloaderOperator(hidPath, this);
 
-	static QEventLoop loop;
-  static bool infoReceivedFlag;
-  static bool crcReceivedFlag;
-  static bool flashErasedFlag;
-  static bool flashProgramedFlag;
+	static bool infoReceivedFlag;
+	static bool crcReceivedFlag;
+	static bool flashErasedFlag;
+	static bool flashProgramedFlag;
 	static uint16_t flashCrc;
 	auto disconnector = new Disconnector(bootOp);
 
