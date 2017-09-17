@@ -43,6 +43,20 @@ bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.port.name == a.port.name) && (b.port.serial == a.port.serial));
 }
 
+void RemoveMacFocusRect(QWidget *w) {
+    w->setAttribute(Qt::WA_MacShowFocusRect, false);
+
+    foreach(QObject *child, w->children()) {
+        QWidget *childW = qobject_cast<QWidget*>(child);
+
+        if(0 == childW) {
+            continue;
+        }
+
+        RemoveMacFocusRect(childW);
+    }
+}
+
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new MainWindowUI(this))
@@ -71,6 +85,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	this->setMinimumWidth(screenSize.width() < 1366 ? screenSize.width() * 0.95 : 1366);
 
     ApplyStyle();
+
+    RemoveMacFocusRect(this);
 }
 MainWindow::~MainWindow() {
 	instrumentEnumerator->terminate();
