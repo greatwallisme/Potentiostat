@@ -137,11 +137,13 @@ void MainWindowUI::CreateMenu() {
 
 	menuBar->addMenu(moreOptionsMenu);
 
-#ifndef QT_NO_DEBUG
-	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
+//#ifndef QT_NO_DEBUG
+    auto debugMenu = new QMenu("Debug");
+    auto applyStyleSheet = debugMenu->addAction("Apply stylesheet");
+    menuBar->addMenu(debugMenu);
 
 	connections << CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
-#endif
+//#endif
 
 	connections << CONNECT(updateHardware, &QAction::triggered, [=]() {
 		GetUpdateFirmwareDialog(mw);
@@ -2975,16 +2977,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-template<typename T, typename F>
-void ModifyObject(QObject *parent, F &lambda) {
-	foreach(QObject* obj, parent->children()) {
-		T* objT = qobject_cast<T*>(obj);
-		if (objT) {
-			lambda(objT);
-		}
+template<typename T>
+void ModifyObject(QObject *parent, std::function<void(T*)> lambda) {
+    foreach(QObject* obj, parent->children()) {
+        T* objT = qobject_cast<T*>(obj);
+        if (objT) {
+            lambda(objT);
+        }
 
-		ModifyObject<T>(obj, lambda);
-	}
+        ModifyObject<T>(obj, lambda);
+    }
 }
 bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	static bool ret;
@@ -3659,7 +3661,7 @@ void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double per
 
 
 QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = { 
-	{ QString(REAL_TIME_ELAPSED_TIME), [=](qreal val) -> QString {
+    { QString(REAL_TIME_ELAPSED_TIME), [](qreal val) -> QString {
 		QString ret("%1:%2:%3");
 
 		int intVal = val;
@@ -3670,36 +3672,36 @@ QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = {
 
 		return ret.arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
 	} },
-	{ QString(REAL_TIME_WORKING_ELECTRODE), [=](qreal val) -> QString {
+    { QString(REAL_TIME_WORKING_ELECTRODE), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
-	{ QString(REAL_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
+    { QString(REAL_TIME_COUNTER_ELECTRODE), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
-	{ QString(REAL_TIME_CURRENT), [=](qreal val) -> QString {
+    { QString(REAL_TIME_CURRENT), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'e', 3);
 	} },
     /* AC experimental values */
-  { QString(REAL_TIME_FREQUENCY), [=](qreal val) -> QString {
+  { QString(REAL_TIME_FREQUENCY), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_MAG), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_MAG), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_PHASE), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_PHASE), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_REAL), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_REAL), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_IMAG), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_IMAG), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } }

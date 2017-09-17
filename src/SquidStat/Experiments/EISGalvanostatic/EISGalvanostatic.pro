@@ -4,7 +4,7 @@
 
 TEMPLATE = lib
 TARGET = EISGalvanostatic
-DESTDIR = ../../../out/Release/prebuilt
+DESTDIR = ../../../../out/Release/prebuilt
 QT += core designer widgets gui
 CONFIG += release designer plugin
 DEFINES += QT_DESIGNER_LIB QT_WIDGETS_LIB

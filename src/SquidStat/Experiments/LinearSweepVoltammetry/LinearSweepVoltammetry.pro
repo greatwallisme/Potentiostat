@@ -4,7 +4,7 @@
 
 TEMPLATE = lib
 TARGET = LinearSweepVoltammetry
-DESTDIR = ../../../out/Release/prebuilt
+DESTDIR = ../../../../out/Release/prebuilt
 QT += core widgets gui
 CONFIG += release console
 DEFINES += WIN64 QT_WIDGETS_LIB

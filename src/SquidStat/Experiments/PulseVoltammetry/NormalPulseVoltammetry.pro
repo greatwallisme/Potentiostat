@@ -4,7 +4,7 @@
 
 TEMPLATE = lib
 TARGET = NormalPulseVoltammetry
-DESTDIR = ../../../out/Release/prebuilt
+DESTDIR = ../../../../out/Release/prebuilt
 QT += core widgets gui
 CONFIG += release plugin
 DEFINES += QT_DESIGNER_LIB QT_WIDGETS_LIB
