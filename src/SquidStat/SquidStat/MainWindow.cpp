@@ -364,10 +364,13 @@ void MainWindow::CleanupCurrentHardware() {
 
 	hardware.handlers.clear();
 }
+#include <QApplication>
 void MainWindow::LoadBuilderElements() {
-	LOG() << "Loading builder elements";
+    LOG() << "Loading builder elements";
 
-    auto expFileInfos = QDir(ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
+    auto appPath = QFileInfo(QApplication::applicationFilePath()).absolutePath();
+
+    auto expFileInfos = QDir(appPath + "/" ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
         auto filePath = expFileInfo.absoluteFilePath();
@@ -396,7 +399,9 @@ void MainWindow::LoadBuilderElements() {
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
-    auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
+    auto appPath = QFileInfo(QApplication::applicationFilePath()).absolutePath();
+
+    auto expFileInfos = QDir(appPath + "/" PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
 		auto filePath = expFileInfo.absoluteFilePath();
