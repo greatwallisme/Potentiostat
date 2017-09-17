@@ -137,11 +137,13 @@ void MainWindowUI::CreateMenu() {
 
 	menuBar->addMenu(moreOptionsMenu);
 
-#ifndef QT_NO_DEBUG
-	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
+//#ifndef QT_NO_DEBUG
+    auto debugMenu = new QMenu("Debug");
+    auto applyStyleSheet = debugMenu->addAction("Apply stylesheet");
+    menuBar->addMenu(debugMenu);
 
 	connections << CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
-#endif
+//#endif
 
 	connections << CONNECT(updateHardware, &QAction::triggered, [=]() {
 		GetUpdateFirmwareDialog(mw);

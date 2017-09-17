@@ -349,10 +349,10 @@ void MainWindow::CleanupCurrentHardware() {
 void MainWindow::LoadBuilderElements() {
 	LOG() << "Loading builder elements";
 
-	auto expFileInfos = QDir(ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+    auto expFileInfos = QDir(ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
-		auto filePath = expFileInfo.absoluteFilePath();
+        auto filePath = expFileInfo.absoluteFilePath();
 
 		auto loader = new QPluginLoader(filePath, this);
 
@@ -378,7 +378,7 @@ void MainWindow::LoadBuilderElements() {
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
-	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+    auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
 		auto filePath = expFileInfo.absoluteFilePath();
