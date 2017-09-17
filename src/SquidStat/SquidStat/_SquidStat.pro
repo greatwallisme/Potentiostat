@@ -4,7 +4,7 @@
 
 TEMPLATE = app
 TARGET = _SquidStat
-DESTDIR = ../../out/Release/_SquidStat
+DESTDIR = ../../../out/Release/_SquidStat
 QT += core widgets gui serialport
 CONFIG += release
 DEFINES += WIN64 QT_SERIALPORT_LIB QT_WIDGETS_LIB

@@ -2975,16 +2975,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-template<typename T, typename F>
-void ModifyObject(QObject *parent, F &lambda) {
-	foreach(QObject* obj, parent->children()) {
-		T* objT = qobject_cast<T*>(obj);
-		if (objT) {
-			lambda(objT);
-		}
+template<typename T>
+void ModifyObject(QObject *parent, std::function<void(T*)> lambda) {
+    foreach(QObject* obj, parent->children()) {
+        T* objT = qobject_cast<T*>(obj);
+        if (objT) {
+            lambda(objT);
+        }
 
-		ModifyObject<T>(obj, lambda);
-	}
+        ModifyObject<T>(obj, lambda);
+    }
 }
 bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	static bool ret;
@@ -3014,7 +3014,7 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	auto okConnection = CONNECT(ok, &QPushButton::clicked, [=]() {
 		ret = true;
 	});
-    /*
+
 	ModifyObject<QVBoxLayout>(dialogPtr, [=](QVBoxLayout *obj) {
 		if (obj->parent() != dialogPtr) {
 			return;
@@ -3044,7 +3044,7 @@ bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	ModifyObject<QFrame>(dialogPtr, [](QFrame *obj) {
 		auto objParent = qobject_cast<QWidget*>(obj->parent());
 	});
-    //*/
+
 	colorDialog.exec();
 
 	QObject::disconnect(okConnection);

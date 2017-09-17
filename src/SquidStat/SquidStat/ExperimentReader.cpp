@@ -34,7 +34,7 @@
 UserInput ParseUserInputJson(const QJsonObject &jo) {
 	UserInput ret;
 
-	foreach(auto &val, jo) {
+    foreach(const QJsonValue &val, jo) {
 		if (val.isArray()) {
 			throw QString("User Input contains an array value, but it should not.");
 		}

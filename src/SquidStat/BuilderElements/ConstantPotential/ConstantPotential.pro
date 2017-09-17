@@ -4,7 +4,7 @@
 
 TEMPLATE = lib
 TARGET = ConstantPotential
-DESTDIR = ../../../out/Release/elements
+DESTDIR = ../../../../out/Release/elements
 QT += core widgets gui
 CONFIG += release console
 DEFINES += WIN64 QT_WIDGETS_LIB
