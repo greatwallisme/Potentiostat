@@ -173,7 +173,6 @@ QPushButton#bar-button:open {
 	margin-right: 50px;
 }
 #notification-new-messages {
-	qproperty-text: "1";
 	qproperty-alignment: "AlignHCenter | AlignVCenter";
 	
 	margin: 0px;

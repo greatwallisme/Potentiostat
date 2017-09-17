@@ -69,6 +69,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	QRect screenSize = QDesktopWidget().availableGeometry(this);
 	this->setMinimumHeight(screenSize.height() < 768 ? screenSize.height() * 0.95 : 768);
 	this->setMinimumWidth(screenSize.width() < 1366 ? screenSize.width() * 0.95 : 1366);
+
+    ApplyStyle();
 }
 MainWindow::~MainWindow() {
 	instrumentEnumerator->terminate();
