@@ -227,8 +227,9 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 		}
 		instrumentList->setModel(model);
 		
-		if (list.size()) {
-			instrumentList->selectionModel()->select(instrumentList->model()->index(0, 0), QItemSelectionModel::Select);
+        if (list.size()) {
+            instrumentList->setCurrentIndex(instrumentList->model()->index(0, 0));
+
 		}
 	});
 	
@@ -1136,7 +1137,7 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
-	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
+    fileList->setCurrentIndex(fileList->model()->index(0, 0));
 	
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 	globalLay->addLayout(lay);
@@ -3335,7 +3336,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
-	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
+    fileList->setCurrentIndex(fileList->model()->index(0, 0));
 	
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
 		dialogCanceled = false;
