@@ -58,11 +58,10 @@
       <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5SerialPortd.lib;qwtd.lib;Qt5Guid.lib;Qt5Widgetsd.lib;qtcsv.lib;hidapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(QTDIR)\bin\Qt5Cored.dll $(OutDir)\
-copy $(QTDIR)\bin\Qt5SerialPortd.dll $(OutDir)\
-mkdir $(OutDir)\platforms\
-copy $(QTDIR)\plugins\platforms\qwindowsd.dll $(OutDir)\platforms\
-copy $(ProjectDir)\GUI.css $(OutDir)\</Command>
+      <Command>mkdir $(OutDir)\prebuilt\
+copy $(ProjectDir)\prebuilt\*.dll $(OutDir)\prebuilt\ /Y
+mkdir $(OutDir)\elements\
+copy $(ProjectDir)\elements\*.dll $(OutDir)\elements\ /Y</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>rmdir prebuilt
