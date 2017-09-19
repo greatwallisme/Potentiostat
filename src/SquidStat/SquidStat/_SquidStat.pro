@@ -4,7 +4,7 @@
 
 TEMPLATE = app
 TARGET = _SquidStat
-DESTDIR = ../../out/Release/_SquidStat
+DESTDIR = ../../../out/Release/_SquidStat
 QT += core widgets gui serialport
 CONFIG += release
 DEFINES += WIN64 QT_SERIALPORT_LIB QT_WIDGETS_LIB
@@ -14,10 +14,11 @@ INCLUDEPATH += . \
     ./../../../3rdparty/hidapi-out/include \
     ./../../../3rdparty/qtcsv-out/include \
     ./../../../3rdparty/qwt/bin/include
+QMAKE_LFLAGS += -F"./../../../3rdparty/qwt/bin/lib"
 LIBS += -L"./../../../3rdparty/qwt/bin/lib" \
     -L"./../../../3rdparty/hidapi-out/lib-release" \
     -L"./../../../3rdparty/qtcsv-out/lib-release" \
-    -lqwt \
+    -framework qwt \
     -lhidapi \
     -lqtcsv
 DEPENDPATH += .

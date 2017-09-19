@@ -43,6 +43,20 @@ bool operator == (const InstrumentInfo &a, const InstrumentInfo &b) {
 	return ((a.port.name == a.port.name) && (b.port.serial == a.port.serial));
 }
 
+void RemoveMacFocusRect(QWidget *w) {
+    w->setAttribute(Qt::WA_MacShowFocusRect, false);
+
+    foreach(QObject *child, w->children()) {
+        QWidget *childW = qobject_cast<QWidget*>(child);
+
+        if(0 == childW) {
+            continue;
+        }
+
+        RemoveMacFocusRect(childW);
+    }
+}
+
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
 	ui(new MainWindowUI(this))
@@ -69,6 +83,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	QRect screenSize = QDesktopWidget().availableGeometry(this);
 	this->setMinimumHeight(screenSize.height() < 768 ? screenSize.height() * 0.95 : 768);
 	this->setMinimumWidth(screenSize.width() < 1366 ? screenSize.width() * 0.95 : 1366);
+
+    ApplyStyle();
+
+    RemoveMacFocusRect(this);
 }
 MainWindow::~MainWindow() {
 	instrumentEnumerator->terminate();
@@ -346,13 +364,16 @@ void MainWindow::CleanupCurrentHardware() {
 
 	hardware.handlers.clear();
 }
+#include <QApplication>
 void MainWindow::LoadBuilderElements() {
-	LOG() << "Loading builder elements";
+    LOG() << "Loading builder elements";
 
-	auto expFileInfos = QDir(ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+    auto appPath = QFileInfo(QApplication::applicationFilePath()).absolutePath();
+
+    auto expFileInfos = QDir(appPath + "/" ELEMENTS_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
-		auto filePath = expFileInfo.absoluteFilePath();
+        auto filePath = expFileInfo.absoluteFilePath();
 
 		auto loader = new QPluginLoader(filePath, this);
 
@@ -378,7 +399,9 @@ void MainWindow::LoadBuilderElements() {
 void MainWindow::LoadPrebuildExperiments() {
 	LOG() << "Loading prebuilt experiments";
 
-	auto expFileInfos = QDir(PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll", QDir::Files | QDir::Readable);
+    auto appPath = QFileInfo(QApplication::applicationFilePath()).absolutePath();
+
+    auto expFileInfos = QDir(appPath + "/" PREBUILT_EXP_DIR).entryInfoList(QStringList() << "*.dll" << "*.dylib", QDir::Files | QDir::Readable | QDir::NoSymLinks);
 
 	foreach(const QFileInfo &expFileInfo, expFileInfos) {
 		auto filePath = expFileInfo.absoluteFilePath();

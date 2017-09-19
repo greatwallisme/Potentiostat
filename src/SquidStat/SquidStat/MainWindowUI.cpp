@@ -138,7 +138,9 @@ void MainWindowUI::CreateMenu() {
 	menuBar->addMenu(moreOptionsMenu);
 
 #ifndef QT_NO_DEBUG
-	auto applyStyleSheet = menuBar->addAction("Apply stylesheet");
+    auto debugMenu = new QMenu("Debug");
+    auto applyStyleSheet = debugMenu->addAction("Apply stylesheet");
+    menuBar->addMenu(debugMenu);
 
 	connections << CONNECT(applyStyleSheet, &QAction::triggered, mw, &MainWindow::ApplyStyle);
 #endif
@@ -225,8 +227,9 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 		}
 		instrumentList->setModel(model);
 		
-		if (list.size()) {
-			instrumentList->selectionModel()->select(instrumentList->model()->index(0, 0), QItemSelectionModel::Select);
+        if (list.size()) {
+            instrumentList->setCurrentIndex(instrumentList->model()->index(0, 0));
+
 		}
 	});
 	
@@ -1134,7 +1137,7 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
-	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
+    fileList->setCurrentIndex(fileList->model()->index(0, 0));
 	
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 	globalLay->addLayout(lay);
@@ -2975,16 +2978,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	return w;
 }
-template<typename T, typename F>
-void ModifyObject(QObject *parent, F &lambda) {
-	foreach(QObject* obj, parent->children()) {
-		T* objT = qobject_cast<T*>(obj);
-		if (objT) {
-			lambda(objT);
-		}
+template<typename T>
+void ModifyObject(QObject *parent, std::function<void(T*)> lambda) {
+    foreach(QObject* obj, parent->children()) {
+        T* objT = qobject_cast<T*>(obj);
+        if (objT) {
+            lambda(objT);
+        }
 
-		ModifyObject<T>(obj, lambda);
-	}
+        ModifyObject<T>(obj, lambda);
+    }
 }
 bool MainWindowUI::GetColor(QWidget *parent, QColor &color) {
 	static bool ret;
@@ -3333,7 +3336,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 		model->setItem(row++, item);
 	}
 	fileList->setModel(model);
-	fileList->selectionModel()->select(fileList->model()->index(0, 0), QItemSelectionModel::Select);
+    fileList->setCurrentIndex(fileList->model()->index(0, 0));
 	
 	dialogConn << CONNECT(okBut, &QPushButton::clicked, [=]() {
 		dialogCanceled = false;
@@ -3659,7 +3662,7 @@ void MainWindowUI::ZoomAxis(PlotHandler &handler, QwtPlot::Axis axis, double per
 
 
 QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = { 
-	{ QString(REAL_TIME_ELAPSED_TIME), [=](qreal val) -> QString {
+    { QString(REAL_TIME_ELAPSED_TIME), [](qreal val) -> QString {
 		QString ret("%1:%2:%3");
 
 		int intVal = val;
@@ -3670,36 +3673,36 @@ QMap<QString, std::function<QString(qreal)>> valueDisplayHandler = {
 
 		return ret.arg(h).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
 	} },
-	{ QString(REAL_TIME_WORKING_ELECTRODE), [=](qreal val) -> QString {
+    { QString(REAL_TIME_WORKING_ELECTRODE), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
-	{ QString(REAL_TIME_COUNTER_ELECTRODE), [=](qreal val) -> QString {
+    { QString(REAL_TIME_COUNTER_ELECTRODE), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'f', 3);
 	} },
-	{ QString(REAL_TIME_CURRENT), [=](qreal val) -> QString {
+    { QString(REAL_TIME_CURRENT), [](qreal val) -> QString {
 		QString ret("%1");
 		return ret.arg(val, 0, 'e', 3);
 	} },
     /* AC experimental values */
-  { QString(REAL_TIME_FREQUENCY), [=](qreal val) -> QString {
+  { QString(REAL_TIME_FREQUENCY), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_MAG), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_MAG), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_PHASE), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_PHASE), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_REAL), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_REAL), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } },
-  { QString(REAL_TIME_IMPEDANCE_IMAG), [=](qreal val) -> QString {
+  { QString(REAL_TIME_IMPEDANCE_IMAG), [](qreal val) -> QString {
     QString ret("%1");
     return ret.arg(val, 0, 'f', 3);
   } }

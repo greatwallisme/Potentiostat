@@ -17,6 +17,7 @@ InstrumentList RemoveUnavaliableInstruments(InstrumentList &instruments, const Q
 
 		bool found = false;
 		foreach(const QSerialPortInfo &serialPortInfo, availablePorts) {
+
 			if ((instrument.port.name == serialPortInfo.portName()) && (instrument.port.serial == serialPortInfo.serialNumber())) {
 				found = true;
 				break;
@@ -259,7 +260,18 @@ InstrumentEnumerator::InstrumentEnumerator() :
 }
 void InstrumentEnumerator::run() {
 	while (1) {
-		auto availablePorts = QSerialPortInfo::availablePorts();
+        auto availablePorts = QSerialPortInfo::availablePorts();
+
+        #ifdef TARGET_OS_MAC
+        for(int i = 0; i < availablePorts.size();) {
+            if(availablePorts.at(i).portName().contains(QRegExp("^cu\\."))) {
+                ++i;
+            }
+            else {
+                availablePorts.removeAt(i);
+            }
+        }
+        #endif
 
 		InstrumentList instrumentsToDelete = RemoveUnavaliableInstruments(instruments, availablePorts);
 
