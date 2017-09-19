@@ -119,12 +119,12 @@ NodesData EISPotentiostatic::GetNodesData(const UserInput &inputs, const Calibra
     exp.isTail = false;
     exp.nodeType = FRA_NODE_POT;
     exp.currentRangeMode = AUTORANGE;
-    exp.FRA_pot_node.frequency = (float)frequencyList[i];
+    exp.ACsamplingParams.frequency = (float)frequencyList[i];
     exp.FRA_pot_node.VBiasUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, biasVoltage);
     exp.FRA_pot_node.VBiasVsOCP = biasVsOCP;
-    exp.FRA_pot_node.amplitudeTarget = acAmp / 1000;
+    exp.ACsamplingParams.amplitudeTarget = acAmp / 1000;
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
-    exp.FRA_pot_node.firstTime = (i == 0);
+    exp.ACsamplingParams.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
   NODES_DATA_END();

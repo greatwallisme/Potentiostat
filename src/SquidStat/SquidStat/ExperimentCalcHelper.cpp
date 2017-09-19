@@ -184,6 +184,8 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
     break;
   }
 
+  pNode->DCsamplingParams.isFastSlewRate = false; //debugging. todo: incorporate fast sampling mode
+
   /* 1) Minimize dt, maximize DACMult */
   pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
   pNode->DCSweep_galv.IStep = 1;

@@ -829,9 +829,9 @@ void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
   value = value <= 0.0001 ? 1 : value;
 
 	ExperimentCalcHelperClass::GetSamplingParams_staticDAC(it->info.hwVer.hwModel, &node, value);
-	params.timerDiv = node.samplingParams.ADCTimerDiv;
-	params.timerPeriod = node.samplingParams.ADCTimerPeriod;
-	params.ADCbufsize = node.samplingParams.ADCBufferSizeOdd;
+	params.timerDiv = node.DCsamplingParams.ADCTimerDiv;
+	params.timerPeriod = node.DCsamplingParams.ADCTimerPeriod;
+	params.ADCbufsize = node.DCsamplingParams.ADCBufferSizeOdd;
 
 	it->oper->SetManualSamplingParams(channel, params);
 }
