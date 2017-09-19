@@ -88,8 +88,6 @@ QWidget* MaxPower::CreateUserInput() const {
 NodesData MaxPower::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-	double power;
-  QString powerUnits_str;
   double VMax;
   double VMin;
   double tmax;
@@ -102,7 +100,6 @@ NodesData MaxPower::GetNodesData(QWidget *wdg, const CalibrationData &calData, c
   GET_SELECTED_DROP_DOWN(tmaxUnits_str, T_MAX_UNITS);
   GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_INT_OBJ_NAME);
 
-  power *= ExperimentCalcHelperClass::GetUnitsMultiplier(powerUnits_str);
   tmax *= ExperimentCalcHelperClass::GetUnitsMultiplier(tmaxUnits_str);
 
   exp.isHead = false;
