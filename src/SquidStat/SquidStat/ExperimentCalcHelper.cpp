@@ -35,8 +35,9 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
 		break;
 	}
 
-	pNode->samplingParams.ADCTimerDiv = 0;
-	pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.ADCBufferSizeOdd = 1;
+  pNode->DCsamplingParams.isFastSlewRate = false;
+	pNode->DCsamplingParams.ADCTimerDiv = 0;
+	pNode->DCsamplingParams.ADCBufferSizeEven = pNode->DCsamplingParams.ADCBufferSizeOdd = 1;
 
   /* If targetSamplingInterval > 1 second, increase Filtersize */
   double transmitInterval;
@@ -46,21 +47,22 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
     FilterSize++;
     transmitInterval = targetSamplingInterval / FilterSize * SECONDS;
   } while (transmitInterval > MaxUpdateInterval * SECONDS);
-  pNode->samplingParams.decimation_num = FilterSize;
+  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
 
 	/* Minimize dt, maximize ADCBufferSizeEven and Odd */
 	uint64_t dt;
-  pNode->samplingParams.ADCBufferSizeEven = 0;
+  pNode->DCsamplingParams.ADCBufferSizeEven = 0;
   do
   {
-    pNode->samplingParams.ADCBufferSizeEven++;
-    dt = (uint64_t)MAX(dt_min, transmitInterval / pNode->samplingParams.ADCBufferSizeEven);
-  } while (dt / dt_min > 1 && pNode->samplingParams.ADCBufferSizeEven < ADCbufsize);
-  pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.ADCBufferSizeEven;
-  pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
-  pNode->samplingParams.ADCTimerDiv = 0;
+    pNode->DCsamplingParams.ADCBufferSizeEven++;
+    dt = (uint64_t)MAX(dt_min, transmitInterval / pNode->DCsamplingParams.ADCBufferSizeEven);
+  } while (dt / dt_min > 1 && pNode->DCsamplingParams.ADCBufferSizeEven < ADCbufsize);
+  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
+  pNode->DCsamplingParams.ADCTimerPeriod = (uint32_t)dt;
+  pNode->DCsamplingParams.ADCTimerDiv = 0;
 }
 
+//TODO: incorporate fastslew mode, PointsSkippedMCU
 void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
   double dEdt, const double targetSamplingInterval)
 {
@@ -91,31 +93,34 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
     break;
   }
 
+  pNode->DCsamplingParams.isFastSlewRate = false;  //debugging
+  pNode->DCsamplingParams.PointsSkippedMCU = 1;  //debugging: todo, incorporate these params into fast slewrate notes
+
   /* 1) Minimize dt, maximize DACMult */
-  pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
+  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
   pNode->DCSweep_pot.VStep = 1;
   uint64_t dt;
   double ticksPerStep = abs(1 / dEdt / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000); //the 1000 factor accounts for the mV to V conversion, since dEdt is in mV/s
   do
   {
-    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
-    if (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACbufsize)
+    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven);
+    if (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize)
     {
-      if (pNode->samplingParams.DACMultEven << 1 < DACbufsize)
+      if (pNode->DCsamplingParams.DACMultEven << 1 < DACbufsize)
       {
-        pNode->samplingParams.DACMultEven <<= 1;
-        pNode->samplingParams.DACMultOdd <<= 1;
+        pNode->DCsamplingParams.DACMultEven <<= 1;
+        pNode->DCsamplingParams.DACMultOdd <<= 1;
       }
       else
         break;
     }
-  } while (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACbufsize);
+  } while (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize);
 
   /* 2) Increase VStep, if necessary (if dt is too small, or if DACbuf is expended too quickly */
-  while (dt < dt_min || pNode->samplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
+  while (dt < dt_min || pNode->DCsamplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
   {
     pNode->DCSweep_pot.VStep++;
-    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
+    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
   }
 
   /* 3) Calculate ADCBufferSizeEven and Odd (must be <= ADCbufsize). Data should be sent no less than once per second */
@@ -125,29 +130,30 @@ void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWver
   do
   {
     FilterSize++;
-    pNode->samplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->samplingParams.DACMultEven / FilterSize) :
+    pNode->DCsamplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->DCsamplingParams.DACMultEven / FilterSize) :
       targetSamplingInterval * SECONDS / dt / FilterSize;
-    transmitInterval = pNode->samplingParams.ADCBufferSizeEven * dt;
-  } while ((pNode->samplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
-  pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.ADCBufferSizeEven;
-  pNode->samplingParams.decimation_num = FilterSize;
+    transmitInterval = pNode->DCsamplingParams.ADCBufferSizeEven * dt;
+  } while ((pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
+  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
+  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
 
   /* 4) Calculate Points Ignored (for dynamic sampling) */
-  if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
-    pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
+  if (pNode->DCsamplingParams.ADCBufferSizeEven == pNode->DCsamplingParams.DACMultEven)
+    pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
   else
-    pNode->samplingParams.PointsIgnored = 0;
+    pNode->DCsamplingParams.minorPointsDiscarded = 0;
 
   /* 5) Make sure timer period isn't too big for uint32_t */
-  pNode->samplingParams.ADCTimerDiv = 0;
+  pNode->DCsamplingParams.ADCTimerDiv = 0;
   while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
   {
-    pNode->samplingParams.ADCTimerDiv++;
+    pNode->DCsamplingParams.ADCTimerDiv++;
     dt >>= 1;
   }
-  pNode->samplingParams.ADCTimerPeriod = (uint32_t) dt;
+  pNode->DCsamplingParams.ADCTimerPeriod = (uint32_t) dt;
 }
 
+//TODO: incorporate fast slew mode, PointsSkippedMCU
 void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
   double dIdt, currentRange_t currentRange, const double targetSamplingInterval)
 {
@@ -179,30 +185,30 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
   }
 
   /* 1) Minimize dt, maximize DACMult */
-  pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
+  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
   pNode->DCSweep_galv.IStep = 1;
   uint64_t dt;
   double ticksPerStep = abs(1 / dIdt / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS);
   do
   {
-    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven);
-    if (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACbufsize)
+    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven);
+    if (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize)
     {
-      if (pNode->samplingParams.DACMultEven << 1 < DACbufsize)
+      if (pNode->DCsamplingParams.DACMultEven << 1 < DACbufsize)
       {
-        pNode->samplingParams.DACMultEven <<= 1;
-        pNode->samplingParams.DACMultOdd <<= 1;
+        pNode->DCsamplingParams.DACMultEven <<= 1;
+        pNode->DCsamplingParams.DACMultOdd <<= 1;
       }
       else
         break;
     }
-  } while (dt / dt_min > 1 && pNode->samplingParams.DACMultEven < DACbufsize);
+  } while (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize);
 
   /* 2) Increase VStep, if necessary (if dt is too small, or if DACbuf is expended too quickly */
-  while (dt < dt_min || pNode->samplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
+  while (dt < dt_min || pNode->DCsamplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
   {
     pNode->DCSweep_galv.IStep++;
-    dt = (uint64_t)round(ticksPerStep / pNode->samplingParams.DACMultEven * pNode->DCSweep_galv.IStep);
+    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven * pNode->DCSweep_galv.IStep);
   }
 
   /* 3) Calculate ADCBufferSizeEven and Odd (must be <= ADCbufsize). Data should be sent no less than once per second */
@@ -212,28 +218,28 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
   do
   {
     FilterSize++;
-    pNode->samplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->samplingParams.DACMultEven / FilterSize) :
+    pNode->DCsamplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->DCsamplingParams.DACMultEven / FilterSize) :
       targetSamplingInterval * SECONDS / dt / FilterSize;
-    transmitInterval = pNode->samplingParams.ADCBufferSizeEven * dt;
-  } while ((pNode->samplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
-  pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.ADCBufferSizeEven;
-  pNode->samplingParams.decimation_num = FilterSize;
+    transmitInterval = pNode->DCsamplingParams.ADCBufferSizeEven * dt;
+  } while ((pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
+  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
+  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
 
   /* 4) Calculate Points Ignored (for dynamic sampling) */
-  if (pNode->samplingParams.ADCBufferSizeEven == pNode->samplingParams.DACMultEven)
-    pNode->samplingParams.PointsIgnored = pNode->samplingParams.ADCBufferSizeEven / 2;
+  if (pNode->DCsamplingParams.ADCBufferSizeEven == pNode->DCsamplingParams.DACMultEven)
+    pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
   else
-    pNode->samplingParams.PointsIgnored = 0;
+    pNode->DCsamplingParams.minorPointsDiscarded = 0;
 
   /* 5) Make sure timer period isn't too big for uint32_t */
-  pNode->samplingParams.ADCTimerDiv = 0;
+  pNode->DCsamplingParams.ADCTimerDiv = 0;
   while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
   {
-    pNode->samplingParams.ADCTimerDiv++;
+    pNode->DCsamplingParams.ADCTimerDiv++;
     dt >>= 1;
   }
-  pNode->samplingParams.ADCTimerPeriod = (uint32_t)dt;
-  pNode->samplingParams.decimation_num = FilterSize;
+  pNode->DCsamplingParams.ADCTimerPeriod = (uint32_t)dt;
+  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
 }
 
 void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode)
@@ -263,8 +269,8 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
     break;
   }
 
-  pNode->samplingParams.ADCTimerDiv = 0;
-  pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd = 1;
+  pNode->DCsamplingParams.ADCTimerDiv = 0;
+  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
 
   /* 1) Take the lesser of (period - pulsewidth) and pulsewidth */
   double t_pulse;
@@ -288,25 +294,25 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
     bufMult <<= 1;  //should this be bufMult++ ?
     dt = t_pulse * MILLISECONDS / bufMult;
   }
-  pNode->samplingParams.ADCTimerPeriod = dt;
+  pNode->DCsamplingParams.ADCTimerPeriod = dt;
 
   if (isEvenPeriodShorter)
   {
-    pNode->samplingParams.DACMultOdd = bufMult;
-    pNode->samplingParams.DACMultEven = pNode->samplingParams.DACMultOdd * (t_period - t_pulsewidth) / t_pulsewidth;
+    pNode->DCsamplingParams.DACMultOdd = bufMult;
+    pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd * (t_period - t_pulsewidth) / t_pulsewidth;
   }
   else
   {
-    pNode->samplingParams.DACMultEven = bufMult;
-    pNode->samplingParams.DACMultOdd = pNode->samplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
+    pNode->DCsamplingParams.DACMultEven = bufMult;
+    pNode->DCsamplingParams.DACMultOdd = pNode->DCsamplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
   }
-  pNode->samplingParams.PointsIgnored = isEvenPeriodShorter ? pNode->samplingParams.DACMultEven / 2 : pNode->samplingParams.DACMultOdd / 2;
+  pNode->DCsamplingParams.minorPointsDiscarded = isEvenPeriodShorter ? pNode->DCsamplingParams.DACMultEven / 2 : pNode->DCsamplingParams.DACMultOdd / 2;
 
   /* 3) Calculate ADCMult */
-  pNode->samplingParams.ADCBufferSizeEven = pNode->samplingParams.DACMultEven;
-  pNode->samplingParams.ADCBufferSizeOdd = pNode->samplingParams.DACMultOdd;
+  pNode->DCsamplingParams.ADCBufferSizeEven = pNode->DCsamplingParams.DACMultEven;
+  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.DACMultOdd;
 
-  pNode->samplingParams.decimation_num = 1;
+  pNode->DCsamplingParams.PointsSkippedPC = 1;
 }
 
 currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)
@@ -460,33 +466,33 @@ QList<double> ExperimentCalcHelperClass::calculateFrequencyList(double lowerFreq
 
 void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, ExperimentNode_t * pNode)
 {
-  pNode->FRA_pot_node.freqRange = pNode->FRA_pot_node.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
+  pNode->ACsamplingParams.freqRange = pNode->ACsamplingParams.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
 
   /* (1) Calculate signal gen clock frequency and signal gen register value */
   int wavegenClkdiv = 1 << (int) WAVEGENCLK_24KHZ;
-  pNode->FRA_pot_node.wavegenClkSpeed = WAVEGENCLK_24KHZ;
-  double fSignal = pNode->FRA_pot_node.frequency;
+  pNode->ACsamplingParams.wavegenClkSpeed = WAVEGENCLK_24KHZ;
+  double fSignal = pNode->ACsamplingParams.frequency;
 
   while (fSignal * SIGNAL_GEN_RESOLUTION * wavegenClkdiv >= 25e6)
   {
     wavegenClkdiv >>= 1;
-    pNode->FRA_pot_node.wavegenClkSpeed = (WAVEGENCLK_SPEED_t)((int)pNode->FRA_pot_node.wavegenClkSpeed - 1);
-    if (pNode->FRA_pot_node.wavegenClkSpeed == WAVEGENCLK_25MHZ)
+    pNode->ACsamplingParams.wavegenClkSpeed = (WAVEGENCLK_SPEED_t)((int)pNode->ACsamplingParams.wavegenClkSpeed - 1);
+    if (pNode->ACsamplingParams.wavegenClkSpeed == WAVEGENCLK_25MHZ)
       break;
   }
-  pNode->FRA_pot_node.wavegenFraction = (uint32_t)(fSignal * wavegenClkdiv / 25e6 * 268435456);
-  pNode->FRA_pot_node.wavegenFraction = (pNode->FRA_pot_node.wavegenFraction == 0) ? 1 : pNode->FRA_pot_node.wavegenFraction; //make sure frequency doesn't equal zero
+  pNode->ACsamplingParams.wavegenFraction = (uint32_t)(fSignal * wavegenClkdiv / 25e6 * 268435456);
+  pNode->ACsamplingParams.wavegenFraction = (pNode->ACsamplingParams.wavegenFraction == 0) ? 1 : pNode->ACsamplingParams.wavegenFraction; //make sure frequency doesn't equal zero
 
   /* Re-calculate signal frequency based on integer timer values */
-  fSignal = (double)pNode->FRA_pot_node.wavegenFraction / 268435456.0 * 25e6 / wavegenClkdiv;
-  pNode->FRA_pot_node.frequency = fSignal;
+  fSignal = (double)pNode->ACsamplingParams.wavegenFraction / 268435456.0 * 25e6 / wavegenClkdiv;
+  pNode->ACsamplingParams.frequency = fSignal;
 
   /* (2) Calculate ADCac buffer size and sampling frequency*/
   int n = ADCacBUF_SIZE;
   double fSample;
   uint32_t ADCclkdiv = 1;
 
-  if (pNode->FRA_pot_node.freqRange == HF_RANGE)
+  if (pNode->ACsamplingParams.freqRange == HF_RANGE)
     fSample = (n - 1) * fSignal / n;
   else
     fSample = fSignal * n / 2;
@@ -496,14 +502,14 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   {
     while (TimerPeriod > 4294967296)
     {
-      pNode->FRA_pot_node.ADCacTimerClkDiv++;
+      pNode->ACsamplingParams.ADCacTimerClkDiv++;
       TimerPeriod >>= 1;
       ADCclkdiv <<= 1;
     }
 
     /* Recalculate sampling frequency and ADCbufsize based on integer timer values */
     fSample = 100.0e6 / ADCclkdiv / TimerPeriod;
-    if (pNode->FRA_pot_node.freqRange == HF_RANGE)
+    if (pNode->ACsamplingParams.freqRange == HF_RANGE)
     {
       double denom = fSignal - fSample;
       double x = ABS(fSignal / denom);
@@ -518,7 +524,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
     else
       break;
   }
-  pNode->FRA_pot_node.ADCacTimerPeriod = (uint32_t)TimerPeriod;
+  pNode->ACsamplingParams.ADCacTimerPeriod = (uint32_t)TimerPeriod;
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)

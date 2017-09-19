@@ -160,12 +160,12 @@ NodesData EISGalvanostatic::GetNodesData(QWidget *wdg, const CalibrationData &ca
     exp.tMin = 0;
     exp.tMax = 0xffffffffffffffff;
     exp.currentRangeMode = (currentRange_t)MIN((int)DCcurrentRangeLimit, (int)ACcurrentRangeLimit);
-    exp.FRA_galv_node.frequency = (float)frequencyList[i];
+    exp.ACsamplingParams.frequency = (float)frequencyList[i];
     ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
-    exp.FRA_galv_node.amplitudeTarget = amplitude;
+    exp.ACsamplingParams.amplitudeTarget = amplitude;
     exp.FRA_galv_node.IRange = exp.currentRangeMode;
     exp.FRA_galv_node.IBias = ExperimentCalcHelperClass::GetBINCurrent(&calData, exp.FRA_galv_node.IRange, IBias);
-    exp.FRA_pot_node.firstTime = (i == 0);
+    exp.ACsamplingParams.firstTime = (i == 0);
     PUSH_NEW_NODE_DATA();
   }
 
