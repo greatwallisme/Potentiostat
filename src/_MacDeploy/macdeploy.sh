@@ -4,6 +4,10 @@ cp ./../../3rdparty/qtcsv-out/lib-release/libqtcsv.dylib ./../../out/Release/_Sq
 cp ./../../3rdparty/hidapi-out/lib-release/libhidapi.0.dylib ./../../out/Release/_SquidStat/_SquidStat.app/Contents/MacOS/
 mkdir -p ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/qwt.framework/
 cp -R ./../../3rdparty/qwt/bin/lib/qwt.framework/ ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/qwt.framework/
+mkdir -p ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/QtConcurrent.framework/
+cp -R $QTDIR/../lib/QtConcurrent.framework/ ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/QtConcurrent.framework/
+mkdir -p ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/QtOpenGL.framework/
+cp -R $QTDIR/../lib/QtOpenGL.framework/ ./../../out/Release/_SquidStat/_SquidStat.app/Contents/Frameworks/QtOpenGL.framework/
 install_name_tool -change /usr/local/opt/hidapi/lib/libhidapi.0.dylib @executable_path/libhidapi.0.dylib ./../../out/Release/_SquidStat/_SquidStat.app/Contents/MacOS/_SquidStat
 install_name_tool -change libqtcsv.1.dylib @executable_path/libqtcsv.1.dylib ./../../out/Release/_SquidStat/_SquidStat.app/Contents/MacOS/_SquidStat
 install_name_tool -change qwt.framework/Versions/6/qwt @executable_path/../Frameworks/qwt.framework/Versions/6/qwt ./../../out/Release/_SquidStat/_SquidStat.app/Contents/MacOS/_SquidStat
