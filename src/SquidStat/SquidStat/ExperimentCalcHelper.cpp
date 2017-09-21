@@ -527,6 +527,10 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
       break;
   }
   pNode->ACsamplingParams.ADCacTimerPeriod = (uint32_t)TimerPeriod;
+
+  //debugging
+  //todo: make algorithm for calculating num buffers
+  pNode->ACsamplingParams.numBufs = 1;
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
