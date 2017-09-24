@@ -80,7 +80,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
       break;
 
     case OVERCURRENT_WARNING:
-      LOG() << "The current has exceeded its set maximum limit! New range: " << QString::number(data[0]);
+      //LOG() << "The current has exceeded its set maximum limit! New range: " << QString::number(data[0]);
       break;
 
     case ECE_OVERVOLTAGE_WARNING:
@@ -163,6 +163,10 @@ void InstrumentOperator::SoftReset() {
 }
 void InstrumentOperator::StartManualExperiment(quint8 channel) {
 	_communicator->SendCommand((CommandID)SET_MANUAL_MODE, channel);
+}
+
+void InstrumentOperator::SetCompRange(quint8 channel, quint8 range) {
+    _communicator->SendCommand((CommandID)SET_COMP_RANGE, channel, QByteArray((char*)&range, sizeof(range)));
 }
 
 #define TO_BYTE_ARRAY(a)	QByteArray((char*)&a, sizeof(a))

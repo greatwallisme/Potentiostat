@@ -27,6 +27,7 @@ public slots:
 	void SetManualPotentioSetpoint(quint8 channel, const Manual::PotentioSetpoint&);
 	void SetManualOcp(quint8 channel);
 	void SetCurrentRangingMode(quint8 channel, const Manual::RangingMode&);
+  void SetCompRange(quint8 channel, quint8 range);
 
 private slots:
 	void ResponseReceived(ResponseID resp, quint8 channel, const QByteArray &data);

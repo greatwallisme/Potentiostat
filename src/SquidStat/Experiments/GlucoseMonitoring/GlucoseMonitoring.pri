@@ -1,6 +1,6 @@
 HEADERS += ./Factory.h \
-    ./Chronoamperometry.h
+    ./GlucoseMonitoring.h
 SOURCES += ../../SquidStat/ExperimentCalcHelper.cpp \
     ./Factory.cpp \
-    ./Chronoamperometry.cpp
+    ./GlucoseMonitoring.cpp
 RESOURCES += recources.qrc

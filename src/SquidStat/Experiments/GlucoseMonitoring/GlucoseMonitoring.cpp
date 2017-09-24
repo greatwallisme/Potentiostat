@@ -22,7 +22,7 @@
 #define PLOT_VAR_GLUCOSE_CONC   "Glucose concentration (mmol)"
 
 QString GlucoseMonitoring::GetShortName() const {
-	return "GlucoseMonitoring";
+	return "Glucose Monitoring";
 }
 QString GlucoseMonitoring::GetFullName() const {
 	return "Glucose Monitoring";
@@ -72,7 +72,7 @@ QWidget* GlucoseMonitoring::CreateUserInput() const {
 NodesData GlucoseMonitoring::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-  double max_current_expected = 0.2;  //in mA
+  double max_current_expected = 1.0 / 50.0;  //in mA
 	double v1, t1;
   QString t1Units_str;
   uint32_t num_repeats;
@@ -106,9 +106,9 @@ QStringList GlucoseMonitoring::GetXAxisParameters(ExperimentType type) const {
 	QStringList ret;
 
 	if (type == ET_DC) {
-		ret <<
-      PLOT_VAR_ELAPSED_TIME_HR <<
-			PLOT_VAR_TIMESTAMP_NORMALIZED;
+      ret <<
+          PLOT_VAR_TIMESTAMP_NORMALIZED <<
+          PLOT_VAR_ELAPSED_TIME_HR;
 	}
 
 	return ret;
@@ -117,11 +117,10 @@ QStringList GlucoseMonitoring::GetYAxisParameters(ExperimentType type) const {
 	QStringList ret;
 
 	if (type == ET_DC) {
-		ret <<
-      PLOT_VAR_CURRENT <<
-			PLOT_VAR_EWE <<
-      PLOT_VAR_CURRENT <<
-      PLOT_VAR_GLUCOSE_CONC;
+      ret <<
+          PLOT_VAR_GLUCOSE_CONC <<
+          PLOT_VAR_CURRENT <<
+          PLOT_VAR_EWE;
 	}
 
 	return ret;
@@ -131,12 +130,12 @@ void GlucoseMonitoring::PUSH_NEW_DC_DATA_DEFINITION {
 	qreal timestamp = (qreal)expData.timestamp / SECONDS;
   ProcessedDCData processedData = ExperimentCalcHelperClass::ProcessDCDataPoint(&calData, expData);
   
-  double slope = 0.5, intercept = 1;
+  double slope = 1.988, intercept = -3.6719;
 
 	PUSH_BACK_DATA(PLOT_VAR_TIMESTAMP, timestamp);
 	PUSH_BACK_DATA(PLOT_VAR_EWE, processedData.EWE);
 	PUSH_BACK_DATA(PLOT_VAR_CURRENT, processedData.current);
-  PUSH_BACK_DATA(PLOT_VAR_GLUCOSE_CONC, processedData.current * slope + intercept);
+  PUSH_BACK_DATA(PLOT_VAR_GLUCOSE_CONC, (processedData.current * 1000) * slope + intercept);
 
 	if (!timestampOffset.contains(&container)) {
 		timestampOffset[&container] = timestamp;

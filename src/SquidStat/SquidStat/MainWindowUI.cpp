@@ -134,6 +134,12 @@ void MainWindowUI::CreateMenu() {
 	auto moreOptionsMenu = new QMenu("More Options");
 
 	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
+ 
+  /*auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
+  auto compRange0Select = selectCompRangeMenu->addAction("Stability setting 1");
+  auto compRange1Select = selectCompRangeMenu->addAction("Stability setting 2");
+  compRange0Select->setCheckable(true);
+  compRange1Select->setCheckable(true);*/
 
 	menuBar->addMenu(moreOptionsMenu);
 
@@ -148,6 +154,14 @@ void MainWindowUI::CreateMenu() {
 	connections << CONNECT(updateHardware, &QAction::triggered, [=]() {
 		GetUpdateFirmwareDialog(mw);
 	});
+
+  //connections << CONNECT(compRange0Select, &QAction::triggered, [=]() {
+  //    mw->SetCompRange(0);
+  //});
+
+  //connections << CONNECT(compRange1Select, &QAction::triggered, [=]() {
+  //    mw->SetCompRange(1);
+  //});
 	mw->setMenuBar(menuBar);
 }
 void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
@@ -2900,15 +2914,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		if (handler.exp) {
 		  handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 
+     /* if (majorData.saveFile)
+          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);*/
+
       if (majorData.saveFile)
-          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-      /*if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
-        if (expData.decimation_num == 0)
-          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-        else if (majorData.saveFile && ((majorData.container[majorData.container.lastKey()].data.size() - 1) % expData.decimation_num == 0)) {
-          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-        }
-      }*/
+      {
+          QString key = majorData.container.firstKey();
+          uint32_t n = MAX(majorData.currentNode.DCsamplingParams.PointsSkippedPC, 1);
+          if ((majorData.container[key].data.size() - 1) % n == 0)
+              handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+      }
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -2949,7 +2964,23 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+        /* <Matt/> */
+        ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
+        for (int i = 0; i < ADCacBUF_SIZE * 2; i++)
+        {
+            majorData.accumulatingACdata.append(data->data[i]);
+        }
+        uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
+        if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs * 2)
+        {
+            handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
+                majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+            majorData.accumulatingACdata.clear();
+        }
+
+			//handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+        /* </Matt> */
+        
 			if (majorData.saveFile) {
 				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
 			}
@@ -4265,6 +4296,11 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			return;
 		}
 
+    //Question: how do I know which item in the "data" QList is the right one?
+    /* <Matt/> */
+    dataTabs.plots[id][ET_AC].data.first().currentNode = node;
+    /* </Matt> */
+
 		QString nodeTypeStr = "";
 
 		switch (node.nodeType) {
@@ -4372,7 +4408,22 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			if (!handler.exp) {
 				return;
 			}
-			handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+
+      /* <Matt/> */
+      ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
+      for (int i = 0; i < ADCacBUF_SIZE; i++)
+      {
+          majorData.accumulatingACdata.append(data->data[i]);
+      }
+      uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
+      if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs)
+      {
+          handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
+              container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+      }
+      //handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+      /* </Matt> */
+			
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {
 					QString text;

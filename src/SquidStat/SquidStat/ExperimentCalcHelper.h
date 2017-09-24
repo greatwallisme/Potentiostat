@@ -42,8 +42,7 @@ public:
   static double calcNumberOfCycles(const ExperimentalAcData);
 
   /* sinusoidal curve-fitting */
-  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range);
-
+  static ComplexDataPoint_t AnalyzeFRA(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range);
 private:
   /* matrix operations */
   static double ** createMatrix(int rows, int cols);
@@ -56,7 +55,7 @@ private:
   /* Newton-raphson method */
   static void sinusoidLeastSquaresFit(double * xbuf, double * ybuf, int size, double * results);
   static void NewtonRaphson(double * initialGuessParams, double * xbuf, double * ybuf, int length, double * resultsBuf, bool lockedFrequency = false);
-  static double * filterData(int16_t * rawData, int length, int rollingAvgSize);
+  static void filterData(uint16_t * rawData, uint8_t numACBuffers, double * smoothedIdataDest, double * smoothedEWEdataDest, int rollingAvgSize);
   static double getError(double * rawData, double * resultsBuf, int len);
   static double y_model(double * paramsBuf, double x);
   static double dedX(double * paramsBuf, double * xbuf, double * ybuf, int size, double(*dydX)(double *, double));

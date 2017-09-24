@@ -530,7 +530,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
   //debugging
   //todo: make algorithm for calculating num buffers
-  pNode->ACsamplingParams.numBufs = 1;
+  pNode->ACsamplingParams.numBufs = 5;
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
@@ -560,13 +560,15 @@ double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData ac
 }
 
 /* Sinusoidal curve fitting */
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * bufCurrent, int16_t * bufEWE, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxNumCycles, const cal_t * calData, currentRange_t range)
 {
   //todo: add error analysis, THD
-  int newLen = ADCacBUF_SIZE - ADCacROLLING_AVG_SIZE;
+  int newLen = numACBuffers * ADCacBUF_SIZE - ADCacROLLING_AVG_SIZE;
   double * t_data = new double[newLen];
-  double * filteredCurrentData = filterData(bufCurrent, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
-  double * filteredEWEdata = filterData(bufEWE, ADCacBUF_SIZE, ADCacROLLING_AVG_SIZE);
+  double * filteredCurrentData = new double[newLen];
+  double * filteredEWEdata = new double[newLen];
+
+  filterData(rawDataBuf, numACBuffers, filteredCurrentData, filteredEWEdata, ADCacROLLING_AVG_SIZE);
 
   /*double rawDataEWEDouble[ADCacBUF_SIZE];
   double rawDataIDouble[ADCacBUF_SIZE];
@@ -622,17 +624,17 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
   }
 
   /* debugging only */
-  //std::ofstream fout;
-  //QString filename = "C:/Users/Matt/Desktop/results";
-  //filename.append(QString::number(frequency));
-  //filename.append(".txt");
-  //fout.open(filename.toStdString(), std::ofstream::out);
-  //fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
-  //fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
-  //for (int i = 0; i < ADCacBUF_SIZE; i++)
-  //{
-  //  fout << bufCurrent[i] << '\t' << bufEWE[i] << '\n';
-  //}
+  std::ofstream fout;
+  QString filename = "C:/Users/Matt/Desktop/results";
+  filename.append(QString::number(frequency));
+  filename.append(".txt");
+  fout.open(filename.toStdString(), std::ofstream::out);
+  fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
+  fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
+  for (int i = 0; i < newLen; i++)
+  {
+    fout << filteredCurrentData[i] << '\t' << filteredEWEdata[i] << '\n';
+  }
 
   ComplexDataPoint_t pt;
   double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE;
@@ -850,35 +852,56 @@ void ExperimentCalcHelperClass::sinusoidLeastSquaresFit(double * xbuf, double * 
   delete[] Q;
 }
 
-double * ExperimentCalcHelperClass::filterData(int16_t * rawData, int length, int rollingAvgSize)
+void ExperimentCalcHelperClass::filterData(uint16_t * rawData, uint8_t numACBuffers, double * smoothedIdataDest, double * smoothedEWEdataDest, int rollingAvgSize)
 {
-  int newLength = length - rollingAvgSize;
-  double * filteredData = new double[newLength];
+  int newLength = numACBuffers * ADCacBUF_SIZE - rollingAvgSize;
+  double *separatedDataI = new double[numACBuffers * ADCacBUF_SIZE];
+  double *separatedDataEWE = new double[numACBuffers * ADCacBUF_SIZE];
+  //smoothedIdataDest = new double[newLength];
+  //smoothedEWEdataDest = new double[newLength];
+  
+
+  for (int n = 0; n < numACBuffers; n++)
+  {
+      for (int i = 0; i < ADCacBUF_SIZE; i++)
+      {
+          separatedDataI[i + ADCacBUF_SIZE * n] = rawData[i + ADCacBUF_SIZE * n * 2];
+          separatedDataEWE[i + ADCacBUF_SIZE * n] = rawData[i + ADCacBUF_SIZE * (2 * n + 1)];
+      }
+  }
   
   /* low-pass filter */
   for (int i = 0; i < newLength; i++)
   {
-    filteredData[i] = 0;
+      smoothedIdataDest[i] = 0;
+      smoothedEWEdataDest[i] = 0;
     for (int j = 0; j < rollingAvgSize; j++)
     {
-      filteredData[i] += rawData[i + j];
+        smoothedIdataDest[i] += separatedDataI[i + j];
+        smoothedEWEdataDest[i] += separatedDataEWE[i + j];
     }
-    filteredData[i] /= rollingAvgSize;
+    smoothedIdataDest[i] /= rollingAvgSize;
+    smoothedEWEdataDest[i] /= rollingAvgSize;
   }
 
   /* "high-pass filter" (remove average value) */
-  double avg = 0;
+  double avgI = 0;
+  double avgEWE = 0;
   for (int i = 0; i < newLength; i++)
   {
-    avg += filteredData[i];
+    avgI += smoothedIdataDest[i];
+    avgEWE += smoothedEWEdataDest[i];
   }
-  avg /= newLength;
+  avgI /= newLength;
+  avgEWE /= newLength;
   for (int i = 0; i < newLength; i++)
   {
-    filteredData[i] -= avg;
+      smoothedIdataDest[i] -= avgI;
+      smoothedEWEdataDest[i] -= avgEWE;
   }
 
-  return filteredData;
+  delete[] separatedDataI;
+  delete[] separatedDataEWE;
 }
 
 double ExperimentCalcHelperClass::getError(double * rawData, double * resultsBuf, int len)

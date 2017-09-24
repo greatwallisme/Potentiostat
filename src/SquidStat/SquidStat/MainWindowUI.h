@@ -190,6 +190,9 @@ private:
 		QwtPlotCurve *curve2;
 		QString name;
 		QString filePath;
+
+    ExperimentNode_t currentNode;
+    QVector<uint16_t> accumulatingACdata;
 	};
 	struct PlotHandler {
 		QwtPlot* plot;

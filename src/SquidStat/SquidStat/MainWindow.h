@@ -92,6 +92,7 @@ public slots:
 	void StopManualExperiment(const QUuid&);
 	void PauseManualExperiment(const QUuid&);
 	void ResumeManualExperiment(const QUuid&);
+  void SetCompRange(const QUuid&, quint8 range);
 
 signals:
 	void HardwareFound(const InstrumentList&);

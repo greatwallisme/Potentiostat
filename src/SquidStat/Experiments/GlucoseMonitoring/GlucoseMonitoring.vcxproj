@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{0EC5D020-13C5-48F0-9238-FC64A5443256}</ProjectGuid>
+    <ProjectGuid>{1C104BB1-DD68-41C6-A370-51B92645B061}</ProjectGuid>
     <Keyword>Qt4VSv1.0</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
     <ProjectName>GlucoseMonitoring</ProjectName>

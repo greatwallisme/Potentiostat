@@ -810,6 +810,20 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	LOG() << "Manual experiment started";
 	it->oper->StartManualExperiment(channel);
 }
+
+void MainWindow::SetCompRange(const QUuid& id, quint8 range)
+{
+    auto it = SearchForHandler(id);
+
+    if (it == hardware.handlers.end()) {
+        return;
+    }
+
+    auto channel = SearchForChannel(it, id);
+
+    it->oper->SetCompRange(channel, range);
+}
+
 void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 	auto it = SearchForHandler(id);
 

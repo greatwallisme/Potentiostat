@@ -1,5 +1,5 @@
 TEMPLATE = lib
-TARGET = Chronoamperometry
+TARGET = GlucoseMonitoring
 DESTDIR = ../../../../out/Release/prebuilt
 QT += core widgets gui
 CONFIG += release plugin
@@ -14,4 +14,4 @@ MOC_DIR += ./GeneratedFiles/release
 OBJECTS_DIR += release
 UI_DIR += ./GeneratedFiles
 RCC_DIR += ./GeneratedFiles
-include(Chronoamperometry.pri)
+include(GlucoseMonitoring.pri)
