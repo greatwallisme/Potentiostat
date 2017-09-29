@@ -191,8 +191,8 @@ private:
 		QString name;
 		QString filePath;
 
-    ExperimentNode_t currentNode;
-    QVector<uint16_t> accumulatingACdata;
+    //ExperimentNode_t currentNode;
+    //QVector<uint16_t> accumulatingACdata;
 	};
 	struct PlotHandler {
 		QwtPlot* plot;
@@ -205,6 +205,17 @@ private:
 			quint64 stamp;
 			quint64 realTimeValueStamp;
 		} plotCounter;
+		struct {
+			struct {
+				uint32_t amount;
+				uint32_t counter;
+				QByteArray accumData;
+			} ac;
+			struct {
+				uint32_t devider;
+				uint32_t counter;
+			} dc;
+		} helpers;
 	};
 
 	struct BuilderHandler {

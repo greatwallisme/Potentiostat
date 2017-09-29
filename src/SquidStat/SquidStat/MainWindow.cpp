@@ -221,6 +221,17 @@ void MainWindow::CreateLogicForInstrument(MainWindow::InstrumentHandler &newHand
 		this, static_cast<void(MainWindow::*)(const QUuid&)>(&MainWindow::StopExperiment));
 
 	newHandler.connections <<
+	connect(experimentTrigger, &ExperimentTrigger::SwitchFile, [=](const QUuid &id, const QString &name, uint8_t channel) {
+		auto handler = SearchForHandler(id);
+		if (handler == hardware.handlers.end()) {
+			LOG() << "Hardware handler not found";
+			return;
+		}
+
+		;
+	});
+
+	newHandler.connections <<
 	connect(instrumentOperator, &InstrumentOperator::ExperimentPaused, this, [=](quint8 channel) {
 		auto oper = qobject_cast<InstrumentOperator*>(sender());
 		if (0 == oper) {
@@ -524,6 +535,7 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 	QUuid newId = existingId.isNull() ? QUuid::createUuid() : existingId;
 	
 	hardware.currentInstrument.handler->trigger->SetUuid(newId);
+	hardware.currentInstrument.handler->trigger->SetChannel(currentChannel);
 	bool ok = true;
 	foreach(auto type, types) {
 		StartExperimentParameters curParam;
@@ -741,6 +753,7 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	QList<StartExperimentParameters> startParams;
 
 	hardware.currentInstrument.handler->trigger->SetUuid(id);
+	hardware.currentInstrument.handler->trigger->SetChannel(channel);
 	bool ok = true;
 	foreach(auto type, types) {
 		StartExperimentParameters curParam;

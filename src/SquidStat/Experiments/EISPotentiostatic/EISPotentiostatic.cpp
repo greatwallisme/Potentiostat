@@ -202,10 +202,12 @@ QStringList EISPotentiostatic::GetYAxisParameters(ExperimentType type) const {
 }
 void EISPotentiostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
-	//GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
-  double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*dataHeader);
+	GET_COMPLEX_DATA_POINT(dataPoint);
+	/*
+	double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*dataHeader);
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(dataHeader->frequency, ACrawdata, numACBuffers,	dataHeader->gainVoltage,										\
       dataHeader->gainCurrent, numCycles, &calData, dataHeader->IRange);
+	//*/
 
   if (dataPoint.error < 2000)
   {

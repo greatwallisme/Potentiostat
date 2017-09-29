@@ -63,14 +63,8 @@ typedef QList<ExperimentType> ExperimentTypeList;
 #define PUSH_NEW_DC_DATA_DEFINITION \
 	PushNewDcData(const ExperimentalDcData &expData, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
 
-/* <Matt/> */
-/*#define PUSH_NEW_AC_DATA_DEFINITION \
-  PushNewAcData(const QByteArray &expDataRaw, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
-*/
-
 #define PUSH_NEW_AC_DATA_DEFINITION \
-    PushNewAcData(ExperimentalAcData * dataHeader, uint16_t * ACrawdata, uint8_t numACBuffers, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
-/* </Matt> */
+  PushNewAcData(const QByteArray &expDataRaw, uint16_t numBufs, DataMap &container, const CalibrationData &calData, const HardwareVersion &hwVersion, const ExperimentNotes &notes, AbstractExperimentTrigger *trigger) const
 
 class AbstractExperiment {
 public:
@@ -89,13 +83,13 @@ public:
 	virtual QStringList GetXAxisParameters(ExperimentType) const = 0;
 	virtual QStringList GetYAxisParameters(ExperimentType) const = 0;
 	
-	virtual void PUSH_NEW_DC_DATA_DEFINITION {};
-	virtual void SaveDcDataHeader(QFile&, const ExperimentNotes&) const {};
-	virtual void SaveDcData(QFile&, const DataMap&) const {};
+	virtual void PUSH_NEW_DC_DATA_DEFINITION {}
+	virtual void SaveDcDataHeader(QFile&, const ExperimentNotes&) const {}
+	virtual void SaveDcData(QFile&, const DataMap&) const {}
 
-	virtual void PUSH_NEW_AC_DATA_DEFINITION {};
-	virtual void SaveAcDataHeader(QFile&, const ExperimentNotes&) const {};
-	virtual void SaveAcData(QFile&, const DataMap&) const {};
+	virtual void PUSH_NEW_AC_DATA_DEFINITION {}
+	virtual void SaveAcDataHeader(QFile&, const ExperimentNotes&) const {}
+	virtual void SaveAcData(QFile&, const DataMap&) const {}
 };
 
 Q_DECLARE_METATYPE(AbstractExperiment*)

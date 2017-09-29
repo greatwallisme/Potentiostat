@@ -2912,18 +2912,20 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-		  handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 
-     /* if (majorData.saveFile)
-          handler.exp->SaveDcData(*majorData.saveFile, majorData.container);*/
+			if (majorData.saveFile)
+			handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
 
-      if (majorData.saveFile)
-      {
-          QString key = majorData.container.firstKey();
-          uint32_t n = MAX(majorData.currentNode.DCsamplingParams.PointsSkippedPC, 1);
-          if ((majorData.container[key].data.size() - 1) % n == 0)
-              handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
-      }
+			/*
+			if (majorData.saveFile)
+			{
+				QString key = majorData.container.firstKey();
+				uint32_t n = MAX(majorData.currentNode.DCsamplingParams.PointsSkippedPC, 1);
+				if ((majorData.container[key].data.size() - 1) % n == 0)
+					handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+			}
+			//*/
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -2964,26 +2966,47 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-        /* <Matt/> */
-        ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
-        for (int i = 0; i < ADCacBUF_SIZE * 2; i++)
-        {
-            majorData.accumulatingACdata.append(data->data[i]);
-        }
-        uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
-        if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs * 2)
-        {
-            handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
-                majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-            majorData.accumulatingACdata.clear();
-        }
-
-			//handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-        /* </Matt> */
-        
-			if (majorData.saveFile) {
-				handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+			/* <Matt/> */
+			/*
+			ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
+			for (int i = 0; i < ADCacBUF_SIZE * 2; i++)
+			{
+				majorData.accumulatingACdata.append(data->data[i]);
 			}
+			uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
+			if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs * 2)
+			{
+				handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
+					majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+				majorData.accumulatingACdata.clear();
+			}
+			//*/
+			/* </Matt> */
+
+			//*
+			//handler.exp->AddNewData(...);
+			handler.helpers.ac.accumData += expData;
+			--handler.helpers.ac.counter;
+			if (0 == handler.helpers.ac.counter) {
+				handler.exp->PushNewAcData(
+					expData,
+					handler.helpers.ac.amount,
+					majorData.container,
+					majorData.cal,
+					majorData.hwVer,
+					majorData.notes,
+					trigger);
+
+				if (majorData.saveFile) {
+					handler.exp->SaveAcData(*majorData.saveFile, majorData.container);
+				}
+
+				handler.helpers.ac.accumData.clear();
+			}
+			/*/
+			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			//*/
+        
 		}
 
 		if (majorData.data[QwtPlot::xBottom] && majorData.data[QwtPlot::yLeft]) {
@@ -3009,6 +3032,36 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	connections << CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 	connections << CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
+	connections << CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
+		PlotHandler &handler(dataTabs.plots[curId][ET_AC]);
+		switch(node.nodeType) {
+			case FRA_NODE_POT:
+			case FRA_NODE_GALV:
+			case FRA_NODE_PSEUDOGALV:
+				handler.helpers.ac.amount = node.ACsamplingParams.numBufs;
+				handler.helpers.ac.counter = handler.helpers.ac.amount;
+				handler.helpers.ac.accumData.clear();
+				break;
+
+			case DCNODE_OCP:
+			case DCNODE_SWEEP_POT:
+			case DCNODE_SWEEP_GALV:
+			case DCNODE_POINT_POT:
+			case DCNODE_POINT_GALV:
+			case DCNODE_NORMALPULSE_POT:
+			case DCNODE_NORMALPULSE_GALV:
+			case DCNODE_DIFFPULSE_POT:
+			case DCNODE_DIFFPULSE_GALV:
+			case DCNODE_SQRWAVE_POT:
+			case DCNODE_SQRWAVE_GALV:
+			case DCNODE_SINEWAVE:
+			case DCNODE_CONST_RESISTANCE:
+			case DCNODE_CONST_POWER:
+			case DCNODE_MAX_POWER:
+				//Fill dcEveryPoint;
+				break;
+		}
+	});
 
 	return w;
 }
@@ -4296,10 +4349,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			return;
 		}
 
-    //Question: how do I know which item in the "data" QList is the right one?
-    /* <Matt/> */
-    dataTabs.plots[id][ET_AC].data.first().currentNode = node;
-    /* </Matt> */
+		//Question: how do I know which item in the "data" QList is the right one?
+		/* <Matt/> */
+		//dataTabs.plots[id][ET_AC].data.first().currentNode = node;
+		/* </Matt> */
 
 		QString nodeTypeStr = "";
 
@@ -4409,20 +4462,20 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				return;
 			}
 
-      /* <Matt/> */
-      ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
-      for (int i = 0; i < ADCacBUF_SIZE; i++)
-      {
-          majorData.accumulatingACdata.append(data->data[i]);
-      }
-      uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
-      if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs)
-      {
-          handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
-              container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-      }
-      //handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-      /* </Matt> */
+			/* <Matt/> */
+			/*
+			ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
+			for (int i = 0; i < ADCacBUF_SIZE; i++) {
+				majorData.accumulatingACdata.append(data->data[i]);
+			}
+			uint32_t dataCount = majorData.accumulatingACdata.count() / ADCacBUF_SIZE;
+			if (dataCount >= majorData.currentNode.ACsamplingParams.numBufs) {
+				handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
+					container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			}
+			//*/
+			handler.exp->PushNewAcData(expData, 1, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			/* </Matt> */
 			
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {
 				if (container.keys().contains(curVal)) {

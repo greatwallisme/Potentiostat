@@ -203,14 +203,14 @@ QStringList EISGalvanostatic::GetYAxisParameters(ExperimentType type) const {
 }
 void EISGalvanostatic::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
-//GET_COMPLEX_DATA_POINT(dataPoint, expDataRaw, &calData);
-  double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*dataHeader);
-  dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(dataHeader->frequency, ACrawdata, numACBuffers, dataHeader->gainVoltage, dataHeader->gainCurrent, numCycles, &calData, dataHeader->IRange);
+	GET_COMPLEX_DATA_POINT(dataPoint);
+	//double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*dataHeader);
+	//dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(dataHeader->frequency, ACrawdata, numACBuffers, dataHeader->gainVoltage, dataHeader->gainCurrent, numCycles, &calData, dataHeader->IRange);
 
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
 	PUSH_BACK_DATA(PLOT_VAR_IMPEDANCE, dataPoint.ImpedanceMag);
 	PUSH_BACK_DATA(PLOT_VAR_PHASE, dataPoint.phase);
-  PUSH_BACK_DATA(PLOT_VAR_ABS_PHASE, abs(dataPoint.phase));
+	PUSH_BACK_DATA(PLOT_VAR_ABS_PHASE, abs(dataPoint.phase));
 	PUSH_BACK_DATA(PLOT_VAR_IMP_REAL, dataPoint.ImpedanceReal);
 	PUSH_BACK_DATA(PLOT_VAR_IMP_IMAG, dataPoint.ImpedanceImag);
 	PUSH_BACK_DATA(PLOT_VAR_NEG_IMP_IMAG, -dataPoint.ImpedanceImag);
