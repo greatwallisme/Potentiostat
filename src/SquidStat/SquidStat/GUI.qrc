@@ -61,5 +61,7 @@
         <file>Resources/bell.png</file>
         <file>Resources/delete-notification.png</file>
         <file>GUI.css</file>
+        <file>Resources/red-dot.png</file>
+        <file>Resources/yellow-dot.png</file>
     </qresource>
 </RCC>

@@ -76,6 +76,7 @@
 #include <QStandardPaths>
 #include <QDesktopWidget>
 #include <QSignalMapper>
+#include <QTreeView>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -323,6 +324,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	widgetsLayout->addWidget(GetBuildExperimentTab());
 	widgetsLayout->addWidget(GetManualControlTab());
 	widgetsLayout->addWidget(GetNewDataWindowTab());
+	widgetsLayout->addWidget(GetStatisticsTab());
 #ifndef QT_NO_DEBUG
 	widgetsLayout->addWidget(GetOldSearchHardwareTab());
 #endif
@@ -384,15 +386,28 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
-	
+
 	ui.newDataTab.newDataTabButton = pbt;
-	
+
 	connections << CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
 			return;
 		}
 
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
+	});
+
+	pbt = OBJ_PROP(OBJ_NAME(PBT("Instrument summary"), "bar-button"), "order", "last");
+	pbt->setCheckable(true);
+	buttonGroup->addButton(pbt);
+	barLayout->addWidget(pbt);
+
+	connections << CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
+		if (!checked) {
+			return;
+		}
+
+		widgetsLayout->setCurrentWidget(GetStatisticsTab());
 	});
 
 #ifndef QT_NO_DEBUG
@@ -1231,6 +1246,73 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 	dialog->deleteLater();
 
 	return !dialogCanceled;
+}
+QWidget* MainWindowUI::GetStatisticsTab() {
+	static QWidget *w = 0;
+
+	if (w) {
+		return w;
+	}
+
+	w = WDG();
+	auto lay = new QHBoxLayout(w);
+
+	auto view = new QTreeView(w);
+	lay->addWidget(view);
+
+	auto model = new QStandardItemModel(view);
+	view->setModel(model);
+
+	model->setHorizontalHeaderLabels(QStringList() << "" << "Status" << "Experiment" << "Step" << "Last notification");
+
+	auto rootItem = model->invisibleRootItem();
+
+	auto instItem = new QStandardItem("Instrument A");
+	rootItem->setChild(0, 0, instItem);
+
+	auto item = new QStandardItem(QIcon(":/GUI/Resources/green-dot.png"), "Channel 1");
+	instItem->setChild(0, 0, item);
+	item = new QStandardItem("Active");
+	instItem->setChild(0, 1, item);
+	item = new QStandardItem("~~~~~~~.csv");
+	instItem->setChild(0, 2, item);
+	item = new QStandardItem("Constant current");
+	instItem->setChild(0, 3, item);
+
+	item = new QStandardItem(QIcon(":/GUI/Resources/yellow-dot.png"), "Channel 2");
+	instItem->setChild(1, 0, item);
+	item = new QStandardItem("Error");
+	instItem->setChild(1, 1, item);
+	item = new QStandardItem("~~~~~~~.csv");
+	instItem->setChild(1, 2, item);
+	item = new QStandardItem("");
+	instItem->setChild(1, 3, item);
+	item = new QStandardItem("Overcurrent");
+	instItem->setChild(1, 4, item);
+
+	item = new QStandardItem(QIcon(":/GUI/Resources/red-dot.png"), "Channel 3");
+	instItem->setChild(2, 0, item);
+	item = new QStandardItem("Stopped");
+	instItem->setChild(2, 1, item);
+	item = new QStandardItem("");
+	instItem->setChild(2, 2, item);
+	item = new QStandardItem("");
+	instItem->setChild(2, 3, item);
+	item = new QStandardItem("");
+	instItem->setChild(2, 4, item);
+
+	item = new QStandardItem(QIcon(":/GUI/Resources/red-dot.png"), "Channel 4");
+	instItem->setChild(3, 0, item);
+	item = new QStandardItem("Stopped");
+	instItem->setChild(3, 1, item);
+	item = new QStandardItem("");
+	instItem->setChild(3, 2, item);
+	item = new QStandardItem("");
+	instItem->setChild(3, 3, item);
+	item = new QStandardItem("");
+	instItem->setChild(3, 4, item);
+
+	return  w;
 }
 QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QWidget *w = 0;

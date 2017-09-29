@@ -131,6 +131,8 @@ private:
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0, bool isManualMode = false, HardwareModel_t = HardwareModel_t::PRIME);
 
+	QWidget* GetStatisticsTab();
+
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
 	QWidget* GetPlotWidget();
