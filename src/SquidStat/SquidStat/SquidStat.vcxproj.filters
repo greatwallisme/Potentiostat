@@ -190,6 +190,9 @@
     <ClCompile Include="ExperimentCalcHelper.cpp">
       <Filter>_scr\ExternalStructures</Filter>
     </ClCompile>
+    <ClCompile Include="DataManager.cpp">
+      <Filter>_scr</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -236,6 +239,9 @@
     </ClInclude>
     <ClInclude Include="ManualExperimentRunner.h">
       <Filter>_scr\Experiments</Filter>
+    </ClInclude>
+    <ClInclude Include="DataManager.h">
+      <Filter>_scr</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

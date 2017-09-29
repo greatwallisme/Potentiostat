@@ -1,6 +1,10 @@
 #include "MainWindowUI.h"
 #include "MainWindow.h"
 
+#ifndef QT_NO_DEBUG
+#include "DataManager.h" //debugging only
+#endif
+
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_legend.h>
@@ -2966,7 +2970,51 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		if (handler.exp) {
         /* <Matt/> */
         ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
-        for (int i = 0; i < ADCacBUF_SIZE * 2; i++)
+
+
+        /*debugging */
+        /*static DataManager mDataManager;
+        mDataManager._cal = majorData.cal;
+        static int num_iters = 0;
+        mDataManager.ACDATA_ANALYSIS_smoothData(data->data);
+        uint32_t status = mDataManager.ACDATA_ANALYSIS_isACDataAcceptable(data->targetAmplitude, data->gainVoltage, data->gainCurrent, data->currentRange, data->ACamplitude);
+
+        QString mStatuses = mDataManager.decomposeStatus(status);
+        QString filename;
+        filename.append("C:/Users/Matt/Desktop/data");
+        filename.append(QString("%1").arg(num_iters++));
+        filename.append(".txt");
+
+        QFile mfile;
+        mfile.setFileName(filename);
+        QTextStream mstream(&mfile);
+
+        mfile.open(QIODevice::ReadWrite | QIODevice::Text);
+        mfile.seek(mfile.size());
+        
+        mstream << "Ctrl amplitude: " << data->ACamplitude << "\n";
+        mstream << "gains, I and E: " << data->gainCurrent << "," << data->gainVoltage << "\n";
+        mstream << "Current range: " << (int)(data->currentRange) << "\n";
+        mstream << mStatuses;
+        for (int i = 0; i < 1024; i++)
+        {
+            mstream << data->data[i] << '\t' << data->data[i + 1024] << '\n';
+        }*/
+
+        /* debugging 2 */
+        QFile mfile;
+        mfile.setFileName("C:/Users/Matt/Desktop/rawData.txt");
+        QTextStream mstream(&mfile);
+
+        mfile.open(QIODevice::ReadWrite | QIODevice::Text);
+        mfile.seek(mfile.size());
+        for (int i = 0; i < 1024; i++)
+        {
+            mstream << data->data[i] << '\t' << data->data[i + 1024] << '\n';
+        }
+
+
+        /*for (int i = 0; i < ADCacBUF_SIZE * 2; i++)
         {
             majorData.accumulatingACdata.append(data->data[i]);
         }
@@ -2976,7 +3024,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
             handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
                 majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
             majorData.accumulatingACdata.clear();
-        }
+        }*/
 
 			//handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
         /* </Matt> */
@@ -4298,7 +4346,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
     //Question: how do I know which item in the "data" QList is the right one?
     /* <Matt/> */
-    dataTabs.plots[id][ET_AC].data.first().currentNode = node;
+    //dataTabs.plots[id][ET_AC].data.first().currentNode = node;
     /* </Matt> */
 
 		QString nodeTypeStr = "";
@@ -4410,7 +4458,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			}
 
       /* <Matt/> */
-      ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
+      /*ExperimentalAcData * data = (ExperimentalAcData *)expData.data();
       for (int i = 0; i < ADCacBUF_SIZE; i++)
       {
           majorData.accumulatingACdata.append(data->data[i]);
@@ -4420,7 +4468,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
       {
           handler.exp->PushNewAcData(data, majorData.accumulatingACdata.data(), majorData.currentNode.ACsamplingParams.numBufs,
               container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
-      }
+      }*/
+
       //handler.exp->PushNewAcData(expData, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
       /* </Matt> */
 			

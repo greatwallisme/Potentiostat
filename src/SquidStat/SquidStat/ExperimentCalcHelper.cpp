@@ -530,7 +530,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
   //debugging
   //todo: make algorithm for calculating num buffers
-  pNode->ACsamplingParams.numBufs = 5;
+  pNode->ACsamplingParams.numBufs = 20;
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
@@ -624,17 +624,18 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
   }
 
   /* debugging only */
-  std::ofstream fout;
-  QString filename = "C:/Users/Matt/Desktop/results";
-  filename.append(QString::number(frequency));
-  filename.append(".txt");
-  fout.open(filename.toStdString(), std::ofstream::out);
-  fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
-  fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
-  for (int i = 0; i < newLen; i++)
-  {
-    fout << filteredCurrentData[i] << '\t' << filteredEWEdata[i] << '\n';
-  }
+  //std::ofstream fout;
+  //QString filename = "C:/Users/Matt/Desktop/results";
+  //filename.append(QString::number(frequency));
+  //filename.append(".txt");
+  //fout.open(filename.toStdString(), std::ofstream::out);
+  //fout << "I fitted params:" << '\t' << resultsCurrent[0] << '\t' << resultsCurrent[1] << '\t' << resultsCurrent[2] << '\t' << resultsCurrent[3] << '\n';
+  //fout << "EWE fitted params:" << '\t' << resultsEWE[0] << '\t' << resultsEWE[1] << '\t' << resultsEWE[2] << '\t' << resultsEWE[3] << '\n';
+  //for (int i = 0; i < newLen * 2; i++)
+  //{
+  //  //fout << filteredCurrentData[i] << '\t' << filteredEWEdata[i] << '\n';
+  //    fout << rawDataBuf[i] << '\n';
+  //}
 
   ComplexDataPoint_t pt;
   double MagEWE = sqrt(pow(resultsEWE[2], 2) + pow(resultsEWE[3], 2)) / gainEWE;
