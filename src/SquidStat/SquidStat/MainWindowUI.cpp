@@ -3067,11 +3067,15 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 			//*
 			//handler.exp->AddNewData(...);
-			handler.helpers.ac.accumData += expData;
+      
+        ExperimentalAcData ACdataHeader = *((ExperimentalAcData *)expData.data());
+        QByteArray ACDataOnly((const char *)(expData.data() + sizeof(ExperimentalAcData)), expData.count() - sizeof(ExperimentalAcData));
+			handler.helpers.ac.accumData += ACDataOnly;
 			--handler.helpers.ac.counter;
 			if (0 == handler.helpers.ac.counter) {
 				handler.exp->PushNewAcData(
-					expData,
+					ACdataHeader,
+          handler.helpers.ac.accumData,
 					handler.helpers.ac.amount,
 					majorData.container,
 					majorData.cal,
@@ -4556,7 +4560,9 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			}
 			//*/
-			handler.exp->PushNewAcData(expData, 1, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+      ExperimentalAcData ACdataHeader = *((ExperimentalAcData *)expData.data());
+      QByteArray ACDataOnly((const char *)(expData.data() + sizeof(ExperimentalAcData)), expData.count() - sizeof(ExperimentalAcData));
+			handler.exp->PushNewAcData(ACdataHeader, ACDataOnly, 1, container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 			/* </Matt> */
 			
 			foreach(const QString &curVal, dataTabs.realTimeLabels[id].keys()) {

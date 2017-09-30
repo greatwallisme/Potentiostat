@@ -530,7 +530,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
   //debugging
   //todo: make algorithm for calculating num buffers
-  pNode->ACsamplingParams.numBufs = 5;
+  pNode->ACsamplingParams.numBufs = 20;
 }
 
 double ExperimentCalcHelperClass::calcNumberOfCycles(const ExperimentalAcData acDataHeader)
@@ -569,14 +569,6 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
   double * filteredEWEdata = new double[newLen];
 
   filterData(rawDataBuf, numACBuffers, filteredCurrentData, filteredEWEdata, ADCacROLLING_AVG_SIZE);
-
-  /*double rawDataEWEDouble[ADCacBUF_SIZE];
-  double rawDataIDouble[ADCacBUF_SIZE];
-  for (int i = 0; i < ADCacBUF_SIZE; i++)
-  {
-    rawDataEWEDouble[i] = bufEWE[i];
-    rawDataIDouble[i] = bufCurrent[i];
-  }*/
 
   for (int i = 0; i < newLen; i++)
     t_data[i] = i;

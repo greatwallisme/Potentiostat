@@ -25,17 +25,16 @@
 	(ExperimentalAcData*)expDataRaw.data()
 
 #define GET_COMPLEX_DATA_POINT(dataPoint)							\
-	ExperimentalAcData *expData = GET_DATA_PTR(expDataRaw);			\
-	double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*expData); \
+	double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(dataheader); \
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
-		expData->frequency,											\
-		expData->data,												\
+		dataheader.frequency,											\
+		(uint16_t*)expDataRaw.data(),												\
 		numBufs,													\
-		expData->gainVoltage,										\
-		expData->gainCurrent,										\
+		dataheader.gainVoltage,										\
+		dataheader.gainCurrent,										\
 		numCycles,													\
 		&calData,													\
-		expData->IRange);
+		dataheader.IRange);
 
 #define PUSH_BACK_DATA(store, val) {		\
 	if (container[store].data.isEmpty()) {	\
