@@ -77,6 +77,7 @@
 #include <QDesktopWidget>
 #include <QSignalMapper>
 #include <QTreeView>
+#include <QHeaderView>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -1257,13 +1258,46 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	w = WDG();
 	auto lay = new QHBoxLayout(w);
 
-	auto view = new QTreeView(w);
+	auto view = OBJ_NAME(new QTreeView(w), "status-tab-view");
 	lay->addWidget(view);
 
 	auto model = new QStandardItemModel(view);
 	view->setModel(model);
 
-	model->setHorizontalHeaderLabels(QStringList() << "" << "Status" << "Experiment" << "Step" << "Last notification");
+	QStringList headerNames = QStringList() << "" << "Status" << "Experiment" << "Step" << "Last notification";
+
+	model->setHorizontalHeaderLabels(headerNames);
+	view->header()->setSectionsMovable(false);
+	view->header()->setSectionsClickable(false);
+	view->setEditTriggers(QAbstractItemView::NoEditTriggers);
+	view->setItemsExpandable(false);
+
+	view->installEventFilter(new UniversalEventFilter(view, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+
+		if (e->type() != QEvent::Resize) {
+			return false;
+		}
+
+		if (view->header()->count() != headerNames.size()) {
+			return false;
+		}
+
+		QList<int> columnWeights{3, 2, 4, 2, 4};
+		int weightSum = 0;
+		for (auto i : columnWeights) {
+			weightSum += i;
+		}
+
+		auto width = view->width();
+
+		for (int i = 0; i < columnWeights.size(); ++i) {
+			view->setColumnWidth(i, (float)width * columnWeights.at(i) / weightSum);
+		}
+
+		return true;
+	}));
+
 
 	auto rootItem = model->invisibleRootItem();
 
@@ -1311,6 +1345,8 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	instItem->setChild(3, 3, item);
 	item = new QStandardItem("");
 	instItem->setChild(3, 4, item);
+
+	view->expandAll();
 
 	return  w;
 }
@@ -2994,10 +3030,16 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataMapVisualization &majorData(handler.data.first());
 
 		if (handler.exp) {
-			handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
+			--handler.helpers.dc.counter;
+			if (0 == handler.helpers.dc.counter) {
+				handler.exp->PushNewDcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
 
-			if (majorData.saveFile)
-			handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+				if (majorData.saveFile) {
+					handler.exp->SaveDcData(*majorData.saveFile, majorData.container);
+				}
+				
+				handler.helpers.dc.counter = handler.helpers.dc.amount;
+			}
 
 			/*
 			if (majorData.saveFile)
@@ -3068,14 +3110,14 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			//*
 			//handler.exp->AddNewData(...);
       
-        ExperimentalAcData ACdataHeader = *((ExperimentalAcData *)expData.data());
-        QByteArray ACDataOnly((const char *)(expData.data() + sizeof(ExperimentalAcData)), expData.count() - sizeof(ExperimentalAcData));
+			ExperimentalAcData ACdataHeader = *((ExperimentalAcData *)expData.data());
+			QByteArray ACDataOnly((const char *)(expData.data() + sizeof(ExperimentalAcData)), expData.count() - sizeof(ExperimentalAcData));
 			handler.helpers.ac.accumData += ACDataOnly;
 			--handler.helpers.ac.counter;
 			if (0 == handler.helpers.ac.counter) {
 				handler.exp->PushNewAcData(
 					ACdataHeader,
-          handler.helpers.ac.accumData,
+					handler.helpers.ac.accumData,
 					handler.helpers.ac.amount,
 					majorData.container,
 					majorData.cal,
@@ -3088,6 +3130,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				}
 
 				handler.helpers.ac.accumData.clear();
+				handler.helpers.ac.counter = handler.helpers.ac.amount;
 			}
 			/*/
 			handler.exp->PushNewAcData(expData, majorData.container, majorData.cal, majorData.hwVer, majorData.notes, trigger);
@@ -3144,7 +3187,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			case DCNODE_CONST_RESISTANCE:
 			case DCNODE_CONST_POWER:
 			case DCNODE_MAX_POWER:
-				//Fill dcEveryPoint;
+				handler.helpers.dc.amount = node.DCsamplingParams.PointsSkippedPC;
+				if (0 == handler.helpers.dc.amount) {
+					handler.helpers.dc.amount = 1;
+				}
+				handler.helpers.dc.counter = handler.helpers.dc.amount;
 				break;
 		}
 	});

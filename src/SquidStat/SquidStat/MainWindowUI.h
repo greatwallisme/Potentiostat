@@ -214,7 +214,7 @@ private:
 				QByteArray accumData;
 			} ac;
 			struct {
-				uint32_t devider;
+				uint32_t amount;
 				uint32_t counter;
 			} dc;
 		} helpers;

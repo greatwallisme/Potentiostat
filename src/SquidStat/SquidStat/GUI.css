@@ -1165,6 +1165,27 @@ QColorPicker {
 	color: #677284;
 	font-size: 16px;
 }
+/*//////////////       INSTRUMENT SUMMARY      ////////////////////*/
+#status-tab-view QHeaderView {
+	border: none;
+	border-bottom: 1px solid #c6ccd2;
+	
+	qproperty-defaultAlignment: "AlignHCenter | AlignVCenter";
+	
+	font-family: "Esphimere";
+	color: #ce2026;
+	font-size: 20px;
+	
+	min-height: 30px;
+}
+#status-tab-view QHeaderView::item {
+	border-right: black;
+}
+#status-tab-view {
+	border: 1px solid #c6ccd2;
+	
+	font-size: 16px;
+}
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
 	font-family: "Esphimere";
