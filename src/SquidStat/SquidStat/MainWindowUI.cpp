@@ -2983,8 +2983,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
 	});
 
-	connections << CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
-		for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it) {
+	auto expCompleteHandler = [=](const QUuid &id) {
+		int i = 0;
+		for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it, ++i) {
 			PlotHandler &handler(it.value());
 			DataMapVisualization &majorData(handler.data.first());
 
@@ -3011,7 +3012,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				tabBar->setTabIcon(i, QIcon());
 			}
 		}
-	});
+	};
+	connections << CONNECT(mw, &MainWindow::ExperimentCompleted, expCompleteHandler);
 
 	auto dcDataArrivedLambda = [=](const QUuid &id, const ExperimentalDcData &expData, ExperimentTrigger *trigger, bool paused) {
 		if (!dataTabs.plots.keys().contains(id)) {
@@ -3162,14 +3164,22 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	connections << CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 	connections << CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
 	connections << CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
-		PlotHandler &handler(dataTabs.plots[curId][ET_AC]);
+		if (!dataTabs.plots.contains(curId)) {
+			return;
+		}
+
 		switch(node.nodeType) {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
-			case FRA_NODE_PSEUDOGALV:
+			case FRA_NODE_PSEUDOGALV: {
+				if (!dataTabs.plots[curId].contains(ET_AC)) {
+					return;
+				}
+				PlotHandler &handler(dataTabs.plots[curId][ET_AC]);
 				handler.helpers.ac.amount = node.ACsamplingParams.numBufs;
 				handler.helpers.ac.counter = handler.helpers.ac.amount;
 				handler.helpers.ac.accumData.clear();
+			}
 				break;
 
 			case DCNODE_OCP:
@@ -3186,13 +3196,27 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			case DCNODE_SINEWAVE:
 			case DCNODE_CONST_RESISTANCE:
 			case DCNODE_CONST_POWER:
-			case DCNODE_MAX_POWER:
+			case DCNODE_MAX_POWER: {
+				if (!dataTabs.plots[curId].contains(ET_DC)) {
+					return;
+				}
+				PlotHandler &handler(dataTabs.plots[curId][ET_DC]);
 				handler.helpers.dc.amount = node.DCsamplingParams.PointsSkippedPC;
 				if (0 == handler.helpers.dc.amount) {
 					handler.helpers.dc.amount = 1;
 				}
 				handler.helpers.dc.counter = handler.helpers.dc.amount;
+			}
 				break;
+
+			default:
+				return;
+				break;
+		}
+
+		//if(node.newFileTrigger) {
+		if (0) {
+
 		}
 	});
 
