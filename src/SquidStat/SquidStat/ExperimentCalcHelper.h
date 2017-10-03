@@ -53,6 +53,7 @@ private:
   static double ** matrixMult(double ** matrix1, int rows1, int cols1, double ** matrix2, int rows2, int cols2);
 
   /* Newton-raphson method */
+  static int GetFrequency(double const *xbuf_smoothed, int size);
   static void sinusoidLeastSquaresFit(double * xbuf, double * ybuf, int size, double * results);
   static void NewtonRaphson(double * initialGuessParams, double * xbuf, double * ybuf, int length, double * resultsBuf, bool lockedFrequency = false);
   static void filterData(uint16_t * rawData, uint8_t numACBuffers, double * smoothedIdataDest, double * smoothedEWEdataDest, int rollingAvgSize);

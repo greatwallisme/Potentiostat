@@ -617,7 +617,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
 
   /* debugging only */
   std::ofstream fout;
-  QString filename = "C:/Users/Matt/Desktop/results";
+  QString filename = "C:/Users/mattc/Desktop/results";
   filename.append(QString::number(frequency));
   filename.append(".txt");
   fout.open(filename.toStdString(), std::ofstream::out);
@@ -1216,3 +1216,254 @@ double ExperimentCalcHelperClass::d2ydc2(double * paramsBuf, double x)
 {
   return 0;
 }
+
+//=============================================================================
+namespace // unnamed namespace to make these function definitions private within this file
+{
+    // func Average: Computes the average of a vector.
+    //
+    // in     x: 
+    // returns: The average of x.
+    int Average(std::vector<int> const& x)
+    {
+        if (x.size() < 1) { return 0; }
+
+        int sum = 0;
+        for (int i = 0; i < x.size(); i++)
+        {
+            sum += x[i];
+        }
+        int average = sum / x.size();
+        return average;
+    }
+
+    // func Zero: Computes a "zero-value" of a vector.
+    //
+    // in     x: 
+    // returns: The zero-value of x.
+    int Zero(std::vector<int> const& x)
+    {
+        // CHOOSE: find the zero by taking the average
+        int zero = Average(x);
+
+        std::cout << "Zero: " << zero << std::endl;
+        return zero;
+    }
+
+    // func Sign: Computes the sign (pos, neg, zero) of a number.
+    //
+    // in     x: 
+    // returns: -1 <- neg, 0 <- 0, +1 <- pos
+    int Sign(int x)
+    {
+        int sign = (x > 0) - (x < 0);
+        return sign;
+    }
+
+    // func AllZeroCrossings: Finds indicies of all zero-crossing leading edges.
+    //
+    //    out zc: indicies of lead-edges of zero-crossings.
+    // in     x:
+    // in     zero: 
+    void AllZeroCrossings(std::vector<int>& zca, std::vector<int> const& x, int zero)
+    {
+        if (!zca.empty() || x.size() < 2)
+        {
+            std::cout << "AllZeroCrossings" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // process all but the last point
+        for (int i = 0; i < x.size() - 1; i++)
+        {
+            // vertical shift each point relative to the zero-value
+            int sign_curr = Sign(x[i] - zero);
+            int sign_next = Sign(x[i + 1] - zero);
+            if ((sign_curr == 0) || (sign_curr != sign_next)) {
+                zca.push_back(i);
+            }
+        }
+
+        // process the last point
+        if (x.back() - zero == 0)
+        {
+            // only add if the last point is equal to the zero-value
+            zca.push_back(x.back());
+        }
+
+        std::cout << "zca: ";
+        for (int i = 0; i < zca.size(); i++) {
+            std::cout << zca[i] << ",";
+        }
+        std::cout << std::endl;
+    }
+
+    // func Edge1: Determines the "cutoff" point between zero-cross intervals
+    // that are small or large.2 "buckets" (small/large), 1 edge between them.
+    // in     zc: Indices of zero-crossings.
+    // returns: The edge (cutoff) value separating a small zc-interval from a large one.
+    int Edge1(std::vector<int> const& zc)
+    {
+        // find the maximum distance between zero-crossings
+        // by computing the distance between each adjacent zc
+        // and keep track of the maximum
+        int max = 0;
+        for (int i = 0; i < zc.size() - 1; i++)
+        {
+            int dist = zc[i + 1] - zc[i];
+            if (dist > max)
+            {
+                max = dist;
+            }
+        }
+
+        // CHOOSE: edge is half of max
+        int edge = max / 2;
+        std::cout << "max run: " << max << std::endl;
+        std::cout << "edge: " << edge << std::endl;
+
+        return edge;
+    }
+
+    // func GroupZeroCrossings: Gets start and stop indices of zero-cross clusters.
+    //
+    //    out zci: (start,stop) indices of zero-crossing interval.
+    // in     zca: Indices of all zero-crossing leading-edges.
+    // in     nx: The original sample size from which zca was computed.
+    void ZeroCrossIntervals(std::vector< std::pair<int, int> >& zci, std::vector<int> const& zca, int nx)
+    {
+        // nx     = 21 <-- original sample size
+        // zca    = 3  4  10  15 16 20 <-- leading edges of all zero-crossings in the original sample of size nx
+        // edge   = 2 <-- anything <= is a cluster, anything > is not a cluster
+        // zci[0] = [3, 5] <-- trailing edge (5) is one more than the last leading edge (4) in the cluster
+        // zci[1] = [10, 11] <-- not a cluster
+        // zci[2] = [15, 17] <-- is a cluster
+        // zci[3] = [20, 20] <-- trailing edge = leading edge because the original sample is of size nx=21
+        
+        if (!zci.empty() || zca.size() < 2) {
+            std::cout << "ZeroCrossIntervals" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        // CHOOSE: two "buckets"
+        int edge = Edge1(zca);
+
+        // distances between zero-crossings
+        int i = 0;
+        int beg = zca[i];
+        int end = beg;
+        int n = zca.size();
+        // process all but the last point since we're using a forward difference
+        while (i < (n - 1)) {
+            // save the starting index when you encounter any type of zero-crossing
+            beg = zca[i]; // leading-edge of zero-crossing
+
+            int dist = 0;
+            bool at_end;
+            bool in_cluster = false;
+            // keep updating the trailing-edge index until you exit the cluster.
+            // this will only happen once if the zero-crossing is a lone point (not a cluster)
+            do
+            {
+                dist = zca[i + 1] - zca[i]; // forward difference
+                i += 1;
+                at_end = i >= (n - 1);
+                in_cluster = dist < edge; // CHOOSE: non-inclusive
+            } while (!at_end && in_cluster);
+            
+            // we're out of the cluster or past the lone zero-crossing point,
+            // so save the trailing-edge index, which is one more than the last leading-edge index
+            end = zca[i - 1] + 1; // trailing-edge of zero-crossing
+
+            // store the interval
+            std::pair<int, int> interval(beg, end);
+            zci.push_back(interval);
+        }
+
+        // process the last point, which must be done after the loop
+        // since we're using a forward-difference
+        beg = zca[i];
+        if (i == nx - 1) {
+            // the last zero-crossing is the last point of the original vector,
+            // so the trailing edge is also the leading edge,
+             // which happens when the last point is equal to the zero-value
+            end = beg;
+        }
+        else
+        {
+            // the last zero-crossing is not the last point of the original vector,
+            // so it's ok to use the following point as the zero-crossing trailing-edge
+            end = beg + 1;
+        }
+    
+        std::pair<int, int> interval(beg, end);
+        zci.push_back(interval);
+
+        std::cout << "zci: ";
+        for (int i = 0; i < zci.size(); i++) {
+            std::cout << zci[i].first << ":" << zci[i].second << ",";
+        }
+        std::cout << std::endl;
+    }
+
+    int AverageDistance(std::vector< std::pair<int, int> >& x)
+    {
+        int average_distance = 0;
+        for (int i = 0; i < x.size(); i++)
+        {
+            int dist = x[i].second - x[i].first;
+            average_distance += dist / (i + 1);
+        }
+        return average_distance;
+    }
+
+    int AverageDistance(std::vector<int> const& x)
+    {
+        // backward-difference
+        int average_distance = 0;
+        for (int i = 1; i <= x.size(); i++)
+        {
+            average_distance += (x[i] - x[i - 1]) / i;
+        }
+        return average_distance;
+    }
+
+    void SmoothZeroCrossings(std::vector<int>& zca, std::vector< std::pair<int, int> > const& zci)
+    {
+        for (int i = 0; i < zci.size(); i++)
+        {
+            // CHOOSE: floor since lead-edge defines the zero-crossing
+            int zc = (zci[i].second + zci[i].first) / 2;
+            zca.push_back(zc);
+        }
+    }
+} // namespace
+
+// in     xbuf: Must already be smoothed
+int ExperimentCalcHelperClass::GetFrequency(double const *const xbuf_smoothed, int const size)
+{
+
+    // Algorithm Variables
+    std::vector<int> x(xbuf_smoothed, xbuf_smoothed + size * sizeof(xbuf_smoothed[0])); // copy xbuf array into x vector
+    std::vector<int> zca; // indicies of all zero-crossings
+    std::vector< std::pair<int, int> > zci; // index-pairs of zero-crossing intervals
+    int zero = 0; // computed "zero-value"
+
+    // choose a zero-value
+    zero = Zero(x);
+
+    // find all zero-crossings
+    AllZeroCrossings(zca, x, zero);
+
+    // find zero-crossing intervals
+    ZeroCrossIntervals(zci, zca, x.size());
+
+    // overwrite zca with clusters resolved to single points
+    zca.clear();
+    SmoothZeroCrossings(zca, zci);
+
+    int frequency = AverageDistance(zca);
+    return frequency;
+}
+
+
