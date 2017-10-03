@@ -209,13 +209,13 @@ private:
 		} plotCounter;
 		struct {
 			struct {
-				uint32_t amount;
-				uint32_t counter;
+				uint32_t amount = 1;
+				uint32_t counter = 1;
 				QByteArray accumData;
 			} ac;
 			struct {
-				uint32_t amount;
-				uint32_t counter;
+				uint32_t amount = 1;
+				uint32_t counter = 1;
 			} dc;
 		} helpers;
 	};
