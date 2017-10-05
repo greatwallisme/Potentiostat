@@ -11,8 +11,8 @@
 #define VEND_OBJ_NAME             "ending-voltage"
 #define VEND_VS_OCP_OBJ_NAME      "ending-voltage-vs-ocp"
 #define SLEWRATE_OBJ_NAME         "slewrate"
-#define SAMPLING_MODE_OBJ_NAME    "sampling-mode"
-#define SAMPLING_INT_OBJ_NAME     "sampling-interval-fixed"
+#define SAMPLING_INT_UNITS_OBJ_NAME "sampling-interval-units"
+#define SAMPLING_INT_OBJ_NAME     "sampling-interval"
 #define MAX_CURRENT_OBJ_NAME      "max-current"
 #define MAX_CURRENT_UNITS_OBJ_NAME "max-current-units"
 #define AUTORANGE_MODE_OBJ_NAME   "autorange-mode"
@@ -63,20 +63,12 @@ QWidget* DCPotentialSweepElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_TEXT_INPUT(SLEWRATE_DEFAULT, SLEWRATE_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 
-  ++row;
-  _INSERT_VERTICAL_SPACING(row);
-
-  ++row;
-  _INSERT_CENTERED_COMMENT("<b>Sampling interval</b>", row);
-  
-  ++row;
-  _START_RADIO_BUTTON_GROUP(SAMPLING_MODE_OBJ_NAME);
-  _INSERT_RADIO_BUTTON_EXT("Auto-calculate (recommended)", row, 0, 1, -1);
-  ++row;
-  _INSERT_RADIO_BUTTON("Fixed interval: ", row, 0);
-  _END_RADIO_BUTTON_GROUP();
+  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of:", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mV");
+  _ADD_DROP_DOWN_ITEM("s");
+  _END_DROP_DOWN();
 
   ++row;
   _INSERT_VERTICAL_SPACING(row);
@@ -117,14 +109,15 @@ NodesData DCPotentialSweepElement::GetNodesData(const UserInput &inputs, const C
   double VEnd = inputs[VEND_OBJ_NAME].toDouble();
   bool VEndVsOCP = inputs[VEND_VS_OCP_OBJ_NAME].toString().contains("open circuit");
   double dVdt = inputs[SLEWRATE_OBJ_NAME].toDouble();
-  QString samplingMode_str = inputs[SAMPLING_MODE_OBJ_NAME].toString();
   double samplingInterval = inputs[SAMPLING_INT_OBJ_NAME].toDouble();
   double maxCurrent = inputs[MAX_CURRENT_OBJ_NAME].toDouble();
   QString currentRangeMode_str = inputs[AUTORANGE_MODE_OBJ_NAME].toString();
   currentRange_t currentRangeMode;
 
-  samplingInterval = samplingMode_str.contains("Auto") ? 0 : inputs[SAMPLING_INT_OBJ_NAME].toDouble();
-  
+  samplingInterval = inputs[SAMPLING_INT_OBJ_NAME].toDouble();
+  if (inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString().contains("mV"))
+      samplingInterval = samplingInterval / dVdt;
+
   maxCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[MAX_CURRENT_UNITS_OBJ_NAME].toString());
 
   if (currentRangeMode_str.contains("Autorange"))

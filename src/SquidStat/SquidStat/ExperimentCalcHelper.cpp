@@ -10,6 +10,7 @@
 
 void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, const double targetSamplingInterval, double MaxUpdateInterval)
 {
+    pNode->DCsamplingParams.isFastSlewRate = false;
 	int dt_min = 50000;
   int ADCbufsize = 256;
   int DACbufsize = 256;
@@ -62,190 +63,247 @@ void ExperimentCalcHelperClass::GetSamplingParams_staticDAC(HardwareModel_t HWve
   pNode->DCsamplingParams.ADCTimerDiv = 0;
 }
 
-//TODO: incorporate fastslew mode, PointsSkippedMCU
 void ExperimentCalcHelperClass::GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-  double dEdt, const double targetSamplingInterval)
+    double dEdt, double targetSamplingInterval, double MaxUpdateInterval)
 {
-  if (dEdt == 0) return;
+    if (dEdt == 0)
+    {
+        GetSamplingParams_staticDAC(HWversion, pNode, targetSamplingInterval);
+        return;
+    }
+    if (targetSamplingInterval == 0)
+    {
+        targetSamplingInterval = dEdt / 1000 * calData->m_DACdcP_V * SECONDS;
+    }
 
-  int dt_min = 50000;
-  int ADCbufsize = 256;
-  int DACbufsize = 256;
-  switch (HWversion)
-  {
+    int ADCdt_min, DACdt_min, ADCbufsizeMax, DACbufsizeMax;
+    switch (HWversion)
+    {
     case PRIME:
     case PICO:
     case EDGE:
     case SOLO:
     case PLUS:
-      dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
-      ADCbufsize = ADCdcBUF_SIZE_TEENSY;
-      DACbufsize = DACdcBUF_SIZE_TEENSY;
-    break;
+        ADCdt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
+        DACdt_min = SQUIDSTAT_TEENSY_MIN_DACDC_TIMER_PERIOD;
+        ADCbufsizeMax = ADCdcBUF_SIZE_TEENSY;
+        DACbufsizeMax = DACdcBUF_SIZE_TEENSY;
+        break;
     case PLUS_2_0:
     case PRIME_2_0:
     case SOLO_2_0:
-      dt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
-      ADCbufsize = ADCdcBUF_SIZE_PIC;
-      DACbufsize = DACdcBUF_SIZE_PIC;
-    break;
-  default:
-    break;
-  }
-
-  pNode->DCsamplingParams.isFastSlewRate = false;  //debugging
-  pNode->DCsamplingParams.PointsSkippedMCU = 1;  //debugging: todo, incorporate these params into fast slewrate notes
-
-  /* 1) Minimize dt, maximize DACMult */
-  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
-  pNode->DCSweep_pot.VStep = 1;
-  uint64_t dt;
-  double ticksPerStep = abs(1 / dEdt / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000); //the 1000 factor accounts for the mV to V conversion, since dEdt is in mV/s
-  do
-  {
-    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven);
-    if (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize)
-    {
-      if (pNode->DCsamplingParams.DACMultEven << 1 < DACbufsize)
-      {
-        pNode->DCsamplingParams.DACMultEven <<= 1;
-        pNode->DCsamplingParams.DACMultOdd <<= 1;
-      }
-      else
+        ADCdt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
+        DACdt_min = SQUIDSTAT_PIC_MIN_DACDC_TIMER_PERIOD;
+        ADCbufsizeMax = ADCdcBUF_SIZE_PIC;
+        DACbufsizeMax = DACdcBUF_SIZE_PIC;
+        break;
+    default:
         break;
     }
-  } while (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize);
+    double actualSamplingInterval = MAX(ADCdt_min, MIN(targetSamplingInterval * SECONDS, MaxUpdateInterval * SECONDS));
+    uint64_t minorDataEventInterval, majorDataEventInterval;
 
-  /* 2) Increase VStep, if necessary (if dt is too small, or if DACbuf is expended too quickly */
-  while (dt < dt_min || pNode->DCsamplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
-  {
-    pNode->DCSweep_pot.VStep++;
-    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven * pNode->DCSweep_pot.VStep);
-  }
+    /* Determine which slew mode to operate in */
+    double ticksPerDACStep = abs(1 / dEdt / (calData->m_DACdcP_V / 2 + calData->m_DACdcN_V / 2) * SECONDS * 1000); //the 1000 factor accounts for the mV to V conversion, since dEdt is in mV/s
+    pNode->DCsamplingParams.isFastSlewRate = ticksPerDACStep < ADCdt_min;
 
-  /* 3) Calculate ADCBufferSizeEven and Odd (must be <= ADCbufsize). Data should be sent no less than once per second */
-  /* if auto-calculate mode is selected (targetSamplingInterval == 0), then use samplingInterval = dt * DACdcBUF_SIZE */
-  double transmitInterval;
-  uint32_t FilterSize = 0;
-  do
-  {
-    FilterSize++;
-    pNode->DCsamplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->DCsamplingParams.DACMultEven / FilterSize) :
-      targetSamplingInterval * SECONDS / dt / FilterSize;
-    transmitInterval = pNode->DCsamplingParams.ADCBufferSizeEven * dt;
-  } while ((pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
-  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
-  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
+    if (pNode->DCsamplingParams.isFastSlewRate)
+    {
+        /* In fast slew mode, the DAC updates (N = ADC_DAC_ratio) times per minor data event.
+            The ADC samples once per minor data event */
 
-  /* 4) Calculate Points Ignored (for dynamic sampling) */
-  if (pNode->DCsamplingParams.ADCBufferSizeEven == pNode->DCsamplingParams.DACMultEven)
-    pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
-  else
-    pNode->DCsamplingParams.minorPointsDiscarded = 0;
+    /* Calculate DAC timing */
+        pNode->DCsamplingParams.DACTimerDiv = 0;        //assume that at fast slew rates, only short timer periods will be needed (<32 bits)
+        pNode->DCSweep_pot.VStep = 1;
+        while ((pNode->DCsamplingParams.DACTimerPeriod = ticksPerDACStep * pNode->DCSweep_pot.VStep) < DACdt_min)
+        {
+            pNode->DCSweep_pot.VStep++;
+        }
 
-  /* 5) Make sure timer period isn't too big for uint32_t */
-  pNode->DCsamplingParams.ADCTimerDiv = 0;
-  while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
-  {
-    pNode->DCsamplingParams.ADCTimerDiv++;
-    dt >>= 1;
-  }
-  pNode->DCsamplingParams.ADCTimerPeriod = (uint32_t) dt;
+    /* Calculate ADC timing */
+        /* minimize ADC_DAC_ratio to minimize minorDataEventInterval */
+        pNode->DCsamplingParams.ADC_DAC_ratio = ceil((double)ADCdt_min / pNode->DCsamplingParams.DACTimerPeriod);
+        minorDataEventInterval = pNode->DCsamplingParams.ADC_DAC_ratio * pNode->DCsamplingParams.DACTimerPeriod;
+
+        /* ADCBufferSize * minorDataEventInterval = MajorDataEventInterval */
+        pNode->DCsamplingParams.ADCBufferSizeEven = 1;
+        while ((pNode->DCsamplingParams.ADCBufferSizeEven + 1) * minorDataEventInterval < actualSamplingInterval &&
+            pNode->DCsamplingParams.ADCBufferSizeEven < ADCbufsizeMax)
+        {
+            pNode->DCsamplingParams.ADCBufferSizeEven++;
+        }
+        pNode->DCsamplingParams.minorPointsDiscarded = 0;
+    }
+    else
+    {
+        /* In slow slew mode, ADC samples at every minor data event, and averages (N = ADCbufSize) points
+            The DAC updates every (N = DAC_ADC_ratio) times the ADCbuffer overflows */
+
+    /* Calculate DAC timing */
+        /* DAC is triggered at intervals of DAC_ADC_ratio * minorDataEventInterval * ADCbufSize * VStep */
+        
+        /* Adjust the sampling period if necessary so that ticksPerDACStep is an integer multiple */
+        uint64_t compromisedSamplingInterval = ticksPerDACStep;
+        if (actualSamplingInterval < ticksPerDACStep)
+        {
+            int N = 1;
+            while ((compromisedSamplingInterval = ticksPerDACStep / N) > actualSamplingInterval)
+                N++;
+            pNode->DCsamplingParams.PointsSkippedMCU = N;
+        }
+
+        /* 1) Maximize ADCBufferSize, minimize minorDataEventInterval */
+        pNode->DCsamplingParams.ADCBufferSizeEven = 1;
+        pNode->DCsamplingParams.DAC_ADC_ratio = 1;
+        pNode->DCSweep_pot.VStep = 1;
+        while (floor((minorDataEventInterval = ticksPerDACStep / pNode->DCsamplingParams.ADCBufferSizeEven /
+            pNode->DCsamplingParams.DAC_ADC_ratio) / ADCdt_min) > 1)
+        {
+                pNode->DCsamplingParams.ADCBufferSizeEven++;
+        }
+        while (pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsizeMax)
+        {
+            pNode->DCsamplingParams.DAC_ADC_ratio *= 2;
+            pNode->DCsamplingParams.ADCBufferSizeEven /= 2;
+        }
+        minorDataEventInterval = ticksPerDACStep / pNode->DCsamplingParams.ADCBufferSizeEven / pNode->DCsamplingParams.DAC_ADC_ratio; //recalculate to minimize rounding error
+
+    /* Calculate ADC timing */
+        /* (1<<ADCTimerDiv) * ADCTimerPeriod = minorDataEventInterval */
+        pNode->DCsamplingParams.ADCTimerDiv = 0;
+        double ADCTimerPeriod = minorDataEventInterval;
+        while (ADCTimerPeriod > 4294967295 - 5 * MILLISECONDS)
+        {
+            ADCTimerPeriod /= 2;
+            pNode->DCsamplingParams.ADCTimerDiv++;
+        }
+        pNode->DCsamplingParams.ADCTimerPeriod = floor(ADCTimerPeriod);
+
+        if (pNode->DCsamplingParams.DAC_ADC_ratio == 1)
+            pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
+        else
+            pNode->DCsamplingParams.minorPointsDiscarded = 0;
+    }
+
+    /* PointsSkippedMCU * MajorDataEventInterval = actualSamplingInterval */
+    majorDataEventInterval = pNode->DCsamplingParams.ADCBufferSizeEven * minorDataEventInterval;
+    pNode->DCsamplingParams.PointsSkippedMCU = floor(actualSamplingInterval / majorDataEventInterval);
+
+    /* actualSamplingInterval * PointsSkippedPC = targetSamplingInterval */
+    pNode->DCsamplingParams.PointsSkippedPC = targetSamplingInterval / (majorDataEventInterval * pNode->DCsamplingParams.PointsSkippedMCU);
+
+    pNode->DCsamplingParams.ADCcounter = 0;
+    pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
 }
 
-//TODO: incorporate fast slew mode, PointsSkippedMCU
 void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-  double dIdt, currentRange_t currentRange, const double targetSamplingInterval)
+    double dIdt, currentRange_t currentRange, double targetSamplingInterval, double MaxUpdateInterval)
 {
-  if (dIdt == 0) return;
-
-  int dt_min = 50000;
-  int ADCbufsize = 256;
-  int DACbufsize = 256;
-  switch (HWversion)
-  {
-  case PRIME:
-  case PICO:
-  case EDGE:
-  case SOLO:
-  case PLUS:
-    dt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
-    ADCbufsize = ADCdcBUF_SIZE_TEENSY;
-    DACbufsize = DACdcBUF_SIZE_TEENSY;
-    break;
-  case PLUS_2_0:
-  case PRIME_2_0:
-  case SOLO_2_0:
-    dt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
-    ADCbufsize = ADCdcBUF_SIZE_PIC;
-    DACbufsize = DACdcBUF_SIZE_PIC;
-    break;
-  default:
-    break;
-  }
-
-  pNode->DCsamplingParams.isFastSlewRate = false; //debugging. todo: incorporate fast sampling mode
-
-  /* 1) Minimize dt, maximize DACMult */
-  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
-  pNode->DCSweep_galv.IStep = 1;
-  uint64_t dt;
-  double ticksPerStep = abs(1 / dIdt / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS);
-  do
-  {
-    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven);
-    if (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize)
+    if (dIdt == 0)
     {
-      if (pNode->DCsamplingParams.DACMultEven << 1 < DACbufsize)
-      {
-        pNode->DCsamplingParams.DACMultEven <<= 1;
-        pNode->DCsamplingParams.DACMultOdd <<= 1;
-      }
-      else
+        GetSamplingParams_staticDAC(HWversion, pNode, targetSamplingInterval);
+        return;
+    }
+    if (targetSamplingInterval == 0)
+    {
+        targetSamplingInterval = dIdt / 1000 * calData->m_DACdcP_I[(int)currentRange] * SECONDS;
+    }
+
+    int ADCdt_min, DACdt_min, ADCbufsizeMax, DACbufsizeMax;
+    switch (HWversion)
+    {
+    case PRIME:
+    case PICO:
+    case EDGE:
+    case SOLO:
+    case PLUS:
+        ADCdt_min = SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD;
+        DACdt_min = SQUIDSTAT_TEENSY_MIN_DACDC_TIMER_PERIOD;
+        ADCbufsizeMax = ADCdcBUF_SIZE_TEENSY;
+        DACbufsizeMax = DACdcBUF_SIZE_TEENSY;
+        break;
+    case PLUS_2_0:
+    case PRIME_2_0:
+    case SOLO_2_0:
+        ADCdt_min = SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD;
+        DACdt_min = SQUIDSTAT_PIC_MIN_DACDC_TIMER_PERIOD;
+        ADCbufsizeMax = ADCdcBUF_SIZE_PIC;
+        DACbufsizeMax = DACdcBUF_SIZE_PIC;
+        break;
+    default:
         break;
     }
-  } while (dt / dt_min > 1 && pNode->DCsamplingParams.DACMultEven < DACbufsize);
+    double actualSamplingInterval = MAX(ADCdt_min, MIN(targetSamplingInterval * SECONDS, MaxUpdateInterval * SECONDS));
+    uint64_t minorDataEventInterval, majorDataEventInterval;
 
-  /* 2) Increase VStep, if necessary (if dt is too small, or if DACbuf is expended too quickly */
-  while (dt < dt_min || pNode->DCsamplingParams.DACMultEven * dt * DACbufsize < MIN_TICKS_FOR_USB_TRANSMISSION)
-  {
-    pNode->DCSweep_galv.IStep++;
-    dt = (uint64_t)round(ticksPerStep / pNode->DCsamplingParams.DACMultEven * pNode->DCSweep_galv.IStep);
-  }
+    /* Determine which slew mode to operate in */
+    double ticksPerDACStep = abs(1 / dIdt / (calData->m_DACdcP_I[(int)currentRange] / 2 + calData->m_DACdcN_I[currentRange] / 2) * SECONDS);
+    pNode->DCsamplingParams.isFastSlewRate = ticksPerDACStep < ADCdt_min;
 
-  /* 3) Calculate ADCBufferSizeEven and Odd (must be <= ADCbufsize). Data should be sent no less than once per second */
-  /* if auto-calculate mode is selected (targetSamplingInterval == 0), then use samplingInterval = dt * DACdcBUF_SIZE */
-  double transmitInterval;
-  uint32_t FilterSize = 0;
-  do
-  {
-    FilterSize++;
-    pNode->DCsamplingParams.ADCBufferSizeEven = targetSamplingInterval == 0 ? (pNode->DCsamplingParams.DACMultEven / FilterSize) :
-      targetSamplingInterval * SECONDS / dt / FilterSize;
-    transmitInterval = pNode->DCsamplingParams.ADCBufferSizeEven * dt;
-  } while ((pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsize) || (transmitInterval > 1 * SECONDS));
-  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
-  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
+    if (pNode->DCsamplingParams.isFastSlewRate)
+    {
+        /* Calculate DAC timing */
+        pNode->DCsamplingParams.DACTimerDiv = 0;        //assume that at fast slew rates, only short timer periods will be needed (<32 bits)
+        pNode->DCSweep_galv.IStep = 1;
+        while ((pNode->DCsamplingParams.DACTimerPeriod = ticksPerDACStep * pNode->DCSweep_galv.IStep) < DACdt_min)
+        {
+            pNode->DCSweep_galv.IStep++;
+        }
 
-  /* 4) Calculate Points Ignored (for dynamic sampling) */
-  if (pNode->DCsamplingParams.ADCBufferSizeEven == pNode->DCsamplingParams.DACMultEven)
-    pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
-  else
-    pNode->DCsamplingParams.minorPointsDiscarded = 0;
+        /* Calculate ADC timing */
+        /* minimize ADC_DAC_ratio to minimize minorDataEventInterval */
+        pNode->DCsamplingParams.ADC_DAC_ratio = ceil(ADCdt_min / pNode->DCsamplingParams.DACTimerPeriod);
+        minorDataEventInterval = pNode->DCsamplingParams.ADC_DAC_ratio * pNode->DCsamplingParams.DACTimerPeriod;
+    }
+    else
+    {
+        /* Calculate DAC timing */
+        /* DAC is triggered at intervals of DAC_ADC_ratio * minorDataEventInterval * VStep */
+        pNode->DCsamplingParams.DAC_ADC_ratio = 1;
+        while ((minorDataEventInterval = ceil(ticksPerDACStep / pNode->DCsamplingParams.DAC_ADC_ratio)) / ADCdt_min > 1)
+        {
+            pNode->DCsamplingParams.DAC_ADC_ratio++;
+        }
 
-  /* 5) Make sure timer period isn't too big for uint32_t */
-  pNode->DCsamplingParams.ADCTimerDiv = 0;
-  while (dt > 4294967295 - 5 * MILLISECONDS) //5ms accounts conservatively for loop time
-  {
-    pNode->DCsamplingParams.ADCTimerDiv++;
-    dt >>= 1;
-  }
-  pNode->DCsamplingParams.ADCTimerPeriod = (uint32_t)dt;
-  pNode->DCsamplingParams.PointsSkippedPC = FilterSize;
+        /* Make sure minorDataEventInterval isn't too small */
+        pNode->DCSweep_pot.VStep = 1;
+        while ((minorDataEventInterval = ticksPerDACStep * pNode->DCSweep_pot.VStep) < ADCdt_min)
+        {
+            pNode->DCSweep_pot.VStep++;
+        }
+
+        /* Calculate ADC timing */
+        /* (1<<ADCTimerDiv) * ADCTimerPeriod = minorDataEventInterval */
+        pNode->DCsamplingParams.ADCTimerDiv = 0;
+        double ADCTimerPeriod = minorDataEventInterval;
+        while (ADCTimerPeriod > 4294967295 - 5 * MILLISECONDS)
+        {
+            ADCTimerPeriod /= 2;
+            pNode->DCsamplingParams.ADCTimerDiv++;
+        }
+        pNode->DCsamplingParams.ADCTimerPeriod = floor(ADCTimerPeriod);
+    }
+
+    /* ADCBufferSize * minorDataEventInterval = MajorDataEventInterval */
+    pNode->DCsamplingParams.ADCBufferSizeEven = 1;
+    while ((pNode->DCsamplingParams.ADCBufferSizeEven + 1) * minorDataEventInterval < actualSamplingInterval &&
+        pNode->DCsamplingParams.ADCBufferSizeEven < ADCbufsizeMax)
+    {
+        pNode->DCsamplingParams.ADCBufferSizeEven++;
+    }
+    pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
+    majorDataEventInterval = pNode->DCsamplingParams.ADCBufferSizeEven * minorDataEventInterval;
+
+    /* PointsSkippedMCU * MajorDataEventInterval = actualSamplingInterval */
+    pNode->DCsamplingParams.PointsSkippedMCU = floor(actualSamplingInterval / majorDataEventInterval);
+
+    /* actualSamplingInterval * PointsSkippedPC = targetSamplingInterval */
+    pNode->DCsamplingParams.PointsSkippedPC = targetSamplingInterval / (majorDataEventInterval * pNode->DCsamplingParams.PointsSkippedMCU);
 }
 
 void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode)
 {
+  pNode->DCsamplingParams.PointsSkippedPC = 1;
   int dt_min = 50000;
   int ADCbufsize = 256;
   int DACbufsize = 256;
@@ -272,7 +330,7 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
   }
 
   pNode->DCsamplingParams.ADCTimerDiv = 0;
-  pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd = 1;
+  pNode->DCsamplingParams.DAC_ADC_ratio = 1;
 
   /* 1) Take the lesser of (period - pulsewidth) and pulsewidth */
   double t_pulse;
@@ -300,21 +358,15 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
 
   if (isEvenPeriodShorter)
   {
-    pNode->DCsamplingParams.DACMultOdd = bufMult;
-    pNode->DCsamplingParams.DACMultEven = pNode->DCsamplingParams.DACMultOdd * (t_period - t_pulsewidth) / t_pulsewidth;
+    pNode->DCsamplingParams.ADCBufferSizeOdd = bufMult;
+    pNode->DCsamplingParams.ADCBufferSizeEven = pNode->DCsamplingParams.ADCBufferSizeOdd * (t_period - t_pulsewidth) / t_pulsewidth;
   }
   else
   {
-    pNode->DCsamplingParams.DACMultEven = bufMult;
-    pNode->DCsamplingParams.DACMultOdd = pNode->DCsamplingParams.DACMultEven * (t_pulsewidth / (t_period - t_pulsewidth));
+    pNode->DCsamplingParams.ADCBufferSizeEven = bufMult;
+    pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven * (t_pulsewidth / (t_period - t_pulsewidth));
   }
-  pNode->DCsamplingParams.minorPointsDiscarded = isEvenPeriodShorter ? pNode->DCsamplingParams.DACMultEven / 2 : pNode->DCsamplingParams.DACMultOdd / 2;
-
-  /* 3) Calculate ADCMult */
-  pNode->DCsamplingParams.ADCBufferSizeEven = pNode->DCsamplingParams.DACMultEven;
-  pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.DACMultOdd;
-
-  pNode->DCsamplingParams.PointsSkippedPC = 1;
+  pNode->DCsamplingParams.minorPointsDiscarded = isEvenPeriodShorter ? pNode->DCsamplingParams.ADCBufferSizeEven / 2 : pNode->DCsamplingParams.ADCBufferSizeOdd / 2;
 }
 
 currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)

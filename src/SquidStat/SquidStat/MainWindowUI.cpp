@@ -398,7 +398,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 		widgetsLayout->setCurrentWidget(GetNewDataWindowTab());
 	});
 
-	pbt = OBJ_PROP(OBJ_NAME(PBT("Instrument summary"), "bar-button"), "order", "last");
+	pbt = OBJ_PROP(OBJ_NAME(PBT("Channel Status"), "bar-button"), "order", "last");
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
@@ -2986,6 +2986,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	auto expCompleteHandler = [=](const QUuid &id) {
 		int i = 0;
 		for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it, ++i) {
+
 			PlotHandler &handler(it.value());
 			DataMapVisualization &majorData(handler.data.first());
 
@@ -2996,6 +2997,10 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			}
 
 			handler.plot->replot();
+
+      /*Matt*/
+        //todo: add command to start manual sampling whenever the channel stops, and when the instrument becomes connected
+
 
 			for (int i = 0; i < tabBar->count(); ++i) {
 				auto wdg = stackedLay->widget(i);

@@ -11,6 +11,8 @@
 #define END_VOLTAGE_OBJ_NAME	"end-voltage"
 #define END_VOLTAGE_VS_OCP_OBJ_NAME "end-voltage-vs-ocp"
 #define SCAN_RATE_OBJ_NAME	"scan-rate"
+#define SAMPLING_INT_OBJ_NAME "sampling-interval"
+#define SAMPLING_INT_UNITS_OBJ_NAME "sampling-interval-units"
 #define CURRENT_RANGE_OBJ_NAME  "current-range-mode"
 #define CURRENT_RANGE_VALUE_OBJ_NAME  "approx-current-max-value"
 #define CURRENT_RANGE_UNITS_OBJ_NAME  "current-range-units"
@@ -18,6 +20,7 @@
 #define START_VOLTAGE_DEFAULT	0
 #define END_VOLTAGE_DEFAULT		1
 #define SCAN_RATE_DEFAULT	1
+#define SAMPLING_INT_DEFAULT 1
 #define CURRENT_RANGE_VALUE_DEFAULT 100
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
@@ -94,6 +97,14 @@ QWidget* LinearSweepVoltammetry::CreateUserInput() const {
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 
   ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
+  _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mV");
+  _ADD_DROP_DOWN_ITEM("s");
+  _END_DROP_DOWN();
+
+  ++row;
   _INSERT_VERTICAL_SPACING(row);
 
   ++row;
@@ -123,6 +134,8 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	double startVoltage;
 	double endVoltage;
 	double dEdt;
+  double sampling_int;
+  QString sampling_int_units_str;
   QString startVoltageVsOCP_str;
   QString endVoltageVsOCP_str;
   bool startVoltageVsOCP;
@@ -135,6 +148,8 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	GET_TEXT_INPUT_VALUE_DOUBLE(startVoltage, START_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(endVoltage, END_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(dEdt, SCAN_RATE_OBJ_NAME);
+  GET_TEXT_INPUT_VALUE_DOUBLE(sampling_int, SAMPLING_INT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(sampling_int_units_str, SAMPLING_INT_UNITS_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(startVoltageVsOCP_str, START_VOLTAGE_VS_OCP_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(endVoltageVsOCP_str, END_VOLTAGE_VS_OCP_OBJ_NAME);
   GET_SELECTED_RADIO(currentRangeMode_str, CURRENT_RANGE_OBJ_NAME);
@@ -143,6 +158,9 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 
   startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
   endVoltageVsOCP = endVoltageVsOCP_str.contains("open circuit");
+
+  if (sampling_int_units_str.contains("mV"))
+      sampling_int = sampling_int / dEdt;       //convert from mV to s
 
   approxMaxCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(currentRangeUnits_str);
   if (currentRangeMode_str.contains("Autorange"))
@@ -170,7 +188,7 @@ NodesData LinearSweepVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
 	exp.tMin = 10 * MICROSECONDS;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt, sampling_int);
   exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
   exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, endVoltage);

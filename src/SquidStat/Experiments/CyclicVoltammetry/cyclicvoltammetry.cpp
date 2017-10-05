@@ -12,6 +12,8 @@
 #define LOWER_VOLTAGE_OBJ_NAME  "lower-voltage"
 #define LOWER_V_VS_OCP_OBJ_NAME	"lower-voltage-vs-ocp"
 #define SCAN_RATE_OBJ_NAME		"scan-rate"
+#define SAMPLING_INT_OBJ_NAME "sampling-interval"
+#define SAMPLING_INT_UNITS_OBJ_NAME "sampling-interval-units"
 #define CYCLES_OBJ_NAME			"cycles"
 #define CURRENT_RANGE_OBJ_NAME  "current-range-mode"
 #define CURRENT_RANGE_VALUE_OBJ_NAME  "approx-current-max-value"
@@ -21,6 +23,7 @@
 #define UPPER_VOLTAGE_DEFAULT	0.5
 #define LOWER_VOLTAGE_DEFAULT	-0.5
 #define SCAN_RATE_DEFAULT		1
+#define SAMPLING_INT_DEFAULT 1
 #define CYCLES_DEFAULT			3
 #define CURRENT_RANGE_VALUE_DEFAULT 100
 
@@ -113,6 +116,14 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 	
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
+  _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
+  _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mV");
+  _ADD_DROP_DOWN_ITEM("s");
+  _END_DROP_DOWN();
+
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
 
@@ -158,6 +169,8 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   QString lowerVoltageVsOCP_str;
 	bool lowerVoltageVsOCP;
 	double dEdt;
+  double sampling_int;
+  QString sampling_int_units_str;
 	qint32 cycles;
   QString currentRangeMode_str;
   QString currentRangeUnits_str;
@@ -168,6 +181,8 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	GET_TEXT_INPUT_VALUE_DOUBLE(upperVoltage, UPPER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(dEdt, SCAN_RATE_OBJ_NAME);
+  GET_TEXT_INPUT_VALUE_DOUBLE(sampling_int, SAMPLING_INT_OBJ_NAME);
+  GET_SELECTED_DROP_DOWN(sampling_int_units_str, SAMPLING_INT_UNITS_OBJ_NAME);
 	GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(startVoltageVsOCP_str, START_V_VS_OCP_OBJ_NAME);
   GET_SELECTED_DROP_DOWN(upperVoltageVsOCP_str, UPPER_V_VS_OCP_OBJ_NAME);
@@ -179,6 +194,9 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
   startVoltageVsOCP = startVoltageVsOCP_str.contains("open circuit");
   upperVoltageVsOCP = upperVoltageVsOCP_str.contains("open circuit");
   lowerVoltageVsOCP = lowerVoltageVsOCP_str.contains("open circuit");
+
+  if (sampling_int_units_str.contains("mV"))
+      sampling_int = sampling_int / dEdt;       //convert from mV to s
 
   approxMaxCurrent *= ExperimentCalcHelperClass::GetUnitsMultiplier(currentRangeUnits_str);
   if (currentRangeMode_str.contains("Autorange"))
@@ -207,7 +225,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt, sampling_int);
 	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, startVoltage);
 	exp.DCSweep_pot.VStartVsOCP = startVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);
@@ -222,7 +240,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt, sampling_int);
 	exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);
 	exp.DCSweep_pot.VStartVsOCP = upperVoltageVsOCP;
 	exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, lowerVoltage);
@@ -238,7 +256,7 @@ NodesData CyclicVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.tMin = 1e7;
 	exp.tMax = 0xFFFFFFFFFFFFFFFF;
   exp.currentRangeMode = currentRangeMode;
-  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt);
+  ExperimentCalcHelperClass::GetSamplingParams_potSweep(hwVersion.hwModel, &calData, &exp, dEdt, sampling_int);
   exp.DCSweep_pot.VStartUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, lowerVoltage);
 	exp.DCSweep_pot.VStartVsOCP = lowerVoltageVsOCP;
   exp.DCSweep_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, upperVoltage);

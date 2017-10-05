@@ -9,8 +9,10 @@
 #include <qlist.h>
 
 #define SQUIDSTAT_PIC_MIN_ADCDC_TIMER_PERIOD (10 * MICROSECONDS)
+#define SQUIDSTAT_PIC_MIN_DACDC_TIMER_PERIOD (2 * MICROSECONDS)
 #define SQUIDSTAT_PIC_MAX_ADCDC_BUF_SIZE 512
 #define SQUIDSTAT_TEENSY_MIN_ADCDC_TIMER_PERIOD (500 * MICROSECONDS)
+#define SQUIDSTAT_TEENSY_MIN_DACDC_TIMER_PERIOD (10 * MICROSECONDS)
 #define SQUIDSTAT_TEENSY_MAX_ADCDC_BUF_SIZE 512
 #define SQUIDSTAT_PIC_TIMER_CLK_SPEED 1e8
 #define SQUIDSTAT_MAX_ADC_AC_BUF_SIZE 1024.0
@@ -25,9 +27,9 @@ class ExperimentCalcHelperClass
 public:
 	static void GetSamplingParams_staticDAC(HardwareModel_t HWversion, ExperimentNode_t * pNode, const double targetSamplingInterval, double MaxUpdateInterval = 1);
   static void GetSamplingParams_potSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-    double dEdt, const double targetSamplingInterval = 0);
+    double dEdt, double targetSamplingInterval = 0, double MaxUpdateInterval = 1.0);
   static void GetSamplingParams_galvSweep(HardwareModel_t HWversion, const cal_t * calData, ExperimentNode_t * pNode,
-    double dIdt, currentRange_t currentRange, const double samplingInterval = 0);
+    double dIdt, currentRange_t currentRange, const double samplingInterval = 0, double MaxUpdateInterval = 1.0);
   static void GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode);
 	static currentRange_t GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent);
 	static int16_t GetBINCurrent(const cal_t * calData, currentRange_t currentRange, double targetCurrent);
