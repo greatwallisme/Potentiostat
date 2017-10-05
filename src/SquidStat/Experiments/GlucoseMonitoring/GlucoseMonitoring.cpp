@@ -9,10 +9,18 @@
 #define T1_OBJECT_NAME			"sampling-interval"
 #define T1_UNITS_OBJ_NAME   "sampling-interval-units"
 #define NUM_REPEATS_OBJ_NAME	"number-of-repeats"
+#define THIRD_POLYNOMIAL_PARAM_OBJ_NAME "third-polynomial-parameter"
+#define SECOND_POLYNOMIAL_PARAM_OBJ_NAME "second-polynomial-parameter"
+#define FIRST_POLYNOMIAL_PARAM_OBJ_NAME "first-polynomial-parameter"
+#define ZEROETH_POLYNOMIAL_PARAM_OBJ_NAME "zeroeth-polynomial-parameter"
 
 #define V1_DEFAULT				0.1
 #define T1_DEFAULT				10
 #define NUM_REPEATS_DEFAULT 3
+#define THIRD_POLYNOMIAL_PARAM_DEFAULT 0
+#define SECOND_POLYNOMIAL_PARAM_DEFAULT 0.01
+#define FIRST_POLYNOMIAL_PARAM_DEFAULT 0.1
+#define ZEROETH_POLYNOMIAL_PARAM_DEFAULT 0.2
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
@@ -63,6 +71,27 @@ QWidget* GlucoseMonitoring::CreateUserInput() const {
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Number of samples = ", row, 0);
   _INSERT_TEXT_INPUT(NUM_REPEATS_DEFAULT, NUM_REPEATS_OBJ_NAME, row, 1);
+
+  ++row;
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Calibration constants</b>", row);
+  
+  ++row;
+  _INSERT_CENTERED_COMMENT("For polynomial f(current/uA) = concentration/mM:", row);
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Cubic term: ", row, 0);
+  _INSERT_TEXT_INPUT(THIRD_POLYNOMIAL_PARAM_DEFAULT, THIRD_POLYNOMIAL_PARAM_OBJ_NAME, row, 1);
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Quadratic term: ", row, 0);
+  _INSERT_TEXT_INPUT(SECOND_POLYNOMIAL_PARAM_DEFAULT, SECOND_POLYNOMIAL_PARAM_OBJ_NAME, row, 1);
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Linear term: ", row, 0);
+  _INSERT_TEXT_INPUT(FIRST_POLYNOMIAL_PARAM_DEFAULT, FIRST_POLYNOMIAL_PARAM_OBJ_NAME, row, 1);
+  ++row;
+  _INSERT_RIGHT_ALIGN_COMMENT("Constant term: ", row, 0);
+  _INSERT_TEXT_INPUT(ZEROETH_POLYNOMIAL_PARAM_DEFAULT, ZEROETH_POLYNOMIAL_PARAM_OBJ_NAME, row, 1);
 
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);

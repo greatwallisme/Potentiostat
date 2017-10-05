@@ -14,8 +14,8 @@
 #define ENDING_CURRENT_UNITS_OBJ_NAME	"ending-current-units"
 #define SWEEP_RATE_OBJ_NAME         "sweep-rate"
 #define SWEEP_RATE_UNITS_OBJ_NAME "sweep-rate-units"
-#define SAMPLING_MODE_OBJ_NAME "sampling-mode"
-#define SAMPLING_INT_OBJ_NAME "sampling-interval-fixed"
+#define SAMPLING_INT_OBJ_NAME "sampling-interval"
+#define SAMPLING_INT_UNITS_OBJ_NAME "sampling-interval-units"
 
 #define STARTING_CURRENT_DEFAULT	-10
 #define ENDING_CURRENT_DEFAULT  10
@@ -70,13 +70,12 @@ QWidget* DCCurrentSweep::CreateUserInput(UserInput &inputs) const {
   _INSERT_CENTERED_COMMENT("<b>Sampling interval</b>", row);
 
   ++row;
-  _START_RADIO_BUTTON_GROUP(SAMPLING_MODE_OBJ_NAME);
-  _INSERT_RADIO_BUTTON_EXT("Auto-calculate (recommended)", row, 0, 1, -1);
-  ++row;
-  _INSERT_RADIO_BUTTON("Fixed interval: ", row, 0);
-  _END_RADIO_BUTTON_GROUP();
+  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+  _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
+  _ADD_DROP_DOWN_ITEM("mV");
+  _ADD_DROP_DOWN_ITEM("s");
+  _END_DROP_DOWN();
 
 	_SET_ROW_STRETCH(++row, 1);
 	_SET_COL_STRETCH(4, 1);
@@ -92,11 +91,13 @@ NodesData DCCurrentSweep::GetNodesData(const UserInput &inputs, const Calibratio
   QString IStartUnits_str = inputs[STARTING_CURRENT_UNITS_OBJ_NAME].toString();
   QString IEndUnits_str = inputs[ENDING_CURRENT_UNITS_OBJ_NAME].toString();
   QString dIdtUnits_str = inputs[SWEEP_RATE_UNITS_OBJ_NAME].toString();
-  double sampInterval = inputs[SAMPLING_MODE_OBJ_NAME].toString().contains("Auto") ? 0 : inputs[SAMPLING_INT_OBJ_NAME].toDouble();
+  double sampInterval = inputs[SAMPLING_INT_OBJ_NAME].toDouble();
 
   IStart *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[STARTING_CURRENT_UNITS_OBJ_NAME].toString());
   IEnd *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[ENDING_CURRENT_UNITS_OBJ_NAME].toString());
   dIdt *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[SWEEP_RATE_UNITS_OBJ_NAME].toString());
+  if (inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString().contains("mV"))
+      sampInterval = sampInterval / dIdt;       //convert from mA to s
   
   currentRange_t currentRange = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, MAX(ABS(IStart), ABS(IEnd)));
 

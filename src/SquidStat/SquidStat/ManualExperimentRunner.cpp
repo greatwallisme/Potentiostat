@@ -56,47 +56,47 @@ QWidget* ManualExperimentRunner::CreateUserInput() const {
 NodesData ManualExperimentRunner::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-	exp.isHead = true;
-	exp.isTail = false;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 100000;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	exp.DCsamplingParams.ADCTimerDiv = 3;
-	exp.DCsamplingParams.ADCTimerPeriod = 15625;
-	exp.DCsamplingParams.ADCBufferSizeEven = 20;
-	exp.DCsamplingParams.ADCBufferSizeOdd = 20;
-	exp.DCsamplingParams.minorPointsDiscarded = 0;
-	exp.DCsamplingParams.DACMultEven = 5;
-	exp.DCsamplingParams.DACMultOdd = 5;
-	exp.DCSweep_pot.VStartUserInput = 0;
-	exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
-	exp.DCSweep_pot.VEndUserInput = 1024;
-	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
-	exp.DCSweep_pot.VStep = 1;
-	exp.DCSweep_pot.Imax = 1e10;
-	exp.MaxPlays = 3;
+	//exp.isHead = true;
+	//exp.isTail = false;
+	//exp.nodeType = DCNODE_SWEEP_POT;
+	//exp.tMin = 100000;
+	//exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	//exp.DCsamplingParams.ADCTimerDiv = 3;
+	//exp.DCsamplingParams.ADCTimerPeriod = 15625;
+	//exp.DCsamplingParams.ADCBufferSizeEven = 20;
+	//exp.DCsamplingParams.ADCBufferSizeOdd = 20;
+	//exp.DCsamplingParams.minorPointsDiscarded = 0;
+	//exp.DCsamplingParams.DACMultEven = 5;
+	//exp.DCsamplingParams.DACMultOdd = 5;
+	//exp.DCSweep_pot.VStartUserInput = 0;
+	//exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
+	//exp.DCSweep_pot.VEndUserInput = 1024;
+	//exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
+	//exp.DCSweep_pot.VStep = 1;
+	//exp.DCSweep_pot.Imax = 1e10;
+	//exp.MaxPlays = 3;
 	PUSH_NEW_NODE_DATA();
 
-	exp.isHead = false;
-	exp.isTail = true;
-	exp.nodeType = DCNODE_SWEEP_POT;
-	exp.tMin = 100000;
-	exp.tMax = 0xFFFFFFFFFFFFFFFF;
-	exp.DCsamplingParams.ADCTimerDiv = 2;
-	exp.DCsamplingParams.ADCTimerPeriod = 15625;
-	exp.DCsamplingParams.ADCBufferSizeEven = 20;
-	exp.DCsamplingParams.ADCBufferSizeOdd = 20;
-	exp.DCsamplingParams.minorPointsDiscarded = 0;
-	exp.DCsamplingParams.DACMultEven = 10;
-	exp.DCsamplingParams.DACMultOdd = 10;
-	exp.DCSweep_pot.VStartUserInput = 0;
-	exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
-	exp.DCSweep_pot.VEndUserInput = 512;
-	exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
-	exp.DCSweep_pot.VStep = 1;
-	exp.DCSweep_pot.Imax = 1e10;
-	exp.MaxPlays = 1;
-	exp.branchHeadIndex = 0;
+	//exp.isHead = false;
+	//exp.isTail = true;
+	//exp.nodeType = DCNODE_SWEEP_POT;
+	//exp.tMin = 100000;
+	//exp.tMax = 0xFFFFFFFFFFFFFFFF;
+	//exp.DCsamplingParams.ADCTimerDiv = 2;
+	//exp.DCsamplingParams.ADCTimerPeriod = 15625;
+	//exp.DCsamplingParams.ADCBufferSizeEven = 20;
+	//exp.DCsamplingParams.ADCBufferSizeOdd = 20;
+	//exp.DCsamplingParams.minorPointsDiscarded = 0;
+	//exp.DCsamplingParams.DACMultEven = 10;
+	//exp.DCsamplingParams.DACMultOdd = 10;
+	//exp.DCSweep_pot.VStartUserInput = 0;
+	//exp.DCSweep_pot.VStartVsOCP = false; //todo: get user input here
+	//exp.DCSweep_pot.VEndUserInput = 512;
+	//exp.DCSweep_pot.VEndVsOCP = false; //todo: get user input here
+	//exp.DCSweep_pot.VStep = 1;
+	//exp.DCSweep_pot.Imax = 1e10;
+	//exp.MaxPlays = 1;
+	//exp.branchHeadIndex = 0;
 	PUSH_NEW_NODE_DATA();
 
 	exp.nodeType = END_EXPERIMENT_NODE;
