@@ -3163,23 +3163,20 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	connections << CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 	connections << CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
-	connections << CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
+
+	auto expNodeBegining = [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
 		if (!dataTabs.plots.contains(curId)) {
 			return;
 		}
 
-		switch(node.nodeType) {
+		PlotHandler *handler = 0;
+		ExperimentType etype;
+
+		switch (node.nodeType) {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
-			case FRA_NODE_PSEUDOGALV: {
-				if (!dataTabs.plots[curId].contains(ET_AC)) {
-					return;
-				}
-				PlotHandler &handler(dataTabs.plots[curId][ET_AC]);
-				handler.helpers.ac.amount = node.ACsamplingParams.numBufs;
-				handler.helpers.ac.counter = handler.helpers.ac.amount;
-				handler.helpers.ac.accumData.clear();
-			}
+			case FRA_NODE_PSEUDOGALV:
+				etype = ET_AC;
 				break;
 
 			case DCNODE_OCP:
@@ -3196,17 +3193,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			case DCNODE_SINEWAVE:
 			case DCNODE_CONST_RESISTANCE:
 			case DCNODE_CONST_POWER:
-			case DCNODE_MAX_POWER: {
-				if (!dataTabs.plots[curId].contains(ET_DC)) {
-					return;
-				}
-				PlotHandler &handler(dataTabs.plots[curId][ET_DC]);
-				handler.helpers.dc.amount = node.DCsamplingParams.PointsSkippedPC;
-				if (0 == handler.helpers.dc.amount) {
-					handler.helpers.dc.amount = 1;
-				}
-				handler.helpers.dc.counter = handler.helpers.dc.amount;
-			}
+			case DCNODE_MAX_POWER:
+				etype = ET_DC;
 				break;
 
 			default:
@@ -3214,11 +3202,75 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				break;
 		}
 
-		//if(node.newFileTrigger) {
-		if (0) {
-
+		if (!dataTabs.plots[curId].contains(etype)) {
+			return;
 		}
-	});
+		handler = &(dataTabs.plots[curId][etype]);
+
+		if (0 == handler) {
+			return;
+		}
+
+		switch (etype) {
+			case ET_AC:
+				handler->helpers.ac.amount = node.ACsamplingParams.numBufs;
+				handler->helpers.ac.counter = handler->helpers.ac.amount;
+				handler->helpers.ac.accumData.clear();
+				break;
+			case ET_DC:
+				handler->helpers.dc.amount = node.DCsamplingParams.PointsSkippedPC;
+				if (0 == handler->helpers.dc.amount) {
+					handler->helpers.dc.amount = 1;
+				}
+				handler->helpers.dc.counter = handler->helpers.dc.amount;
+				break;
+			default:
+				return;
+				break;
+		}
+
+
+		//if(node.newFileTrigger) {
+		if (1) {
+			auto &majorData(handler->data.first());
+
+			QString path = majorData.filePath;
+			QRegExp rx("((_[0-9]{3})?\\.csv)$");
+			if (-1 == rx.indexIn(path)) {
+				return;
+			}
+			auto postfixStr = rx.cap(1);
+			auto counterStr = rx.cap(2);
+			if (counterStr.size()) {
+				counterStr.remove(0, 1);
+			}
+			int counter = counterStr.toInt() + 1;
+			
+			path.remove(QRegExp(postfixStr + "$"));
+
+			path += "_" + QString("%1").arg(counter, 3, 10, QChar('0')) + ".csv";
+
+			majorData.filePath = path;
+			majorData.saveFile->flush();
+			majorData.saveFile->close();
+			majorData.saveFile->deleteLater();
+			majorData.saveFile = new QFile(majorData.filePath);
+			if (!majorData.saveFile->open(QIODevice::WriteOnly)) {
+				majorData.saveFile->deleteLater();
+				return;
+			}
+			
+			switch (etype) {
+				case ET_DC:
+					handler->exp->SaveDcDataHeader(*majorData.saveFile, majorData.notes);
+					break;
+				case ET_AC:
+					handler->exp->SaveAcDataHeader(*majorData.saveFile, majorData.notes);
+					break;
+			}
+		}
+	};
+	connections << CONNECT(mw, &MainWindow::ExperimentNodeBeginning, expNodeBegining);
 
 	return w;
 }
