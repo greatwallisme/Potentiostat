@@ -1186,6 +1186,9 @@ QColorPicker {
 	
 	font-size: 16px;
 }
+#status-tab-view::branch {
+        background: palette(base);
+}
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
 	font-family: "Esphimere";
