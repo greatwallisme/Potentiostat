@@ -106,6 +106,23 @@
 #define PAUSE_EXP_BUTTON_TEXT		"Pause Experiment"
 #define RESUME_EXP_BUTTON_TEXT		"Resume Experiment"
 
+#define ACTIVE_STATUS	"Active"
+#define STOPPED_STATUS	"Stopped"
+#define ERROR_STATUS	"Error"
+#define PAUSED_STATUS	"Paused"
+
+#define STOPPED_DOT		QIcon(":/GUI/Resources/red-dot.png")
+#define MIDDLE_DOT		QIcon(":/GUI/Resources/yellow-dot.png")
+#define ACTIVE_DOT		QIcon(":/GUI/Resources/green-dot.png")
+
+enum : quint8 {
+	NAME_COL = 0,
+	STATUS_COL,
+	EXPERIMENT_COL,
+	STEP_COL,
+	LAST_NOTIF_COL
+};
+
 MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	mw(mainWindow)
 {
@@ -370,6 +387,8 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 	pbt->setCheckable(true);
 	buttonGroup->addButton(pbt);
 	barLayout->addWidget(pbt);
+
+	ui.manualExperiment.tabButton = pbt;
 
 	connections << CONNECT(pbt, &QPushButton::toggled, [=](bool checked) {
 		if (!checked) {
@@ -1301,6 +1320,277 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 	auto rootItem = model->invisibleRootItem();
 
+	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [rootItem](const QStringList &instNames) {
+		for (int i = 0; i < rootItem->rowCount();) {
+			auto curName = rootItem->child(i)->data(Qt::DisplayRole).toString();
+
+			if (instNames.contains(curName)) {
+				rootItem->removeRow(i);
+			}
+			else {
+				++i;
+			}
+		}
+	});
+	CONNECT(mw, &MainWindow::AddNewInstruments, [rootItem, view](const QList<HardwareUiDescription> &hwList) {
+		for (auto &hw : hwList) {
+			auto instItem = new QStandardItem(hw.name);
+			rootItem->setChild(rootItem->rowCount(), 0, instItem);
+
+			for (int i = 0; i < hw.channelAmount; ++i) {
+				auto item = new QStandardItem(STOPPED_DOT, QString("Channel %1").arg(i + 1));
+				item->setData(QUuid(), Qt::UserRole);
+				instItem->setChild(i, NAME_COL, item);
+				
+				item = new QStandardItem(STOPPED_STATUS);
+				instItem->setChild(i, STATUS_COL, item);
+				
+				instItem->setChild(i, EXPERIMENT_COL, new QStandardItem(""));
+				instItem->setChild(i, STEP_COL, new QStandardItem(""));
+				instItem->setChild(i, LAST_NOTIF_COL, new QStandardItem(""));
+			}
+		}
+		
+		view->expandAll();
+	});
+
+	static QMap<QUuid, ExperimentType> activeNodeType;
+
+	auto searchById = [rootItem](const QUuid &id, QStandardItem* &instItem, quint8 &channel) -> bool {
+		bool ret = false;
+
+		for (int i = 0; i < rootItem->rowCount(); ++i) {
+			auto item = rootItem->child(i);
+
+			for (int j = 0; j < item->rowCount(); ++j) {
+				auto chNameItem = item->child(j, NAME_COL);
+				auto curId = chNameItem->data(Qt::UserRole).toUuid();
+				if (curId == id) {
+					instItem = item;
+					channel = j;
+					ret = true;
+					break;
+				}
+			}
+			if (ret) {
+				break;
+			}
+		}
+
+		return ret;
+	};
+
+	CONNECT(view, &QTreeView::doubleClicked, [=](const QModelIndex &index) {
+		auto id = index.data(Qt::UserRole).toUuid();
+		if (id == QUuid()) {
+			return;
+		}
+
+		if (!dataTabs.dataTabPtrs.contains(id)) {
+			return;
+		}
+
+		DataTabPtr &tabPtr(dataTabs.dataTabPtrs[id]);
+
+		switch (tabPtr.type) {
+			case DataTabPtr::DT_MANUAL:
+				ui.manualExperiment.tabButton->click();
+				tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
+				tabPtr.manual.channelButton->click();
+				break;
+
+			case DataTabPtr::DT_REGULAR:
+				ui.newDataTab.newDataTabButton->click();
+				tabPtr.regular.tabBar->setCurrentIndex(tabPtr.regular.index);
+				break;
+		}
+	});
+
+	CONNECT(mw, &MainWindow::ExperimentCompleted, [searchById](const QUuid &id) {
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+		
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		auto chItem = instItem->child(channel, NAME_COL);
+		chItem->setIcon(STOPPED_DOT);
+		chItem->setData(QUuid(), Qt::UserRole);
+		
+		chItem = instItem->child(channel, STATUS_COL);
+		chItem->setText(STOPPED_STATUS);
+
+		chItem = instItem->child(channel, EXPERIMENT_COL);
+		chItem->setText("");
+		
+		chItem = instItem->child(channel, STEP_COL);
+		chItem->setText("");
+	});
+	CONNECT(mw, &MainWindow::ExperimentResumed, [searchById](const QUuid &id) {
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		auto chItem = instItem->child(channel, NAME_COL);
+		chItem->setIcon(ACTIVE_DOT);
+		
+		chItem = instItem->child(channel, STATUS_COL);
+		chItem->setText(ACTIVE_STATUS);
+	});
+	CONNECT(mw, &MainWindow::ExperimentPaused, [searchById](const QUuid &id) {
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		auto chItem = instItem->child(channel, NAME_COL);
+		chItem->setIcon(MIDDLE_DOT);
+		
+		chItem = instItem->child(channel, STATUS_COL);
+		chItem->setText(PAUSED_STATUS);
+	});
+	auto expStartedHandler = [=](const QUuid &id, const QString &name, quint8 channel) {
+		for (int i = 0; i < rootItem->rowCount(); ++i) {
+			auto instItem = rootItem->child(i);
+			auto curName = instItem->data(Qt::DisplayRole).toString();
+
+			if (curName != name) {
+				continue;
+			}
+
+			if (!dataTabs.plots.contains(id)) {
+				return;
+			}
+
+			activeNodeType[id] = dataTabs.plots[id].firstKey();
+
+			auto chItem = instItem->child(channel, NAME_COL);
+			chItem->setIcon(ACTIVE_DOT);
+			chItem->setData(id, Qt::UserRole);
+
+			chItem = instItem->child(channel, STATUS_COL);
+			chItem->setText(ACTIVE_STATUS);
+
+			if (dataTabs.plots[id].contains(activeNodeType[id])) {
+				chItem = instItem->child(channel, EXPERIMENT_COL);
+				auto filePath = dataTabs.plots[id][activeNodeType[id]].data.first().filePath;
+				chItem->setText(QFileInfo(filePath).fileName());
+			}
+		}
+	};
+	CONNECT(mw, &MainWindow::ExperimentStarted, expStartedHandler);
+	#define NODE_TYPE_STR_FILL(a, b) case a: nodeTypeStr = b; break;
+
+	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &id, const ExperimentNode_t &node) {
+		if (!dataTabs.plots.contains(id)) {
+			return;
+		}
+
+		switch (node.nodeType) {
+			case FRA_NODE_POT:
+			case FRA_NODE_GALV:
+			case FRA_NODE_PSEUDOGALV:
+				activeNodeType[id] = ET_AC;
+				break;
+
+			case DCNODE_OCP:
+			case DCNODE_SWEEP_POT:
+			case DCNODE_SWEEP_GALV:
+			case DCNODE_POINT_POT:
+			case DCNODE_POINT_GALV:
+			case DCNODE_NORMALPULSE_POT:
+			case DCNODE_NORMALPULSE_GALV:
+			case DCNODE_DIFFPULSE_POT:
+			case DCNODE_DIFFPULSE_GALV:
+			case DCNODE_SQRWAVE_POT:
+			case DCNODE_SQRWAVE_GALV:
+			case DCNODE_SINEWAVE:
+			case DCNODE_CONST_RESISTANCE:
+			case DCNODE_CONST_POWER:
+			case DCNODE_MAX_POWER:
+				activeNodeType[id] = ET_DC;
+				break;
+
+			default:
+				return;
+				break;
+		}
+
+		QString nodeTypeStr = "";
+		switch (node.nodeType) {
+			NODE_TYPE_STR_FILL(END_EXPERIMENT_NODE, "Experiment complete")
+			NODE_TYPE_STR_FILL(DCNODE_OCP, "Open circuit")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_POT, "Potential sweep")
+			NODE_TYPE_STR_FILL(DCNODE_SWEEP_GALV, "Current sweep")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_POT, "Fixed potential")
+			NODE_TYPE_STR_FILL(DCNODE_POINT_GALV, "Fixed current")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_POT, "Potential pulse (normal)")
+			NODE_TYPE_STR_FILL(DCNODE_NORMALPULSE_GALV, "Current pulse (normal)")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_POT, "Potential pulse (differential)")
+			NODE_TYPE_STR_FILL(DCNODE_DIFFPULSE_GALV, "Current pulse (differential)")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_POT, "Potential square wave")
+			NODE_TYPE_STR_FILL(DCNODE_SQRWAVE_GALV, "Current square wave")
+			NODE_TYPE_STR_FILL(DCNODE_SINEWAVE, "Potential sine wave")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_RESISTANCE, "Constant resistance")
+			NODE_TYPE_STR_FILL(DCNODE_CONST_POWER, "Constant power")
+			NODE_TYPE_STR_FILL(DCNODE_MAX_POWER, "Maximum power point")
+			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
+			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
+			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
+
+			default: break;
+		}
+		
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		if (dataTabs.plots[id].contains(activeNodeType[id])) {
+			auto chItem = instItem->child(channel, EXPERIMENT_COL);
+			auto filePath = dataTabs.plots[id][activeNodeType[id]].data.first().filePath;
+			chItem->setText(QFileInfo(filePath).fileName());
+		}
+
+		auto chItem = instItem->child(channel, STEP_COL);
+		chItem->setText(nodeTypeStr);
+	});
+	CONNECT(mw, &MainWindow::ExperimentNotification, [=](const QUuid &id, const QString &msg) {
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		auto chItem = instItem->child(channel, LAST_NOTIF_COL);
+		chItem->setText(msg);
+	});
+	CONNECT(mw, &MainWindow::ExperimentError, [=](const QUuid &id) {
+		QStandardItem *instItem = 0;
+		quint8 channel = 0;
+
+		if (!searchById(id, instItem, channel)) {
+			return;
+		}
+
+		auto chItem = instItem->child(channel, NAME_COL);
+		chItem->setIcon(MIDDLE_DOT);
+
+		chItem = instItem->child(channel, STATUS_COL);
+		chItem->setText(ERROR_STATUS);
+	});
+
+	/*
 	auto instItem = new QStandardItem("Instrument A");
 	rootItem->setChild(0, 0, instItem);
 
@@ -1345,6 +1635,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	instItem->setChild(3, 3, item);
 	item = new QStandardItem("");
 	instItem->setChild(3, 4, item);
+	//*/
 
 	view->expandAll();
 
@@ -2589,7 +2880,8 @@ QWidget* MainWindowUI::GetManualControlTab() {
 			auto mapper = new QSignalMapper(wdg);
 
 			for (int i = 0; i < hwDescr.channelAmount; ++i) {
-				ids[hwDescr.name] << QUuid::createUuid();
+				auto curId = QUuid::createUuid();
+				ids[hwDescr.name] << curId;
 
 				auto dataWidget = CreateNewDataTabWidget(ids[hwDescr.name].at(i),
 					ET_DC,
@@ -2606,12 +2898,20 @@ QWidget* MainWindowUI::GetManualControlTab() {
 					mapper, static_cast<void(QSignalMapper::*)()>(&QSignalMapper::map));
 
 				dataLayout->addWidget(dataWidget);
+
+				DataTabPtr dataTabPtr;
+				dataTabPtr.type = DataTabPtr::DT_MANUAL;
+				dataTabPtr.manual.hwTabBar = tabBar;
+				dataTabPtr.manual.channelButton = channelSelectButtons.at(i);
+				dataTabPtr.manual.hwIndex = tabBar->count();
+
+				dataTabs.dataTabPtrs[curId] = dataTabPtr;
 			}
 			connections << CONNECT(mapper, static_cast<void(QSignalMapper::*)(int)>(&QSignalMapper::mapped),
 				dataLayout, &QStackedLayout::setCurrentIndex);
 
 			tabBar->insertTab(tabBar->count(), hwDescr.name);
-			stackedLay->insertWidget(tabBar->count(), wdg);
+			stackedLay->insertWidget(tabBar->count()-1, wdg);
 		}
 
 		if (tabBar->isHidden()) {
@@ -2981,6 +3281,13 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		tabBar->setCurrentIndex(tabBar->count() - 1);
 		stackedLay->setCurrentIndex(tabBar->count() - 1);
 		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
+
+		DataTabPtr tabPtr;
+		tabPtr.type = DataTabPtr::DT_REGULAR;
+		tabPtr.regular.tabBar = tabBar;
+		tabPtr.regular.index = tabBar->count() - 1;
+
+		dataTabs.dataTabPtrs[startParams.id] = tabPtr;
 	});
 
 	auto expCompleteHandler = [=](const QUuid &id) {
@@ -3169,7 +3476,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	connections << CONNECT(mw, &MainWindow::DcDataArrived, dcDataArrivedLambda);
 	connections << CONNECT(mw, &MainWindow::AcDataArrived, acDataArrivedLambda);
 
-	auto expNodeBegining = [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
+	auto expNodeBegining = [=](const QUuid &curId, const ExperimentNode_t &node) {
 		if (!dataTabs.plots.contains(curId)) {
 			return;
 		}
@@ -4554,7 +4861,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	}
 
 	plotHandler.plotTabConnections <<
-	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, quint8 channel, const ExperimentNode_t &node) {
+	CONNECT(mw, &MainWindow::ExperimentNodeBeginning, [=](const QUuid &curId, const ExperimentNode_t &node) {
 		if (curId != id) {
 			return;
 		}

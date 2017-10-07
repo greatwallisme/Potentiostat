@@ -41,7 +41,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 		case DEBUG_LOG_MSG: {
 				QByteArray strData = data;
 				strData.push_back('\0');
-				LOG() << QString(strData.data());
+				//LOG() << QString(strData.data());
 			}
 			break;
 
@@ -75,25 +75,34 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			emit NodeDownloaded(channel);
 			break;
 
-    case OVERCURRENT_ERROR:
-      LOG() << "The current has exceeded instrument limits! The channel has been shut off.";
-      break;
+		case OVERCURRENT_ERROR: {
+			auto msg = "The current has exceeded instrument limits! The channel has been shut off.";
+			emit Notification(channel, msg);
+			emit Error(channel);
+			LOG() << msg;
+		} break;
 
-    case OVERCURRENT_WARNING:
-      //LOG() << "The current has exceeded its set maximum limit! New range: " << QString::number(data[0]);
-      break;
+		case OVERCURRENT_WARNING:
+		  //LOG() << "The current has exceeded its set maximum limit! New range: " << QString::number(data[0]);
+		  break;
 
-    case ECE_OVERVOLTAGE_WARNING:
-      LOG() << "Counter electrode potential out of range!";
-        break;
+		case ECE_OVERVOLTAGE_WARNING: {
+			auto msg = "Counter electrode potential out of range!";
+			emit Notification(channel, msg);
+			LOG() << msg;
+		} break;
      
-    case EWE_OVERVOLTAGE_WARNING:
-      LOG() << "Working electrode potential out of range!";
-      break;
+		case EWE_OVERVOLTAGE_WARNING: {
+			auto msg = "Working electrode potential out of range!";
+			emit Notification(channel, msg);
+			LOG() << msg;
+		} break;
 
-    case REF_OVERVOLTAGE_WARNING:
-      LOG() << "Reference electrode potential out of range!";
-      break;
+		case REF_OVERVOLTAGE_WARNING: {
+			auto msg = "Reference electrode potential out of range!";
+			emit Notification(channel, msg);
+			LOG() << msg;
+		} break;
 
 		default:
 			LOG() << "Unknown response";

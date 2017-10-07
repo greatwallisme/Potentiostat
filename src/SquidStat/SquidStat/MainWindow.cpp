@@ -220,15 +220,39 @@ void MainWindow::CreateLogicForInstrument(MainWindow::InstrumentHandler &newHand
 	connect(experimentTrigger, &ExperimentTrigger::StopExperiment,
 		this, static_cast<void(MainWindow::*)(const QUuid&)>(&MainWindow::StopExperiment));
 
+
 	newHandler.connections <<
-	connect(experimentTrigger, &ExperimentTrigger::SwitchFile, [=](const QUuid &id, const QString &name, uint8_t channel) {
-		auto handler = SearchForHandler(id);
+	connect(instrumentOperator, &InstrumentOperator::Notification, this, [=](quint8 channel, const QString &msg) {
+		auto oper = qobject_cast<InstrumentOperator*>(sender());
+		if (0 == oper) {
+			LOG() << "Unexpected InstrumentOperator pointer";
+			return;
+		}
+
+		auto handler = SearchForHandler(oper);
 		if (handler == hardware.handlers.end()) {
 			LOG() << "Hardware handler not found";
 			return;
 		}
 
-		;
+		emit ExperimentNotification(handler->experiment[channel].id, msg);
+	});
+
+	newHandler.connections <<
+	connect(instrumentOperator, &InstrumentOperator::Error, this, [=](quint8 channel) {
+		auto oper = qobject_cast<InstrumentOperator*>(sender());
+		if (0 == oper) {
+			LOG() << "Unexpected InstrumentOperator pointer";
+			return;
+		}
+
+		auto handler = SearchForHandler(oper);
+		if (handler == hardware.handlers.end()) {
+			LOG() << "Hardware handler not found";
+			return;
+		}
+
+		emit ExperimentError(handler->experiment[channel].id);
 	});
 
 	newHandler.connections <<
@@ -319,7 +343,7 @@ void MainWindow::CreateLogicForInstrument(MainWindow::InstrumentHandler &newHand
 			LOG() << "Hardware handler not found";
 			return;
 		}
-		emit ExperimentNodeBeginning(handler->experiment[channel].id, channel, node);
+		emit ExperimentNodeBeginning(handler->experiment[channel].id, node);
 	});
 
 	newHandler.connections <<
@@ -623,6 +647,8 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 
 	LOG() << "Start experiment";
 	hardware.currentInstrument.handler->oper->StartExperiment(nodesData, hardware.currentInstrument.channel);
+
+	emit ExperimentStarted(newId, hardware.currentInstrument.handler->info.name, hardware.currentInstrument.channel);
 }
 QList<MainWindow::InstrumentHandler>::iterator MainWindow::SearchForHandler(const QString &name/*, quint8 channel*/) {
 	auto hwIt = hardware.handlers.begin();
@@ -834,6 +860,8 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 
 	LOG() << "Manual experiment started";
 	it->oper->StartManualExperiment(channel);
+	
+	emit ExperimentStarted(id, it->info.name, channel);
 }
 
 void MainWindow::SetCompRange(const QUuid& id, quint8 range)

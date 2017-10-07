@@ -98,7 +98,7 @@ signals:
 	void HardwareFound(const InstrumentList&);
 	void DcDataArrived(const QUuid&, const ExperimentalDcData &expData, ExperimentTrigger *, bool paused);
 	void AcDataArrived(const QUuid&, const QByteArray &expData, ExperimentTrigger *, bool paused);
-	void ExperimentNodeBeginning(const QUuid&, quint8 channel, const ExperimentNode_t&);
+	void ExperimentNodeBeginning(const QUuid&, const ExperimentNode_t&);
 
 	void PrebuiltExperimentsFound(const QList<AbstractExperiment*>&);
 	void BuilderElementsFound(const QList<AbstractBuilderElement*>&);
@@ -117,7 +117,10 @@ signals:
 	void ExperimentCompleted(const QUuid&);
 	void ExperimentResumed(const QUuid&);
 	void ExperimentPaused(const QUuid&);
+	void ExperimentStarted(const QUuid&, const QString&, quint8);
 	void EditCustomExperiment(const CustomExperiment&);
+	void ExperimentNotification(const QUuid&, const QString&);
+	void ExperimentError(const QUuid&);
 
 	void CurrentHardwareList(const InstrumentList&);
 

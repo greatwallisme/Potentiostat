@@ -162,6 +162,9 @@ private:
 			QWidget *owner;
 			QWidget *mainTabBar;
 		} notificationDependencies;
+		struct {
+			QPushButton *tabButton;
+		} manualExperiment;
 	} ui;
 		
 	struct {
@@ -238,10 +241,29 @@ private:
 
 	QMap<QString, AbstractBuilderElement*> elementsPtrMap;
 
+	struct DataTabPtr {
+		enum {
+			DT_MANUAL,
+			DT_REGULAR
+		} type;
+		union {
+			struct {
+				QTabBar *hwTabBar;
+				int hwIndex;
+				QPushButton *channelButton;
+			} manual;
+			struct {
+				QTabBar *tabBar;
+				int index;
+			} regular;
+		};
+	};
+
 	struct {
 		QMap<QUuid, QMap<ExperimentType, PlotHandler>> plots;
 		QMap<QUuid, QMap<QString, QLabel*>> realTimeLabels;
 		QMap<QUuid, qreal> realTimeElapsedTime;
+		QMap<QUuid, DataTabPtr> dataTabPtrs;
 	} dataTabs;
 
 	MainWindow *mw;
