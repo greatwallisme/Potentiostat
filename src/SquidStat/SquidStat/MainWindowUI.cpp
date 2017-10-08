@@ -3652,8 +3652,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 
 
-		//if(node.newFileTrigger) {
-		if (1) {
+		//TODO: if(node.newFileTrigger) {
+		if (0) {
 			auto &majorData(handler->data.first());
 
 			QString path = majorData.filePath;
