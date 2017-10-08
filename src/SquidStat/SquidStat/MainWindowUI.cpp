@@ -19,6 +19,7 @@
 
 #include <QEvent>
 #include <QKeyEvent>
+#include <QMimeData>
 
 #include <QIntValidator>
 #include <QListView>
@@ -1622,54 +1623,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(ERROR_STATUS);
 	});
-
-	/*
-	auto instItem = new QStandardItem("Instrument A");
-	rootItem->setChild(0, 0, instItem);
-
-	auto item = new QStandardItem(QIcon(":/GUI/Resources/green-dot.png"), "Channel 1");
-	instItem->setChild(0, 0, item);
-	item = new QStandardItem("Active");
-	instItem->setChild(0, 1, item);
-	item = new QStandardItem("~~~~~~~.csv");
-	instItem->setChild(0, 2, item);
-	item = new QStandardItem("Constant current");
-	instItem->setChild(0, 3, item);
-
-	item = new QStandardItem(QIcon(":/GUI/Resources/yellow-dot.png"), "Channel 2");
-	instItem->setChild(1, 0, item);
-	item = new QStandardItem("Error");
-	instItem->setChild(1, 1, item);
-	item = new QStandardItem("~~~~~~~.csv");
-	instItem->setChild(1, 2, item);
-	item = new QStandardItem("");
-	instItem->setChild(1, 3, item);
-	item = new QStandardItem("Overcurrent");
-	instItem->setChild(1, 4, item);
-
-	item = new QStandardItem(QIcon(":/GUI/Resources/red-dot.png"), "Channel 3");
-	instItem->setChild(2, 0, item);
-	item = new QStandardItem("Stopped");
-	instItem->setChild(2, 1, item);
-	item = new QStandardItem("");
-	instItem->setChild(2, 2, item);
-	item = new QStandardItem("");
-	instItem->setChild(2, 3, item);
-	item = new QStandardItem("");
-	instItem->setChild(2, 4, item);
-
-	item = new QStandardItem(QIcon(":/GUI/Resources/red-dot.png"), "Channel 4");
-	instItem->setChild(3, 0, item);
-	item = new QStandardItem("Stopped");
-	instItem->setChild(3, 1, item);
-	item = new QStandardItem("");
-	instItem->setChild(3, 2, item);
-	item = new QStandardItem("");
-	instItem->setChild(3, 3, item);
-	item = new QStandardItem("");
-	instItem->setChild(3, 4, item);
-	//*/
-
+	
 	view->expandAll();
 
 	return  w;
@@ -3168,6 +3122,129 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
+
+	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
+		bool ret = false;
+		auto w = qobject_cast<QTabBar*>(obj);
+
+		if (0 == w) {
+			return ret;
+		}
+
+		#define ME(a) ((QMouseEvent*)a)
+
+		static Qt::MouseButton pressedButton = Qt::MouseButton::NoButton;
+		static QPoint startPoint;
+
+		switch (e->type()) {
+			case QEvent::MouseButtonPress:
+				pressedButton = ME(e)->button();
+				startPoint = ME(e)->pos();
+				break;
+
+			case QEvent::MouseMove:
+				if (pressedButton == Qt::LeftButton) {
+					QPoint pos = ME(e)->pos();
+					QLine moveVector(startPoint, pos);
+
+					auto vlength = qAbs(moveVector.dy());
+					if (vlength > w->height()) {
+						auto curIndex = w->currentIndex();
+						auto curTabRect = w->tabRect(curIndex);
+						auto tabText = w->tabText(curIndex);
+
+						auto mime = new QMimeData;
+						mime->setData("name", tabText.toLocal8Bit());
+						
+						auto tempFrame = OBJ_NAME(new QFrame, "tab-drag-frame");
+						auto tempFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tempFrame)));
+						tempFrameLay->addWidget(new QLabel(tabText));
+						tempFrameLay->addWidget(OBJ_NAME(PBT("x"), "close-document-pbt"));
+						tempFrame->setFixedSize(curTabRect.width(), curTabRect.height() - 10);
+
+						QDrag *drag = new QDrag(w);
+						drag->setMimeData(mime);
+						drag->setPixmap(tempFrame->grab());
+						drag->setHotSpot(QPoint(startPoint.x() - curTabRect.x(), startPoint.y() - curTabRect.y() - 10));
+						drag->setDragCursor(drag->dragCursor(Qt::MoveAction), Qt::IgnoreAction);
+
+						auto dropAction = drag->exec(Qt::ActionMask, Qt::MoveAction);
+						tempFrame->deleteLater();
+
+						if (closeTabButton) {
+							tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+							QObject::disconnect(closeTabButtonConnection);
+							closeTabButton->deleteLater();
+							closeTabButton = 0;
+						}
+
+						static QMap<QWidget*, QIcon> iconHolder;
+						auto plotWdg = stackedLay->widget(curIndex);
+						iconHolder[plotWdg] = w->tabIcon(curIndex);
+						w->removeTab(curIndex);
+						stackedLay->removeWidget(plotWdg);
+						
+						if (0 == w->count()) {
+							w->hide();
+						}
+
+						QRect screenSize = QDesktopWidget().availableGeometry(mw);
+
+						auto window = new QMainWindow(nullptr);
+						window->setMinimumHeight(screenSize.height() < 768 ? screenSize.height() * 0.95 : 768);
+						window->setMinimumWidth(screenSize.width() < 1200 ? screenSize.width() * 0.95 : 1200);
+						window->setWindowTitle(tabText);
+						
+						auto menuBar = new QMenuBar;
+						window->setMenuBar(menuBar);
+
+						auto menu = new QMenu("Options");
+						menuBar->addMenu(menu);
+
+						auto action = menu->addAction("Move back");
+
+						connections << CONNECT(action, &QAction::triggered, [=]() {
+							if (0 == tabBar->count()) {
+								tabBar->show();
+							}
+							tabBar->insertTab(tabBar->count(), iconHolder[plotWdg], tabText);
+							stackedLay->insertWidget(tabBar->count()-1, plotWdg);
+							window->deleteLater();
+						});
+						
+						connections << CONNECT(mw, &MainWindow::ExperimentCompleted, [=](const QUuid &id) {
+							auto plot = plotWdg->findChild<QWidget*>("qwt-plot");
+							if (0 == plot) {
+								return;
+							}
+							for (auto it = dataTabs.plots[id].begin(); it != dataTabs.plots[id].end(); ++it) {
+								PlotHandler &handler(it.value());
+								if (handler.plot != plot) {
+									continue;
+								}
+								
+								iconHolder[plotWdg] = QIcon();
+							}
+						});
+
+						window->setCentralWidget(plotWdg);
+						plotWdg->hide();
+
+						window->show();
+						plotWdg->show();
+
+						ret = true;
+					}
+				}
+				break;
+			
+			case QEvent::MouseButtonRelease:
+				pressedButton = Qt::MouseButton::NoButton;
+				break;
+		}
+
+		return ret;
+	}));
 
 	connections << CONNECT(addNewButton, &QPushButton::clicked, [=]() {
 		CsvFileData csvData;

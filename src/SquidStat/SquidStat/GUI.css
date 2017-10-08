@@ -903,6 +903,17 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	background-color: #ce2026;
 }
+#tab-drag-frame {
+	border: 1px solid #ce2026;
+	padding-left: 20px;
+	padding-right: 15px;
+}
+#tab-drag-frame QPushButton {
+	margin: 0px;
+}
+#tab-drag-frame QLabel {
+	margin: 0px;
+}
 #plot-tab {
 }
 #plot-tab::pane {
