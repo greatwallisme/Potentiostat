@@ -583,8 +583,14 @@ void MainWindow::StartExperiment(QWidget *paramsWdg, const QUuid &existingId) {
 		}
 		curParam.name = tabName;
 		tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|\\.]"), "_");
+		
+		QString subdirPath = tabName;
+		int i = 0;
+		while (QDir(dirName + "/" + subdirPath).exists()) {
+			subdirPath = tabName + "_" + QString::number(++i);
+		}
 
-		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Base file name");
+		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + subdirPath, "Base file name");
 
 		if (dialogRet.isEmpty()) {
 			ok = false;
@@ -810,7 +816,13 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 		curParam.name = tabName;
 		tabName.replace(QRegExp("[\\\\/\\*\\?:\"<>|\\.]"), "_");
 
-		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + tabName, "Base file name");
+		QString subdirPath = tabName;
+		int i = 0;
+		while (QDir(dirName + "/" + subdirPath).exists()) {
+			subdirPath = tabName + "_" + QString::number(++i);
+		}
+		
+		auto dialogRet = QFileDialog::getSaveFileName(this, "Save experiment data", dirName + "/" + subdirPath, "Base file name");
 
 		if (dialogRet.isEmpty()) {
 			ok = false;
@@ -821,7 +833,7 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 		settings.setValue(DATA_SAVE_PATH, dirName);
 
 		dialogRet += "/" + QFileInfo(dialogRet).fileName() + ".csv";
-
+		
 		if (!QFileInfo(dialogRet).absoluteDir().exists()) {
 			QDir().mkpath(QFileInfo(dialogRet).absolutePath());
 		}
