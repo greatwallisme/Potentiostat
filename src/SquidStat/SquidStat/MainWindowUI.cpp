@@ -59,6 +59,7 @@
 #include "HexLoader.h"
 #include "UIEventFilters.hpp"
 #include "ManualExperimentRunner.h"
+#include "HwListButton.h"
 
 #include <functional>
 #include <QScrollBar>
@@ -78,6 +79,7 @@
 #include <QSignalMapper>
 #include <QTreeView>
 #include <QHeaderView>
+
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -111,9 +113,11 @@
 #define ERROR_STATUS	"Error"
 #define PAUSED_STATUS	"Paused"
 
+/*
 #define STOPPED_DOT		QIcon(":/GUI/Resources/red-dot.png")
 #define MIDDLE_DOT		QIcon(":/GUI/Resources/yellow-dot.png")
 #define ACTIVE_DOT		QIcon(":/GUI/Resources/green-dot.png")
+//*/
 
 enum : quint8 {
 	NAME_COL = 0,
@@ -1319,41 +1323,6 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 
 	auto rootItem = model->invisibleRootItem();
-
-	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [rootItem](const QStringList &instNames) {
-		for (int i = 0; i < rootItem->rowCount();) {
-			auto curName = rootItem->child(i)->data(Qt::DisplayRole).toString();
-
-			if (instNames.contains(curName)) {
-				rootItem->removeRow(i);
-			}
-			else {
-				++i;
-			}
-		}
-	});
-	CONNECT(mw, &MainWindow::AddNewInstruments, [rootItem, view](const QList<HardwareUiDescription> &hwList) {
-		for (auto &hw : hwList) {
-			auto instItem = new QStandardItem(hw.name);
-			rootItem->setChild(rootItem->rowCount(), 0, instItem);
-
-			for (int i = 0; i < hw.channelAmount; ++i) {
-				auto item = new QStandardItem(STOPPED_DOT, QString("Channel %1").arg(i + 1));
-				item->setData(QUuid(), Qt::UserRole);
-				instItem->setChild(i, NAME_COL, item);
-				
-				item = new QStandardItem(STOPPED_STATUS);
-				instItem->setChild(i, STATUS_COL, item);
-				
-				instItem->setChild(i, EXPERIMENT_COL, new QStandardItem(""));
-				instItem->setChild(i, STEP_COL, new QStandardItem(""));
-				instItem->setChild(i, LAST_NOTIF_COL, new QStandardItem(""));
-			}
-		}
-		
-		view->expandAll();
-	});
-
 	static QMap<QUuid, ExperimentType> activeNodeType;
 
 	auto searchById = [rootItem](const QUuid &id, QStandardItem* &instItem, quint8 &channel) -> bool {
@@ -1379,8 +1348,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 		return ret;
 	};
-
-	CONNECT(view, &QTreeView::doubleClicked, [=](const QModelIndex &index) {
+	auto triggerIndex = [=](const QModelIndex &index) {
 		auto id = index.data(Qt::UserRole).toUuid();
 		if (id == QUuid()) {
 			return;
@@ -1393,20 +1361,60 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		DataTabPtr &tabPtr(dataTabs.dataTabPtrs[id]);
 
 		switch (tabPtr.type) {
-			case DataTabPtr::DT_MANUAL:
-				ui.manualExperiment.tabButton->click();
-				tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
-				tabPtr.manual.channelButton->click();
-				break;
+		case DataTabPtr::DT_MANUAL:
+			ui.manualExperiment.tabButton->click();
+			tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
+			tabPtr.manual.channelButton->click();
+			break;
 
-			case DataTabPtr::DT_REGULAR:
-				ui.newDataTab.newDataTabButton->click();
-				tabPtr.regular.tabBar->setCurrentIndex(tabPtr.regular.index);
-				break;
+		case DataTabPtr::DT_REGULAR:
+			ui.newDataTab.newDataTabButton->click();
+			tabPtr.regular.tabBar->setCurrentIndex(tabPtr.regular.index);
+			break;
+		}
+	};
+
+	CONNECT(mw, &MainWindow::RemoveDisconnectedInstruments, [rootItem](const QStringList &instNames) {
+		for (int i = 0; i < rootItem->rowCount();) {
+			auto curName = rootItem->child(i)->data(Qt::DisplayRole).toString();
+
+			if (instNames.contains(curName)) {
+				rootItem->removeRow(i);
+			}
+			else {
+				++i;
+			}
 		}
 	});
+	CONNECT(mw, &MainWindow::AddNewInstruments, [rootItem, view, triggerIndex](const QList<HardwareUiDescription> &hwList) {
+		for (auto &hw : hwList) {
+			auto instItem = new QStandardItem(hw.name);
+			rootItem->setChild(rootItem->rowCount(), 0, instItem);
 
-	CONNECT(mw, &MainWindow::ExperimentCompleted, [searchById](const QUuid &id) {
+			for (int i = 0; i < hw.channelAmount; ++i) {
+				auto item = new QStandardItem();
+				item->setData(QUuid(), Qt::UserRole);
+				instItem->setChild(i, NAME_COL, item);
+
+				auto wdg = new HwListButton(instItem->index().child(i, NAME_COL), QString("Channel %1").arg(i + 1));
+				CONNECT(wdg, &HwListButton::Clicked, triggerIndex);
+				view->setIndexWidget(instItem->index().child(i, NAME_COL), wdg);
+
+				item = new QStandardItem(STOPPED_STATUS);
+				instItem->setChild(i, STATUS_COL, item);
+
+				instItem->setChild(i, EXPERIMENT_COL, new QStandardItem(""));
+				instItem->setChild(i, STEP_COL, new QStandardItem(""));
+				instItem->setChild(i, LAST_NOTIF_COL, new QStandardItem(""));
+			}
+		}
+
+		view->expandAll();
+	});
+
+	CONNECT(view, &QTreeView::doubleClicked, triggerIndex);
+
+	CONNECT(mw, &MainWindow::ExperimentCompleted, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
 		quint8 channel = 0;
 		
@@ -1415,8 +1423,13 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setIcon(STOPPED_DOT);
 		chItem->setData(QUuid(), Qt::UserRole);
+		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
+			auto hw = qobject_cast<HwListButton*>(w);
+			if (hw) {
+				hw->SetColorState(HwListButton::STOPPED);
+			}
+		}
 		
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(STOPPED_STATUS);
@@ -1427,7 +1440,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		chItem = instItem->child(channel, STEP_COL);
 		chItem->setText("");
 	});
-	CONNECT(mw, &MainWindow::ExperimentResumed, [searchById](const QUuid &id) {
+	CONNECT(mw, &MainWindow::ExperimentResumed, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
 		quint8 channel = 0;
 
@@ -1436,12 +1449,17 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setIcon(ACTIVE_DOT);
+		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
+			auto hw = qobject_cast<HwListButton*>(w);
+			if (hw) {
+				hw->SetColorState(HwListButton::ACTIVE);
+			}
+		}
 		
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(ACTIVE_STATUS);
 	});
-	CONNECT(mw, &MainWindow::ExperimentPaused, [searchById](const QUuid &id) {
+	CONNECT(mw, &MainWindow::ExperimentPaused, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
 		quint8 channel = 0;
 
@@ -1450,7 +1468,12 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setIcon(MIDDLE_DOT);
+		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
+			auto hw = qobject_cast<HwListButton*>(w);
+			if (hw) {
+				hw->SetColorState(HwListButton::MIDDLE);
+			}
+		}
 		
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(PAUSED_STATUS);
@@ -1471,8 +1494,13 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			activeNodeType[id] = dataTabs.plots[id].firstKey();
 
 			auto chItem = instItem->child(channel, NAME_COL);
-			chItem->setIcon(ACTIVE_DOT);
 			chItem->setData(id, Qt::UserRole);
+			if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
+				auto hw = qobject_cast<HwListButton*>(w);
+				if (hw) {
+					hw->SetColorState(HwListButton::ACTIVE);
+				}
+			}
 
 			chItem = instItem->child(channel, STATUS_COL);
 			chItem->setText(ACTIVE_STATUS);
@@ -1564,7 +1592,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		auto chItem = instItem->child(channel, STEP_COL);
 		chItem->setText(nodeTypeStr);
 	});
-	CONNECT(mw, &MainWindow::ExperimentNotification, [=](const QUuid &id, const QString &msg) {
+	CONNECT(mw, &MainWindow::ExperimentNotification, [searchById](const QUuid &id, const QString &msg) {
 		QStandardItem *instItem = 0;
 		quint8 channel = 0;
 
@@ -1575,7 +1603,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		auto chItem = instItem->child(channel, LAST_NOTIF_COL);
 		chItem->setText(msg);
 	});
-	CONNECT(mw, &MainWindow::ExperimentError, [=](const QUuid &id) {
+	CONNECT(mw, &MainWindow::ExperimentError, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
 		quint8 channel = 0;
 
@@ -1584,7 +1612,12 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setIcon(MIDDLE_DOT);
+		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
+			auto hw = qobject_cast<HwListButton*>(w);
+			if (hw) {
+				hw->SetColorState(HwListButton::MIDDLE);
+			}
+		}
 
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(ERROR_STATUS);
