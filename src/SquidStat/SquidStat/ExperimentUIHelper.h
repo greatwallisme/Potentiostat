@@ -25,7 +25,7 @@
 	(ExperimentalAcData*)expDataRaw.data()
 
 #define GET_COMPLEX_DATA_POINT(dataPoint)							\
-	double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(dataheader); \
+	double numCycles = ExperimentCalcHelperClass::estimatePeriod(dataheader); \
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
 		dataheader.frequency,											\
 		(uint16_t*)expDataRaw.data(),												\
