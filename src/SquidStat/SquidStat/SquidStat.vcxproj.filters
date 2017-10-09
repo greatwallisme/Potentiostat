@@ -190,6 +190,15 @@
     <ClCompile Include="ExperimentCalcHelper.cpp">
       <Filter>_scr\ExternalStructures</Filter>
     </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_HwListButton.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_HwListButton.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="HwListButton.cpp">
+      <Filter>_scr\MainWindow</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Config.h">
@@ -286,6 +295,9 @@
     </CustomBuild>
     <CustomBuild Include="ExperimentTrigger.hpp">
       <Filter>_scr\Experiments</Filter>
+    </CustomBuild>
+    <CustomBuild Include="HwListButton.h">
+      <Filter>_scr\MainWindow</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

@@ -42,6 +42,8 @@ signals:
 	void ExperimentResumed(quint8 channel);
 	void NodeDownloaded(quint8 channel);
 	void ExperimentNodeBeginning(quint8 channel, const ExperimentNode_t&);
+	void Notification(quint8 channel, const QString&);
+	void Error(quint8 channel);
 
 private:
 	SerialCommunicator *_communicator;

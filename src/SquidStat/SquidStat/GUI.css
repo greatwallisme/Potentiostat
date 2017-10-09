@@ -103,6 +103,9 @@ QMenuBar::item {
 	
 	color: #ffffff;
 }
+QMenuBar::item:open {
+	background-color: #ce2026;
+}
 /*//////////////       UPDATE FW DIALOG     ////////////////////*/
 #update-firmware-dialog {
 	border: 1px solid #7b1a1e;
@@ -900,6 +903,17 @@ QLabel[experiment-params-widget="low-margin"] {
 	border: none;
 	background-color: #ce2026;
 }
+#tab-drag-frame {
+	border: 1px solid #ce2026;
+	padding-left: 20px;
+	padding-right: 15px;
+}
+#tab-drag-frame QPushButton {
+	margin: 0px;
+}
+#tab-drag-frame QLabel {
+	margin: 0px;
+}
 #plot-tab {
 }
 #plot-tab::pane {
@@ -1185,6 +1199,77 @@ QColorPicker {
 	border: 1px solid #c6ccd2;
 	
 	font-size: 16px;
+}
+#status-tab-view::branch {
+        background: palette(base);
+}
+HwListButton {
+	border: none;
+	background: none;
+	
+	margin: 0px;
+	padding: 0px;
+}
+HwListButton QLabel {
+	border: none;
+	background: none;
+	
+	margin: 0px;
+	padding-left: 5px;
+	
+	font-size: 16px;
+}
+HwListButton QPushButton {
+	max-width: 20px;
+	max-height: 20px;
+	
+	border: 1px solid #00000000;
+	background: none;
+	
+	border-radius: 2px;
+}
+/*
+red 	#b21e1f
+		#ce2026
+green 	#00a837
+		#00d946
+yellow 	#b7b62b
+		#d3d347
+*/
+HwListButton QPushButton[color-state="active"] {
+	qproperty-icon: url(:/GUI/Resources/green-dot.png);
+	qproperty-iconSize: 20px 20px;
+}
+HwListButton QPushButton[color-state="active"]:hover {
+	border: 1px solid #00a837;
+	background: #00a837;
+	
+	qproperty-icon: none;
+}
+HwListButton QPushButton[color-state="stopped"] {
+	qproperty-icon: url(:/GUI/Resources/red-dot.png);
+	qproperty-iconSize: 20px 20px;
+}
+/*HwListButton QPushButton[color-state="stopped"]:hover {
+	border: 1px solid #b21e1f;
+	background: #b21e1f;
+	
+	qproperty-icon: none;
+}*/
+HwListButton QPushButton[color-state="middle"] {
+	qproperty-icon: url(:/GUI/Resources/yellow-dot.png);
+	qproperty-iconSize: 20px 20px;
+}
+HwListButton QPushButton[color-state="middle"]:hover {
+	border: 1px solid #b7b62b;
+	background: #b7b62b;
+	
+	qproperty-icon: none;
+}
+HwListButton QPushButton[color-state="active"]:pressed,
+HwListButton QPushButton[color-state="middle"]:pressed/*,
+HwListButton QPushButton[color-state="stopped"]:pressed*/ {
+	margin: 1px;
 }
 /*//////////////         SELECT HARDWARE       ////////////////////*/
 #heading-label {
