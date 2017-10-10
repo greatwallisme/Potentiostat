@@ -140,7 +140,7 @@
 		if(!inputs.contains(obj_name)) {		\
 			inputs[obj_name] = default_value;	\
 		}										\
-		led->setText(QString::number(default_value)); \
+		led->setText(QString::number(inputs.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
 		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
@@ -151,7 +151,7 @@
 #define _INSERT_TEXT_INPUT_EXPERIMENT(default_value, obj_name, row, col) \
 	{	\
 		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
-		led->setText(QString::number(default_value)); \
+		led->setText(QString::number(settings.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
 		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \

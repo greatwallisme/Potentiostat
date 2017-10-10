@@ -242,6 +242,9 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
 
     if (pNode->DCsamplingParams.isFastSlewRate)
     {
+        /* In fast slew mode, the DAC updates (N = ADC_DAC_ratio) times per minor data event.
+        The ADC samples once per minor data event */
+
         /* Calculate DAC timing */
         pNode->DCsamplingParams.DACTimerDiv = 0;        //assume that at fast slew rates, only short timer periods will be needed (<32 bits)
         pNode->DCSweep_galv.IStep = 1;
@@ -252,28 +255,54 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
 
         /* Calculate ADC timing */
         /* minimize ADC_DAC_ratio to minimize minorDataEventInterval */
-        pNode->DCsamplingParams.ADC_DAC_ratio = ceil(ADCdt_min / pNode->DCsamplingParams.DACTimerPeriod);
+        pNode->DCsamplingParams.ADC_DAC_ratio = ceil((double)ADCdt_min / pNode->DCsamplingParams.DACTimerPeriod);
         minorDataEventInterval = pNode->DCsamplingParams.ADC_DAC_ratio * pNode->DCsamplingParams.DACTimerPeriod;
+
+        /* ADCBufferSize * minorDataEventInterval = MajorDataEventInterval */
+        pNode->DCsamplingParams.ADCBufferSizeEven = 1;
+        while ((pNode->DCsamplingParams.ADCBufferSizeEven + 1) * minorDataEventInterval < actualSamplingInterval &&
+            pNode->DCsamplingParams.ADCBufferSizeEven < ADCbufsizeMax)
+        {
+            pNode->DCsamplingParams.ADCBufferSizeEven++;
+        }
+        pNode->DCsamplingParams.minorPointsDiscarded = 0;
     }
     else
     {
+        /* In slow slew mode, ADC samples at every minor data event, and averages (N = ADCbufSize) points
+        The DAC updates every (N = DAC_ADC_ratio) times the ADCbuffer overflows */
+
         /* Calculate DAC timing */
-        /* DAC is triggered at intervals of DAC_ADC_ratio * minorDataEventInterval * VStep */
+        /* DAC is triggered at intervals of DAC_ADC_ratio * minorDataEventInterval * ADCbufSize * IStep */
+
+        /* Adjust the sampling period if necessary so that ticksPerDACStep is an integer multiple */
+        uint64_t compromisedSamplingInterval = ticksPerDACStep;
+        if (actualSamplingInterval < ticksPerDACStep)
+        {
+            int N = 1;
+            while ((compromisedSamplingInterval = ticksPerDACStep / N) > actualSamplingInterval)
+                N++;
+            pNode->DCsamplingParams.PointsSkippedMCU = N;
+        }
+
+        /* 1) Maximize ADCBufferSize, minimize minorDataEventInterval */
+        pNode->DCsamplingParams.ADCBufferSizeEven = 1;
         pNode->DCsamplingParams.DAC_ADC_ratio = 1;
-        while ((minorDataEventInterval = ceil(ticksPerDACStep / pNode->DCsamplingParams.DAC_ADC_ratio)) / ADCdt_min > 1)
+        pNode->DCSweep_galv.IStep = 1;
+        while (floor((minorDataEventInterval = ticksPerDACStep / pNode->DCsamplingParams.ADCBufferSizeEven /
+            pNode->DCsamplingParams.DAC_ADC_ratio) / ADCdt_min) > 1)
         {
-            pNode->DCsamplingParams.DAC_ADC_ratio++;
+            pNode->DCsamplingParams.ADCBufferSizeEven++;
         }
-
-        /* Make sure minorDataEventInterval isn't too small */
-        pNode->DCSweep_pot.VStep = 1;
-        while ((minorDataEventInterval = ticksPerDACStep * pNode->DCSweep_pot.VStep) < ADCdt_min)
+        while (pNode->DCsamplingParams.ADCBufferSizeEven > ADCbufsizeMax)
         {
-            pNode->DCSweep_pot.VStep++;
+            pNode->DCsamplingParams.DAC_ADC_ratio *= 2;
+            pNode->DCsamplingParams.ADCBufferSizeEven /= 2;
         }
+        minorDataEventInterval = ticksPerDACStep / pNode->DCsamplingParams.ADCBufferSizeEven / pNode->DCsamplingParams.DAC_ADC_ratio; //recalculate to minimize rounding error
 
-        /* Calculate ADC timing */
-        /* (1<<ADCTimerDiv) * ADCTimerPeriod = minorDataEventInterval */
+                                                                                                                                      /* Calculate ADC timing */
+                                                                                                                                      /* (1<<ADCTimerDiv) * ADCTimerPeriod = minorDataEventInterval */
         pNode->DCsamplingParams.ADCTimerDiv = 0;
         double ADCTimerPeriod = minorDataEventInterval;
         while (ADCTimerPeriod > 4294967295 - 5 * MILLISECONDS)
@@ -282,23 +311,22 @@ void ExperimentCalcHelperClass::GetSamplingParams_galvSweep(HardwareModel_t HWve
             pNode->DCsamplingParams.ADCTimerDiv++;
         }
         pNode->DCsamplingParams.ADCTimerPeriod = floor(ADCTimerPeriod);
-    }
 
-    /* ADCBufferSize * minorDataEventInterval = MajorDataEventInterval */
-    pNode->DCsamplingParams.ADCBufferSizeEven = 1;
-    while ((pNode->DCsamplingParams.ADCBufferSizeEven + 1) * minorDataEventInterval < actualSamplingInterval &&
-        pNode->DCsamplingParams.ADCBufferSizeEven < ADCbufsizeMax)
-    {
-        pNode->DCsamplingParams.ADCBufferSizeEven++;
+        if (pNode->DCsamplingParams.DAC_ADC_ratio == 1)
+            pNode->DCsamplingParams.minorPointsDiscarded = pNode->DCsamplingParams.ADCBufferSizeEven / 2;
+        else
+            pNode->DCsamplingParams.minorPointsDiscarded = 0;
     }
-    pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
-    majorDataEventInterval = pNode->DCsamplingParams.ADCBufferSizeEven * minorDataEventInterval;
 
     /* PointsSkippedMCU * MajorDataEventInterval = actualSamplingInterval */
+    majorDataEventInterval = pNode->DCsamplingParams.ADCBufferSizeEven * minorDataEventInterval;
     pNode->DCsamplingParams.PointsSkippedMCU = floor(actualSamplingInterval / majorDataEventInterval);
 
     /* actualSamplingInterval * PointsSkippedPC = targetSamplingInterval */
     pNode->DCsamplingParams.PointsSkippedPC = targetSamplingInterval / (majorDataEventInterval * pNode->DCsamplingParams.PointsSkippedMCU);
+
+    pNode->DCsamplingParams.ADCcounter = 0;
+    pNode->DCsamplingParams.ADCBufferSizeOdd = pNode->DCsamplingParams.ADCBufferSizeEven;
 }
 
 void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWversion, double t_period, double t_pulsewidth, ExperimentNode_t * pNode)
