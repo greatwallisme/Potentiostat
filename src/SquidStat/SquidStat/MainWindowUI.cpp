@@ -1295,6 +1295,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	view->header()->setSectionsClickable(false);
 	view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	view->setItemsExpandable(false);
+	view->setAlternatingRowColors(true);
 
 	view->installEventFilter(new UniversalEventFilter(view, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
@@ -1326,6 +1327,21 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	auto rootItem = model->invisibleRootItem();
 	static QMap<QUuid, ExperimentType> activeNodeType;
 
+	auto searchForTabIndex = [=](QwtPlot *plot) -> int {
+		int index = -1;
+
+		auto slay = ui.newDataTab.stackedLay;
+		for (int i = 0; i < slay->count(); ++i) {
+			auto wdg = slay->widget(i);
+			auto curPlot = wdg->findChild<QWidget*>("qwt-plot");
+			if (curPlot == plot) {
+				index = i;
+				break;
+			}
+		}
+
+		return index;
+	};
 	auto searchById = [rootItem](const QUuid &id, QStandardItem* &instItem, quint8 &channel) -> bool {
 		bool ret = false;
 
@@ -1349,6 +1365,34 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 		return ret;
 	};
+	auto createCachedWindow = [=](const QUuid &id, const QString &name) {
+		auto axisStrList = dataTabs.lastData[id].keys();
+		axisStrList.removeAll(NONE_Y_AXIS_VARIABLE);
+
+		auto dataTabWidget = CreateNewDataTabWidget(id,
+			ET_SAVED,
+			name,
+			axisStrList,
+			axisStrList,
+			"",
+			&(dataTabs.lastData[id]));
+
+		auto &handler(dataTabs.plots[id][ET_SAVED]);
+
+		ui.newDataTab.tabBar->insertTab(ui.newDataTab.tabBar->count(), name);
+		ui.newDataTab.stackedLay->insertWidget(ui.newDataTab.tabBar->count() - 1, dataTabWidget);
+
+		if (ui.newDataTab.tabBar->isHidden()) {
+			ui.newDataTab.tabBar->show();
+		}
+
+		DataTabPtr tabPtr;
+		tabPtr.type = DataTabPtr::DT_REGULAR;
+		tabPtr.regular.tabBar = ui.newDataTab.tabBar;
+		tabPtr.regular.plot = handler.plot;
+
+		dataTabs.dataTabPtrs[id] = tabPtr;
+	};
 	auto triggerIndex = [=](const QModelIndex &index) {
 		auto id = index.data(Qt::UserRole).toUuid();
 		if (id == QUuid()) {
@@ -1356,22 +1400,35 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		if (!dataTabs.dataTabPtrs.contains(id)) {
+			if(dataTabs.lastData.contains(id)) {
+				auto name = index.parent().child(index.row(), EXPERIMENT_COL).data(Qt::DisplayRole).toString();
+
+				createCachedWindow(id, name);
+
+				dataTabs.lastData.remove(id);
+				ui.newDataTab.newDataTabButton->click();
+				ui.newDataTab.tabBar->setCurrentIndex(ui.newDataTab.tabBar->count()-1);
+			}
 			return;
 		}
-
+		
 		DataTabPtr &tabPtr(dataTabs.dataTabPtrs[id]);
 
 		switch (tabPtr.type) {
-		case DataTabPtr::DT_MANUAL:
-			ui.manualExperiment.tabButton->click();
-			tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
-			tabPtr.manual.channelButton->click();
-			break;
+			case DataTabPtr::DT_MANUAL:
+				ui.manualExperiment.tabButton->click();
+				tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
+				tabPtr.manual.channelButton->click();
+				break;
 
-		case DataTabPtr::DT_REGULAR:
-			ui.newDataTab.newDataTabButton->click();
-			tabPtr.regular.tabBar->setCurrentIndex(tabPtr.regular.index);
-			break;
+			case DataTabPtr::DT_REGULAR: {
+				ui.newDataTab.newDataTabButton->click();
+				int index = searchForTabIndex(tabPtr.regular.plot);
+
+				if (-1 != index) {
+					tabPtr.regular.tabBar->setCurrentIndex(index);
+				}
+			} break;
 		}
 	};
 
@@ -1423,8 +1480,10 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			return;
 		}
 
-		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setData(QUuid(), Qt::UserRole);
+		QStandardItem *chItem;
+		//chItem = instItem->child(channel, NAME_COL);
+		//chItem->setData(QUuid(), Qt::UserRole);
+		
 		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
 			auto hw = qobject_cast<HwListButton*>(w);
 			if (hw) {
@@ -1435,11 +1494,11 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(STOPPED_STATUS);
 
-		chItem = instItem->child(channel, EXPERIMENT_COL);
-		chItem->setText("");
+		//chItem = instItem->child(channel, EXPERIMENT_COL);
+		//chItem->setText("");
 		
-		chItem = instItem->child(channel, STEP_COL);
-		chItem->setText("");
+		//chItem = instItem->child(channel, STEP_COL);
+		//chItem->setText("");
 	});
 	CONNECT(mw, &MainWindow::ExperimentResumed, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
@@ -3102,10 +3161,12 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "new-data-window-placeholder");
 	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+	ui.newDataTab.stackedLay = stackedLay;
 
 	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
 	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
 	tabFrameLay->addWidget(tabBar = OBJ_NAME(new QTabBar, "new-data-window-tab"));
+	ui.newDataTab.tabBar = tabBar;
 
 	tabHeaderLay->addWidget(tabFrame);
 	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
@@ -3272,6 +3333,73 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		tabBar->setCurrentIndex(tabBar->count() - 1);
 	});
 
+	auto actionOnClosePbt = [=]() {
+		int currentIndex = tabBar->currentIndex();
+
+		if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
+			return;
+		}
+
+		auto wdg = stackedLay->widget(currentIndex);
+		auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+		if (0 != plot) {
+			for (auto itId = dataTabs.plots.begin(); itId != dataTabs.plots.end(); ++itId) {
+				bool found = false;
+				for (auto it = itId.value().begin(); it != itId.value().end(); ++it) {
+					if (it.value().plot != plot) {
+						break;
+					}
+
+					foreach(auto conn, it.value().plotTabConnections) {
+						QObject::disconnect(conn);
+					}
+
+					if (it.value().data.first().saveFile) {
+						it.value().data.first().saveFile->close();
+						it.value().data.first().saveFile->deleteLater();
+						it.value().data.first().saveFile = 0;
+					}
+
+					mw->StopExperiment(itId.key());
+
+					dataTabs.lastData[itId.key()] = it->data.first().container;
+
+					itId.value().remove(it.key());
+
+					dataTabs.dataTabPtrs.remove(itId.key());
+
+					if (0 == itId.value().count()) {
+						dataTabs.plots.remove(itId.key());
+					}
+
+					found = true;
+					break;
+				}
+
+				if (found) {
+					break;
+				}
+			}
+		}
+
+		if ((prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1)) {
+			--prevCloseTabButtonPos;
+		}
+
+		tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+		QObject::disconnect(closeTabButtonConnection);
+		closeTabButton->deleteLater();
+		closeTabButton = 0;
+		tabBar->removeTab(currentIndex);
+		stackedLay->removeWidget(wdg);
+		wdg->deleteLater();
+
+		if (0 == tabBar->count()) {
+			tabBar->hide();
+		}
+	};
+
 	connections << CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
 			return;
@@ -3293,67 +3421,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		prevCloseTabButtonPos = index;
 
 		closeTabButtonConnection = 
-			CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
-				int currentIndex = tabBar->currentIndex();
-
-				if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
-					return;
-				}
-
-				auto wdg = stackedLay->widget(currentIndex);
-				auto plot = wdg->findChild<QWidget*>("qwt-plot");
-
-				if (0 != plot) {
-					for (auto itId = dataTabs.plots.begin(); itId != dataTabs.plots.end(); ++itId) {
-						bool found = false;
-						for (auto it = itId.value().begin(); it != itId.value().end(); ++it) {
-							if (it.value().plot != plot) {
-								break;
-							}
-
-							foreach(auto conn, it.value().plotTabConnections) {
-								QObject::disconnect(conn);
-							}
-
-							if (it.value().data.first().saveFile) {
-								it.value().data.first().saveFile->close();
-								it.value().data.first().saveFile->deleteLater();
-								it.value().data.first().saveFile = 0;
-							}
-
-							mw->StopExperiment(itId.key());
-
-							itId.value().remove(it.key());
-							if (0 == itId.value().count()) {
-								dataTabs.plots.remove(itId.key());
-							}
-
-							found = true;
-							break;
-						}
-
-						if (found) {
-							break;
-						}
-					}
-				}
-
-				if( (prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1) ){
-					--prevCloseTabButtonPos;
-				}
-
-				tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
-				QObject::disconnect(closeTabButtonConnection);
-				closeTabButton->deleteLater();
-				closeTabButton = 0;
-				tabBar->removeTab(currentIndex);
-				stackedLay->removeWidget(wdg);
-				wdg->deleteLater();
-
-				if (0 == tabBar->count()) {
-					tabBar->hide();
-				}
-			});
+			CONNECT(closeTabButton, &QPushButton::clicked, actionOnClosePbt);
 	});
 
 	connections << CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
@@ -3395,7 +3463,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		DataTabPtr tabPtr;
 		tabPtr.type = DataTabPtr::DT_REGULAR;
 		tabPtr.regular.tabBar = tabBar;
-		tabPtr.regular.index = tabBar->count() - 1;
+		tabPtr.regular.plot = handler.plot;
 
 		dataTabs.dataTabPtrs[startParams.id] = tabPtr;
 	});
@@ -3417,7 +3485,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
       /*Matt*/
         //todo: add command to start manual sampling whenever the channel stops, and when the instrument becomes connected
-
 
 			for (int i = 0; i < tabBar->count(); ++i) {
 				auto wdg = stackedLay->widget(i);

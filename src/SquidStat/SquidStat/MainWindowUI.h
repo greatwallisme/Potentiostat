@@ -152,6 +152,8 @@ private:
 		struct {
 			QPushButton *newDataTabButton;
 			QPushButton *buildExperimentButton;
+			QStackedLayout *stackedLay;
+			QTabBar *tabBar;
 		} newDataTab;
 		struct {
 			QWidget *listItemOverlay;
@@ -254,7 +256,7 @@ private:
 			} manual;
 			struct {
 				QTabBar *tabBar;
-				int index;
+				QwtPlot *plot;
 			} regular;
 		};
 	};
@@ -264,6 +266,7 @@ private:
 		QMap<QUuid, QMap<QString, QLabel*>> realTimeLabels;
 		QMap<QUuid, qreal> realTimeElapsedTime;
 		QMap<QUuid, DataTabPtr> dataTabPtrs;
+		QMap<QUuid, DataMap> lastData;
 	} dataTabs;
 
 	MainWindow *mw;
