@@ -11,6 +11,8 @@ class QVBoxLayout;
 class QGridLayout;
 class QStackedLayout;
 class QTabWidget;
+class QMdiArea;
+class QMdiSubWindow;
 
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
@@ -152,7 +154,8 @@ private:
 		struct {
 			QPushButton *newDataTabButton;
 			QPushButton *buildExperimentButton;
-			QStackedLayout *stackedLay;
+			//QStackedLayout *stackedLay;
+			QMdiArea *mdiArea;
 			QTabBar *tabBar;
 		} newDataTab;
 		struct {
@@ -267,6 +270,8 @@ private:
 		QMap<QUuid, qreal> realTimeElapsedTime;
 		QMap<QUuid, DataTabPtr> dataTabPtrs;
 		QMap<QUuid, DataMap> lastData;
+		QList<QMdiSubWindow*> dataWindowOrder;
+		bool firstDataTab = true;
 	} dataTabs;
 
 	MainWindow *mw;

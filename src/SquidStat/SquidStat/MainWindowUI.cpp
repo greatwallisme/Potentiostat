@@ -80,7 +80,8 @@
 #include <QSignalMapper>
 #include <QTreeView>
 #include <QHeaderView>
-
+#include <QMdiArea>
+#include <QMdiSubWindow>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -113,6 +114,8 @@
 #define STOPPED_STATUS	"Stopped"
 #define ERROR_STATUS	"Error"
 #define PAUSED_STATUS	"Paused"
+
+#define SUB_WINDOWS_FLAGS			(Qt::Window | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::CustomizeWindowHint)
 
 /*
 #define STOPPED_DOT		QIcon(":/GUI/Resources/red-dot.png")
@@ -1330,9 +1333,9 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	auto searchForTabIndex = [=](QwtPlot *plot) -> int {
 		int index = -1;
 
-		auto slay = ui.newDataTab.stackedLay;
-		for (int i = 0; i < slay->count(); ++i) {
-			auto wdg = slay->widget(i);
+		//auto slay = ui.newDataTab.stackedLay;
+		for (int i = 0; i < dataTabs.dataWindowOrder.count(); ++i) {
+			auto wdg = dataTabs.dataWindowOrder.at(i)->widget();
 			auto curPlot = wdg->findChild<QWidget*>("qwt-plot");
 			if (curPlot == plot) {
 				index = i;
@@ -1379,8 +1382,10 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 		auto &handler(dataTabs.plots[id][ET_SAVED]);
 
+		dataTabs.dataWindowOrder << ui.newDataTab.mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
 		ui.newDataTab.tabBar->insertTab(ui.newDataTab.tabBar->count(), name);
-		ui.newDataTab.stackedLay->insertWidget(ui.newDataTab.tabBar->count() - 1, dataTabWidget);
+		//ui.newDataTab.stackedLay->insertWidget(ui.newDataTab.tabBar->count() - 1, dataTabWidget);
+		ui.newDataTab.mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(ui.newDataTab.tabBar->count() - 1));
 
 		if (ui.newDataTab.tabBar->isHidden()) {
 			ui.newDataTab.tabBar->show();
@@ -3157,11 +3162,21 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	QPushButton *addNewButton;
+	QPushButton *cascadeButton;
+	QPushButton *tileButton;
+
 	QTabBar *tabBar;
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "new-data-window-placeholder");
-	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
-	ui.newDataTab.stackedLay = stackedLay;
+	auto stackedLayWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(stackedLayWdg)));
+	auto mdiArea = new QMdiArea;
+	mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	ui.newDataTab.mdiArea = mdiArea;
+	stackedLayWdgLay->addWidget(mdiArea);
+
+	//auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+	//ui.newDataTab.stackedLay = stackedLay;
 
 	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
 	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
@@ -3171,6 +3186,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabHeaderLay->addWidget(tabFrame);
 	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
 	tabHeaderLay->addStretch(1);
+	tabHeaderLay->addWidget(cascadeButton = OBJ_NAME(PBT("Cascade"), "builder-tab-mdi"));
+	tabHeaderLay->addWidget(tileButton = OBJ_NAME(PBT("Tile"), "builder-tab-mdi"));
 
 	lay->addLayout(tabHeaderLay);
 	lay->addWidget(stackedLayWdg);
@@ -3178,12 +3195,29 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabBar->setExpanding(false);
 	tabBar->setMovable(true);
 
+	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch (e->type()) {
+		case QEvent::Hide:
+			cascadeButton->hide();
+			tileButton->hide();
+			break;
+		case QEvent::Show:
+			cascadeButton->show();
+			tileButton->show();
+			break;
+		}
+		return false;
+	}));
+
 	tabBar->hide();
+	cascadeButton->hide();
+	tileButton->hide();
 	
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
 
+	/*
 	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
 		auto w = qobject_cast<QTabBar*>(obj);
@@ -3306,8 +3340,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		return ret;
 	}));
-
-	connections << CONNECT(addNewButton, &QPushButton::clicked, [=]() {
+	//*/
+	auto actionOnAddNewPbt = [=]() {
 		CsvFileData csvData;
 		if (!ReadCsvFile(mw, csvData)) {
 			return;
@@ -3328,10 +3362,21 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			csvData.filePath,
 			&csvData.container);
 
+		dataTabs.dataWindowOrder << mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
 		tabBar->insertTab(tabBar->count(), tabName);
-		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+		//stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
 		tabBar->setCurrentIndex(tabBar->count() - 1);
-	});
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(tabBar->count() - 1));
+		dataTabs.dataWindowOrder.last()->show();
+
+		if (dataTabs.firstDataTab) {
+			dataTabs.firstDataTab = false;
+			dataTabs.dataWindowOrder.last()->showMaximized();
+		}
+	};
+	connections << CONNECT(addNewButton, &QPushButton::clicked, actionOnAddNewPbt);
+	connections << CONNECT(cascadeButton, &QPushButton::clicked, mdiArea, &QMdiArea::cascadeSubWindows);
+	connections << CONNECT(tileButton, &QPushButton::clicked, mdiArea, &QMdiArea::tileSubWindows);
 
 	auto actionOnClosePbt = [=]() {
 		int currentIndex = tabBar->currentIndex();
@@ -3340,7 +3385,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			return;
 		}
 
-		auto wdg = stackedLay->widget(currentIndex);
+		auto wdg = dataTabs.dataWindowOrder.at(currentIndex)->widget();
+		//auto wdg = stackedLay->widget(currentIndex);
 		auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 		if (0 != plot) {
@@ -3392,8 +3438,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		closeTabButton->deleteLater();
 		closeTabButton = 0;
 		tabBar->removeTab(currentIndex);
-		stackedLay->removeWidget(wdg);
-		wdg->deleteLater();
+		mdiArea->removeSubWindow(dataTabs.dataWindowOrder.at(currentIndex));
+		dataTabs.dataWindowOrder.at(currentIndex)->deleteLater();
+		dataTabs.dataWindowOrder.removeAt(currentIndex);
+		//stackedLay->removeWidget(wdg);
+		//wdg->deleteLater();
 
 		if (0 == tabBar->count()) {
 			tabBar->hide();
@@ -3406,7 +3455,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 		if (index >= tabBar->count()) {
 			tabBar->setCurrentIndex(prevCloseTabButtonPos);
-			stackedLay->setCurrentIndex(prevCloseTabButtonPos);
+			//stackedLay->setCurrentIndex(prevCloseTabButtonPos);
+			mdiArea->setActiveSubWindow(mdiArea->subWindowList().at(prevCloseTabButtonPos));
 			return;
 		}
 
@@ -3416,7 +3466,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			closeTabButton->deleteLater();
 		}
 
-		stackedLay->setCurrentIndex(index);
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(index));
+		//stackedLay->setCurrentIndex(index);
 		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
 		prevCloseTabButtonPos = index;
 
@@ -3425,9 +3476,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	});
 
 	connections << CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
-		auto wdg = stackedLay->widget(from);
-		stackedLay->removeWidget(wdg);
-		stackedLay->insertWidget(to, wdg);
+		auto wdg = dataTabs.dataWindowOrder.at(from);
+		dataTabs.dataWindowOrder.removeAt(from);
+		dataTabs.dataWindowOrder.insert(to, wdg);
 	});
 
 	connections << CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const StartExperimentParameters &startParams) {
@@ -3448,8 +3499,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		handler.data.first().hwVer = startParams.hwVer;
 		handler.data.first().notes = startParams.notes;
 
+		dataTabs.dataWindowOrder << mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
 		tabBar->insertTab(tabBar->count(), startParams.name);
-		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+		//stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
 
 		if (tabBar->isHidden()) {
 			tabBar->show();
@@ -3457,8 +3509,14 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		ui.newDataTab.newDataTabButton->click();
 		tabBar->setCurrentIndex(tabBar->count() - 1);
-		stackedLay->setCurrentIndex(tabBar->count() - 1);
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(tabBar->count() - 1));
+		//stackedLay->setCurrentIndex(tabBar->count() - 1);
 		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
+
+		if (dataTabs.firstDataTab) {
+			dataTabs.firstDataTab = false;
+			dataTabs.dataWindowOrder.last()->showMaximized();
+		}
 
 		DataTabPtr tabPtr;
 		tabPtr.type = DataTabPtr::DT_REGULAR;
@@ -3487,7 +3545,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
         //todo: add command to start manual sampling whenever the channel stops, and when the instrument becomes connected
 
 			for (int i = 0; i < tabBar->count(); ++i) {
-				auto wdg = stackedLay->widget(i);
+				auto wdg = dataTabs.dataWindowOrder.at(i)->widget();
 				auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 				if (0 == plot) {
