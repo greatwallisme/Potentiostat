@@ -103,6 +103,11 @@ QMenuBar::item {
 	
 	color: #ffffff;
 }
+QMenu::item {
+}
+QMenu::item:selected {
+	background-color: #ce2026;
+}
 QMenuBar::item:open {
 	background-color: #ce2026;
 }
