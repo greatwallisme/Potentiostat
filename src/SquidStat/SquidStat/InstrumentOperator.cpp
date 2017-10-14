@@ -39,9 +39,11 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case DEBUG_LOG_MSG: {
+#ifndef QT_NO_DEBUG
 				QByteArray strData = data;
 				strData.push_back('\0');
-				//LOG() << QString(strData.data());
+				LOG() << QString(strData.data());
+#endif
 			}
 			break;
 

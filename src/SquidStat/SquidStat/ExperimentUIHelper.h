@@ -25,7 +25,7 @@
 	(ExperimentalAcData*)expDataRaw.data()
 
 #define GET_COMPLEX_DATA_POINT(dataPoint)							\
-	double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(dataheader); \
+	double numCycles = ExperimentCalcHelperClass::estimatePeriod(dataheader); \
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
 		dataheader.frequency,											\
 		(uint16_t*)expDataRaw.data(),												\
@@ -140,7 +140,7 @@
 		if(!inputs.contains(obj_name)) {		\
 			inputs[obj_name] = default_value;	\
 		}										\
-		led->setText(QString::number(default_value)); \
+		led->setText(QString::number(inputs.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
 		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
@@ -151,7 +151,7 @@
 #define _INSERT_TEXT_INPUT_EXPERIMENT(default_value, obj_name, row, col) \
 	{	\
 		auto led = OBJ_NAME(new QLineEdit(), obj_name); \
-		led->setText(QString::number(default_value)); \
+		led->setText(QString::number(settings.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
 		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \

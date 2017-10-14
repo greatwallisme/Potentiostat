@@ -73,8 +73,10 @@ QWidget* DCCurrentSweep::CreateUserInput(UserInput &inputs) const {
   _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mV");
   _ADD_DROP_DOWN_ITEM("s");
+  _ADD_DROP_DOWN_ITEM("mA");
+  _ADD_DROP_DOWN_ITEM("uA");
+  _ADD_DROP_DOWN_ITEM("nA");
   _END_DROP_DOWN();
 
 	_SET_ROW_STRETCH(++row, 1);
@@ -96,8 +98,12 @@ NodesData DCCurrentSweep::GetNodesData(const UserInput &inputs, const Calibratio
   IStart *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[STARTING_CURRENT_UNITS_OBJ_NAME].toString());
   IEnd *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[ENDING_CURRENT_UNITS_OBJ_NAME].toString());
   dIdt *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[SWEEP_RATE_UNITS_OBJ_NAME].toString());
-  if (inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString().contains("mV"))
+  
+  if (!inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString().contains("s"))
+  {
       sampInterval = sampInterval / dIdt;       //convert from mA to s
+      sampInterval *= ExperimentCalcHelperClass::GetUnitsMultiplier(inputs[SAMPLING_INT_UNITS_OBJ_NAME].toString());
+  }
   
   currentRange_t currentRange = ExperimentCalcHelperClass::GetMinCurrentRange(hwVersion.hwModel, &calData, MAX(ABS(IStart), ABS(IEnd)));
 

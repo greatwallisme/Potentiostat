@@ -310,7 +310,7 @@ void CustomExperimentRunner::SaveDcData(QFile &saveFile, const DataMap &containe
 void CustomExperimentRunner::PUSH_NEW_AC_DATA_DEFINITION {
 	ComplexDataPoint_t dataPoint;
 	GET_COMPLEX_DATA_POINT(dataPoint);
-	//double numCycles = ExperimentCalcHelperClass::calcNumberOfCycles(*dataHeader);
+	//double numCycles = ExperimentCalcHelperClass::estimatePeriod(*dataHeader);
 	//dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(dataHeader->frequency, ACrawdata, numACBuffers, dataHeader->gainVoltage, dataHeader->gainCurrent, numCycles, &calData, dataHeader->IRange);
 
 	PUSH_BACK_DATA(PLOT_VAR_FREQ, dataPoint.frequency);
