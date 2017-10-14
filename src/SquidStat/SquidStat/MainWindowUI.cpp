@@ -3437,10 +3437,17 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		QObject::disconnect(closeTabButtonConnection);
 		closeTabButton->deleteLater();
 		closeTabButton = 0;
-		tabBar->removeTab(currentIndex);
+
+		if ((1 == dataTabs.dataWindowOrder.count()) && dataTabs.dataWindowOrder.at(currentIndex)->isMaximized()) {
+			dataTabs.firstDataTab = true;
+		}
+
+		dataTabs.dataWindowOrder.at(currentIndex)->showNormal();
 		mdiArea->removeSubWindow(dataTabs.dataWindowOrder.at(currentIndex));
 		dataTabs.dataWindowOrder.at(currentIndex)->deleteLater();
 		dataTabs.dataWindowOrder.removeAt(currentIndex);
+
+		tabBar->removeTab(currentIndex);
 		//stackedLay->removeWidget(wdg);
 		//wdg->deleteLater();
 
@@ -3464,15 +3471,18 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 			QObject::disconnect(closeTabButtonConnection);
 			closeTabButton->deleteLater();
+			closeTabButton = 0;
 		}
 
 		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(index));
 		//stackedLay->setCurrentIndex(index);
-		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
-		prevCloseTabButtonPos = index;
+		if (tabBar->tabIcon(index).isNull()) {
+			tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+			prevCloseTabButtonPos = index;
 
-		closeTabButtonConnection = 
-			CONNECT(closeTabButton, &QPushButton::clicked, actionOnClosePbt);
+			closeTabButtonConnection =
+				CONNECT(closeTabButton, &QPushButton::clicked, actionOnClosePbt);
+		}
 	});
 
 	connections << CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
@@ -3500,7 +3510,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		handler.data.first().notes = startParams.notes;
 
 		dataTabs.dataWindowOrder << mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
-		tabBar->insertTab(tabBar->count(), startParams.name);
+		tabBar->insertTab(tabBar->count(), QIcon(":/GUI/Resources/green-dot.png"), startParams.name);
 		//stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
 
 		if (tabBar->isHidden()) {
@@ -3511,7 +3521,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		tabBar->setCurrentIndex(tabBar->count() - 1);
 		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(tabBar->count() - 1));
 		//stackedLay->setCurrentIndex(tabBar->count() - 1);
-		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
 
 		if (dataTabs.firstDataTab) {
 			dataTabs.firstDataTab = false;
@@ -3559,6 +3568,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				tabBar->setTabIcon(i, QIcon());
 			}
 		}
+
+		tabBar->currentChanged(tabBar->currentIndex());
 	};
 	connections << CONNECT(mw, &MainWindow::ExperimentCompleted, expCompleteHandler);
 
