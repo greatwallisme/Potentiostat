@@ -63,6 +63,7 @@ QWidget* DCPotentialSweepElement::CreateUserInput(UserInput &inputs) const {
   _INSERT_TEXT_INPUT(SLEWRATE_DEFAULT, SLEWRATE_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 
+  ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of:", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);

@@ -648,6 +648,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
 
     int rollingFilterSize = MAX(1, approxPeriod / 5);
     double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
+    int numAttempts = 0;
 
     do {
         filteredIData = rollingAverage(rawIData, rollingFilterSize);
@@ -656,7 +657,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
         fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
         Period_resultPrev = Period_result;
         rollingFilterSize = MAX(1, Period_result / 5);
-    } while (fractionalChange > 0.0001);
+    } while (fractionalChange > 0.0001 && numAttempts++ < 25);
 
     /******************************************************/
     /* debugging only */
@@ -680,6 +681,10 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
     ComplexDataPoint_t Z;
     Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
     Z.phase = Ipt.phase - Vpt.phase;
+    if (Z.phase > 180)
+        Z.phase -= 360;
+    if (Z.phase < -180)
+        Z.phase += 360;
     Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
     Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
     Z.frequency = frequency;

@@ -876,17 +876,15 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	emit ExperimentStarted(id, it->info.name, channel);
 }
 
-void MainWindow::SetCompRange(const QUuid& id, quint8 range)
+void MainWindow::SetCompRange(const QString name, quint8 channelNum, quint8 range)
 {
-    auto it = SearchForHandler(id);
+    auto it = SearchForHandler(name);
 
     if (it == hardware.handlers.end()) {
         return;
     }
 
-    auto channel = SearchForChannel(it, id);
-
-    it->oper->SetCompRange(channel, range);
+    it->oper->SetCompRange(channelNum, range);
 }
 
 void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {

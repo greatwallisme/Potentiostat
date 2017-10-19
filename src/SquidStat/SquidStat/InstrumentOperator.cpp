@@ -42,7 +42,8 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 #ifndef QT_NO_DEBUG
 				QByteArray strData = data;
 				strData.push_back('\0');
-				LOG() << QString(strData.data());
+				//LOG() << QString(strData.data());
+        qDebug().noquote() << QDateTime::currentMSecsSinceEpoch() << "\t" << QString(strData.data());
 #endif
 			}
 			break;

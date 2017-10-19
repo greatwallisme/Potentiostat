@@ -159,11 +159,36 @@ void MainWindowUI::CreateMenu() {
 
 	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
  
-  /*auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
-  auto compRange0Select = selectCompRangeMenu->addAction("Stability setting 1");
-  auto compRange1Select = selectCompRangeMenu->addAction("Stability setting 2");
-  compRange0Select->setCheckable(true);
-  compRange1Select->setCheckable(true);*/
+  auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
+  selectCompRangeMenu->setDisabled(true);
+
+  connections << QObject::connect(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription>&hwList) {
+      if (!hwList.isEmpty())
+          selectCompRangeMenu->setEnabled(true);
+      for (auto &hw : hwList)
+      {
+          if (hw.hwModel >= PLUS_2_0)
+          {
+              auto hwCompSubMenu = selectCompRangeMenu->addMenu(hw.name);
+              for (int i = 0; i < hw.channelAmount; i++)
+              {
+                  auto channelCompSubMenu = hwCompSubMenu->addMenu("Channel " + QString::number(i + 1));
+                  QActionGroup * compRanges = new QActionGroup(channelCompSubMenu);
+                  for (int j = 0; j < 4; j++)
+                  {
+                      QAction * compAct = compRanges->addAction("Range " + QString::number(j + 1));
+                      channelCompSubMenu->addAction(compAct);
+                      compAct->setCheckable(true);
+                      QObject::connect(compAct, &QAction::triggered, [=](bool triggered) {
+                          if (triggered)
+                              mw->SetCompRange(hw.name, i, j);
+                      });
+                  }
+                  compRanges->actions().at(0)->setChecked(true);
+              }
+          }
+      }
+  });
 
 	menuBar->addMenu(moreOptionsMenu);
 

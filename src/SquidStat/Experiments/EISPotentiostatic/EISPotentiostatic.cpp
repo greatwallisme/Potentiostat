@@ -236,7 +236,8 @@ void EISPotentiostatic::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes 
 }
 
 void EISPotentiostatic::SaveAcData(QFile &saveFile, const DataMap &container) const {
-  if(container[PLOT_VAR_ERROR].data.count() > 0 && container[PLOT_VAR_ERROR].data.last() < 2000)
+  //if(container[PLOT_VAR_ERROR].data.count() > 0 && container[PLOT_VAR_ERROR].data.last() < 2000)
+  if (container[PLOT_VAR_ERROR].data.count() > 0)
   {
     SAVE_DATA_START();
 
