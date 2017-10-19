@@ -80,7 +80,8 @@
 #include <QSignalMapper>
 #include <QTreeView>
 #include <QHeaderView>
-
+#include <QMdiArea>
+#include <QMdiSubWindow>
 
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
@@ -113,6 +114,8 @@
 #define STOPPED_STATUS	"Stopped"
 #define ERROR_STATUS	"Error"
 #define PAUSED_STATUS	"Paused"
+
+#define SUB_WINDOWS_FLAGS			(Qt::Window | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::CustomizeWindowHint)
 
 /*
 #define STOPPED_DOT		QIcon(":/GUI/Resources/red-dot.png")
@@ -1320,6 +1323,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	view->header()->setSectionsClickable(false);
 	view->setEditTriggers(QAbstractItemView::NoEditTriggers);
 	view->setItemsExpandable(false);
+	view->setAlternatingRowColors(true);
 
 	view->installEventFilter(new UniversalEventFilter(view, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
@@ -1351,6 +1355,21 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 	auto rootItem = model->invisibleRootItem();
 	static QMap<QUuid, ExperimentType> activeNodeType;
 
+	auto searchForTabIndex = [=](QwtPlot *plot) -> int {
+		int index = -1;
+
+		//auto slay = ui.newDataTab.stackedLay;
+		for (int i = 0; i < dataTabs.dataWindowOrder.count(); ++i) {
+			auto wdg = dataTabs.dataWindowOrder.at(i)->widget();
+			auto curPlot = wdg->findChild<QWidget*>("qwt-plot");
+			if (curPlot == plot) {
+				index = i;
+				break;
+			}
+		}
+
+		return index;
+	};
 	auto searchById = [rootItem](const QUuid &id, QStandardItem* &instItem, quint8 &channel) -> bool {
 		bool ret = false;
 
@@ -1374,6 +1393,36 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 		return ret;
 	};
+	auto createCachedWindow = [=](const QUuid &id, const QString &name) {
+		auto axisStrList = dataTabs.lastData[id].keys();
+		axisStrList.removeAll(NONE_Y_AXIS_VARIABLE);
+
+		auto dataTabWidget = CreateNewDataTabWidget(id,
+			ET_SAVED,
+			name,
+			axisStrList,
+			axisStrList,
+			"",
+			&(dataTabs.lastData[id]));
+
+		auto &handler(dataTabs.plots[id][ET_SAVED]);
+
+		dataTabs.dataWindowOrder << ui.newDataTab.mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
+		ui.newDataTab.tabBar->insertTab(ui.newDataTab.tabBar->count(), name);
+		//ui.newDataTab.stackedLay->insertWidget(ui.newDataTab.tabBar->count() - 1, dataTabWidget);
+		ui.newDataTab.mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(ui.newDataTab.tabBar->count() - 1));
+
+		if (ui.newDataTab.tabBar->isHidden()) {
+			ui.newDataTab.tabBar->show();
+		}
+
+		DataTabPtr tabPtr;
+		tabPtr.type = DataTabPtr::DT_REGULAR;
+		tabPtr.regular.tabBar = ui.newDataTab.tabBar;
+		tabPtr.regular.plot = handler.plot;
+
+		dataTabs.dataTabPtrs[id] = tabPtr;
+	};
 	auto triggerIndex = [=](const QModelIndex &index) {
 		auto id = index.data(Qt::UserRole).toUuid();
 		if (id == QUuid()) {
@@ -1381,22 +1430,35 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		}
 
 		if (!dataTabs.dataTabPtrs.contains(id)) {
+			if(dataTabs.lastData.contains(id)) {
+				auto name = index.parent().child(index.row(), EXPERIMENT_COL).data(Qt::DisplayRole).toString();
+
+				createCachedWindow(id, name);
+
+				dataTabs.lastData.remove(id);
+				ui.newDataTab.newDataTabButton->click();
+				ui.newDataTab.tabBar->setCurrentIndex(ui.newDataTab.tabBar->count()-1);
+			}
 			return;
 		}
-
+		
 		DataTabPtr &tabPtr(dataTabs.dataTabPtrs[id]);
 
 		switch (tabPtr.type) {
-		case DataTabPtr::DT_MANUAL:
-			ui.manualExperiment.tabButton->click();
-			tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
-			tabPtr.manual.channelButton->click();
-			break;
+			case DataTabPtr::DT_MANUAL:
+				ui.manualExperiment.tabButton->click();
+				tabPtr.manual.hwTabBar->setCurrentIndex(tabPtr.manual.hwIndex);
+				tabPtr.manual.channelButton->click();
+				break;
 
-		case DataTabPtr::DT_REGULAR:
-			ui.newDataTab.newDataTabButton->click();
-			tabPtr.regular.tabBar->setCurrentIndex(tabPtr.regular.index);
-			break;
+			case DataTabPtr::DT_REGULAR: {
+				ui.newDataTab.newDataTabButton->click();
+				int index = searchForTabIndex(tabPtr.regular.plot);
+
+				if (-1 != index) {
+					tabPtr.regular.tabBar->setCurrentIndex(index);
+				}
+			} break;
 		}
 	};
 
@@ -1448,8 +1510,10 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			return;
 		}
 
-		auto chItem = instItem->child(channel, NAME_COL);
-		chItem->setData(QUuid(), Qt::UserRole);
+		QStandardItem *chItem;
+		//chItem = instItem->child(channel, NAME_COL);
+		//chItem->setData(QUuid(), Qt::UserRole);
+		
 		if (auto w = view->indexWidget(instItem->index().child(channel, NAME_COL))) {
 			auto hw = qobject_cast<HwListButton*>(w);
 			if (hw) {
@@ -1460,11 +1524,11 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 		chItem = instItem->child(channel, STATUS_COL);
 		chItem->setText(STOPPED_STATUS);
 
-		chItem = instItem->child(channel, EXPERIMENT_COL);
-		chItem->setText("");
+		//chItem = instItem->child(channel, EXPERIMENT_COL);
+		//chItem->setText("");
 		
-		chItem = instItem->child(channel, STEP_COL);
-		chItem->setText("");
+		//chItem = instItem->child(channel, STEP_COL);
+		//chItem->setText("");
 	});
 	CONNECT(mw, &MainWindow::ExperimentResumed, [view, searchById](const QUuid &id) {
 		QStandardItem *instItem = 0;
@@ -3123,18 +3187,32 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	QPushButton *addNewButton;
+	QPushButton *cascadeButton;
+	QPushButton *tileButton;
+
 	QTabBar *tabBar;
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "new-data-window-placeholder");
-	auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+	auto stackedLayWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(stackedLayWdg)));
+	auto mdiArea = new QMdiArea;
+	mdiArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	mdiArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+	ui.newDataTab.mdiArea = mdiArea;
+	stackedLayWdgLay->addWidget(mdiArea);
+
+	//auto stackedLay = NO_SPACING(NO_MARGIN(new QStackedLayout(stackedLayWdg)));
+	//ui.newDataTab.stackedLay = stackedLay;
 
 	QFrame *tabFrame = OBJ_NAME(new QFrame, "builder-tab-frame");
 	auto *tabFrameLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(tabFrame)));
 	tabFrameLay->addWidget(tabBar = OBJ_NAME(new QTabBar, "new-data-window-tab"));
+	ui.newDataTab.tabBar = tabBar;
 
 	tabHeaderLay->addWidget(tabFrame);
 	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
 	tabHeaderLay->addStretch(1);
+	tabHeaderLay->addWidget(cascadeButton = OBJ_NAME(PBT("Cascade"), "builder-tab-mdi"));
+	tabHeaderLay->addWidget(tileButton = OBJ_NAME(PBT("Tile"), "builder-tab-mdi"));
 
 	lay->addLayout(tabHeaderLay);
 	lay->addWidget(stackedLayWdg);
@@ -3142,12 +3220,29 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabBar->setExpanding(false);
 	tabBar->setMovable(true);
 
+	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
+		switch (e->type()) {
+		case QEvent::Hide:
+			cascadeButton->hide();
+			tileButton->hide();
+			break;
+		case QEvent::Show:
+			cascadeButton->show();
+			tileButton->show();
+			break;
+		}
+		return false;
+	}));
+
 	tabBar->hide();
+	cascadeButton->hide();
+	tileButton->hide();
 	
 	static QPushButton *closeTabButton = 0;
 	static QMetaObject::Connection closeTabButtonConnection;
 	static int prevCloseTabButtonPos = -1;
 
+	/*
 	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
 		bool ret = false;
 		auto w = qobject_cast<QTabBar*>(obj);
@@ -3270,8 +3365,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		return ret;
 	}));
-
-	connections << CONNECT(addNewButton, &QPushButton::clicked, [=]() {
+	//*/
+	auto actionOnAddNewPbt = [=]() {
 		CsvFileData csvData;
 		if (!ReadCsvFile(mw, csvData)) {
 			return;
@@ -3292,10 +3387,99 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			csvData.filePath,
 			&csvData.container);
 
+		dataTabs.dataWindowOrder << mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
 		tabBar->insertTab(tabBar->count(), tabName);
-		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+		//stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
 		tabBar->setCurrentIndex(tabBar->count() - 1);
-	});
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(tabBar->count() - 1));
+		dataTabs.dataWindowOrder.last()->show();
+
+		if (dataTabs.firstDataTab) {
+			dataTabs.firstDataTab = false;
+			dataTabs.dataWindowOrder.last()->showMaximized();
+		}
+	};
+	connections << CONNECT(addNewButton, &QPushButton::clicked, actionOnAddNewPbt);
+	connections << CONNECT(cascadeButton, &QPushButton::clicked, mdiArea, &QMdiArea::cascadeSubWindows);
+	connections << CONNECT(tileButton, &QPushButton::clicked, mdiArea, &QMdiArea::tileSubWindows);
+
+	auto actionOnClosePbt = [=]() {
+		int currentIndex = tabBar->currentIndex();
+
+		if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
+			return;
+		}
+
+		auto wdg = dataTabs.dataWindowOrder.at(currentIndex)->widget();
+		//auto wdg = stackedLay->widget(currentIndex);
+		auto plot = wdg->findChild<QWidget*>("qwt-plot");
+
+		if (0 != plot) {
+			for (auto itId = dataTabs.plots.begin(); itId != dataTabs.plots.end(); ++itId) {
+				bool found = false;
+				for (auto it = itId.value().begin(); it != itId.value().end(); ++it) {
+					if (it.value().plot != plot) {
+						break;
+					}
+
+					foreach(auto conn, it.value().plotTabConnections) {
+						QObject::disconnect(conn);
+					}
+
+					if (it.value().data.first().saveFile) {
+						it.value().data.first().saveFile->close();
+						it.value().data.first().saveFile->deleteLater();
+						it.value().data.first().saveFile = 0;
+					}
+
+					mw->StopExperiment(itId.key());
+
+					dataTabs.lastData[itId.key()] = it->data.first().container;
+
+					itId.value().remove(it.key());
+
+					dataTabs.dataTabPtrs.remove(itId.key());
+
+					if (0 == itId.value().count()) {
+						dataTabs.plots.remove(itId.key());
+					}
+
+					found = true;
+					break;
+				}
+
+				if (found) {
+					break;
+				}
+			}
+		}
+
+		if ((prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1)) {
+			--prevCloseTabButtonPos;
+		}
+
+		tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
+		QObject::disconnect(closeTabButtonConnection);
+		closeTabButton->deleteLater();
+		closeTabButton = 0;
+
+		if ((1 == dataTabs.dataWindowOrder.count()) && dataTabs.dataWindowOrder.at(currentIndex)->isMaximized()) {
+			dataTabs.firstDataTab = true;
+		}
+
+		dataTabs.dataWindowOrder.at(currentIndex)->showNormal();
+		mdiArea->removeSubWindow(dataTabs.dataWindowOrder.at(currentIndex));
+		dataTabs.dataWindowOrder.at(currentIndex)->deleteLater();
+		dataTabs.dataWindowOrder.removeAt(currentIndex);
+
+		tabBar->removeTab(currentIndex);
+		//stackedLay->removeWidget(wdg);
+		//wdg->deleteLater();
+
+		if (0 == tabBar->count()) {
+			tabBar->hide();
+		}
+	};
 
 	connections << CONNECT(tabBar, &QTabBar::currentChanged, [=](int index) {
 		if (index < 0) {
@@ -3303,7 +3487,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		}
 		if (index >= tabBar->count()) {
 			tabBar->setCurrentIndex(prevCloseTabButtonPos);
-			stackedLay->setCurrentIndex(prevCloseTabButtonPos);
+			//stackedLay->setCurrentIndex(prevCloseTabButtonPos);
+			mdiArea->setActiveSubWindow(mdiArea->subWindowList().at(prevCloseTabButtonPos));
 			return;
 		}
 
@@ -3311,80 +3496,24 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
 			QObject::disconnect(closeTabButtonConnection);
 			closeTabButton->deleteLater();
+			closeTabButton = 0;
 		}
 
-		stackedLay->setCurrentIndex(index);
-		tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
-		prevCloseTabButtonPos = index;
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(index));
+		//stackedLay->setCurrentIndex(index);
+		if (tabBar->tabIcon(index).isNull()) {
+			tabBar->setTabButton(index, QTabBar::RightSide, closeTabButton = OBJ_NAME(PBT("x"), "close-document-pbt"));
+			prevCloseTabButtonPos = index;
 
-		closeTabButtonConnection = 
-			CONNECT(closeTabButton, &QPushButton::clicked, [=]() {
-				int currentIndex = tabBar->currentIndex();
-
-				if ((-1 == currentIndex) || (currentIndex >= tabBar->count())) {
-					return;
-				}
-
-				auto wdg = stackedLay->widget(currentIndex);
-				auto plot = wdg->findChild<QWidget*>("qwt-plot");
-
-				if (0 != plot) {
-					for (auto itId = dataTabs.plots.begin(); itId != dataTabs.plots.end(); ++itId) {
-						bool found = false;
-						for (auto it = itId.value().begin(); it != itId.value().end(); ++it) {
-							if (it.value().plot != plot) {
-								break;
-							}
-
-							foreach(auto conn, it.value().plotTabConnections) {
-								QObject::disconnect(conn);
-							}
-
-							if (it.value().data.first().saveFile) {
-								it.value().data.first().saveFile->close();
-								it.value().data.first().saveFile->deleteLater();
-								it.value().data.first().saveFile = 0;
-							}
-
-							mw->StopExperiment(itId.key());
-
-							itId.value().remove(it.key());
-							if (0 == itId.value().count()) {
-								dataTabs.plots.remove(itId.key());
-							}
-
-							found = true;
-							break;
-						}
-
-						if (found) {
-							break;
-						}
-					}
-				}
-
-				if( (prevCloseTabButtonPos == (tabBar->count() - 1)) && (tabBar->count() > 1) ){
-					--prevCloseTabButtonPos;
-				}
-
-				tabBar->setTabButton(prevCloseTabButtonPos, QTabBar::RightSide, 0);
-				QObject::disconnect(closeTabButtonConnection);
-				closeTabButton->deleteLater();
-				closeTabButton = 0;
-				tabBar->removeTab(currentIndex);
-				stackedLay->removeWidget(wdg);
-				wdg->deleteLater();
-
-				if (0 == tabBar->count()) {
-					tabBar->hide();
-				}
-			});
+			closeTabButtonConnection =
+				CONNECT(closeTabButton, &QPushButton::clicked, actionOnClosePbt);
+		}
 	});
 
 	connections << CONNECT(tabBar, &QTabBar::tabMoved, [=](int from, int to) {
-		auto wdg = stackedLay->widget(from);
-		stackedLay->removeWidget(wdg);
-		stackedLay->insertWidget(to, wdg);
+		auto wdg = dataTabs.dataWindowOrder.at(from);
+		dataTabs.dataWindowOrder.removeAt(from);
+		dataTabs.dataWindowOrder.insert(to, wdg);
 	});
 
 	connections << CONNECT(mw, &MainWindow::CreateNewDataWindow, [=](const StartExperimentParameters &startParams) {
@@ -3405,8 +3534,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 		handler.data.first().hwVer = startParams.hwVer;
 		handler.data.first().notes = startParams.notes;
 
-		tabBar->insertTab(tabBar->count(), startParams.name);
-		stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
+		dataTabs.dataWindowOrder << mdiArea->addSubWindow(dataTabWidget, SUB_WINDOWS_FLAGS);
+		tabBar->insertTab(tabBar->count(), QIcon(":/GUI/Resources/green-dot.png"), startParams.name);
+		//stackedLay->insertWidget(tabBar->count() - 1, dataTabWidget);
 
 		if (tabBar->isHidden()) {
 			tabBar->show();
@@ -3414,13 +3544,18 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 		ui.newDataTab.newDataTabButton->click();
 		tabBar->setCurrentIndex(tabBar->count() - 1);
-		stackedLay->setCurrentIndex(tabBar->count() - 1);
-		tabBar->setTabIcon(tabBar->count() - 1, QIcon(":/GUI/Resources/green-dot.png"));
+		mdiArea->setActiveSubWindow(dataTabs.dataWindowOrder.at(tabBar->count() - 1));
+		//stackedLay->setCurrentIndex(tabBar->count() - 1);
+
+		if (dataTabs.firstDataTab) {
+			dataTabs.firstDataTab = false;
+			dataTabs.dataWindowOrder.last()->showMaximized();
+		}
 
 		DataTabPtr tabPtr;
 		tabPtr.type = DataTabPtr::DT_REGULAR;
 		tabPtr.regular.tabBar = tabBar;
-		tabPtr.regular.index = tabBar->count() - 1;
+		tabPtr.regular.plot = handler.plot;
 
 		dataTabs.dataTabPtrs[startParams.id] = tabPtr;
 	});
@@ -3443,9 +3578,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
       /*Matt*/
         //todo: add command to start manual sampling whenever the channel stops, and when the instrument becomes connected
 
-
 			for (int i = 0; i < tabBar->count(); ++i) {
-				auto wdg = stackedLay->widget(i);
+				auto wdg = dataTabs.dataWindowOrder.at(i)->widget();
 				auto plot = wdg->findChild<QWidget*>("qwt-plot");
 
 				if (0 == plot) {
@@ -3459,6 +3593,8 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 				tabBar->setTabIcon(i, QIcon());
 			}
 		}
+
+		tabBar->currentChanged(tabBar->currentIndex());
 	};
 	connections << CONNECT(mw, &MainWindow::ExperimentCompleted, expCompleteHandler);
 

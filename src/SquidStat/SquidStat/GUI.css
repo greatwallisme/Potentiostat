@@ -103,6 +103,11 @@ QMenuBar::item {
 	
 	color: #ffffff;
 }
+QMenu::item {
+}
+QMenu::item:selected {
+	background-color: #ce2026;
+}
 QMenuBar::item:open {
 	background-color: #ce2026;
 }
@@ -990,11 +995,10 @@ QLabel[experiment-params-widget="low-margin"] {
 #plot-tab QTabBar::tab:only-one {
 	/*padding-bottom: 10px;*/
 }
+#builder-tab-mdi,
 #builder-tab-add-new {
 	color: #ce2026;
 	
-	max-width: 35px;
-	min-width: 35px;	
 	min-height: 33px;
 	max-height: 33px;
 	
@@ -1006,9 +1010,25 @@ QLabel[experiment-params-widget="low-margin"] {
 	
 	border: 1px solid #ce2026;
 	background-color: #ffbec0;
+}
+#builder-tab-add-new {
+	max-width: 35px;
+	min-width: 35px;
 	
 	qproperty-text: "";
 	qproperty-icon: url(:/GUI/Resources/new-tab.png);
+}
+#builder-tab-mdi {
+	min-width: 60px;
+	
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 3px;
+	padding-bottom: 1px;
+	
+	border-left: none;
+	
+	font-weight: bold;
 }
 #close-document-pbt {
 	qproperty-text: "";
@@ -1534,6 +1554,7 @@ QwtTextLabel > QLineEdit {
 	qproperty-alignment: AlignHCenter;
 }
 QwtPlot {
+	min-height: 20px;
 	margin: 30px;
 	margin-top: 0px;
 	margin-right: 0px;
@@ -1548,64 +1569,4 @@ QwtScaleWidget {
     color: #4d565f;
 	font-family: "Segoe UI Semibold";
 }
-/*
-QwtText {
-    color: #000000;
-	font-family: "Segoe UI Semibold";
-	font-size: 20px;
-}
-*/
-/*
-QwtLegend {
-    border: 1px solid white;
-    border-radius: 10px;
-    padding: 10px;
-    background: brown;
-}
-QwtLegendItem {
-    color: palette(light);
-}
-*/
-/*
-QwtPlot {
-	margin: 30px;
-	
-	border: 1px solid #c8c8c8;
-	background-color: #f4f4f4;
-	
-	padding: 10px;
-}
-
-QwtPlotCanvas {
-	border: none;
-    background-color: #f4f4f4;
-}
-
-QwtPlotGLCanvas {
-	border: none;
-    background-color: #f4f4f4;
-}
-
-QwtScaleWidget {
-    color: #666666;
-}
-
-QwtTextLabel#QwtPlotTitle {
-    color: #000000;
-}
-
-QwtTextLabel#QwtPlotFooter {
-    color: #000000;
-}
-
-QwtLegend {
-	border: none;
-    padding: 2px;
-    background: #91A3A3;
-}
-
-QwtLegendLabel {
-    color: #000000;
-}
-*/
 /*//////////////////////////////////*/
