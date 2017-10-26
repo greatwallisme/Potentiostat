@@ -197,3 +197,6 @@ void InstrumentOperator::SetManualOcp(quint8 channel) {
 void InstrumentOperator::SetCurrentRangingMode(quint8 channel, const Manual::RangingMode &params) {
 	_communicator->SendCommand((CommandID)MANUAL_CURRENT_RANGING_MODE_SET, channel, TO_BYTE_ARRAY(params));
 }
+void InstrumentOperator::SendPhaseAngleCalibration(quint8 channel, const Manual::PhaseAngleCalibrationData &params) {
+    _communicator->SendCommand((CommandID)SEND_PHASE_ANGLE_CAL_DATA, channel, TO_BYTE_ARRAY(params));
+}

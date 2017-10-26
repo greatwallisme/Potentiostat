@@ -92,6 +92,7 @@ public slots:
 	void StopManualExperiment(const QUuid&);
 	void PauseManualExperiment(const QUuid&);
 	void ResumeManualExperiment(const QUuid&);
+    void SendPhaseAngleCalibrationData(const QUuid &id /* ... */);
   void SetCompRange(const QUuid&, quint8 range);
 
 signals:
