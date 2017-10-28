@@ -36,7 +36,7 @@ LayoutType* SetZeroSpacing(LayoutType *l) {
 }
 
 #define TR(...)         QObject::tr(__VA_ARGS__)
-#define CONNECT(...)    QObject::connect(__VA_ARGS__)
+//#define QObject::connect(...)    QObject::connect(__VA_ARGS__)
 
 
 
