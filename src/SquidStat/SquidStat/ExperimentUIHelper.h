@@ -143,7 +143,7 @@
 		led->setText(QString::number(inputs.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
-		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
+		*diconnector << QObject::connect(led, &QLineEdit::textChanged, [=](const QString &str) { \
 			(*inputsPtr)[obj_name] = str; \
 		}); \
 	}
@@ -154,7 +154,7 @@
 		led->setText(QString::number(settings.value(obj_name, default_value).toDouble())); \
 		OBJ_PROP(led, "experiment-params-widget", "low-margin"); \
 		lay->addWidget(led, row, col); \
-		*diconnector << CONNECT(led, &QLineEdit::textChanged, [=](const QString &str) { \
+		*diconnector << QObject::connect(led, &QLineEdit::textChanged, [=](const QString &str) { \
 			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
 			localSettings.beginGroup(GetFullName()); \
 			localSettings.setValue(obj_name, str); \
@@ -184,7 +184,7 @@
 			}									\
 		}										\
 		auto inputsPtr = &inputs;				\
-		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+		*diconnector << QObject::connect(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
 			(*inputsPtr)[group->objectName()] = button->text(); \
 		});										\
 	}
@@ -197,7 +197,7 @@
 				break;							\
 			}									\
 		}										\
-		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+		*diconnector << QObject::connect(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
 			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
 			localSettings.beginGroup(GetFullName()); \
 			localSettings.setValue(group->objectName(), button->text()); \
@@ -239,7 +239,7 @@
 				break;							\
 			}									\
 		}										\
-		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+		*diconnector << QObject::connect(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
 			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
 			localSettings.beginGroup(GetFullName()); \
 			localSettings.setValue(group->objectName(), button->text()); \
@@ -259,7 +259,7 @@
 			}									\
 		}										\
 		auto inputsPtr = &inputs;				\
-		*diconnector << CONNECT(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
+		*diconnector << QObject::connect(group, static_cast<void(QButtonGroup::*)(QAbstractButton *)>(&QButtonGroup::buttonClicked), [=](QAbstractButton *button) { \
 			(*inputsPtr)[group->objectName()] = button->text(); \
 		});										\
 	}
@@ -301,7 +301,7 @@
 				break;									\
 			}											\
 		}												\
-		*diconnector << CONNECT(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
+		*diconnector << QObject::connect(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
 			QSettings localSettings(EXPERIMENT_VALUES_INI, QSettings::IniFormat); \
 			localSettings.beginGroup(GetFullName()); \
 			localSettings.setValue(combo->objectName(), str); \
@@ -320,7 +320,7 @@
 			}											\
 		}												\
 		auto inputsPtr = &inputs;						\
-		*diconnector << CONNECT(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
+		*diconnector << QObject::connect(combo, &QComboBox::currentTextChanged, [=](const QString &str) { \
 			(*inputsPtr)[combo->objectName()] = str; \
 		});												\
 	}
