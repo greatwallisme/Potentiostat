@@ -78,6 +78,10 @@ namespace Manual {
 	struct RangingMode {
 		uint8_t currentRangeMode;
 	};
+
+    struct PhaseAngleCalibrationData {
+
+    };
 }
 
 #pragma pack(pop)

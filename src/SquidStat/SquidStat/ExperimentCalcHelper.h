@@ -47,6 +47,8 @@ public:
   /* sinusoidal curve-fitting */
   static ComplexDataPoint_t AnalyzeFRA(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
 
+  ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
+
 private:
   /* Newton-raphson method */
   static ComplexDataPoint_t SingleFrequencyFourier(QVector<double> data, int size, double period);
