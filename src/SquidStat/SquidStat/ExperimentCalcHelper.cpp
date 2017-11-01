@@ -451,7 +451,11 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   double ewe = rawData.ADCrawData.ewe > 0 ? calData->m_eweP * rawData.ADCrawData.ewe + calData->b_ewe : calData->m_eweN * rawData.ADCrawData.ewe + calData->b_ewe;
   double ref = rawData.ADCrawData.ref > 0 ? calData->m_refP * rawData.ADCrawData.ref + calData->b_ref : calData->m_refN * rawData.ADCrawData.ref + calData->b_ref;
   double ece = rawData.ADCrawData.ece > 0 ? calData->m_eceP * rawData.ADCrawData.ece + calData->b_ece : calData->m_eceN * rawData.ADCrawData.ece + calData->b_ece;
+  //double ewe = rawData.ADCrawData.ewe;
+  //double ref = rawData.ADCrawData.ref;
+  //double ece = rawData.ADCrawData.ece;
   processedData.EWE = ewe - ref;
+  processedData.EWE /= rawData.WEgain;
   processedData.ECE = ece - ref;
   int n = (int)rawData.currentRange;
   if (rawData.currentRange == OFF)
@@ -460,6 +464,7 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   else
     processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange] :
                                                            calData->m_iN[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange];
+  processedData.current /= rawData.Igain;
   return processedData;
 }
 
@@ -659,23 +664,39 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
         rollingFilterSize = MAX(1, Period_result / 5);
     } while (fractionalChange > 0.0001 && numAttempts++ < 25);
 
-    /******************************************************/
-    /* debugging only */
-    std::ofstream fout;
-    QString filename = "C:/Users/Matt/Desktop/results";
-    filename.append(QString::number(frequency));
-    filename.append(".txt");
-    fout.open(filename.toStdString(), std::ofstream::out);
-    fout << "Period width = " << Period_result << '\n';
-    for (int i = 0; i < filteredIData.count(); i++)
-    {
-        fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
-    }
-    /******************************************************/
-
     int truncatedLen = (int)(floor(len / Period_result) * Period_result);
     ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
     ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+
+                    //for (int i = 0; i < 50; i++)
+                    //{
+                    //    double altPeriod = Period_result * (0.995 + 0.01 / 50 * i);
+                    //    //truncatedLen = (int)(floor(len / altPeriod) * altPeriod);
+                    //    Ipt = SingleFrequencyFourier(rawIData, truncatedLen, altPeriod);
+                    //    Vpt = SingleFrequencyFourier(rawVData, truncatedLen, altPeriod);
+                    //    /******************************************************/
+                    //    /* debugging only */
+                    //    std::ofstream fout1;
+                    //    QString filename1 = "C:/Users/Matt/Desktop/results.txt";
+                    //    fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+                    //    fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+                    //    /******************************************************/
+                    //}
+
+                    //Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+                    //Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+
+
+            ///******************************************************/
+            ///* debugging only */
+            //std::ofstream fout1;
+            //QString filename1 = "C:/Users/Matt/Desktop/results";
+            //filename1.append(".txt");
+            //fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+            //fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+            ///******************************************************/
+
+
     Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
     Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
     ComplexDataPoint_t Z;
@@ -688,6 +709,20 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
     Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
     Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
     Z.frequency = frequency;
+
+
+    /******************************************************/
+    /* debugging only */
+    std::ofstream fout;
+    QString filename = "C:/Users/Matt/Desktop/results";
+    filename.append(QString::number(frequency));
+    filename.append(".txt");
+    fout.open(filename.toStdString(), std::ofstream::out);
+        for (int i = 0; i < filteredIData.count(); i++)
+        {
+            fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
+        }
+    /******************************************************/
 
     return Z;
 }

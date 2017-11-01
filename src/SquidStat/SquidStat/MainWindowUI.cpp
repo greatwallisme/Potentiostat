@@ -1614,6 +1614,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
 			case FRA_NODE_PSEUDOGALV:
+      case FRA_FIXED_GAINS_AND_RANGE:
 				activeNodeType[id] = ET_AC;
 				break;
 
@@ -1661,6 +1662,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+      NODE_TYPE_STR_FILL(FRA_FIXED_GAINS_AND_RANGE, "Galvanostatic imp., fixed gains")
 			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
 
 			default: break;
@@ -3759,6 +3761,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
 			case FRA_NODE_PSEUDOGALV:
+      case FRA_FIXED_GAINS_AND_RANGE:
 				etype = ET_AC;
 				break;
 
@@ -3814,7 +3817,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 
 		//TODO: if(node.newFileTrigger) {
-		if (0) {
+		if (node.isStartingNewFile) {
 			auto &majorData(handler->data.first());
 
 			QString path = majorData.filePath;
@@ -5168,6 +5171,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+      NODE_TYPE_STR_FILL(FRA_FIXED_GAINS_AND_RANGE, "Galvanostatic imp., fixed gains")
 			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
 
 			default: break;
