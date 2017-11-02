@@ -451,7 +451,11 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   double ewe = rawData.ADCrawData.ewe > 0 ? calData->m_eweP * rawData.ADCrawData.ewe + calData->b_ewe : calData->m_eweN * rawData.ADCrawData.ewe + calData->b_ewe;
   double ref = rawData.ADCrawData.ref > 0 ? calData->m_refP * rawData.ADCrawData.ref + calData->b_ref : calData->m_refN * rawData.ADCrawData.ref + calData->b_ref;
   double ece = rawData.ADCrawData.ece > 0 ? calData->m_eceP * rawData.ADCrawData.ece + calData->b_ece : calData->m_eceN * rawData.ADCrawData.ece + calData->b_ece;
+  //double ewe = rawData.ADCrawData.ewe;
+  //double ref = rawData.ADCrawData.ref;
+  //double ece = rawData.ADCrawData.ece;
   processedData.EWE = ewe - ref;
+  processedData.EWE /= rawData.WEgain;
   processedData.ECE = ece - ref;
   int n = (int)rawData.currentRange;
   if (rawData.currentRange == OFF)
@@ -460,6 +464,7 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   else
     processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange] :
                                                            calData->m_iN[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange];
+  processedData.current /= rawData.Igain;
   return processedData;
 }
 
@@ -648,6 +653,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
 
     int rollingFilterSize = MAX(1, approxPeriod / 5);
     double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
+    int numAttempts = 0;
 
     do {
         filteredIData = rollingAverage(rawIData, rollingFilterSize);
@@ -656,7 +662,54 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
         fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
         Period_resultPrev = Period_result;
         rollingFilterSize = MAX(1, Period_result / 5);
-    } while (fractionalChange > 0.0001);
+    } while (fractionalChange > 0.0001 && numAttempts++ < 25);
+
+    int truncatedLen = (int)(floor(len / Period_result) * Period_result);
+    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+
+                    //for (int i = 0; i < 50; i++)
+                    //{
+                    //    double altPeriod = Period_result * (0.995 + 0.01 / 50 * i);
+                    //    //truncatedLen = (int)(floor(len / altPeriod) * altPeriod);
+                    //    Ipt = SingleFrequencyFourier(rawIData, truncatedLen, altPeriod);
+                    //    Vpt = SingleFrequencyFourier(rawVData, truncatedLen, altPeriod);
+                    //    /******************************************************/
+                    //    /* debugging only */
+                    //    std::ofstream fout1;
+                    //    QString filename1 = "C:/Users/Matt/Desktop/results.txt";
+                    //    fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+                    //    fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+                    //    /******************************************************/
+                    //}
+
+                    //Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+                    //Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+
+
+            ///******************************************************/
+            ///* debugging only */
+            //std::ofstream fout1;
+            //QString filename1 = "C:/Users/Matt/Desktop/results";
+            //filename1.append(".txt");
+            //fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+            //fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+            ///******************************************************/
+
+
+    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
+    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
+    ComplexDataPoint_t Z;
+    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
+    Z.phase = Ipt.phase - Vpt.phase;
+    if (Z.phase > 180)
+        Z.phase -= 360;
+    if (Z.phase < -180)
+        Z.phase += 360;
+    Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
+    Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
+    Z.frequency = frequency;
+
 
     /******************************************************/
     /* debugging only */
@@ -665,24 +718,11 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
     filename.append(QString::number(frequency));
     filename.append(".txt");
     fout.open(filename.toStdString(), std::ofstream::out);
-    fout << "Period width = " << Period_result << '\n';
-    for (int i = 0; i < filteredIData.count(); i++)
-    {
-        fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
-    }
+        for (int i = 0; i < filteredIData.count(); i++)
+        {
+            fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
+        }
     /******************************************************/
-
-    int truncatedLen = (int)(floor(len / Period_result) * Period_result);
-    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
-    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
-    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
-    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
-    ComplexDataPoint_t Z;
-    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
-    Z.phase = Ipt.phase - Vpt.phase;
-    Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
-    Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
-    Z.frequency = frequency;
 
     return Z;
 }
@@ -690,6 +730,49 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
 //=============================================================================
 namespace // unnamed namespace to make these function definitions private within this file
 {
+    // y = a * exp(b * x)
+    // http://mathworld.wolfram.com/LeastSquaresFittingExponential.html
+    void ExponentialRegression(QVector<double> const x, QVector<double> const y, double *a, double *b)
+    {
+        // probably need to first guess a vertical shift, 
+        // and iterate until the fit converges sufficiently.
+
+        double sum_xxy = 0;
+        double sum_ylny = 0;
+        double sum_xy = 0;
+        double sum_xylny = 0;
+        double sum_y = 0;
+
+        if (x.length() != y.length())
+        {
+            *a = 0;
+            *b = 0;
+            return;
+        }
+
+        for (int i = 0; i < x.length(); i++)
+        {
+            double xy = x[i] * y[i];
+            double xxy = xy * y[i];
+            double lny = log(y[i]);
+            double ylny = y[i] * lny;
+            double xylny = x[i] * ylny;
+
+            sum_xxy += xxy;
+            sum_ylny += ylny;
+            sum_xy += xy;
+            sum_xylny += xylny;
+            sum_y += y[i];
+        }
+
+        double denomenator = sum_y * sum_xxy - sum_xy * sum_xy;
+        double a_numerator = sum_xxy * sum_ylny - sum_xy * sum_xylny;
+        double b_numerator = sum_y * sum_xylny - sum_xy * sum_ylny;
+
+        *a = a_numerator / denomenator;
+        *b = b_numerator / denomenator;
+    }
+
     // func Average: Computes the average of a vector.
     //
     // in     x: 
@@ -940,6 +1023,85 @@ double ExperimentCalcHelperClass::GetPeriod(QVector<double> const x)
 
     double halfperiod = AverageDistance(zca);
     return 2 * halfperiod;
+}
+
+ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
+{
+    // 3. Collect data from the ADCAC_DATA responses.
+    
+    int len = numACBuffers * ADCacBUF_SIZE;
+    QVector<double> rawIData, rawVData, filteredIData, filteredVData;
+
+    for (int i = 0; i < numACBuffers; i++)
+    {
+        for (int j = 0; j < ADCacBUF_SIZE; j++)
+        {
+            rawIData.append(rawDataBuf[2 * i * ADCacBUF_SIZE + j]);
+            rawVData.append(rawDataBuf[(2 * i + 1)*ADCacBUF_SIZE + j]);
+        }
+    }
+
+    int rollingFilterSize = MAX(1, approxPeriod / 5);
+    double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
+
+    // 4. Get the data's period from the zero-crossing algorithm.
+
+    do {
+        filteredIData = rollingAverage(rawIData, rollingFilterSize);
+        filteredVData = rollingAverage(rawVData, rollingFilterSize);
+        Period_result = (GetPeriod(filteredIData) + GetPeriod(filteredVData)) / 2;
+        fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
+        Period_resultPrev = Period_result;
+        rollingFilterSize = MAX(1, Period_result / 5);
+    } while (fractionalChange > 0.0001);
+
+    /******************************************************/
+    /* debugging only */
+    std::ofstream fout;
+    QString filename = "C:/Users/Matt/Desktop/results";
+    filename.append(QString::number(frequency));
+    filename.append(".txt");
+    fout.open(filename.toStdString(), std::ofstream::out);
+    fout << "Period width = " << Period_result << '\n';
+    for (int i = 0; i < filteredIData.count(); i++)
+    {
+        fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
+    }
+    /******************************************************/
+
+    // 5. Get the relative magnitude and phase of the voltage and current signals.
+
+    int truncatedLen = (int)(floor(len / Period_result) * Period_result);
+    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
+    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
+    
+    // delete this part?
+    ComplexDataPoint_t Z;
+    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
+    Z.phase = Ipt.phase - Vpt.phase;
+    Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
+    Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
+    Z.frequency = frequency;
+
+    // 6. Assuming that the relative phase data should be flat, generate parameters for a fitting function that accounts for deviations from zero.
+    // need to guess a vertical shift and iterate until converges
+    double a = 0;
+    double b = 0;
+    /*do*/ {
+        double vertical_shift_guess = /**/;
+        QVector<double> x = QVector<double>(/**/);
+        QVector<double> y = QVector<double>(/**/);
+        for (int i = 0; i < x.length(); i++)
+        {
+            x[i] -= vertical_shift_guess;
+            y[i] -= vertical_shift_guess;
+        }
+        ExponentialRegression(/*x*/, /*y*/, &a, &b);
+    } // while ()
+
+    return; 
 }
 
 ComplexDataPoint_t ExperimentCalcHelperClass::SingleFrequencyFourier(QVector<double> data, int len, double period)

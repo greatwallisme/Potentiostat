@@ -162,11 +162,36 @@ void MainWindowUI::CreateMenu() {
 
 	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
  
-	/*auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
-	auto compRange0Select = selectCompRangeMenu->addAction("Stability setting 1");
-	auto compRange1Select = selectCompRangeMenu->addAction("Stability setting 2");
-	compRange0Select->setCheckable(true);
-	compRange1Select->setCheckable(true);*/
+  auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
+  selectCompRangeMenu->setDisabled(true);
+
+  connections << QObject::connect(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription>&hwList) {
+      if (!hwList.isEmpty())
+          selectCompRangeMenu->setEnabled(true);
+      for (auto &hw : hwList)
+      {
+          if (hw.hwModel >= PLUS_2_0)
+          {
+              auto hwCompSubMenu = selectCompRangeMenu->addMenu(hw.name);
+              for (int i = 0; i < hw.channelAmount; i++)
+              {
+                  auto channelCompSubMenu = hwCompSubMenu->addMenu("Channel " + QString::number(i + 1));
+                  QActionGroup * compRanges = new QActionGroup(channelCompSubMenu);
+                  for (int j = 0; j < 4; j++)
+                  {
+                      QAction * compAct = compRanges->addAction("Range " + QString::number(j + 1));
+                      channelCompSubMenu->addAction(compAct);
+                      compAct->setCheckable(true);
+                      QObject::connect(compAct, &QAction::triggered, [=](bool triggered) {
+                          if (triggered)
+                              mw->SetCompRange(hw.name, i, j);
+                      });
+                  }
+                  compRanges->actions().at(0)->setChecked(true);
+              }
+          }
+      }
+  });
 
 	menuBar->addMenu(moreOptionsMenu);
 
@@ -1589,6 +1614,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
 			case FRA_NODE_PSEUDOGALV:
+      case FRA_FIXED_GAINS_AND_RANGE:
 				activeNodeType[id] = ET_AC;
 				break;
 
@@ -1636,6 +1662,7 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+      NODE_TYPE_STR_FILL(FRA_FIXED_GAINS_AND_RANGE, "Galvanostatic imp., fixed gains")
 			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
 
 			default: break;
@@ -3733,6 +3760,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			case FRA_NODE_POT:
 			case FRA_NODE_GALV:
 			case FRA_NODE_PSEUDOGALV:
+      case FRA_FIXED_GAINS_AND_RANGE:
 				etype = ET_AC;
 				break;
 
@@ -3788,7 +3816,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 
 		//TODO: if(node.newFileTrigger) {
-		if (0) {
+		if (node.isStartingNewFile) {
 			auto &majorData(handler->data.first());
 
 			QString path = majorData.filePath;
@@ -5142,6 +5170,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 			NODE_TYPE_STR_FILL(FRA_NODE_POT, "Potentiostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_GALV, "Galvanostatic impedance")
 			NODE_TYPE_STR_FILL(FRA_NODE_PSEUDOGALV, "Pseudo-galvanostatic impedance")
+      NODE_TYPE_STR_FILL(FRA_FIXED_GAINS_AND_RANGE, "Galvanostatic imp., fixed gains")
 			NODE_TYPE_STR_FILL(DUMMY_NODE, " ")
 
 			default: break;

@@ -67,9 +67,6 @@ QWidget* DCCurrentSweep::CreateUserInput(UserInput &inputs) const {
   _END_DROP_DOWN();
 
   ++row;
-  _INSERT_CENTERED_COMMENT("<b>Sampling interval</b>", row);
-
-  ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);

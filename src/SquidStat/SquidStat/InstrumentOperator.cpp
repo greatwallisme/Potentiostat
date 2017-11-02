@@ -29,7 +29,7 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case ADCAC_DATA: {
-      LOG() << "ADCAC_DATA";
+      //LOG() << "ADCAC_DATA";
       auto *dataPtr = data.data();
 				int arrayDataLen = data.size() - sizeof(ExperimentalAcData);
 				if( ( arrayDataLen % (sizeof(int16_t)*2) ) == 0) {
@@ -42,13 +42,14 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 #ifndef QT_NO_DEBUG
 				QByteArray strData = data;
 				strData.push_back('\0');
-				LOG() << QString(strData.data());
+				//LOG() << QString(strData.data());
+        qDebug().noquote() << QDateTime::currentMSecsSinceEpoch() << "\t" << QString(strData.data());
 #endif
 			}
 			break;
 
 		case EXPERIMENT_COMPLETE:
-      LOG() << "EXPERIMENT_COMPLETE";
+      LOG() << "Experiment completed";
 			emit ExperimentCompleted(channel);
 			break;
 		
@@ -61,7 +62,9 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_NODE_BEGINNING:
+#ifndef QT_NO_DEBUG
       LOG() << "EXPERIMENT_NODE_BEGINNING";
+#endif
       if (data.size() == sizeof(ExperimentNode_t)) {
 				ExperimentNode_t *node = (ExperimentNode_t*)data.data();
 				emit ExperimentNodeBeginning(channel, *node);
@@ -69,11 +72,12 @@ void InstrumentOperator::ResponseReceived(ResponseID resp, quint8 channel, const
 			break;
 
 		case EXPERIMENT_NODE_COMPLETE:
+#ifndef QT_NO_DEBUG
 			LOG() << "Node complete";
+#endif
 			break;
 
 		case DATA_RECEIVED_OK:
-			//LOG() << "DATA_RECEIVED_OK";
 			emit NodeDownloaded(channel);
 			break;
 
@@ -196,4 +200,7 @@ void InstrumentOperator::SetManualOcp(quint8 channel) {
 }
 void InstrumentOperator::SetCurrentRangingMode(quint8 channel, const Manual::RangingMode &params) {
 	_communicator->SendCommand((CommandID)MANUAL_CURRENT_RANGING_MODE_SET, channel, TO_BYTE_ARRAY(params));
+}
+void InstrumentOperator::SendPhaseAngleCalibration(quint8 channel, const Manual::PhaseAngleCalibrationData &params) {
+    _communicator->SendCommand((CommandID)SEND_PHASE_ANGLE_CAL_DATA, channel, TO_BYTE_ARRAY(params));
 }

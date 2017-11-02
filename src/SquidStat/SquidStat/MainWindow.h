@@ -92,7 +92,9 @@ public slots:
 	void StopManualExperiment(const QUuid&);
 	void PauseManualExperiment(const QUuid&);
 	void ResumeManualExperiment(const QUuid&);
-  void SetCompRange(const QUuid&, quint8 range);
+  void SetCompRange(const QString name, quint8 channelNum, quint8 range);
+    void SendPhaseAngleCalibrationData(const QUuid &id /* ... */);
+
 
 signals:
 	void HardwareFound(const InstrumentList&);
