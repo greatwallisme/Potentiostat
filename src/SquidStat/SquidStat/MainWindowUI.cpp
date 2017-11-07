@@ -5327,7 +5327,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		}
 	});
 
-	plotHandler.plotTabConnections << QObject::connect(zoomInPbt, &QPushButton::clicked, [=]() {
+	auto zoomInAction = [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ZoomAxis(handler, QwtPlot::xBottom, 0.1);
 		ZoomAxis(handler, QwtPlot::yLeft, 0.1);
@@ -5341,9 +5341,10 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		if (needReplot) {
 			plot->replot();
 		}
-	});
+	};
+	plotHandler.plotTabConnections << QObject::connect(zoomInPbt, &QPushButton::clicked, zoomInAction);
 
-	plotHandler.plotTabConnections << QObject::connect(zoomOutPbt, &QPushButton::clicked, [=]() {
+	auto zoomOutAction = [=]() {
 		PlotHandler &handler(dataTabs.plots[id][type]);
 		ZoomAxis(handler, QwtPlot::xBottom, -0.1);
 		ZoomAxis(handler, QwtPlot::yLeft, -0.1);
@@ -5357,7 +5358,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		if (needReplot) {
 			plot->replot();
 		}
-	});
+	};
+	plotHandler.plotTabConnections << QObject::connect(zoomOutPbt, &QPushButton::clicked, zoomOutAction);
 
 	#define PROPERTY_PAN_VIEW_PRESSED			"pan-view-pressed"
 	#define PROPERTY_ZOOM_TO_SELECTION_PRESSED	"zoom-to-selection-pressed"
@@ -5667,6 +5669,20 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				ret = true;
 			}
 			break;
+
+		case QEvent::Wheel: {
+			QWheelEvent *we = (QWheelEvent*)e;
+			if (Qt::ScrollUpdate != we->phase()) {
+				break;
+			}
+
+			if (we->angleDelta().y() > 0) {
+				zoomInAction();
+			}
+			else {
+				zoomOutAction();
+			}
+		} break;
 		}
 
 		obj->setProperty(PROPERTY_MOUSE_MOVE_PRESSED_POINT, startPoint);
