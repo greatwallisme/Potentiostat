@@ -27,7 +27,7 @@ public slots:
 	void SetManualPotentioSetpoint(quint8 channel, const Manual::PotentioSetpoint&);
 	void SetManualOcp(quint8 channel);
 	void SetCurrentRangingMode(quint8 channel, const Manual::RangingMode&);
-    void SendPhaseAngleCalibration(quint8 channel, const Manual::PhaseAngleCalibrationData &params);
+  //  void SendPhaseAngleCalibration(quint8 channel, const Manual::PhaseAngleCalibrationData &params);
   void SetCompRange(quint8 channel, quint8 range);
 
 private slots:

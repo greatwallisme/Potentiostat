@@ -888,48 +888,49 @@ void MainWindow::SetCompRange(const QString name, quint8 channelNum, quint8 rang
     it->oper->SetCompRange(channelNum, range);
 }
 
-void MainWindow::SendPhaseAngleCalibrationData(const QUuid &id /* ... */) {
-    
-    // 0. Button
-    // modify MainWindowUI.cpp
+//void MainWindow::SendPhaseAngleCalibrationData(const QUuid &id /* ... */) {
+//    
+//    // 0. Button
+//    // modify MainWindowUI.cpp
+//
+//    // 1. Generate the parameters for the ExperimentNode_t array.
+//    ExperimentNode_t node;
+//    // ...
+//
+//    // 2. Send the ExperimentNode_t array to the hardware and start the experiment.
+//
+//    auto it = SearchForHandler(id);
+//
+//    if (it == hardware.handlers.end()) {
+//        return;
+//    }
+//
+//    auto channel = SearchForChannel(it, id);
+//
+//    if (!it->experiment[channel].busy) {
+//        return;
+//    }
+//
+//    // Manual::? params;
+//    // ... params.? = node.? ...
+//    // it->oper->?(channel, params);
+//
+//    // 3. Collect data from the ADCAC_DATA responses.
+//    // 4. Get the data's period from the zero-crossing algorithm.
+//    // 5. Get the relative magnitude and phase of the voltage and current signals.
+//    // 6. Assuming that the relative phase data should be flat, generate parameters for a fitting function that accounts for deviations from zero.
+//    ExperimentCalcHelperClass::PhaseAngleCalibration();
+//
+//    // 7. Assemble all of the parameters for the fitting function in a calibration structure (to be defined) and send it to the hardware for NVM storage.
+//    
+//    // Assemble
+//    Manual::PhaseAngleCalibrationData pac_params;
+//    // ... pac_params.? = node.? ...
+//
+//    // Send
+//    it->oper->SendPhaseAngleCalibration(channel, pac_params);
+//}
 
-    // 1. Generate the parameters for the ExperimentNode_t array.
-    ExperimentNode_t node;
-    // ...
-
-    // 2. Send the ExperimentNode_t array to the hardware and start the experiment.
-
-    auto it = SearchForHandler(id);
-
-    if (it == hardware.handlers.end()) {
-        return;
-    }
-
-    auto channel = SearchForChannel(it, id);
-
-    if (!it->experiment[channel].busy) {
-        return;
-    }
-
-    // Manual::? params;
-    // ... params.? = node.? ...
-    // it->oper->?(channel, params);
-
-    // 3. Collect data from the ADCAC_DATA responses.
-    // 4. Get the data's period from the zero-crossing algorithm.
-    // 5. Get the relative magnitude and phase of the voltage and current signals.
-    // 6. Assuming that the relative phase data should be flat, generate parameters for a fitting function that accounts for deviations from zero.
-    ExperimentCalcHelperClass::PhaseAngleCalibration();
-
-    // 7. Assemble all of the parameters for the fitting function in a calibration structure (to be defined) and send it to the hardware for NVM storage.
-    
-    // Assemble
-    Manual::PhaseAngleCalibrationData pac_params;
-    // ... pac_params.? = node.? ...
-
-    // Send
-    it->oper->SendPhaseAngleCalibration(channel, pac_params);
-}
 void MainWindow::SetManualSamplingParams(const QUuid &id, double value) {
 	auto it = SearchForHandler(id);
 
@@ -1038,10 +1039,6 @@ void MainWindow::SetCurrentRangingMode(const QUuid &id, quint8 range) {
 
 	Manual::RangingMode params;
 	params.currentRangeMode = range;
-
-	/////////////////////////////////////////
-	params.currentRangeMode = 0;
-	/////////////////////////////////////////
 
 	it->oper->SetCurrentRangingMode(channel, params);
 }

@@ -45,10 +45,9 @@ namespace SSC
             public short Ece     { get { return BitConverter.ToInt16(new ArraySegment<byte>(Bytes, H + 6, 2).ToArray(), 0); } }
 
             public byte CurrentRange  { get { return Bytes[H + 8]; } }
-
+            // pad 3 bytes
             public float WEgain { get { return BitConverter.ToSingle(new ArraySegment<byte>(Bytes, H + 12, 4).ToArray(),0); } }
             public float Igain { get { return BitConverter.ToSingle(new ArraySegment<byte>(Bytes, H + 16, 4).ToArray(), 0); } }
-            // pad 3 bytes
             public ulong Timestamp    { get { return BitConverter.ToUInt64(new ArraySegment<byte>(Bytes, H + 20, 8).ToArray(), 0); } }
 
             public byte[] Bytes { get; private set; }

@@ -4973,6 +4973,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 				appliedPotLblRight->show();
 				appliedPotLed->show();
 				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
+        mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
 				break;
 
 			case Qt::Checked:
@@ -5000,19 +5001,29 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 				}
 				else {
+            mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
 					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 				}
 				break;
 			}
 		});
-		plotHandler.plotTabConnections << QObject::connect(rangeCombo, &QComboBox::currentTextChanged, [=]() {
-			mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
+		plotHandler.plotTabConnections << QObject::connect(rangeCombo, &QComboBox::currentTextChanged, [=]() {          //debugging: do I want to disable this drop-down menu in galvanostatic mode or just ignore it?
+        if (!potGalvModeChk->isChecked())
+        {
+            mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
+        }
 		});
 		plotHandler.plotTabConnections << QObject::connect(appliedPotLed, &QLineEdit::editingFinished, [=]() {
-			mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
+        if (openCircuitModeChk->isChecked())
+        {
+            mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
+        }
 		});
 		plotHandler.plotTabConnections << QObject::connect(appliedCurLed, &QLineEdit::editingFinished, [=]() {
-			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
+        if (openCircuitModeChk->isChecked())
+        {
+            mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
+        }
 		});
 		plotHandler.plotTabConnections << QObject::connect(appliedCurLblRight, &QComboBox::currentTextChanged, [=]() {
 			mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
@@ -5026,12 +5037,16 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 			mw->SetManualSamplingParams(id, samplingIntLed->text().toDouble());
 
-			if (potGalvModeChk->isChecked()) {
-				mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
-			}
-			else {
-				mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
-			}
+      if (openCircuitModeChk->isChecked())
+      {
+          if (potGalvModeChk->isChecked()) {
+              mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
+          }
+          else {
+              mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
+              mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
+          }
+      }
 		});
 		plotHandler.plotTabConnections << QObject::connect(pauseManualExpPbt, &QPushButton::clicked, [=]() {
 			if (pauseManualExpPbt->text() == PAUSE_EXP_BUTTON_TEXT) {
@@ -5048,6 +5063,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 					mw->SetManualGalvanoSetpoint(id, appliedCurLed->text().toDouble(), appliedCurLblRight->currentText());
 				}
 				else {
+            mw->SetCurrentRangingMode(id, rangeCombo->currentData().toUInt());
 					mw->SetManualPotentioSetpoint(id, appliedPotLed->text().toDouble());
 				}
 			}

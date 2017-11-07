@@ -454,7 +454,7 @@ ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calD
   //double ewe = rawData.ADCrawData.ewe;
   //double ref = rawData.ADCrawData.ref;
   //double ece = rawData.ADCrawData.ece;
-  processedData.EWE = ewe - ref;
+  processedData.EWE = ewe;
   processedData.EWE /= rawData.WEgain;
   processedData.ECE = ece - ref;
   int n = (int)rawData.currentRange;
@@ -1025,84 +1025,84 @@ double ExperimentCalcHelperClass::GetPeriod(QVector<double> const x)
     return 2 * halfperiod;
 }
 
-ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
-{
-    // 3. Collect data from the ADCAC_DATA responses.
-    
-    int len = numACBuffers * ADCacBUF_SIZE;
-    QVector<double> rawIData, rawVData, filteredIData, filteredVData;
-
-    for (int i = 0; i < numACBuffers; i++)
-    {
-        for (int j = 0; j < ADCacBUF_SIZE; j++)
-        {
-            rawIData.append(rawDataBuf[2 * i * ADCacBUF_SIZE + j]);
-            rawVData.append(rawDataBuf[(2 * i + 1)*ADCacBUF_SIZE + j]);
-        }
-    }
-
-    int rollingFilterSize = MAX(1, approxPeriod / 5);
-    double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
-
-    // 4. Get the data's period from the zero-crossing algorithm.
-
-    do {
-        filteredIData = rollingAverage(rawIData, rollingFilterSize);
-        filteredVData = rollingAverage(rawVData, rollingFilterSize);
-        Period_result = (GetPeriod(filteredIData) + GetPeriod(filteredVData)) / 2;
-        fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
-        Period_resultPrev = Period_result;
-        rollingFilterSize = MAX(1, Period_result / 5);
-    } while (fractionalChange > 0.0001);
-
-    /******************************************************/
-    /* debugging only */
-    std::ofstream fout;
-    QString filename = "C:/Users/Matt/Desktop/results";
-    filename.append(QString::number(frequency));
-    filename.append(".txt");
-    fout.open(filename.toStdString(), std::ofstream::out);
-    fout << "Period width = " << Period_result << '\n';
-    for (int i = 0; i < filteredIData.count(); i++)
-    {
-        fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
-    }
-    /******************************************************/
-
-    // 5. Get the relative magnitude and phase of the voltage and current signals.
-
-    int truncatedLen = (int)(floor(len / Period_result) * Period_result);
-    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
-    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
-    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
-    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
-    
-    // delete this part?
-    ComplexDataPoint_t Z;
-    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
-    Z.phase = Ipt.phase - Vpt.phase;
-    Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
-    Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
-    Z.frequency = frequency;
-
-    // 6. Assuming that the relative phase data should be flat, generate parameters for a fitting function that accounts for deviations from zero.
-    // need to guess a vertical shift and iterate until converges
-    double a = 0;
-    double b = 0;
-    /*do*/ {
-        double vertical_shift_guess = /**/;
-        QVector<double> x = QVector<double>(/**/);
-        QVector<double> y = QVector<double>(/**/);
-        for (int i = 0; i < x.length(); i++)
-        {
-            x[i] -= vertical_shift_guess;
-            y[i] -= vertical_shift_guess;
-        }
-        ExponentialRegression(/*x*/, /*y*/, &a, &b);
-    } // while ()
-
-    return; 
-}
+//ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
+//{
+//    // 3. Collect data from the ADCAC_DATA responses.
+//    
+//    int len = numACBuffers * ADCacBUF_SIZE;
+//    QVector<double> rawIData, rawVData, filteredIData, filteredVData;
+//
+//    for (int i = 0; i < numACBuffers; i++)
+//    {
+//        for (int j = 0; j < ADCacBUF_SIZE; j++)
+//        {
+//            rawIData.append(rawDataBuf[2 * i * ADCacBUF_SIZE + j]);
+//            rawVData.append(rawDataBuf[(2 * i + 1)*ADCacBUF_SIZE + j]);
+//        }
+//    }
+//
+//    int rollingFilterSize = MAX(1, approxPeriod / 5);
+//    double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
+//
+//    // 4. Get the data's period from the zero-crossing algorithm.
+//
+//    do {
+//        filteredIData = rollingAverage(rawIData, rollingFilterSize);
+//        filteredVData = rollingAverage(rawVData, rollingFilterSize);
+//        Period_result = (GetPeriod(filteredIData) + GetPeriod(filteredVData)) / 2;
+//        fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
+//        Period_resultPrev = Period_result;
+//        rollingFilterSize = MAX(1, Period_result / 5);
+//    } while (fractionalChange > 0.0001);
+//
+//    /******************************************************/
+//    /* debugging only */
+//    std::ofstream fout;
+//    QString filename = "C:/Users/Matt/Desktop/results";
+//    filename.append(QString::number(frequency));
+//    filename.append(".txt");
+//    fout.open(filename.toStdString(), std::ofstream::out);
+//    fout << "Period width = " << Period_result << '\n';
+//    for (int i = 0; i < filteredIData.count(); i++)
+//    {
+//        fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
+//    }
+//    /******************************************************/
+//
+//    // 5. Get the relative magnitude and phase of the voltage and current signals.
+//
+//    int truncatedLen = (int)(floor(len / Period_result) * Period_result);
+//    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+//    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+//    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
+//    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
+//    
+//    // delete this part?
+//    ComplexDataPoint_t Z;
+//    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
+//    Z.phase = Ipt.phase - Vpt.phase;
+//    Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
+//    Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
+//    Z.frequency = frequency;
+//
+//    // 6. Assuming that the relative phase data should be flat, generate parameters for a fitting function that accounts for deviations from zero.
+//    // need to guess a vertical shift and iterate until converges
+//    double a = 0;
+//    double b = 0;
+//    /*do*/ {
+//        double vertical_shift_guess = /**/;
+//        QVector<double> x = QVector<double>(/**/);
+//        QVector<double> y = QVector<double>(/**/);
+//        for (int i = 0; i < x.length(); i++)
+//        {
+//            x[i] -= vertical_shift_guess;
+//            y[i] -= vertical_shift_guess;
+//        }
+//        ExponentialRegression(/*x*/, /*y*/, &a, &b);
+//    } // while ()
+//
+//    return; 
+//}
 
 ComplexDataPoint_t ExperimentCalcHelperClass::SingleFrequencyFourier(QVector<double> data, int len, double period)
 {
