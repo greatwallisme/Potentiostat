@@ -141,6 +141,7 @@ MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	selectedHardware.prebuilt.channel = 0;
 
 	mw->setObjectName("mainUI");
+	mw->setWindowTitle("Window title");
 	mw->ApplyStyle();
 }
 MainWindowUI::~MainWindowUI() {
