@@ -49,7 +49,7 @@ QWidget* OpenCircuit::CreateUserInput() const {
 
 	int row = 0;
 
-	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
 	_INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");
@@ -58,7 +58,7 @@ QWidget* OpenCircuit::CreateUserInput() const {
   _END_DROP_DOWN();
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Experiment duration = ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Experiment duration: ", row, 0);
   _INSERT_TEXT_INPUT(DURATION_DEFAULT, DURATION_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DURATION_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");

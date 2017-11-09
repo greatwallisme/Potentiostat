@@ -38,7 +38,7 @@ QString EISGalvanostatic::GetFullName() const {
 	return "EIS (Galvanostatic)";
 }
 QString EISGalvanostatic::GetDescription() const {
-	return "This experiment records the complex impedance of the experimental cell in potentiostatic mode, starting from the <b>upper frequency</b> and sweeping downwards through the <b>lower frequency</b>, with a fixed number of frequency <b>steps per decade</b>. Important parameters include the <b>DC bias</b> and the <b>AC exitation amplitude</b>.";
+	return "This experiment records the complex impedance of the experimental cell in galvanostatic mode, starting from the <b>upper frequency</b> and sweeping downwards through the <b>lower frequency</b>, with a fixed number of frequency <b>steps per decade</b>. Important parameters include the <b>DC bias</b> and the <b>AC exitation amplitude</b>.";
 }
 QStringList EISGalvanostatic::GetCategory() const {
 	return QStringList() <<
@@ -60,7 +60,7 @@ QWidget* EISGalvanostatic::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper frequency", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Upper frequency: ", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_FREQ_DEFAULT, UPPER_FREQ_OBJ_NAME, row, 1);
   _START_DROP_DOWN(UPPER_FREQ_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("kHz");
@@ -69,7 +69,7 @@ QWidget* EISGalvanostatic::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Lower frequency", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Lower frequency: ", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_FREQ_DEFAULT, LOWER_FREQ_OBJ_NAME, row, 1);
   _START_DROP_DOWN(LOWER_FREQ_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("kHz");
@@ -78,14 +78,14 @@ QWidget* EISGalvanostatic::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Steps per decade", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Steps per decade: ", row, 0);
 	_INSERT_TEXT_INPUT(STEPS_PER_DEC_DEFAULT, STEPS_PER_DEC_OBJ_NAME, row, 1);
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
 	
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("DC bias = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("DC bias: ", row, 0);
 	_INSERT_TEXT_INPUT(DC_BIAS_DEFAULT, DC_BIAS_OBJ_NAME, row, 1);
   _START_DROP_DOWN(DC_BIAS_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mA");
@@ -94,7 +94,7 @@ QWidget* EISGalvanostatic::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("AC excitation amplitude = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("AC excitation amplitude: ", row, 0);
 	_INSERT_TEXT_INPUT(AC_AMP_DEFAULT, AC_AMP_OBJ_NAME, row, 1);
   _START_DROP_DOWN(AC_AMP_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mA");

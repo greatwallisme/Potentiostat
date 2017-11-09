@@ -59,12 +59,12 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential: ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
 	_START_DROP_DOWN(START_V_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
@@ -74,17 +74,17 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Voltage step = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Voltage step: ", row, 0);
 	_INSERT_TEXT_INPUT(VOLTAGE_STEP_DEFAULT, VOLTAGE_STEP_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Final potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Final potential: ", row, 0);
 	_INSERT_TEXT_INPUT(FINAL_VOLTAGE_DEFAULT, FINAL_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
 	_START_DROP_DOWN(FINAL_V_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
@@ -94,12 +94,12 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Pulse height = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse height: ", row, 0);
 	_INSERT_TEXT_INPUT(PULSE_HEIGHT_DEFAULT, PULSE_HEIGHT_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Pulse width = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse width: ", row, 0);
 	_INSERT_TEXT_INPUT(PULSE_WIDTH_DEFAULT, PULSE_WIDTH_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
 	
@@ -107,7 +107,7 @@ QWidget* DiffPulseVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Pulse period = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Pulse period: ", row, 0);
 	_INSERT_TEXT_INPUT(PULSE_PERIOD_DEFAULT, PULSE_PERIOD_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("milliseconds", row, 2);
 	

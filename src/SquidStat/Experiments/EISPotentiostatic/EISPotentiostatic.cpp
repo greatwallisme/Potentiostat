@@ -60,7 +60,7 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper frequency", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Upper frequency: ", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_FREQ_DEFAULT, UPPER_FREQ_OBJ_NAME, row, 1);
   _START_DROP_DOWN(UPPER_FREQ_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("kHz");
@@ -69,7 +69,7 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Lower frequency", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Lower frequency: ", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_FREQ_DEFAULT, LOWER_FREQ_OBJ_NAME, row, 1);
   _START_DROP_DOWN(LOWER_FREQ_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("kHz");
@@ -78,26 +78,26 @@ QWidget* EISPotentiostatic::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Steps per decade", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Steps per decade: ", row, 0);
 	_INSERT_TEXT_INPUT(STEPS_PER_DEC_DEFAULT, STEPS_PER_DEC_OBJ_NAME, row, 1);
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
 	
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("DC bias = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("DC bias: ", row, 0);
 	_INSERT_TEXT_INPUT(DC_BIAS_DEFAULT, DC_BIAS_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
 	_START_DROP_DOWN(DC_BIAS_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_ADD_DROP_DOWN_ITEM("reference");
 	_END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("AC excitation amplitude = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("AC excitation amplitude: ", row, 0);
 	_INSERT_TEXT_INPUT(AC_AMP_DEFAULT, AC_AMP_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV", row, 2);
 	

@@ -6,45 +6,62 @@
 
 #define TOP_WIDGET_NAME			"maximum-power"
 
-#define VMAX_OBJ_NAME       "maximum-voltage"
-#define VMIN_OBJ_NAME       "minimum-voltage"
-#define T_MAX_OBJ_NAME      "maximum-time"
-#define T_MAX_UNITS         "time-units"
-#define SAMPLING_INT_OBJ_NAME "sampling-interval"
+#define STARTING_PHASE_OPT_OBJ_NAME "starting-phase-option"
+#define SAMP_INTERVAL_OBJ_NAME	"sampling-interval"
+#define CYCLES_OBJ_NAME			"cycles"
 
-#define POWER_DEFAULT	1
-#define V_MAX_DEFAULT 1
-#define V_MIN_DEFAULT		0
-#define T_MAX_DEFAULT 60
-#define SAMPLING_INT_DEFAULT 1
+#define CHG_POWER_OBJ_NAME	"charge-power"
+#define CHG_POWER_UNITS_OBJ_NAME "charge-power-units"
+#define UPPER_VOLTAGE_OBJ_NAME	"upper-voltage"
+#define MAXIMUM_CHG_CAPACITY_OBJ_NAME "Charging-capacity-limit"
 
+#define RESISTANCE_OBJ_NAME	"load-resistance"
+#define RESISTANCE_UNITS_OBJ_NAME "load-resistance-units"
+#define LOWER_VOLTAGE_OBJ_NAME  "lower-voltage"
+#define MAXIMUM_DISCHG_CAPACITY_OBJ_NAME "Discharging-capacity-limit"
+
+#define REST_PERIOD_OBJ			"rest_period"
+#define REST_PERIOD_INT_OBJ		"rest-period-interval"
+
+#define SAMP_INTERVAL_DEFAULT	10
+#define CHG_POWER_DEFAULT		100		//(in mW)
+#define UPPER_VOLTAGE_DEFAULT 3.6 
+#define MAXIMUM_CHG_CAPACITY_DEFAULT 100 //(in mAh)
+#define RESISTANCE_DEFAULT	100	//(in Ohms)
+#define LOWER_VOLTAGE_DEFAULT 2.7
+#define MAXIMUM_DISCHG_CAPACITY_DEFAULT 100 //(in mAh)
+#define REST_PERIOD_DEFAULT		120
+#define REST_PERIOD_INT_DEFAULT 1
+#define CYCLES_DEFAULT			10
+
+#define PLOT_VAR_DATETIME "Date/time"
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
 #define PLOT_VAR_TIMESTAMP_NORMALIZED	"Elapsed time (s)"
-#define PLOT_VAR_ELAPSED_TIME_HR      "Elapsed time (hr)"
+#define PLOT_VAR_ELAPSED_TIME_HR "Elapsed time (hr)"
 #define PLOT_VAR_EWE					"Working electrode (V)"
 #define PLOT_VAR_CURRENT				"Current (mA)"
-#define PLOT_VAR_POWER   "Power (mW)"
 #define PLOT_VAR_ECE					"Counter electrode (V)"
 #define PLOT_VAR_CURRENT_INTEGRAL		"Cumulative charge (mAh)"
+#define PLOT_VAR_POWER "Power (mW)"
 
 QString MaxPower::GetShortName() const {
-	return "Maximum Power";
+	return "Charge/Discharge 3";
 }
 QString MaxPower::GetFullName() const {
-	return "Maximum Power Charge/Discharge";
+	return "Charge/Discharge (Max P discharge, const P charge)";
 }
 QString MaxPower::GetDescription() const {
-	return "This experiment sweeps the <b>potential</b> of the working electrode from the <b>starting potential</b> to the <b>end potential</b> at constant scan rate <b>dE/dT</b>";
+	return "This experiment discharges the cell using maximum power point tracking, and charges the cell with a <b>constant power</b> source.";
 }
 QStringList MaxPower::GetCategory() const {
   return QStringList() <<
-    "Basic voltammetry";
+    "Energy storage";
 }
 ExperimentTypeList MaxPower::GetTypes() const {
 	return ExperimentTypeList() << ET_DC;
 }
 QPixmap MaxPower::GetImage() const {
-	return QPixmap(":/Experiments/LinearSweepVoltammetry");
+	return QPixmap(":/Experiments/ChargeDischargeDC");
 }
 /*
 #include <QIntValidator>
@@ -52,72 +69,251 @@ QPixmap MaxPower::GetImage() const {
 #include <QRegExpValidator>
 //*/
 QWidget* MaxPower::CreateUserInput() const {
-	USER_INPUT_START(TOP_WIDGET_NAME);
+    USER_INPUT_START(TOP_WIDGET_NAME);
 
-	int row = 0;
+    int row = 0;
+    _INSERT_RIGHT_ALIGN_COMMENT("Starting phase: ", row, 0);
+    _START_DROP_DOWN(STARTING_PHASE_OPT_OBJ_NAME, row, 1);
+    _ADD_DROP_DOWN_ITEM("Charge first");
+    _ADD_DROP_DOWN_ITEM("Discharge first");
+    _END_DROP_DOWN();
 
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum cell voltage = ", row, 0);
-  _INSERT_TEXT_INPUT(V_MAX_DEFAULT, VMAX_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
+    _INSERT_TEXT_INPUT(SAMP_INTERVAL_DEFAULT, SAMP_INTERVAL_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Minimum cell voltage = ", row, 0);
-	_INSERT_TEXT_INPUT(V_MIN_DEFAULT, VMIN_OBJ_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Cycles: ", row, 0);
+    _INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum duration = ", row, 0);
-  _INSERT_TEXT_INPUT(T_MAX_DEFAULT, T_MAX_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(T_MAX_UNITS, row, 2);
-  _ADD_DROP_DOWN_ITEM("s");
-  _ADD_DROP_DOWN_ITEM("min");
-  _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+    ++row;
+    _INSERT_VERTICAL_SPACING(row);
 
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
-  _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
-  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+    ++row;
+    _INSERT_CENTERED_COMMENT("<b>Constant power charge</b>", row);
 
-	_SET_ROW_STRETCH(++row, 1);
-	_SET_COL_STRETCH(3, 1);
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Charging power: ", row, 0);
+    _INSERT_TEXT_INPUT(CHG_POWER_DEFAULT, CHG_POWER_OBJ_NAME, row, 1);
+    _START_DROP_DOWN(CHG_POWER_UNITS_OBJ_NAME, row, 2);
+    _ADD_DROP_DOWN_ITEM("mW");
+    _ADD_DROP_DOWN_ITEM("uW");
+    _ADD_DROP_DOWN_ITEM("nW");
+    _END_DROP_DOWN();
 
-	USER_INPUT_END();
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit: ", row, 0);
+    _INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity: ", row, 0);
+    _INSERT_TEXT_INPUT(MAXIMUM_CHG_CAPACITY_DEFAULT, MAXIMUM_CHG_CAPACITY_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("mAh", row, 2);
+
+    ++row;
+    _INSERT_CENTERED_COMMENT("<I>(Enter \"0\" for unlimited capacity)</I>", row);
+
+    ++row;
+    _INSERT_VERTICAL_SPACING(row);
+
+    ++row;
+    _INSERT_CENTERED_COMMENT("<b>Maximum power discharge</b>", row);
+
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Lower voltage limit: ", row, 0);
+    _INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
+
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity: ", row, 0);
+    _INSERT_TEXT_INPUT(MAXIMUM_DISCHG_CAPACITY_DEFAULT, MAXIMUM_DISCHG_CAPACITY_OBJ_NAME, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("mAh", row, 2);
+
+    ++row;
+    _INSERT_CENTERED_COMMENT("<I>(Enter \"0\" for unlimited capacity)</I>", row);
+
+    ++row;
+    _INSERT_CENTERED_COMMENT("<b>Rest period</b>", row);
+
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
+    _INSERT_TEXT_INPUT(REST_PERIOD_DEFAULT, REST_PERIOD_OBJ, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+
+    ++row;
+    _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
+    _INSERT_TEXT_INPUT(REST_PERIOD_INT_DEFAULT, REST_PERIOD_INT_OBJ, row, 1);
+    _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+
+    _SET_COL_STRETCH(3, 2);
+    _SET_COL_STRETCH(1, 0);
+    _SET_ROW_STRETCH(++row, 1);
+    USER_INPUT_END();
 }
 NodesData MaxPower::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
-	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
+    NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-  double VMax;
-  double VMin;
-  double tmax;
-  QString tmaxUnits_str;
-  double dt;
+    //TODO: what to do about cells hooked up backwards?
+    //TODO: incorporate max charge/discharge capacity? Or incorporate this into another experiment?
+    //TODO: make a const. power discharge node type
 
-  GET_TEXT_INPUT_VALUE(VMax, VMAX_OBJ_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(VMin, VMIN_OBJ_NAME);
-  GET_TEXT_INPUT_VALUE_DOUBLE(tmax, T_MAX_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(tmaxUnits_str, T_MAX_UNITS);
-  GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_INT_OBJ_NAME);
+    QString firstPhase_str;
+    bool chargeFirst = false;
+    double sampInterval;
+    qint32 cycles;
 
-  tmax *= ExperimentCalcHelperClass::GetUnitsMultiplier(tmaxUnits_str);
+    double chgPower;
+    QString chgPowerUnits_str;
+    double upperVoltage;
+    double maxChgCapacity;
 
-  exp.isHead = false;
-  exp.isTail = false;
-  exp.nodeType = DCNODE_MAX_POWER;
-  exp.tMin = 10 * MILLISECONDS;
-  exp.tMax = (uint64_t) (tmax * SECONDS);
-  exp.currentRangeMode = AUTORANGE;
-  ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, dt, 0.05);
-  exp.DCMaxPower.VMax = (float)VMax;
-  exp.DCMaxPower.VMin = (float)VMin;
-  exp.numPlays = 1;
-  PUSH_NEW_NODE_DATA();
+    double lowerVoltage;
+    double maxDischgCapacity;
 
-	exp.nodeType = END_EXPERIMENT_NODE;
-	PUSH_NEW_NODE_DATA();
+    double restPeriodDuration;
+    double restPeriodInterval;
 
-	NODES_DATA_END();
+
+    GET_SELECTED_DROP_DOWN(firstPhase_str, STARTING_PHASE_OPT_OBJ_NAME);
+    GET_TEXT_INPUT_VALUE_DOUBLE(sampInterval, SAMP_INTERVAL_OBJ_NAME);
+    GET_TEXT_INPUT_VALUE(cycles, CYCLES_OBJ_NAME);
+
+    GET_TEXT_INPUT_VALUE_DOUBLE(chgPower, CHG_POWER_OBJ_NAME);
+    GET_SELECTED_DROP_DOWN(chgPowerUnits_str, CHG_POWER_UNITS_OBJ_NAME);
+    GET_TEXT_INPUT_VALUE_DOUBLE(upperVoltage, UPPER_VOLTAGE_OBJ_NAME);
+    GET_TEXT_INPUT_VALUE_DOUBLE(maxChgCapacity, MAXIMUM_CHG_CAPACITY_OBJ_NAME);
+
+    GET_TEXT_INPUT_VALUE_DOUBLE(lowerVoltage, LOWER_VOLTAGE_OBJ_NAME);
+    GET_TEXT_INPUT_VALUE_DOUBLE(maxDischgCapacity, MAXIMUM_DISCHG_CAPACITY_OBJ_NAME);
+
+    GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodDuration, REST_PERIOD_OBJ);
+    GET_TEXT_INPUT_VALUE_DOUBLE(restPeriodInterval, REST_PERIOD_INT_OBJ);
+
+    chgPower *= ExperimentCalcHelperClass::GetUnitsMultiplier(chgPowerUnits_str);
+    maxChgCapacity *= 3600;      //convert from mAh to mC
+    maxDischgCapacity *= 3600;
+
+    if (!firstPhase_str.contains("Discharge first"))
+    {
+        chargeFirst = true;
+    }
+
+    if (chargeFirst)
+    {
+        exp.isHead = true;
+        exp.isTail = false;
+        exp.nodeType = DCNODE_CONST_POWER;
+        exp.tMin = 2 * SECONDS;
+        exp.tMax = 0xffffffffffffffff;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval, 0.05);
+        exp.DCConstPower.VMax = upperVoltage;
+        exp.DCConstPower.VMin = -MAX_VOLTAGE;
+        exp.DCConstPower.power = abs(chgPower);
+        exp.DCConstPower.CapacityMax = maxChgCapacity;
+        exp.DCConstPower.isTrackingCapacity = maxChgCapacity != 0;
+        exp.currentRangeMode = AUTORANGE;
+        exp.MaxPlays = 1;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = exp.isTail = false;
+        exp.nodeType = DCNODE_OCP;
+        exp.DCocp.Vmin = -MAX_VOLTAGE;
+        exp.DCocp.Vmax = MAX_VOLTAGE;
+        exp.DCocp.dVdtMin = 0;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
+        exp.tMin = exp.tMax = restPeriodDuration * SECONDS;
+        exp.MaxPlays = 1;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = exp.isTail = false;
+        exp.nodeType = DCNODE_MAX_POWER;
+        exp.tMax = 0xffffffffffffffff;
+        exp.tMin = 2 * SECONDS;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval, 0.05);
+        
+        exp.DCMaxPower.VMin = lowerVoltage;
+        exp.DCMaxPower.VMax = MAX_VOLTAGE;
+        exp.DCMaxPower.CapacityMax = maxDischgCapacity;
+        exp.DCMaxPower.isTrackingCapacity = maxDischgCapacity != 0;
+        exp.MaxPlays = 1;
+        exp.currentRangeMode = AUTORANGE;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = false;
+        exp.isTail = true;
+        exp.branchHeadIndex = 0;
+        exp.nodeType = DCNODE_OCP;
+        exp.DCocp.Vmin = -MAX_VOLTAGE;
+        exp.DCocp.Vmax = MAX_VOLTAGE;
+        exp.DCocp.dVdtMin = 0;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
+        exp.tMin = restPeriodDuration * SECONDS;
+        exp.tMax = restPeriodDuration * SECONDS;
+        exp.MaxPlays = cycles;
+        PUSH_NEW_NODE_DATA();
+    }
+
+    else
+    {
+        exp.isHead = true;
+        exp.isTail = false;
+        exp.nodeType = DCNODE_CONST_RESISTANCE;
+        exp.tMax = 0xffffffffffffffff;
+        exp.tMin = 2 * SECONDS;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval, 0.05);
+        exp.DCMaxPower.VMin = lowerVoltage;
+        exp.DCMaxPower.VMax = MAX_VOLTAGE;
+        exp.DCMaxPower.CapacityMax = maxDischgCapacity;
+        exp.DCMaxPower.isTrackingCapacity = maxDischgCapacity != 0;
+        exp.MaxPlays = 1;
+        exp.currentRangeMode = AUTORANGE;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = exp.isTail = false;
+        exp.nodeType = DCNODE_OCP;
+        exp.DCocp.Vmin = -MAX_VOLTAGE;
+        exp.DCocp.Vmax = MAX_VOLTAGE;
+        exp.DCocp.dVdtMin = 0;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
+        exp.tMin = exp.tMax = restPeriodDuration * SECONDS;
+        exp.MaxPlays = 1;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = exp.isTail = false;
+        exp.nodeType = DCNODE_CONST_POWER;
+        exp.tMin = 2 * SECONDS;
+        exp.tMax = 0xffffffffffffffff;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, sampInterval, 0.05);
+        exp.DCConstPower.VMax = upperVoltage;
+        exp.DCConstPower.VMin = -MAX_VOLTAGE;
+        exp.DCConstPower.power = abs(chgPower);
+        exp.DCConstPower.CapacityMax = maxChgCapacity;
+        exp.DCConstPower.isTrackingCapacity = maxChgCapacity != 0;
+        exp.currentRangeMode = AUTORANGE;
+        exp.MaxPlays = 1;
+        PUSH_NEW_NODE_DATA();
+
+        exp.isHead = false;
+        exp.isTail = true;
+        exp.branchHeadIndex = 0;
+        exp.nodeType = DCNODE_OCP;
+        exp.DCocp.Vmin = -MAX_VOLTAGE;
+        exp.DCocp.Vmax = MAX_VOLTAGE;
+        exp.DCocp.dVdtMin = 0;
+        ExperimentCalcHelperClass::GetSamplingParams_staticDAC(hwVersion.hwModel, &exp, restPeriodInterval);
+        exp.tMin = restPeriodDuration * SECONDS;
+        exp.tMax = restPeriodDuration * SECONDS;
+        exp.MaxPlays = cycles;
+        PUSH_NEW_NODE_DATA();
+    }
+
+    exp.nodeType = END_EXPERIMENT_NODE;
+    PUSH_NEW_NODE_DATA();
+
+    NODES_DATA_END();
 }
 
 QStringList MaxPower::GetXAxisParameters(ExperimentType type) const {

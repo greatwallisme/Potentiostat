@@ -871,6 +871,14 @@ void MainWindow::StartManualExperiment(const QUuid &id) {
 	it->experiment[channel].isManual = true;
 	it->experiment[channel].id = id;
 
+  foreach(auto &param, startParams) {
+      switch (param.type) {
+      case ET_DC:
+          expPtr->SaveDcDataHeader(*param.file, param.notes);
+          break;
+      }
+  }
+
 	LOG() << "Manual experiment started";
 	it->oper->StartManualExperiment(channel);
 	

@@ -9,29 +9,29 @@
 #define V1_VS_OCP_OBJ_NAME		"voltage-1-vs-ocp"
 #define T1_OBJECT_NAME			"voltage-1-time"
 #define T1_UNITS_OBJ_NAME   "voltage-1-time-units"
-#define V2_OBJECT_NAME			"voltage-2"
-#define V2_VS_OCP_OBJ_NAME		"voltage-2-vs-ocp"
-#define T2_OBJECT_NAME			"voltage-2-time"
-#define T2_UNITS_OBJ_NAME   "voltage-2-time-units"
-#define V3_OBJECT_NAME			"voltage-3"
-#define V3_VS_OCP_OBJ_NAME		"voltage-3-vs-ocp"
-#define T3_OBJECT_NAME			"voltage-3-time"
-#define T3_UNITS_OBJ_NAME   "voltage-3-time-units"
-#define V4_OBJECT_NAME			"voltage-4"
-#define V4_VS_OCP_OBJ_NAME		"voltage-4-vs-ocp"
-#define T4_OBJECT_NAME			"voltage-4-time"
-#define T4_UNITS_OBJ_NAME   "voltage-4-time-units"
+//#define V2_OBJECT_NAME			"voltage-2"
+//#define V2_VS_OCP_OBJ_NAME		"voltage-2-vs-ocp"
+//#define T2_OBJECT_NAME			"voltage-2-time"
+//#define T2_UNITS_OBJ_NAME   "voltage-2-time-units"
+//#define V3_OBJECT_NAME			"voltage-3"
+//#define V3_VS_OCP_OBJ_NAME		"voltage-3-vs-ocp"
+//#define T3_OBJECT_NAME			"voltage-3-time"
+//#define T3_UNITS_OBJ_NAME   "voltage-3-time-units"
+//#define V4_OBJECT_NAME			"voltage-4"
+//#define V4_VS_OCP_OBJ_NAME		"voltage-4-vs-ocp"
+//#define T4_OBJECT_NAME			"voltage-4-time"
+//#define T4_UNITS_OBJ_NAME   "voltage-4-time-units"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
 #define CURRENT_RANGE_OBJ_NAME  "current-range"
 
 #define V1_DEFAULT				0.1
 #define T1_DEFAULT				10
-#define V2_DEFAULT				0.2
-#define T2_DEFAULT				0
-#define V3_DEFAULT				0.3
-#define T3_DEFAULT				0
-#define V4_DEFAULT				0.4
-#define T4_DEFAULT				0
+//#define V2_DEFAULT				0.2
+//#define T2_DEFAULT				0
+//#define V3_DEFAULT				0.3
+//#define T3_DEFAULT				0
+//#define V4_DEFAULT				0.4
+//#define T4_DEFAULT				0
 #define SAMPLING_INT_DEFAULT	0.25
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
@@ -49,7 +49,7 @@ QString Chronoamperometry::GetFullName() const {
 	return "Chronoamperometry/Chronocoulometry";
 }
 QString Chronoamperometry::GetDescription() const {
-	return "This experiment holds the working electrode at a constant potential for a specified amount of time while recording the current and charge passed. Up to four potentials can be used sequentially.";
+	return "This experiment holds the working electrode at a constant potential for a specified amount of time while recording the current and charge passed.";
 }
 QStringList Chronoamperometry::GetCategory() const {
 	return QStringList() <<
@@ -68,19 +68,19 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 
 	int row = 0;
 
-	_INSERT_RIGHT_ALIGN_COMMENT("Potential 1 = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Potential: ", row, 0);
 	_INSERT_TEXT_INPUT(V1_DEFAULT, V1_OBJECT_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("with respect to", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
 	_START_DROP_DOWN(V1_VS_OCP_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("reference");
 	_ADD_DROP_DOWN_ITEM("open circuit");
 	_END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
 	_INSERT_TEXT_INPUT(T1_DEFAULT, T1_OBJECT_NAME, row, 1);
   _START_DROP_DOWN(T1_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");
@@ -88,7 +88,7 @@ QWidget* Chronoamperometry::CreateUserInput() const {
   _ADD_DROP_DOWN_ITEM("hr");
   _END_DROP_DOWN();
 
-	++row;
+	/*++row;
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
@@ -158,7 +158,7 @@ QWidget* Chronoamperometry::CreateUserInput() const {
   _ADD_DROP_DOWN_ITEM("s");
   _ADD_DROP_DOWN_ITEM("min");
   _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+  _END_DROP_DOWN();*/
 
 	++row;
 	_INSERT_VERTICAL_SPACING(row);
@@ -176,34 +176,34 @@ QWidget* Chronoamperometry::CreateUserInput() const {
 NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-	double v1, v2, v3, v4, t1, t2, t3, t4;
-  QString t1Units_str, t2Units_str, t3Units_str, t4Units_str;
+	double v1, /*v2, v3, v4,*/ t1/*, t2, t3, t4*/;
+  QString t1Units_str/*, t2Units_str, t3Units_str, t4Units_str*/;
 	GET_TEXT_INPUT_VALUE_DOUBLE(v1, V1_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(v2, V2_OBJECT_NAME);
+	/*GET_TEXT_INPUT_VALUE_DOUBLE(v2, V2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(v3, V3_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(v4, V4_OBJECT_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(v4, V4_OBJECT_NAME);*/
 	GET_TEXT_INPUT_VALUE_DOUBLE(t1, T1_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
   GET_SELECTED_DROP_DOWN(t1Units_str, T1_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
 
 	double dt;
 	GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_PERIOD_OBJ_NAME);
 
-	QString ocp1, ocp2, ocp3, ocp4;
-	bool _ocp1, _ocp2, _ocp3, _ocp4;
+	QString ocp1/*, ocp2, ocp3, ocp4*/;
+	bool _ocp1/*, _ocp2, _ocp3, _ocp4*/;
 	GET_SELECTED_DROP_DOWN(ocp1, V1_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp2, V2_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp3, V3_VS_OCP_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(ocp4, V4_VS_OCP_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(ocp2, V2_VS_OCP_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(ocp3, V3_VS_OCP_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(ocp4, V4_VS_OCP_OBJ_NAME);
 	_ocp1 = ocp1.contains("open circuit");
-	_ocp2 = ocp2.contains("open circuit");
+	/*_ocp2 = ocp2.contains("open circuit");
 	_ocp3 = ocp3.contains("open circuit");
-	_ocp4 = ocp4.contains("open circuit");
+	_ocp4 = ocp4.contains("open circuit");*/
 
 	exp.isHead = false;
 	exp.isTail = false;
@@ -221,7 +221,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
   if (exp.tMax != 0)
     PUSH_NEW_NODE_DATA();
 
-	exp.isHead = false;
+	/*exp.isHead = false;
 	exp.isTail = false;
 	exp.nodeType = DCNODE_POINT_POT;
 	exp.tMin = 0;
@@ -268,7 +268,7 @@ NodesData Chronoamperometry::GetNodesData(QWidget *wdg, const CalibrationData &c
 	exp.MaxPlays = 1;
   if (exp.tMax != 0)
     PUSH_NEW_NODE_DATA();
-
+*/
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();
 

@@ -62,12 +62,12 @@ QWidget* LinearSweepVoltammetry::CreateUserInput() const {
 	
   //TODO: add current ranging input
 
-	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential: ", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
   _START_DROP_DOWN(START_VOLTAGE_VS_OCP_OBJ_NAME, row, 1);
   _ADD_DROP_DOWN_ITEM("open circuit");
   _ADD_DROP_DOWN_ITEM("reference");
@@ -77,12 +77,12 @@ QWidget* LinearSweepVoltammetry::CreateUserInput() const {
   _INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("End Potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("End Potential: ", row, 0);
 	_INSERT_TEXT_INPUT(END_VOLTAGE_DEFAULT, END_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("with respect to ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("with respect to: ", row, 0);
   _START_DROP_DOWN(END_VOLTAGE_VS_OCP_OBJ_NAME, row, 1);
   _ADD_DROP_DOWN_ITEM("open circuit");
   _ADD_DROP_DOWN_ITEM("reference");
@@ -92,7 +92,7 @@ QWidget* LinearSweepVoltammetry::CreateUserInput() const {
   _INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("dE/dt = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Scan rate (dE/dt): ", row, 0);
 	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 

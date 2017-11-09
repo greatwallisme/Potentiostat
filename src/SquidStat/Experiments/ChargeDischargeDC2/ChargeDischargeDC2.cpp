@@ -66,19 +66,19 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Starting phase", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Starting phase: ", row, 0);
 	_START_DROP_DOWN(STARTING_PHASE_OPT_OBJ_NAME, row, 1);
 	_ADD_DROP_DOWN_ITEM("Charge first");
 	_ADD_DROP_DOWN_ITEM("Discharge first");
 	_END_DROP_DOWN();
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
   _INSERT_TEXT_INPUT(SAMP_INTERVAL_DEFAULT, SAMP_INTERVAL_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Cycles = ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Cycles: ", row, 0);
   _INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 
@@ -89,7 +89,7 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
   _INSERT_CENTERED_COMMENT("<b>Constant power charge</b>", row);
 	
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Charging power = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Charging power: ", row, 0);
 	_INSERT_TEXT_INPUT(CHG_POWER_DEFAULT, CHG_POWER_OBJ_NAME, row, 1);
   _START_DROP_DOWN(CHG_POWER_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mW");
@@ -98,12 +98,12 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit: ", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity: ", row, 0);
   _INSERT_TEXT_INPUT(MAXIMUM_CHG_CAPACITY_DEFAULT, MAXIMUM_CHG_CAPACITY_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("mAh", row, 2);
 
@@ -117,7 +117,7 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
   _INSERT_CENTERED_COMMENT("<b>Constant resistance discharge</b>", row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Load resistance = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Load resistance: ", row, 0);
 	_INSERT_TEXT_INPUT(RESISTANCE_DEFAULT, RESISTANCE_OBJ_NAME, row, 1);
   _START_DROP_DOWN(RESISTANCE_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("Ohms");
@@ -126,12 +126,12 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Lower voltage limit = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Lower voltage limit: ", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Maximum capacity: ", row, 0);
   _INSERT_TEXT_INPUT(MAXIMUM_DISCHG_CAPACITY_DEFAULT, MAXIMUM_DISCHG_CAPACITY_OBJ_NAME, row, 1);
   _INSERT_LEFT_ALIGN_COMMENT("mAh", row, 2);
 
@@ -142,12 +142,12 @@ QWidget* ChargeDischargeDC2::CreateUserInput() const {
   _INSERT_CENTERED_COMMENT("<b>Rest period</b>", row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
 	_INSERT_TEXT_INPUT(REST_PERIOD_DEFAULT, REST_PERIOD_OBJ, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
 	_INSERT_TEXT_INPUT(REST_PERIOD_INT_DEFAULT, REST_PERIOD_INT_OBJ, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 	

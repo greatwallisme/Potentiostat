@@ -9,28 +9,28 @@
 #define I1_UNITS_OBJ_NAME   "current-units-1"
 #define T1_OBJECT_NAME			"current-1-time"
 #define T1_UNITS_OBJ_NAME   "current-1-time-units"
-#define I2_OBJECT_NAME			"current-2"
-#define I2_UNITS_OBJ_NAME   "current-units-2"
-#define T2_OBJECT_NAME			"current-2-time"
-#define T2_UNITS_OBJ_NAME   "current-2-time-units"
-#define I3_OBJECT_NAME			"current-3"
-#define I3_UNITS_OBJ_NAME   "current-units-3"
-#define T3_OBJECT_NAME			"current-3-time"
-#define T3_UNITS_OBJ_NAME   "current-3-time-units"
-#define I4_OBJECT_NAME			"current-4"
-#define I4_UNITS_OBJ_NAME   "current-units-4"
-#define T4_OBJECT_NAME			"current-4-time"
-#define T4_UNITS_OBJ_NAME   "current-4-time-units"
+//#define I2_OBJECT_NAME			"current-2"
+//#define I2_UNITS_OBJ_NAME   "current-units-2"
+//#define T2_OBJECT_NAME			"current-2-time"
+//#define T2_UNITS_OBJ_NAME   "current-2-time-units"
+//#define I3_OBJECT_NAME			"current-3"
+//#define I3_UNITS_OBJ_NAME   "current-units-3"
+//#define T3_OBJECT_NAME			"current-3-time"
+//#define T3_UNITS_OBJ_NAME   "current-3-time-units"
+//#define I4_OBJECT_NAME			"current-4"
+//#define I4_UNITS_OBJ_NAME   "current-units-4"
+//#define T4_OBJECT_NAME			"current-4-time"
+//#define T4_UNITS_OBJ_NAME   "current-4-time-units"
 #define SAMPLING_PERIOD_OBJ_NAME	"sampling-period"
 
 #define I1_DEFAULT				1
 #define T1_DEFAULT				10
-#define I2_DEFAULT				2
-#define T2_DEFAULT				0
-#define I3_DEFAULT				3
-#define T3_DEFAULT				0
-#define I4_DEFAULT				4
-#define T4_DEFAULT				0
+//#define I2_DEFAULT				2
+//#define T2_DEFAULT				0
+//#define I3_DEFAULT				3
+//#define T3_DEFAULT				0
+//#define I4_DEFAULT				4
+//#define T4_DEFAULT				0
 #define SAMPLING_INT_DEFAULT	1
 
 #define PLOT_VAR_TIMESTAMP				"Timestamp"
@@ -48,7 +48,7 @@ QString Chronopotentiometry::GetFullName() const {
 	return "Chronopotentiometry";
 }
 QString Chronopotentiometry::GetDescription() const {
-	return "This experiment applies a constant current to the cell while recording the working electrode potential. Current is applied sequentially at up to four values for the specified duration of time";
+	return "This experiment applies a constant current to the cell while recording the working electrode potential.";
 }
 QStringList Chronopotentiometry::GetCategory() const {
   return QStringList() <<
@@ -65,7 +65,7 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 	USER_INPUT_START(TOP_WIDGET_NAME);
 
 	int row = 0;
-	_INSERT_RIGHT_ALIGN_COMMENT("Current 1 = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Current: ", row, 0);
 	_INSERT_TEXT_INPUT(I1_DEFAULT, I1_OBJECT_NAME, row, 1);
   _START_DROP_DOWN(I1_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mA");
@@ -74,7 +74,7 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
   _END_DROP_DOWN();
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Duration: ", row, 0);
 	_INSERT_TEXT_INPUT(T1_DEFAULT, T1_OBJECT_NAME, row, 1);
   _START_DROP_DOWN(T1_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("s");
@@ -82,79 +82,75 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
   _ADD_DROP_DOWN_ITEM("hr");
   _END_DROP_DOWN();
 
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
+	//++row;
+	//_INSERT_VERTICAL_SPACING(row);
 
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Current 2 = ", row, 0);
-	_INSERT_TEXT_INPUT(I2_DEFAULT, I2_OBJECT_NAME, row, 1);
-  _START_DROP_DOWN(I2_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mA");
-  _ADD_DROP_DOWN_ITEM("uA");
-  _ADD_DROP_DOWN_ITEM("nA");
-  _END_DROP_DOWN();
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Current 2 = ", row, 0);
+	//_INSERT_TEXT_INPUT(I2_DEFAULT, I2_OBJECT_NAME, row, 1);
+ // _START_DROP_DOWN(I2_UNITS_OBJ_NAME, row, 2);
+ // _ADD_DROP_DOWN_ITEM("mA");
+ // _ADD_DROP_DOWN_ITEM("uA");
+ // _ADD_DROP_DOWN_ITEM("nA");
+ // _END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
-	_INSERT_TEXT_INPUT(T2_DEFAULT, T2_OBJECT_NAME, row, 1);
-  _START_DROP_DOWN(T2_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("s");
-  _ADD_DROP_DOWN_ITEM("min");
-  _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+	////TODO: add hh:mm:ss format
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	//_INSERT_TEXT_INPUT(T2_DEFAULT, T2_OBJECT_NAME, row, 1);
+ // _START_DROP_DOWN(T2_UNITS_OBJ_NAME, row, 2);
+ // _ADD_DROP_DOWN_ITEM("s");
+ // _ADD_DROP_DOWN_ITEM("min");
+ // _ADD_DROP_DOWN_ITEM("hr");
+ // _END_DROP_DOWN();
 
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
+	//++row;
+	//_INSERT_VERTICAL_SPACING(row);
 
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Current 3 = ", row, 0);
-	_INSERT_TEXT_INPUT(I3_DEFAULT, I3_OBJECT_NAME, row, 1);
-  _START_DROP_DOWN(I3_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mA");
-  _ADD_DROP_DOWN_ITEM("uA");
-  _ADD_DROP_DOWN_ITEM("nA");
-  _END_DROP_DOWN();
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Current 3 = ", row, 0);
+	//_INSERT_TEXT_INPUT(I3_DEFAULT, I3_OBJECT_NAME, row, 1);
+ // _START_DROP_DOWN(I3_UNITS_OBJ_NAME, row, 2);
+ // _ADD_DROP_DOWN_ITEM("mA");
+ // _ADD_DROP_DOWN_ITEM("uA");
+ // _ADD_DROP_DOWN_ITEM("nA");
+ // _END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
-	_INSERT_TEXT_INPUT(T3_DEFAULT, T3_OBJECT_NAME, row, 1);
-  _START_DROP_DOWN(T3_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("s");
-  _ADD_DROP_DOWN_ITEM("min");
-  _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+	////TODO: add hh:mm:ss format
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	//_INSERT_TEXT_INPUT(T3_DEFAULT, T3_OBJECT_NAME, row, 1);
+ // _START_DROP_DOWN(T3_UNITS_OBJ_NAME, row, 2);
+ // _ADD_DROP_DOWN_ITEM("s");
+ // _ADD_DROP_DOWN_ITEM("min");
+ // _ADD_DROP_DOWN_ITEM("hr");
+ // _END_DROP_DOWN();
 
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
+	//++row;
+	//_INSERT_VERTICAL_SPACING(row);
 
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Current 4 = ", row, 0);
-	_INSERT_TEXT_INPUT(I4_DEFAULT, I4_OBJECT_NAME, row, 1);
-  _START_DROP_DOWN(I4_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("mA");
-  _ADD_DROP_DOWN_ITEM("uA");
-  _ADD_DROP_DOWN_ITEM("nA");
-  _END_DROP_DOWN();
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Current 4 = ", row, 0);
+	//_INSERT_TEXT_INPUT(I4_DEFAULT, I4_OBJECT_NAME, row, 1);
+ // _START_DROP_DOWN(I4_UNITS_OBJ_NAME, row, 2);
+ // _ADD_DROP_DOWN_ITEM("mA");
+ // _ADD_DROP_DOWN_ITEM("uA");
+ // _ADD_DROP_DOWN_ITEM("nA");
+ // _END_DROP_DOWN();
 
-	//TODO: add hh:mm:ss format
-	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
-	_INSERT_TEXT_INPUT(T4_DEFAULT, T4_OBJECT_NAME, row, 1);
-	_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
+	////TODO: add hh:mm:ss format
+	//++row;
+	//_INSERT_RIGHT_ALIGN_COMMENT("Duration = ", row, 0);
+	//_INSERT_TEXT_INPUT(T4_DEFAULT, T4_OBJECT_NAME, row, 1);
+	//_INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 
-	++row;
-	_INSERT_VERTICAL_SPACING(row);
+	//++row;
+	//_INSERT_VERTICAL_SPACING(row);
 
 	++row;
 	_INSERT_RIGHT_ALIGN_COMMENT("Sampling interval: ", row, 0);
 	_INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_PERIOD_OBJ_NAME, row, 1);
-  _START_DROP_DOWN(T4_UNITS_OBJ_NAME, row, 2);
-  _ADD_DROP_DOWN_ITEM("s");
-  _ADD_DROP_DOWN_ITEM("min");
-  _ADD_DROP_DOWN_ITEM("hr");
-  _END_DROP_DOWN();
+  _INSERT_LEFT_ALIGN_COMMENT("s", row, 2);
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
@@ -164,34 +160,34 @@ QWidget* Chronopotentiometry::CreateUserInput() const {
 NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData &calData, const HardwareVersion &hwVersion) const {
 	NODES_DATA_START(wdg, TOP_WIDGET_NAME);
 
-	double i1, i2, i3, i4, t1, t2, t3, t4;
-  QString t1Units_str, t2Units_str, t3Units_str, t4Units_str;
+	double i1, /*i2, i3, i4,*/ t1/*, t2, t3, t4*/;
+  QString t1Units_str/*, t2Units_str, t3Units_str, t4Units_str*/;
 	GET_TEXT_INPUT_VALUE_DOUBLE(i1, I1_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(i2, I2_OBJECT_NAME);
+	/*GET_TEXT_INPUT_VALUE_DOUBLE(i2, I2_OBJECT_NAME);
 	GET_TEXT_INPUT_VALUE_DOUBLE(i3, I3_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(i4, I4_OBJECT_NAME);
+	GET_TEXT_INPUT_VALUE_DOUBLE(i4, I4_OBJECT_NAME);*/
 	GET_TEXT_INPUT_VALUE_DOUBLE(t1, T1_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
-	GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t2, T2_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t3, T3_OBJECT_NAME);
+	//GET_TEXT_INPUT_VALUE_DOUBLE(t4, T4_OBJECT_NAME);
   GET_SELECTED_DROP_DOWN(t1Units_str, T1_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
-  GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t2Units_str, T2_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t3Units_str, T3_UNITS_OBJ_NAME);
+  //GET_SELECTED_DROP_DOWN(t4Units_str, T4_UNITS_OBJ_NAME);
 
 	double dt;
 	GET_TEXT_INPUT_VALUE_DOUBLE(dt, SAMPLING_PERIOD_OBJ_NAME);
 
 	QString iUnits1, iUnits2, iUnits3, iUnits4;
 	GET_SELECTED_DROP_DOWN(iUnits1, I1_UNITS_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(iUnits2, I2_UNITS_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(iUnits3, I3_UNITS_OBJ_NAME);
-	GET_SELECTED_DROP_DOWN(iUnits4, I4_UNITS_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(iUnits2, I2_UNITS_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(iUnits3, I3_UNITS_OBJ_NAME);
+	//GET_SELECTED_DROP_DOWN(iUnits4, I4_UNITS_OBJ_NAME);
 
   i1 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits1);
-  i2 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits2);
-  i3 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits3);
-  i4 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits4);
+  //i2 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits2);
+  //i3 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits3);
+  //i4 *= ExperimentCalcHelperClass::GetUnitsMultiplier(iUnits4);
 
 	exp.isHead = false;
 	exp.isTail = false;
@@ -208,7 +204,7 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   if(exp.tMax != 0)
     PUSH_NEW_NODE_DATA();
 
-  exp.isHead = false;
+ /* exp.isHead = false;
   exp.isTail = false;
   exp.nodeType = DCNODE_POINT_GALV;
   exp.tMin = 0;
@@ -251,7 +247,7 @@ NodesData Chronopotentiometry::GetNodesData(QWidget *wdg, const CalibrationData 
   exp.DCPoint_galv.dVdtMin = 0;
   exp.MaxPlays = 1;
   if (exp.tMax != 0)
-    PUSH_NEW_NODE_DATA();
+    PUSH_NEW_NODE_DATA();*/
 
 	exp.nodeType = END_EXPERIMENT_NODE;
 	PUSH_NEW_NODE_DATA();

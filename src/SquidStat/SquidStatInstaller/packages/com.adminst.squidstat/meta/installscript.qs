@@ -5,6 +5,6 @@ Component.prototype.createOperations = function() {
 	if (systemInfo.productType === "windows") {
 		component.addOperation("Execute", "{0,1638}", "@TargetDir@\\vc_redist.x86.exe", "/install", "/passive", "/norestart");
 		component.addOperation("Delete", "@TargetDir@\\vc_redist.x86.exe");
-		component.addOperation("CreateShortcut", "@TargetDir@/_SquidStat.exe", "@DesktopDir@/SquidStat.lnk");
+		component.addOperation("CreateShortcut", "@TargetDir@/_SquidStat.exe", "@DesktopDir@/Squidstat User Interface 2.0 Beta.lnk");
 	}
 }

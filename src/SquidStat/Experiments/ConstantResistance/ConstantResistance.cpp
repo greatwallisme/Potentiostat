@@ -38,7 +38,7 @@ QString ConstantResistance::GetDescription() const {
 }
 QStringList ConstantResistance::GetCategory() const {
   return QStringList() <<
-    "Energy storage"
+    "Energy storage" <<
     "Charge-discharge";
 }
 ExperimentTypeList ConstantResistance::GetTypes() const {

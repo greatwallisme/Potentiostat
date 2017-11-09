@@ -67,7 +67,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 
   //TODO: add current ranging input
 
-	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Starting potential:", row, 0);
 	_INSERT_TEXT_INPUT(START_VOLTAGE_DEFAULT, START_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
@@ -82,7 +82,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Upper scan limit = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Upper scan limit:", row, 0);
 	_INSERT_TEXT_INPUT(UPPER_VOLTAGE_DEFAULT, UPPER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
@@ -97,7 +97,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Lower scan limit = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Lower scan limit:", row, 0);
 	_INSERT_TEXT_INPUT(LOWER_VOLTAGE_DEFAULT, LOWER_VOLTAGE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("V", row, 2);
 
@@ -112,12 +112,12 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Scan rate (dE/dt) = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Scan rate (dE/dt):", row, 0);
 	_INSERT_TEXT_INPUT(SCAN_RATE_DEFAULT, SCAN_RATE_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("mV/s", row, 2);
 	
   ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of: ", row, 0);
+  _INSERT_RIGHT_ALIGN_COMMENT("Sample at intervals of:", row, 0);
   _INSERT_TEXT_INPUT(SAMPLING_INT_DEFAULT, SAMPLING_INT_OBJ_NAME, row, 1);
   _START_DROP_DOWN(SAMPLING_INT_UNITS_OBJ_NAME, row, 2);
   _ADD_DROP_DOWN_ITEM("mV");
@@ -128,7 +128,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
 	_INSERT_VERTICAL_SPACING(row);
 
 	++row;
-	_INSERT_RIGHT_ALIGN_COMMENT("Repeats = ", row, 0);
+	_INSERT_RIGHT_ALIGN_COMMENT("Repeats:", row, 0);
 	_INSERT_TEXT_INPUT(CYCLES_DEFAULT, CYCLES_OBJ_NAME, row, 1);
 	_INSERT_LEFT_ALIGN_COMMENT("", row, 2);
 
@@ -142,7 +142,7 @@ QWidget* CyclicVoltammetry::CreateUserInput() const {
   _START_RADIO_BUTTON_GROUP(CURRENT_RANGE_OBJ_NAME);
   _INSERT_RADIO_BUTTON("Autorange", row, 0);
   ++row;
-  _INSERT_RADIO_BUTTON("Approx. max current: ", row, 0);
+  _INSERT_RADIO_BUTTON("Approx. max current:", row, 0);
   _END_RADIO_BUTTON_GROUP();
   _INSERT_TEXT_INPUT(CURRENT_RANGE_VALUE_DEFAULT, CURRENT_RANGE_VALUE_OBJ_NAME, row, 1);
   _START_DROP_DOWN(CURRENT_RANGE_UNITS_OBJ_NAME, row, 2);
