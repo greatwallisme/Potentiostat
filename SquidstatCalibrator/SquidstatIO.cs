@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO.Ports;
+using System.Text;
 
 namespace SSC
 {
@@ -91,6 +92,16 @@ namespace SSC
                         else if (msg[iCMDRSP] == (byte)Rsp.DEBUG_LOG_MSG)
                         {
                             Console.WriteLine("RSP  {0}", RspStr(msg.ToArray()));
+                        }
+                        else if (msg[iCMDRSP] == (byte)Rsp.CAL_DATA)
+                        {
+                            cal_rsp = new CAL_DATA(msg.ToArray());
+                            Console.WriteLine("RSP  {0}", cal_rsp.ToString());
+                        }
+                        else if (msg[iCMDRSP] == (byte)Rsp.HW_DATA)
+                        {
+                            string hw_data = Encoding.ASCII.GetString(msg.ToArray());
+                            Console.WriteLine("RSP  {0}", hw_data);
                         }
 
                         // Throw out the packet, resetting everything.

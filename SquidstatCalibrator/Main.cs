@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace SSC // Squidstat Calibrator
 {
@@ -22,6 +23,10 @@ namespace SSC // Squidstat Calibrator
             RANGE                // 0, 1, 2, ... 
         };
 
+        const string directory = @"C:\Potentiostat\SquidstatCalibrator\bin\Debug";
+
+        static CAL_DATA cal_rsp;
+
         // Example Usage:
         // _.exe v2 COM6 hp34401a COM4 current 3
         // _.exe v2 COM6 hp34401a COM4 voltage
@@ -29,6 +34,8 @@ namespace SSC // Squidstat Calibrator
         // _.exe v2 COM6 calibrate <-- sends calibration data
         static void Main(string[] args)
         {
+            Console.WriteLine("Directory: " + directory);
+
             StreamWriter csv;
             MeterExchanges = new List<Exchange>();
 
@@ -47,6 +54,7 @@ namespace SSC // Squidstat Calibrator
             }
 
             CHANNEL = byte.Parse(args[(int)Args.SQUIDSTAT_CHANNEL]);
+            Console.WriteLine("Channel: " + CHANNEL);
 
             ConnectToSquidstat(args[(int)Args.SQUIDSTAT_PORT_NAME]);
 
@@ -82,7 +90,9 @@ namespace SSC // Squidstat Calibrator
                 // in write mode
                 // either way, overwrite it
                 // allow other programs to read it
-                using (var stream = File.Open("r"+ args[(int)Args.RANGE] +".csv", FileMode.Create, FileAccess.Write, FileShare.Read))
+                using (var stream = File.Open(
+                    Path.Combine(directory, "r" + args[(int)Args.RANGE] + ".csv"), 
+                    FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     // StreamWriter lets you call .WriteLine(...) on the object
                     csv = new StreamWriter(stream);
@@ -129,7 +139,7 @@ namespace SSC // Squidstat Calibrator
 
                     _hp34401a.Close();
 
-                    using (var stream = File.Open("v.csv", FileMode.Create, FileAccess.Write, FileShare.Read))
+                    using (var stream = File.Open(Path.Combine(directory, "v.csv"), FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
                         csv = new StreamWriter(stream);
                         csv.AutoFlush = true;
@@ -172,7 +182,9 @@ namespace SSC // Squidstat Calibrator
 
                     _hp34401a.Close();
 
-                    using (var stream = File.Open("r" + args[(int)Args.RANGE] + ".csv", FileMode.Create, FileAccess.Write, FileShare.Read))
+                    using (var stream = File.Open(
+                        Path.Combine(directory, "r" + args[(int)Args.RANGE] + ".csv"),
+                        FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
                         csv = new StreamWriter(stream);
                         csv.AutoFlush = true;
@@ -197,10 +209,62 @@ namespace SSC // Squidstat Calibrator
             }
             else if (args[(int)Args.METER_NAME].ToLower() == "calibrate")
             {
-                var cal = new SEND_CAL_DATA();
+                var cal = new CAL_DATA();
                 cal.FromCsv("cal.csv");
                 byte[] cmd = cal.Bytes;
                 WriteBytes(ref _squidstat, cmd);
+            }
+            else if (args[(int)Args.METER_NAME].ToLower() == "quality")
+            {
+                // ask for cal struct
+                var cmd = SEND_CAL_DATA();
+                WriteBytes(ref _squidstat, cmd);
+
+                // wait for response
+                while (cal_rsp == null) { }
+
+                using (var stream = File.Open(Path.Combine(directory, "cal_rsp.csv"), FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    csv = new StreamWriter(stream);
+                    csv.AutoFlush = true;
+
+                    cal_rsp.ToCsv(csv);
+                }
+            }
+            else if (args[(int)Args.METER_NAME].ToLower() == "save_hw_data")
+            {
+                var cmd = new SAVE_HW_DATA();
+
+                using (var stream = File.Open(AppDomain.CurrentDomain.BaseDirectory + "\\save_hw_data.csv", FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    StreamReader reader = new StreamReader(stream);
+                    string s_hardwareModel = reader.ReadLine();
+                    string s_serialNumber = reader.ReadLine();
+                    s_serialNumber += "\n";
+
+                    List<string> text = new List<string>();
+                    while (!reader.EndOfStream)
+                    {
+                        text.Add(reader.ReadLine());
+                    }
+
+                    string s_generalText = string.Join("\n", text);
+
+                    cmd.hardwareModel = (HardwareModel_t)byte.Parse(s_hardwareModel);
+                    cmd.serialNumber = s_serialNumber;
+                    cmd.text = s_generalText;
+                }
+
+                Thread.Sleep(500);
+                WriteBytes(ref _squidstat, cmd.Bytes);
+                Thread.Sleep(500);
+                WriteBytes(ref _squidstat, SEND_HW_DATA());
+                Thread.Sleep(500);
+            }
+            else if (args[(int)Args.METER_NAME].ToLower() == "send_hw_data")
+            {
+                WriteBytes(ref _squidstat, SEND_HW_DATA());
+                Thread.Sleep(500);
             }
             else
             {

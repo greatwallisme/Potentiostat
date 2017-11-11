@@ -67,6 +67,10 @@ namespace SSC
             //SkipAdcdc(4);
             SkipAdcdc(5);
 
+            WriteBytes(ref _squidstat, new MANUAL_POT_SETPOINT_SET(_setpoints[0]).Bytes);
+            WriteString(ref _hp34401a, "MEASURE:VOLTAGE:DC? DEF,DEF");
+            ReadString(ref _hp34401a);
+
             // for each commanded setpoint
             foreach (short sp in _setpoints)
             {
@@ -106,6 +110,7 @@ namespace SSC
                 e.CmdToSS = cmd;
                 WriteBytes(ref _squidstat, cmd);
 
+                // never skip less than 2 to guarantee consistent data
                 SkipAdcdc(3);
 
                 WriteString(ref _hp34401a, "MEASURE:CURRENT:DC? DEF,DEF");
