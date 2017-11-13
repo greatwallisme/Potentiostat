@@ -45,6 +45,11 @@ namespace SSC
             return new byte[] { FRAME1, FRAME2, (byte)Cmd.HANDSHAKE, CHANNEL, 0x00, 0x00 };
         }
 
+        static byte[] SEND_CAL_DATA()
+        {
+            return new byte[] { FRAME1, FRAME2, (byte)Cmd.SEND_CAL_DATA, CHANNEL, 0x00, 0x00 };
+        }
+
         static byte[] SET_MANUAL_MODE()
         {
             return new byte[] { FRAME1, FRAME2, (byte)Cmd.SET_MANUAL_MODE, CHANNEL, 0x00, 0x00 };
@@ -136,7 +141,78 @@ namespace SSC
             }
         }
 
-        class SEND_CAL_DATA
+        static byte[] SEND_HW_DATA()
+        {
+            return new byte[] { FRAME1, FRAME2, (byte)Cmd.SEND_HW_DATA, CHANNEL, 0x00, 0x00 };
+        }
+
+        enum HardwareModel_t
+        {
+            PRIME = 0,
+            EDGE,
+            PICO,
+            SOLO,
+            PLUS,
+            PLUS_2_0,
+            SOLO_2_0,
+            PRIME_2_0
+        };
+
+        class SAVE_HW_DATA
+        {
+            public HardwareModel_t hardwareModel;
+            public string serialNumber;
+            public string text;
+
+            public SAVE_HW_DATA()
+            {
+
+            }
+
+            public byte[] Bytes
+            {
+                get
+                {
+                    byte b_hardwareModel = (byte)hardwareModel;
+                    byte[] b_serialNumber = System.Text.Encoding.ASCII.GetBytes(serialNumber);
+                    byte[] b_text = System.Text.Encoding.ASCII.GetBytes(text);
+
+                    List<byte> bytes = new List<byte>();
+                    bytes.Add(b_hardwareModel);
+                    bytes.AddRange(b_serialNumber);
+                    bytes.AddRange(b_text);
+
+                    if (bytes.Count < 256)
+                    {
+                        int size = 256 - bytes.Count;
+                        byte[] padding = new byte[size];
+                        bytes.AddRange(padding);
+                    }
+
+                    if (bytes.Count > 256)
+                    {
+                        Console.WriteLine("ERR  Text exceeds 256 characters.");
+                        byte[] rval = new byte[0];
+                        return rval;
+                    }
+
+                    var cmd_ = new byte[] { FRAME1, FRAME2, (byte)Cmd.SAVE_HW_DATA, CHANNEL };
+                    List<byte> cmd = cmd_.ToList();
+
+                    ushort numDataBytes = 256;
+                    cmd.AddRange(BitConverter.GetBytes(numDataBytes));
+
+
+                    cmd.AddRange(bytes);
+
+
+                    return cmd.ToArray();
+                }
+            }
+            
+        }
+
+        class CAL_DATA
         {
             public float m_DACac;    //DACac mVAC-to-bin slope
 
@@ -164,7 +240,7 @@ namespace SSC
             public float[] m_DACdcN_I; //DACdc current mA-to-bin slope, x < 0.	Units = bits/mA
             public float[] b_DACdc_I;  //DACdc current mA-to-bin intercept		Units = bits
 
-            public SEND_CAL_DATA()
+            public CAL_DATA()
             {
                 int N = _currentRanges.Count;
                 m_iP = new float[N];
@@ -173,6 +249,89 @@ namespace SSC
                 m_DACdcP_I = new float[N];
                 m_DACdcN_I = new float[N];
                 b_DACdc_I = new float[N];
+            }
+
+            public CAL_DATA(byte[] b)
+            {
+                int N = _currentRanges.Count;
+                m_iP = new float[N];
+                m_iN = new float[N];
+                b_i = new float[N];
+                m_DACdcP_I = new float[N];
+                m_DACdcN_I = new float[N];
+                b_DACdc_I = new float[N];
+
+                m_DACac = BitConverter.ToSingle(b, H + 4*0);
+
+                m_DACdcP_V = BitConverter.ToSingle(b, H + 4*1);
+                m_DACdcN_V = BitConverter.ToSingle(b, H + 4*2);
+                b_DACdc_V = BitConverter.ToSingle(b, H + 4*3);
+
+                m_refP = BitConverter.ToSingle(b, H + 4*4);
+                m_refN = BitConverter.ToSingle(b, H + 4*5);
+                b_ref = BitConverter.ToSingle(b, H + 4*6);
+
+                m_eweP = BitConverter.ToSingle(b, H + 4*7);
+                m_eweN = BitConverter.ToSingle(b, H + 4*8);
+                b_ewe = BitConverter.ToSingle(b, H + 4*9);
+
+                m_eceP = BitConverter.ToSingle(b, H + 4*10);
+                m_eceN = BitConverter.ToSingle(b, H + 4*11);
+                b_ece = BitConverter.ToSingle(b, H + 4*12);
+
+                m_iP[0] = BitConverter.ToSingle(b, H + 4*13);
+                m_iP[1] = BitConverter.ToSingle(b, H + 4*14);
+                m_iP[2] = BitConverter.ToSingle(b, H + 4*15);
+                m_iP[3] = BitConverter.ToSingle(b, H + 4*16);
+                m_iP[4] = BitConverter.ToSingle(b, H + 4*17);
+                m_iP[5] = BitConverter.ToSingle(b, H + 4*18);
+                m_iP[6] = BitConverter.ToSingle(b, H + 4*19);
+                m_iP[7] = BitConverter.ToSingle(b, H + 4*20);
+
+                m_iN[0] = BitConverter.ToSingle(b, H + 4 * 21);
+                m_iN[1] = BitConverter.ToSingle(b, H + 4 * 22);
+                m_iN[2] = BitConverter.ToSingle(b, H + 4 * 23);
+                m_iN[3] = BitConverter.ToSingle(b, H + 4 * 24);
+                m_iN[4] = BitConverter.ToSingle(b, H + 4 * 25);
+                m_iN[5] = BitConverter.ToSingle(b, H + 4 * 26);
+                m_iN[6] = BitConverter.ToSingle(b, H + 4 * 27);
+                m_iN[7] = BitConverter.ToSingle(b, H + 4 * 28);
+
+                b_i[0] = BitConverter.ToSingle(b, H + 4 * 29);
+                b_i[1] = BitConverter.ToSingle(b, H + 4 * 30);
+                b_i[2] = BitConverter.ToSingle(b, H + 4 * 31);
+                b_i[3] = BitConverter.ToSingle(b, H + 4 * 32);
+                b_i[4] = BitConverter.ToSingle(b, H + 4 * 33);
+                b_i[5] = BitConverter.ToSingle(b, H + 4 * 34);
+                b_i[6] = BitConverter.ToSingle(b, H + 4 * 35);
+                b_i[7] = BitConverter.ToSingle(b, H + 4 * 36);
+
+                m_DACdcP_I[0] = BitConverter.ToSingle(b, H + 4 * 37);
+                m_DACdcP_I[1] = BitConverter.ToSingle(b, H + 4 * 38);
+                m_DACdcP_I[2] = BitConverter.ToSingle(b, H + 4 * 39);
+                m_DACdcP_I[3] = BitConverter.ToSingle(b, H + 4 * 40);
+                m_DACdcP_I[4] = BitConverter.ToSingle(b, H + 4 * 41);
+                m_DACdcP_I[5] = BitConverter.ToSingle(b, H + 4 * 42);
+                m_DACdcP_I[6] = BitConverter.ToSingle(b, H + 4 * 43);
+                m_DACdcP_I[7] = BitConverter.ToSingle(b, H + 4 * 44);
+
+                m_DACdcN_I[0] = BitConverter.ToSingle(b, H + 4 * 45);
+                m_DACdcN_I[1] = BitConverter.ToSingle(b, H + 4 * 46);
+                m_DACdcN_I[2] = BitConverter.ToSingle(b, H + 4 * 47);
+                m_DACdcN_I[3] = BitConverter.ToSingle(b, H + 4 * 48);
+                m_DACdcN_I[4] = BitConverter.ToSingle(b, H + 4 * 49);
+                m_DACdcN_I[5] = BitConverter.ToSingle(b, H + 4 * 50);
+                m_DACdcN_I[6] = BitConverter.ToSingle(b, H + 4 * 51);
+                m_DACdcN_I[7] = BitConverter.ToSingle(b, H + 4 * 52);
+
+                b_DACdc_I[0] = BitConverter.ToSingle(b, H + 4 * 53);
+                b_DACdc_I[1] = BitConverter.ToSingle(b, H + 4 * 54);
+                b_DACdc_I[2] = BitConverter.ToSingle(b, H + 4 * 55);
+                b_DACdc_I[3] = BitConverter.ToSingle(b, H + 4 * 56);
+                b_DACdc_I[4] = BitConverter.ToSingle(b, H + 4 * 57);
+                b_DACdc_I[5] = BitConverter.ToSingle(b, H + 4 * 58);
+                b_DACdc_I[6] = BitConverter.ToSingle(b, H + 4 * 59);
+                b_DACdc_I[7] = BitConverter.ToSingle(b, H + 4 * 60);
             }
 
             public byte[] Bytes
@@ -219,6 +378,31 @@ namespace SSC
 
                     return b.ToArray();
                 }
+            }
+
+            public void ToCsv(StreamWriter s)
+            {
+                s.WriteLine(m_DACac);
+                s.WriteLine(m_DACdcP_V);
+                s.WriteLine(m_DACdcN_V);
+                s.WriteLine(b_DACdc_V);
+                s.WriteLine(m_refP);
+                s.WriteLine(m_refN);
+                s.WriteLine(b_ref);
+                s.WriteLine(m_eweP);
+                s.WriteLine(m_eweN);
+                s.WriteLine(b_ewe);
+                s.WriteLine(m_eceP);
+                s.WriteLine(m_eceN);
+                s.WriteLine(b_ece);
+
+                for (int i = 0; i < 8; i++) { s.WriteLine(m_iP[i]); }
+                for (int i = 0; i < 8; i++) { s.WriteLine(m_iN[i]); }
+                for (int i = 0; i < 8; i++) { s.WriteLine(b_i[i]); }
+
+                for (int i = 0; i < 8; i++) { s.WriteLine(m_DACdcP_I[i]); }
+                for (int i = 0; i < 8; i++) { s.WriteLine(m_DACdcN_I[i]); }
+                for (int i = 0; i < 8; i++) { s.WriteLine(b_DACdc_I[i]); }
             }
 
             public void FromCsv(string fileName)
