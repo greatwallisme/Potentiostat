@@ -33,6 +33,7 @@
 #include <QStackedLayout>
 #include <QScrollArea>
 #include <QCheckBox>
+#include <qwidgetaction.h>
 
 #include <QStandardItemModel>
 
@@ -160,11 +161,11 @@ void MainWindowUI::CreateMenu() {
 
 	auto moreOptionsMenu = new QMenu("More Options");
 
-	auto updateHardware = moreOptionsMenu->addAction("Update Hardware");
+	auto updateHardware = moreOptionsMenu->addAction("Update hardware");
  
+  /* Stability compensation circuit tuning */
   auto selectCompRangeMenu = moreOptionsMenu->addMenu("Potentiostat stability");
   selectCompRangeMenu->setDisabled(true);
-
   connections << QObject::connect(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription>&hwList) {
       if (!hwList.isEmpty())
           selectCompRangeMenu->setEnabled(true);
@@ -192,6 +193,38 @@ void MainWindowUI::CreateMenu() {
           }
       }
   });
+
+  /*IR compensation settings */
+  /*auto irCompensationMenu = moreOptionsMenu->addMenu("IR compensation settings");
+  irCompensationMenu->setDisabled(true);
+  connections << QObject::connect(mw, &MainWindow::AddNewInstruments, [=](const QList<HardwareUiDescription>&hwList) {
+      if (!hwList.isEmpty())
+          irCompensationMenu->setEnabled(true);
+      for (auto &hw : hwList)
+      {
+          auto hwIRSubMenu = irCompensationMenu->addMenu(hw.name);
+          for (int i = 0; i < hw.channelAmount; i++)
+          {
+              auto channelIRSubMenu = hwIRSubMenu->addMenu("Channel " + QString::number(i + 1));
+              
+              QWidgetAction * irCompGroupBoxWidgetAction = new QWidgetAction(NULL);
+              QGroupBox * irCompGroupBox = new QGroupBox();
+              irCompGroupBoxWidgetAction->setDefaultWidget(irCompGroupBox);
+              
+              QCheckBox * irCompCheckbox = new QCheckBox();
+              QLineEdit * irCompLed = new QLineEdit();
+              QLabel * irLabel = new QLabel();
+              irLabel->setText("Ohms");
+              QHBoxLayout * hbox = new QHBoxLayout();
+              hbox->addWidget(irCompCheckbox);
+              hbox->addWidget(irCompLed);
+              hbox->addWidget(irLabel);
+              irCompGroupBox->setLayout(hbox);
+
+              channelIRSubMenu->addAction(irCompGroupBoxWidgetAction);
+          }
+      }
+  });*/
 
 	menuBar->addMenu(moreOptionsMenu);
 

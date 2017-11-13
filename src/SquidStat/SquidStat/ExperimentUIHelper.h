@@ -28,7 +28,7 @@
 	double numCycles = ExperimentCalcHelperClass::estimatePeriod(dataheader); \
 	dataPoint = ExperimentCalcHelperClass::AnalyzeFRA(				\
 		dataheader.frequency,											\
-		(uint16_t*)expDataRaw.data(),												\
+		(int16_t*)expDataRaw.data(),												\
 		numBufs,													\
 		dataheader.gainVoltage,										\
 		dataheader.gainCurrent,										\

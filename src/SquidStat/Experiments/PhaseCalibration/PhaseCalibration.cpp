@@ -226,7 +226,7 @@ NodesData PhaseCalibration::GetNodesData(QWidget *wdg, const CalibrationData &ca
           exp.FRA_fixedGainsAndRange_node.IBias = 0;
           exp.FRA_fixedGainsAndRange_node.IGainSetting = calExpStructMap[load_str][n].gainI;
           exp.FRA_fixedGainsAndRange_node.WEGainSetting = calExpStructMap[load_str][n].gainWE;
-          exp.ACsamplingParams.amplitudeTarget = calExpStructMap[load_str][n].amplitude;
+          exp.ACsamplingParams.amplitudeTarget = (float)calExpStructMap[load_str][n].amplitude;
           ExperimentCalcHelperClass::calcACSamplingParams(&calData, &exp);
 
           PUSH_NEW_NODE_DATA();

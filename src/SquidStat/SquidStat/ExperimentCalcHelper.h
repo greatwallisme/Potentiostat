@@ -17,7 +17,8 @@
 #define SQUIDSTAT_TEENSY_MAX_ADCDC_BUF_SIZE 512
 #define SQUIDSTAT_PIC_TIMER_CLK_SPEED 1e8
 #define SQUIDSTAT_MAX_ADC_AC_BUF_SIZE 1024.0
-#define HF_CUTOFF_VALUE 500
+#define HF_CUTOFF_VALUE 1000
+#define MINIMUM_NUM_CYCLES_SAMPLED 2
 #define SIGNAL_GEN_RESOLUTION 1024
 #define MIN_TICKS_FOR_USB_TRANSMISSION (80 * MILLISECONDS)
 #define MAX_CURRENT 1.0e10
@@ -45,7 +46,7 @@ public:
   static double estimatePeriod(const ExperimentalAcData);
 
   /* sinusoidal curve-fitting */
-  static ComplexDataPoint_t AnalyzeFRA(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
+  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
 
   ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
 

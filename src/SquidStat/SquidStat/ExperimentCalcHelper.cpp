@@ -575,14 +575,19 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
   pNode->ACsamplingParams.frequency = fSignal;
 
   /* (2) Calculate ADCac buffer size and sampling frequency*/
-  int n = ADCacBUF_SIZE;
   double fSample;
   uint32_t ADCclkdiv = 1;
 
   if (pNode->ACsamplingParams.freqRange == HF_RANGE)
-    fSample = (n - 1) * fSignal / n;
+  {
+      fSample = ((float)(ADCacBUF_SIZE - 1)) / ADCacBUF_SIZE * fSignal;
+      pNode->ACsamplingParams.numBufs = MIN(20, 2 * fSample / ADCacBUF_SIZE);   //maximum sampling period for HF signals is 2 seconds
+  }
   else
-    fSample = fSignal * n / 2;
+  {
+      pNode->ACsamplingParams.numBufs = 20;
+      fSample = MIN(fSignal * ADCacBUF_SIZE * pNode->ACsamplingParams.numBufs / MINIMUM_NUM_CYCLES_SAMPLED, 5.e4);
+  }
   uint64_t TimerPeriod = (uint64_t)(100.0e6 / fSample / ADCclkdiv);
 
   while (1)
@@ -612,10 +617,6 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
       break;
   }
   pNode->ACsamplingParams.ADCacTimerPeriod = (uint32_t)TimerPeriod;
-
-  //debugging
-  //todo: make algorithm for calculating num buffers
-  pNode->ACsamplingParams.numBufs = 20;
 }
 
 double ExperimentCalcHelperClass::estimatePeriod(const ExperimentalAcData acDataHeader)
@@ -637,7 +638,7 @@ double ExperimentCalcHelperClass::estimatePeriod(const ExperimentalAcData acData
 }
 
 /* Sinusoidal curve fitting */
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
 {
     int len = numACBuffers * ADCacBUF_SIZE;
     QVector<double> rawIData, rawVData, filteredIData, filteredVData;
@@ -697,8 +698,8 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
             ///******************************************************/
 
 
-    Ipt.ImpedanceMag /= gainI * fabs(calData->m_DACdcP_I[range]) * 1000;
-    Vpt.ImpedanceMag /= gainEWE * fabs(calData->m_DACdcP_V);
+    Ipt.ImpedanceMag /= gainI / fabs(calData->m_iP[range]) * 1000;
+    Vpt.ImpedanceMag /= gainEWE / fabs(calData->m_eweP);
     ComplexDataPoint_t Z;
     Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
     Z.phase = Ipt.phase - Vpt.phase;
@@ -718,9 +719,9 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, uint1
     filename.append(QString::number(frequency));
     filename.append(".txt");
     fout.open(filename.toStdString(), std::ofstream::out);
-        for (int i = 0; i < filteredIData.count(); i++)
+        for (int i = 0; i < rawIData.count(); i++)
         {
-            fout << filteredIData[i] << '\t' << filteredVData[i] << '\n';
+            fout << rawIData[i] << '\t' << rawVData[i] << '\n';
         }
     /******************************************************/
 
