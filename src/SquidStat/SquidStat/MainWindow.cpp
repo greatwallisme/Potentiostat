@@ -1290,7 +1290,7 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 	static QEventLoop loop;
 	QString hidPath;
 
-	int searchAttempts = 20;
+	int searchAttempts = 40;
 	while (searchAttempts--) {
 		hidPath = HidCommunicator::SearchForBootloaderHidPath();
 
@@ -1318,19 +1318,19 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 	static bool flashErasedFlag;
 	static bool flashProgramedFlag;
 	static uint16_t flashCrc;
-	auto disconnector = new Disconnector(bootOp);
+  auto disconnector = new Disconnector(bootOp);
 
-	#define BREAK_LOOP(a)			\
+#define BREAK_LOOP(a)			\
 			a = true;		\
 			loop.quit();
 
-	#define WAIT_LOOP(a)										\
+#define WAIT_LOOP(a)										\
 		a = false;									\
-		QTimer::singleShot(5000, &loop, &QEventLoop::quit); \
+		QTimer::singleShot(25000, &loop, &QEventLoop::quit); \
 		loop.exec();
 
-	#define PERFORM_REQUEST(a, b)			\
-		attempts = 3;					\
+#define PERFORM_REQUEST(a, b, maxAttempts)			\
+		attempts = maxAttempts;					\
 		while (attempts--) {			\
 			bootOp->a;					\
 			WAIT_LOOP(b);				\
@@ -1368,10 +1368,14 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 	int attempts;
 	do {
 		LOG() << "Requesting bootloader info";
-		PERFORM_REQUEST(RequestBootloaderInfo(), infoReceivedFlag);
+		PERFORM_REQUEST(RequestBootloaderInfo(), infoReceivedFlag, 3);
+
+    QThread::msleep(500);
 
 		LOG() << "Erasing flash";
-		PERFORM_REQUEST(EraseFlash(), flashErasedFlag);
+		PERFORM_REQUEST(EraseFlash(), flashErasedFlag, 3);
+
+    QThread::msleep(500);
 
 		LOG() << "Programming flash...";
 		auto it = fw.begin();
@@ -1383,23 +1387,27 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 				toSend += *it++;
 			}
 
-			PERFORM_REQUEST(ProgramFlash(toSend), flashProgramedFlag);
+			PERFORM_REQUEST(ProgramFlash(toSend), flashProgramedFlag, 1);
 		}
 		if (it != fw.end()) {
 			break;
 		}
 		LOG() << "...done!";
 
+    QThread::msleep(500);
+
 		auto hexCrc = HexLoader::CalculateCrc(fw);
 
 		LOG() << "Requesting firmware CRC";
-		PERFORM_REQUEST(RequestFirmwareCrc(hexCrc), crcReceivedFlag);
+		PERFORM_REQUEST(RequestFirmwareCrc(hexCrc), crcReceivedFlag, 3);
 
 		if (flashCrc != hexCrc.crc) {
 			LOG() << "Loaded flash is invalid";
-			break;
+			continue;
 		}
 		LOG() << "Loaded flash is valid";
+
+    QThread::msleep(500);
 
 		LOG() << "Jump to application";
 		bootOp->JumpToApplication();

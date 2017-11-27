@@ -621,7 +621,7 @@ void ExperimentCalcHelperClass::calcACSamplingParams(const cal_t * calData, Expe
 
 double ExperimentCalcHelperClass::estimatePeriod(const ExperimentalAcData acDataHeader)
 {
-  double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod;
+  double samplingFreq = 1.0e8 / (1 << acDataHeader.ADCacTimerDiv) / acDataHeader.ADCacTimerPeriod; //todo: "1 << acDataHeader.ADCacTimerDiv" is incorrect for div value of 7
   freq_range_t freqRange = acDataHeader.frequency > HF_CUTOFF_VALUE ? HF_RANGE : LF_RANGE;
   double samplesPerPeriod;
 
@@ -652,20 +652,26 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
         }
     }
 
-    int rollingFilterSize = MAX(1, approxPeriod / 5);
-    double Period_result, Period_resultPrev = approxPeriod, fractionalChange;
-    int numAttempts = 0;
 
-    do {
-        filteredIData = rollingAverage(rawIData, rollingFilterSize);
-        filteredVData = rollingAverage(rawVData, rollingFilterSize);
-        Period_result = (GetPeriod(filteredIData) + GetPeriod(filteredVData)) / 2;
-        fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
-        Period_resultPrev = Period_result;
-        rollingFilterSize = MAX(1, Period_result / 5);
-    } while (fractionalChange > 0.0001 && numAttempts++ < 25);
+    double Period_result = approxPeriod;
+    if (frequency > HF_CUTOFF_VALUE)
+    {
+        int rollingFilterSize = MAX(1, approxPeriod / 5);
+        double Period_resultPrev = approxPeriod, fractionalChange;
+        int numAttempts = 0;
+
+        do {
+            filteredIData = rollingAverage(rawIData, rollingFilterSize);
+            filteredVData = rollingAverage(rawVData, rollingFilterSize);
+            Period_result = (GetPeriod(filteredIData) + GetPeriod(filteredVData)) / 2;
+            fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
+            Period_resultPrev = Period_result;
+            rollingFilterSize = MAX(1, Period_result / 5);
+        } while (fractionalChange > 0.0001 && numAttempts++ < 25); 
+    }
 
     int truncatedLen = (int)(floor(len / Period_result) * Period_result);
+
     ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
     ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
 

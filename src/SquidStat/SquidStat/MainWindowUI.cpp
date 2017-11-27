@@ -142,7 +142,7 @@ MainWindowUI::MainWindowUI(MainWindow *mainWindow) :
 	selectedHardware.prebuilt.channel = 0;
 
 	mw->setObjectName("mainUI");
-	mw->setWindowTitle("Window title");
+	mw->setWindowTitle("Squidstat User Interface v2.0 Beta");
 	mw->ApplyStyle();
 }
 MainWindowUI::~MainWindowUI() {
