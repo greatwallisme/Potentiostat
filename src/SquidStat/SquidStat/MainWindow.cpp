@@ -1320,24 +1320,20 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 	static uint16_t flashCrc;
   auto disconnector = new Disconnector(bootOp);
 
-#define BREAK_LOOP(a)			\
-			a = true;		\
-			loop.quit();
-
 #define WAIT_LOOP(a)										\
 		a = false;									\
-		QTimer::singleShot(25000, &loop, &QEventLoop::quit); \
+		QTimer::singleShot(5000, &loop, &QEventLoop::quit); \
 		loop.exec();
 
-#define PERFORM_REQUEST(a, b, maxAttempts)			\
-		attempts = maxAttempts;					\
-		while (attempts--) {			\
+#define PERFORM_REQUEST(a, b)			\
+		/*attempts = 3;		*/			\
+		/*while (attempts--) {			\*/ \
 			bootOp->a;					\
 			WAIT_LOOP(b);				\
-			if (b) {			\
-				break;					\
-			}							\
-		}								\
+			/*if (b) {*/			\
+			/*	break;*/					\
+			/*}*/							\
+		/*}								\*/   \
 		if (!b) {				\
 			LOG() << "No response to the command"; \
 			break;						\
@@ -1345,37 +1341,49 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 
 
 	*disconnector << connect(bootOp, &BootloaderOperator::BootloaderInfoReceived, [=](const BootloaderInfo &info) {
-		LOG() << "Bootloader version: maj -" << info.major << ", min -" << info.minor;
-		BREAK_LOOP(infoReceivedFlag);
+      if (infoReceivedFlag == false)
+      {
+          LOG() << "Bootloader version: maj -" << info.major << ", min -" << info.minor;
+          infoReceivedFlag = true;
+          loop.quit();
+      }
 	});
 
 	*disconnector << connect(bootOp, &BootloaderOperator::FirmwareCrcReceived, [=](uint16_t crc) {
-		flashCrc = crc;
-		BREAK_LOOP(crcReceivedFlag);
+      if (crcReceivedFlag == false)
+      {
+          flashCrc = crc;
+          crcReceivedFlag = true;
+          loop.quit();
+      }
 	});
 
 	*disconnector << connect(bootOp, &BootloaderOperator::FlashErased, [=]() {
-		LOG() << "Flash erased";
-		BREAK_LOOP(flashErasedFlag);
+      if (flashErasedFlag == false)
+      {
+          LOG() << "Flash erased";
+          flashErasedFlag = true;
+          loop.quit();
+      }
 	});
 
 	*disconnector << connect(bootOp, &BootloaderOperator::FlashProgramed, [=]() {
-		BREAK_LOOP(flashProgramedFlag);
+      if (flashProgramedFlag == false)
+      {
+          flashProgramedFlag = true;
+          loop.quit();
+      }
 	});
 
 	flashCrc = 0;
 
 	int attempts;
 	do {
-		LOG() << "Requesting bootloader info";
-		PERFORM_REQUEST(RequestBootloaderInfo(), infoReceivedFlag, 3);
-
-    QThread::msleep(500);
+		//LOG() << "Requesting bootloader info";
+		//PERFORM_REQUEST(RequestBootloaderInfo(), infoReceivedFlag);
 
 		LOG() << "Erasing flash";
-		PERFORM_REQUEST(EraseFlash(), flashErasedFlag, 3);
-
-    QThread::msleep(500);
+		PERFORM_REQUEST(EraseFlash(), flashErasedFlag);
 
 		LOG() << "Programming flash...";
 		auto it = fw.begin();
@@ -1386,28 +1394,30 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
 			while ((it != fw.end()) && (maxPack--)) {
 				toSend += *it++;
 			}
-
-			PERFORM_REQUEST(ProgramFlash(toSend), flashProgramedFlag, 1);
+			//PERFORM_REQUEST(ProgramFlash(toSend), flashProgramedFlag);
+      flashProgramedFlag = false;
+      bootOp->ProgramFlash(toSend);
+            /*debugging: for some reason this is causing premature firing of QEventLoop::quit*/
+            //QTimer::singleShot(5000, &loop, &QEventLoop::quit);
+      loop.exec();
+      if (!flashProgramedFlag)
+          LOG() << "error line 1403";
+      QThread::msleep(1);
 		}
 		if (it != fw.end()) {
 			break;
 		}
 		LOG() << "...done!";
 
-    QThread::msleep(500);
-
 		auto hexCrc = HexLoader::CalculateCrc(fw);
-
 		LOG() << "Requesting firmware CRC";
-		PERFORM_REQUEST(RequestFirmwareCrc(hexCrc), crcReceivedFlag, 3);
+		PERFORM_REQUEST(RequestFirmwareCrc(hexCrc), crcReceivedFlag);
 
 		if (flashCrc != hexCrc.crc) {
 			LOG() << "Loaded flash is invalid";
 			continue;
 		}
 		LOG() << "Loaded flash is valid";
-
-    QThread::msleep(500);
 
 		LOG() << "Jump to application";
 		bootOp->JumpToApplication();
