@@ -52,7 +52,7 @@ public:
 
 private:
   /* Newton-raphson method */
-  static ComplexDataPoint_t SingleFrequencyFourier(QVector<double> data, int size, double period);
+  static ComplexDataPoint_t SingleFrequencyFourier(QVector<double> data, int size, double period, int harmonic);
   static double GetPeriod(QVector<double> const xbuf_smoothed);
   static QVector<double> rollingAverage(QVector<double> rawData, int rollingAvgWidth);
 };

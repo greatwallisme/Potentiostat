@@ -667,48 +667,67 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
             fractionalChange = abs(Period_result - Period_resultPrev) / Period_result;
             Period_resultPrev = Period_result;
             rollingFilterSize = MAX(1, Period_result / 5);
-        } while (fractionalChange > 0.0001 && numAttempts++ < 25); 
+        } while (fractionalChange > 0.0001 && numAttempts++ < 25);
     }
 
     int truncatedLen = (int)(floor(len / Period_result) * Period_result);
 
-    ComplexDataPoint_t Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
-    ComplexDataPoint_t Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+    /* Get Fourier data for fundamental + 10 harmonics */
+    ComplexDataPoint_t Ipt[11], Vpt[11];
+    for (int i = 0; i < 11; i++)
+    {
+        Ipt[i] = SingleFrequencyFourier(rawIData, truncatedLen, Period_result, i);
+        Vpt[i] = SingleFrequencyFourier(rawVData, truncatedLen, Period_result, i);
+    }
 
-                    //for (int i = 0; i < 50; i++)
-                    //{
-                    //    double altPeriod = Period_result * (0.995 + 0.01 / 50 * i);
-                    //    //truncatedLen = (int)(floor(len / altPeriod) * altPeriod);
-                    //    Ipt = SingleFrequencyFourier(rawIData, truncatedLen, altPeriod);
-                    //    Vpt = SingleFrequencyFourier(rawVData, truncatedLen, altPeriod);
-                    //    /******************************************************/
-                    //    /* debugging only */
-                    //    std::ofstream fout1;
-                    //    QString filename1 = "C:/Users/Matt/Desktop/results.txt";
-                    //    fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
-                    //    fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
-                    //    /******************************************************/
-                    //}
+    /* Normalize and calculate errors */
+    double NormI[11], NormV[11];
+    for (int i = 0; i < 11; i++)
+    {
+        NormI[i] = Ipt[i].ImpedanceMag / Ipt[0].ImpedanceMag;
+        NormV[i] = Vpt[i].ImpedanceMag / Vpt[0].ImpedanceMag;
+        NormI[i] -= NormV[i];
+    }
 
-                    //Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
-                    //Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
+    double x = NormI[1] * NormI[1] + NormI[1] * NormI[2]
+        + NormI[3] * NormI[4] / 3 + NormI[5] * NormI[6] / 5
+        + NormI[7] * NormI[8] / 7 + NormI[9] * NormI[10] / 9;
+    double significance = 1 / (1 + sqrt(x) / exp(1));
+
+    //for (int i = 0; i < 50; i++)
+    //{
+    //    double altPeriod = Period_result * (0.995 + 0.01 / 50 * i);
+    //    //truncatedLen = (int)(floor(len / altPeriod) * altPeriod);
+    //    Ipt = SingleFrequencyFourier(rawIData, truncatedLen, altPeriod);
+    //    Vpt = SingleFrequencyFourier(rawVData, truncatedLen, altPeriod);
+    //    /******************************************************/
+    //    /* debugging only */
+    //    std::ofstream fout1;
+    //    QString filename1 = "C:/Users/Matt/Desktop/results.txt";
+    //    fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+    //    fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+    //    /******************************************************/
+    //}
+
+    //Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
+    //Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
 
 
-            ///******************************************************/
-            ///* debugging only */
-            //std::ofstream fout1;
-            //QString filename1 = "C:/Users/Matt/Desktop/results";
-            //filename1.append(".txt");
-            //fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
-            //fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
-            ///******************************************************/
+///******************************************************/
+///* debugging only */
+//std::ofstream fout1;
+//QString filename1 = "C:/Users/Matt/Desktop/results";
+//filename1.append(".txt");
+//fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
+//fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
+///******************************************************/
 
 
-    Ipt.ImpedanceMag /= gainI / fabs(calData->m_iP[range]) * 1000;
-    Vpt.ImpedanceMag /= gainEWE / fabs(calData->m_eweP);
+    Ipt[0].ImpedanceMag /= gainI / fabs(calData->m_iP[range]) * 1000;
+    Vpt[0].ImpedanceMag /= gainEWE / fabs(calData->m_eweP);
     ComplexDataPoint_t Z;
-    Z.ImpedanceMag = Vpt.ImpedanceMag / Ipt.ImpedanceMag;
-    Z.phase = Ipt.phase - Vpt.phase;
+    Z.ImpedanceMag = Vpt[0].ImpedanceMag / Ipt[0].ImpedanceMag;
+    Z.phase = Ipt[0].phase - Vpt[0].phase;
     if (Z.phase > 180)
         Z.phase -= 360;
     if (Z.phase < -180)
@@ -716,7 +735,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
     Z.ImpedanceReal = Z.ImpedanceMag * cos(Z.phase * M_PI / 180);
     Z.ImpedanceImag = Z.ImpedanceMag * sin(Z.phase * M_PI / 180);
     Z.frequency = frequency;
-
+    Z.error = Z.ImpedanceMag * (1 - significance);
 
     /******************************************************/
     /* debugging only */
@@ -1111,12 +1130,12 @@ double ExperimentCalcHelperClass::GetPeriod(QVector<double> const x)
 //    return; 
 //}
 
-ComplexDataPoint_t ExperimentCalcHelperClass::SingleFrequencyFourier(QVector<double> data, int len, double period)
+ComplexDataPoint_t ExperimentCalcHelperClass::SingleFrequencyFourier(QVector<double> data, int len, double period, int harmonic)
 {
     double sumSine = 0, sumCosine = 0;
     for (int i = 0; i < len; i++)
     {
-        double arg = i * (2 * M_PI / period);
+        double arg = i * (2 * M_PI / period * (harmonic + 1));
         sumSine += data[i] * sin(arg);
         sumCosine += data[i] * cos(arg);
     }

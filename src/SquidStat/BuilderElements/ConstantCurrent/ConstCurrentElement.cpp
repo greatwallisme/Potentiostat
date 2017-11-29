@@ -61,7 +61,10 @@ QWidget* ConstCurrentElement::CreateUserInput(UserInput &inputs) const {
   _END_DROP_DOWN();
 
   ++row;
-  _INSERT_CENTERED_COMMENT("Ending conditions", row);
+  _INSERT_VERTICAL_SPACING(row);
+
+  ++row;
+  _INSERT_CENTERED_COMMENT("<b>Ending conditions<b>", row);
 
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Upper voltage limit: ", row, 0);
