@@ -11,8 +11,6 @@
 #define LOWER_FREQ_UNITS_OBJ_NAME "lower-frequency-units"
 #define STEPS_PER_DEC_OBJ_NAME	"step-per-decade"
 #define LOAD_RESISTANCE_OBJ_NAME			"Load-resistance"
-#define FIXED_GAIN_MODE_OBJ_NAME      "Fixed-gain-mode"
-#define GAIN_SELECT_OBJ_NAME          "Gain-select"
 
 #define UPPER_FREQ_DEFAULT		1000		//(in kHz)
 #define LOWER_FREQ_DEFAULT		1	//(in kHz)
@@ -27,6 +25,7 @@
 #define PLOT_VAR_IGAIN          "Current gain"
 #define PLOT_VAR_IRANGE         "Current range"
 #define PLOT_VAR_LOAD           "Load (Ohms)"
+#define PLOT_VAR_ERR            "Error (Ohms)"
 
 QString PhaseCalibration::GetShortName() const {
 	return "Calibration -- phase angle";
@@ -84,38 +83,12 @@ QWidget* PhaseCalibration::CreateUserInput() const {
   ++row;
   _INSERT_RIGHT_ALIGN_COMMENT("Load resistance: ", row, 0);
   _START_DROP_DOWN(LOAD_RESISTANCE_OBJ_NAME, row, 1);
-  _ADD_DROP_DOWN_ITEM("1");
   _ADD_DROP_DOWN_ITEM("10");
-  _ADD_DROP_DOWN_ITEM("56");
-  _ADD_DROP_DOWN_ITEM("270");
-  _ADD_DROP_DOWN_ITEM("510");
-  _ADD_DROP_DOWN_ITEM("2.4k");
-  _ADD_DROP_DOWN_ITEM("4.7k");
+  _ADD_DROP_DOWN_ITEM("100");
+  _ADD_DROP_DOWN_ITEM("1k");
   _ADD_DROP_DOWN_ITEM("10k");
   _END_DROP_DOWN();
   _INSERT_LEFT_ALIGN_COMMENT("Ohms", row, 2);
-
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Fixed gain mode: ", row, 0);
-  _START_DROP_DOWN(FIXED_GAIN_MODE_OBJ_NAME, row, 1);
-  _ADD_DROP_DOWN_ITEM("Fixed current gain");
-  _ADD_DROP_DOWN_ITEM("Fixed voltage gain");
-  _END_DROP_DOWN();
-
-  ++row;
-  _INSERT_RIGHT_ALIGN_COMMENT("Gain: ", row, 0);
-  _START_DROP_DOWN(GAIN_SELECT_OBJ_NAME, row, 1);
-  _ADD_DROP_DOWN_ITEM("1");
-  _ADD_DROP_DOWN_ITEM("2");
-  _ADD_DROP_DOWN_ITEM("5");
-  _ADD_DROP_DOWN_ITEM("10");
-  _ADD_DROP_DOWN_ITEM("20");
-  _ADD_DROP_DOWN_ITEM("50");
-  _ADD_DROP_DOWN_ITEM("100");
-  _ADD_DROP_DOWN_ITEM("200");
-  _ADD_DROP_DOWN_ITEM("500");
-  _ADD_DROP_DOWN_ITEM("1000");
-  _END_DROP_DOWN();
 	
 	_SET_COL_STRETCH(3, 2);
 	_SET_COL_STRETCH(1, 0);
@@ -156,42 +129,80 @@ NodesData PhaseCalibration::GetNodesData(QWidget *wdg, const CalibrationData &ca
         double amplitude;
     };
 
-    /* Experiment 1 */
-    /* phase vs amplitude @ fixed range, variable gain and load */
-    //QList<phase_cal_experiment_struct> calExpStructs_510, calExpStructs_10, calExpStructs_56;
-    //calExpStructs_510.append(phase_cal_experiment_struct{ 1, 510, AC_GAIN1, AC_GAIN1, RANGE3, .1 });    //experiment num, load/ohms, WE gain, Igain, iRange, amp/mA
-    //calExpStructs_510.append(phase_cal_experiment_struct{ 1, 510, AC_GAIN2, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_510.append(phase_cal_experiment_struct{ 1, 510, AC_GAIN5, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_510.append(phase_cal_experiment_struct{ 1, 510, AC_GAIN10, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN10, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN20, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN50, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN100, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN100, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN200, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN500, AC_GAIN1, RANGE3, .1 });
-    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN1000, AC_GAIN1, RANGE3, .1 });
-    QList<phase_cal_experiment_struct> calExpStructs_56, calExpStructs_10, calExpStructs_1;
-    calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN1, AC_GAIN1, RANGE2, 1 });    //experiment num, load/ohms, WE gain, Igain, iRange, amp/mA
-    calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN2, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN5, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_56.append(phase_cal_experiment_struct{ 1, 56, AC_GAIN10, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN10, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN20, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN50, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN100, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_1.append(phase_cal_experiment_struct{ 1, 1, AC_GAIN100, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_1.append(phase_cal_experiment_struct{ 1, 1, AC_GAIN200, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_1.append(phase_cal_experiment_struct{ 1, 1, AC_GAIN500, AC_GAIN1, RANGE2, 1 });
-    calExpStructs_1.append(phase_cal_experiment_struct{ 1, 1, AC_GAIN1000, AC_GAIN1, RANGE2, 1 });
+    /* Experiment 1 (Does amplitude alone affect phase behavior?) */
+    /* phase vs amplitude @ fixed range, fixed gain and fixed load */
+    //QList<phase_cal_experiment_struct> calExpStructs_100, calExpStructs_56, calExpStructs_10;
+    //calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 10 });    //experiment num, load/ohms, WE gain, Igain, iRange, amp/mA
+    //calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 5 });
+    //calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 2 });
+    //calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 1 });
+    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN1, AC_GAIN1, RANGE1, 100 });    //experiment num, load/ohms, WE gain, Igain, iRange, amp/mA
+    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN1, AC_GAIN1, RANGE1, 50 });
+    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN1, AC_GAIN1, RANGE1, 20 });
+    //calExpStructs_10.append(phase_cal_experiment_struct{ 1, 10, AC_GAIN1, AC_GAIN1, RANGE1, 10 });
+
+    /* Experiment 2 (Calibrate phase w.r.t. gain) */
+    /* phase vs freq @ variable Igain */
+    /*QList<phase_cal_experiment_struct> calExpStructs_100, calExpStructs_1k, calExpStructs_10k;
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 10 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN2, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN5, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN10, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN20, RANGE2, 0.5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN50, RANGE2, 0.2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN100, RANGE2, 0.1 });*/
+    /*calExpStructs_1k.append(phase_cal_experiment_struct{ 1, 1000, AC_GAIN1, AC_GAIN10, RANGE2, 1 });
+    calExpStructs_1k.append(phase_cal_experiment_struct{ 1, 1000, AC_GAIN1, AC_GAIN20, RANGE2, 0.5 });
+    calExpStructs_1k.append(phase_cal_experiment_struct{ 1, 1000, AC_GAIN1, AC_GAIN50, RANGE2, 0.2 });
+    calExpStructs_1k.append(phase_cal_experiment_struct{ 1, 1000, AC_GAIN1, AC_GAIN100, RANGE2, 0.1 });
+    calExpStructs_10k.append(phase_cal_experiment_struct{ 1, 10000, AC_GAIN1, AC_GAIN100, RANGE2, 0.1 });
+    calExpStructs_10k.append(phase_cal_experiment_struct{ 1, 10000, AC_GAIN1, AC_GAIN200, RANGE2, 0.05 });
+    calExpStructs_10k.append(phase_cal_experiment_struct{ 1, 10000, AC_GAIN1, AC_GAIN500, RANGE2, 0.02 });
+    calExpStructs_10k.append(phase_cal_experiment_struct{ 1, 10000, AC_GAIN1, AC_GAIN1000, RANGE2, 0.01 });*/
+
+    /* Experiment 3 (Calibrate phase w.r.t. gain) */
+    /* phase vs freq @ variable Vgain */
+    /*QList<phase_cal_experiment_struct> calExpStructs_100, calExpStructs_1k, calExpStructs_10k;
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 10 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN2, AC_GAIN1, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN5, AC_GAIN1, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10, AC_GAIN1, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN20, AC_GAIN1, RANGE2, 0.5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN50, AC_GAIN1, RANGE2, 0.2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN100, AC_GAIN1, RANGE2, 0.1 });*/
+
+    /* Experiment 3 (Phase w.r.t. each gain stage) */
+    /*QList<phase_cal_experiment_struct> calExpStructs_100;
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN1, RANGE2, 10 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN2, AC_GAIN1, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN5, AC_GAIN1, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10, AC_GAIN1, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10_alt1, AC_GAIN1, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10_alt2, AC_GAIN1, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN2, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN5, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN10, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN10_alt1, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN1, AC_GAIN10_alt2, RANGE2, 1 });*/
+
+    /* Experiment 4 (phase calibration verification) */
+    QList<phase_cal_experiment_struct> calExpStructs_100;
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10, AC_GAIN20, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN10, AC_GAIN50, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN100, AC_GAIN100, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN100, AC_GAIN200, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN100, AC_GAIN500, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN20, AC_GAIN10, RANGE2, 5 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN50, AC_GAIN10, RANGE2, 2 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN100, AC_GAIN100, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN200, AC_GAIN100, RANGE2, 1 });
+    calExpStructs_100.append(phase_cal_experiment_struct{ 1, 100, AC_GAIN500, AC_GAIN100, RANGE2, 1 });
+
 
     QMap<QString, QList<phase_cal_experiment_struct>> calExpStructMap;
-    /*calExpStructMap.insert("510", calExpStructs_510);
-    calExpStructMap.insert("10", calExpStructs_10);
-    calExpStructMap.insert("56", calExpStructs_56);*/
-    calExpStructMap.insert("56", calExpStructs_56);
-    calExpStructMap.insert("10", calExpStructs_10);
-    calExpStructMap.insert("1", calExpStructs_1);
+    calExpStructMap.insert("100", calExpStructs_100);
+    //calExpStructMap.insert("1k", calExpStructs_1k);
+    //calExpStructMap.insert("10k", calExpStructs_10k);
     
   QList<double> frequencyList = ExperimentCalcHelperClass::calculateFrequencyList(lowerFreq, upperFreq, stepsPerDecade);
 
@@ -272,6 +283,7 @@ void PhaseCalibration::PUSH_NEW_AC_DATA_DEFINITION{
     PUSH_BACK_DATA(PLOT_VAR_WEGAIN, dataheader.gainVoltage);
     PUSH_BACK_DATA(PLOT_VAR_IGAIN, dataheader.gainCurrent);
     PUSH_BACK_DATA(PLOT_VAR_IRANGE, (int)dataheader.IRange);
+    PUSH_BACK_DATA(PLOT_VAR_ERR, dataPoint.error);
 }
 
 void PhaseCalibration::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &notes) const {
@@ -283,6 +295,7 @@ void PhaseCalibration::SaveAcDataHeader(QFile &saveFile, const ExperimentNotes &
     SAVE_AC_DATA_HEADER(PLOT_VAR_WEGAIN);
     SAVE_AC_DATA_HEADER(PLOT_VAR_IGAIN);
     SAVE_AC_DATA_HEADER(PLOT_VAR_IRANGE);
+    SAVE_AC_DATA_HEADER(PLOT_VAR_ERR);
 
     SAVE_DATA_HEADER_END();
 }
@@ -296,6 +309,7 @@ void PhaseCalibration::SaveAcData(QFile &saveFile, const DataMap &container) con
     SAVE_DATA(PLOT_VAR_WEGAIN);
     SAVE_DATA(PLOT_VAR_IGAIN);
     SAVE_DATA(PLOT_VAR_IRANGE);
+    SAVE_DATA(PLOT_VAR_ERR);
 
     SAVE_DATA_END();
 }

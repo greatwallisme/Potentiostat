@@ -166,7 +166,7 @@ NodesData DiffPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationData
 	exp.DCPulseDiff_pot.VStartVsOCP = startVsOCP_str.contains("open circuit");
   exp.DCPulseDiff_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VFinal);
 	exp.DCPulseDiff_pot.VEndVsOCP = endVsOCP_str.contains("open circuit");
-  exp.DCPulseDiff_pot.VStep = (calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep;
+  exp.DCPulseDiff_pot.VStep = (float)abs((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep);
 	exp.DCPulseDiff_pot.VHeight = (int16_t)(PulseHeight * (calData.m_DACdcN_V + calData.m_DACdcP_V) / 2);
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();

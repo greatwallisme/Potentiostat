@@ -156,7 +156,7 @@ NodesData NormalPulseVoltammetry::GetNodesData(QWidget *wdg, const CalibrationDa
   exp.DCPulseNormal_pot.VBaselineVsOCP = startVoltageVsOCP_str.contains("open circuit");
   exp.DCPulseNormal_pot.VEndUserInput = ExperimentCalcHelperClass::GetBINVoltageForDAC(&calData, VFinal);
 	exp.DCPulseNormal_pot.VEndVsOCP = VFinalVsOCP_str.contains("open circuit");
-  exp.DCPulseNormal_pot.VStep = (float)((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep);
+  exp.DCPulseNormal_pot.VStep = (float)abs(((calData.m_DACdcN_V + calData.m_DACdcP_V) / 2 * VStep));
 	exp.MaxPlays = 1;
 	PUSH_NEW_NODE_DATA();
 

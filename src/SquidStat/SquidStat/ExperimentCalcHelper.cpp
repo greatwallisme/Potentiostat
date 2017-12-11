@@ -682,11 +682,12 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
 
     /* Normalize and calculate errors */
     double NormI[11], NormV[11];
-    for (int i = 0; i < 11; i++)
+    for (int i = 1; i < 11; i++)
     {
         NormI[i] = Ipt[i].ImpedanceMag / Ipt[0].ImpedanceMag;
         NormV[i] = Vpt[i].ImpedanceMag / Vpt[0].ImpedanceMag;
         NormI[i] -= NormV[i];
+        NormI[i] = MAX(0, NormI[i]);  //debugging: or should I just take the abs value of NormI[i]?
     }
 
     double x = NormI[1] * NormI[1] + NormI[1] * NormI[2]
