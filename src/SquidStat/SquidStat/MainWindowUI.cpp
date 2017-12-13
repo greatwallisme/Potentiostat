@@ -264,7 +264,7 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 
 	auto globalLay = NO_MARGIN(new QVBoxLayout(frame));
 
-	QListView *instrumentList;
+	QListView *instrumentList = nullptr;
 
 	globalLay->addWidget(OBJ_NAME(new QLabel("Update Firmware"), "heading-label"));
 	globalLay->addWidget(OBJ_PROP(OBJ_NAME(new QLabel("1) Choose which device you want to update:"), "experiment-params-comment"), "comment-placement", "right"));
@@ -273,8 +273,8 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 
 	instrumentList->setEditTriggers(QAbstractItemView::NoEditTriggers);
 
-	QLineEdit *hexFileLed;
-	QPushButton *hexFilePbt;
+	QLineEdit *hexFileLed = nullptr;
+	QPushButton *hexFilePbt = nullptr;
 
 	auto hexLay = new QHBoxLayout;
 	hexLay->addWidget(hexFileLed = LED());
@@ -285,8 +285,8 @@ void MainWindowUI::GetUpdateFirmwareDialog(QWidget *parent) {
 
 	globalLay->addLayout(hexLay);
 
-	QPushButton *nextBut;
-	QPushButton *cancelBut;
+	QPushButton *nextBut = nullptr;
+	QPushButton *cancelBut = nullptr;
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
@@ -420,7 +420,7 @@ QWidget* MainWindowUI::GetMainTabWidget() {
 
 	QButtonGroup *buttonGroup = new QButtonGroup(m_mainWindow);
 	
-	QPushButton *pbt;
+	QPushButton *pbt = nullptr;
 	
 	pbt = OBJ_NAME(PBT("Run an Experiment"), "bar-button");
 	pbt->setCheckable(true);
@@ -646,7 +646,7 @@ void MainWindowUI::ShowNotificationDialog(bool needToExec) {
 
 		auto itemLay = NO_SPACING(NO_MARGIN(new QGridLayout(item)));
 
-		QPushButton *deleteItem;
+		QPushButton *deleteItem = nullptr;
 		itemLay->addWidget(OBJ_NAME(new QLabel(header), "notification-dialog-item-header"), 1, 0);
 		itemLay->addWidget(OBJ_NAME(new QLabel(text), "notification-dialog-item-text"), 2, 0, 1, 2);
 		itemLay->addWidget(deleteItem = OBJ_NAME(PBT(""), "notification-dialog-item-delete-pbt"), 0, 1, 2, 1);
@@ -721,7 +721,7 @@ QWidget* MainWindowUI::GetLogWidget() {
 		return w;
 	}
 
-	QTextEdit *log;
+	QTextEdit *log = nullptr;
 
 	w = WDG();
 	QVBoxLayout *lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
@@ -753,8 +753,8 @@ QWidget* MainWindowUI::GetControlButtonsWidget() {
 		return w;
 	}
 
-	QPushButton *startExperiment;
-	QPushButton *stopExperiment;
+	QPushButton *startExperiment = nullptr;
+	QPushButton *stopExperiment = nullptr;
 
 	w = WDG();
 	w->setMinimumHeight(50);
@@ -768,8 +768,8 @@ QWidget* MainWindowUI::CreateBuildExpHolderWidget(const QUuid &id) {
 	w = WDG();
 	auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
-	MyScrollArea *buildExpHolder;
-	QSpinBox *mult;
+	MyScrollArea *buildExpHolder = nullptr;
+	QSpinBox *mult = nullptr;
 	lay->addWidget(buildExpHolder = OBJ_NAME(new MyScrollArea, "exp-builder-scroll-area"));
 	lay->addWidget(mult = OBJ_NAME(new QSpinBox(), "exp-builder-global-multiplier"));
 
@@ -805,7 +805,7 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	w = OBJ_PROP(OBJ_NAME(WDG(), "node-list-owner"), "widget-type", "left-grey");
 	auto nodeListOwnerLay = NO_SPACING(NO_MARGIN(new QVBoxLayout(w)));
 
-	QLabel *commentLabel;
+	QLabel *commentLabel = nullptr;
 
 	auto elementsListHolder = OBJ_NAME(new QFrame(), "elements-list-holder");
 	auto elementsListHolderLay = new QGridLayout(elementsListHolder);
@@ -818,9 +818,9 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 	elementsListArea->setWidget(elementsListHolder);
 
 	auto searchLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
-	QLabel *searchLabel;
-	QPushButton *searchClearPbt;
-	QLineEdit *searchExpLed;
+	QLabel *searchLabel = nullptr;
+	QPushButton *searchClearPbt = nullptr;
+	QLineEdit *searchExpLed = nullptr;
 	searchLay->addWidget(searchLabel = OBJ_NAME(LBL(""), "search-experiments-label"));
 	searchLay->addWidget(searchExpLed = OBJ_NAME(LED(), "search-experiments"));
 	searchLay->addWidget(searchClearPbt = OBJ_NAME(PBT(""), "search-experiments-clear"));
@@ -1009,8 +1009,8 @@ QWidget* MainWindowUI::CreateElementsListWidget() {
 					effect->setBlurRadius(5);
 					overlay->setGraphicsEffect(effect);
 
-					QLabel *iconLbl;
-					QLabel *textLbl;
+					QLabel *iconLbl = nullptr;
+					QLabel *textLbl = nullptr;
 
 					auto lay = NO_SPACING(NO_MARGIN(new QVBoxLayout(overlay)));
 					lay->addWidget(iconLbl = OBJ_NAME(new QLabel(), "hover-element-overlay-icon"));
@@ -1086,7 +1086,7 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	QLineEdit *titleLed;
+	QLineEdit *titleLed = nullptr;
 
 	auto paramsLay = new QHBoxLayout;
 	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Experiment Name: "), "experiment-params-comment"), "comment-placement", "left"));
@@ -1095,8 +1095,8 @@ QString MainWindowUI::GetCustomExperimentName(QWidget *parent, const QString &na
 
 
 	auto buttonLay = new QHBoxLayout;
-	QPushButton *okBut;
-	QPushButton *cancelBut;
+	QPushButton *okBut = nullptr;
+	QPushButton *cancelBut = nullptr;
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Save"), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
@@ -1148,13 +1148,13 @@ bool MainWindowUI::GetUserAgreement(QWidget *parent, const QString &title, const
 
 	auto paramsLay = new QHBoxLayout;
 	//paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Make sure that you <b>saved</b> the experiment.<br>All unsaved data will be <b>lost</b>."), "experiment-params-comment"), "comment-placement", "right"));
-	QLabel *textLabel;
+	QLabel *textLabel = nullptr;
 	paramsLay->addWidget(textLabel = OBJ_PROP(OBJ_NAME(new QLabel(text), "experiment-params-comment"), "comment-placement", "right"));
 	textLabel->setWordWrap(true);
 
 	auto buttonLay = new QHBoxLayout;
-	QPushButton *okBut;
-	QPushButton *cancelBut;
+	QPushButton *okBut = nullptr;
+	QPushButton *cancelBut = nullptr;
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(okBut = OBJ_NAME(new QPushButton(okText), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(new QPushButton(cancelText), "secondary-button"));
@@ -1242,7 +1242,7 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 
 	auto lay = new QVBoxLayout();
 	
-	QListView *fileList;
+	QListView *fileList = nullptr;
 	
 	lay->addWidget(OBJ_NAME(LBL("Open Experiment"), "heading-label"));
 	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
@@ -1264,9 +1264,9 @@ bool MainWindowUI::GetOpenCustomExperiment(QWidget *parent, CustomExperiment &cE
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
 	auto buttonLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
-	QPushButton *okBut;
-	QPushButton *cancelBut;
-	QPushButton *deleteBut;
+	QPushButton *okBut = nullptr;
+	QPushButton *cancelBut = nullptr;
+	QPushButton *deleteBut = nullptr;
 	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Open"), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
 	buttonLay->addSpacing(20);
@@ -1567,7 +1567,7 @@ QWidget* MainWindowUI::GetChannelStatusTab() {
 			return;
 		}
 
-		QStandardItem *chItem;
+		QStandardItem *chItem = nullptr;
 		//chItem = instItem->child(channel, ChannelStatusColumn::NAME);
 		//chItem->setData(QUuid(), Qt::UserRole);
 		
@@ -1786,11 +1786,11 @@ QWidget* MainWindowUI::GetChannelStatusTab() {
 QWidget* MainWindowUI::CreateBuildExperimentTabWidget(const QUuid &id) {
 	QWidget *w = 0;
 	
-	QPushButton *deletePbt;
-	QPushButton *duplicatePbt;
-	QPushButton *openPbt;
-	QPushButton *savePbt;
-	QPushButton *newPbt;
+	QPushButton *deletePbt = nullptr;
+	QPushButton *duplicatePbt = nullptr;
+	QPushButton *openPbt = nullptr;
+	QPushButton *savePbt = nullptr;
+	QPushButton *newPbt = nullptr;
 
 	auto topButtonOwner = OBJ_NAME(new QFrame, "builder-top-button-owner");
 	auto topButtonOwnerLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(topButtonOwner)));
@@ -1903,8 +1903,8 @@ QWidget* MainWindowUI::GetBuildExperimentTab() {
 
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
 
-	QPushButton *addNewButton;
-	QTabBar *tabBar;
+	QPushButton *addNewButton = nullptr;
+	QTabBar *tabBar = nullptr;
 
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 	
@@ -2173,11 +2173,11 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	dialog->setFixedWidth(660);
 
 	auto electrodeCombo = CMB();
-	QRadioButton *commRefRadio;
-	QRadioButton *otherRefRadio;
-	QLineEdit *otherRefLed;
-	QLineEdit *potVsSheLed;
-	QTextEdit *notesTed;
+	QRadioButton *commRefRadio = nullptr;
+	QRadioButton *otherRefRadio = nullptr;
+	QLineEdit *otherRefLed = nullptr;
+	QLineEdit *potVsSheLed = nullptr;
+	QTextEdit *notesTed = nullptr;
 
 	QLineEdit* currentDensityWorkingElectrode;
 	QLineEdit* currentDensityCounterElectrode;
@@ -2226,8 +2226,8 @@ bool MainWindowUI::GetExperimentNotes(QWidget *parent, ExperimentNotes &ret) {
 	lay->addWidget(OBJ_NAME(LBL("Atmosphere"), "notes-dialog-right-comment"), row, 0);
 	lay->addWidget(atmosphere = LED(), row++, 1);
 
-	QPushButton *okBut;
-	QPushButton *cancelBut;
+	QPushButton *okBut = nullptr;
+	QPushButton *cancelBut = nullptr;
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addStretch(1);
@@ -2337,9 +2337,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 		return w;
 	}
 
-	QLabel *descrIcon;
-	QLabel *descrName;
-	QLabel *descrText;
+	QLabel *descrIcon = nullptr;
+	QLabel *descrName = nullptr;
+	QLabel *descrText = nullptr;
 
 	w = WDG();
 	QHBoxLayout *lay = NO_SPACING(NO_MARGIN(new QHBoxLayout(w)));
@@ -2354,9 +2354,9 @@ QWidget* MainWindowUI::GetRunExperimentTab() {
 	experimentList->setModel(proxyModel);
 
 	auto searchLay = NO_SPACING(NO_MARGIN(new QHBoxLayout));
-	QLabel *searchLabel;
-	QPushButton *searchClearPbt;
-	QLineEdit *searchExpLed;
+	QLabel *searchLabel = nullptr;
+	QPushButton *searchClearPbt = nullptr;
+	QLineEdit *searchExpLed = nullptr;
 	searchLay->addWidget(searchLabel = OBJ_NAME(LBL(""), "search-experiments-label"));
 	searchLay->addWidget(searchExpLed = OBJ_NAME(LED(), "search-experiments"));
 	searchLay->addWidget(searchClearPbt = OBJ_NAME(PBT(""), "search-experiments-clear"));
@@ -2792,7 +2792,7 @@ QWidget* MainWindowUI::GetManualControlTab() {
 
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
-	QTabBar *tabBar;
+	QTabBar *tabBar = nullptr;
 
 	auto channelSelectWdg = OBJ_NAME(new QFrame(), "channel-selecting-placeholder");
 	auto channelSelectWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(channelSelectWdg)));
@@ -3252,11 +3252,11 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
-	QPushButton *addNewButton;
-	QPushButton *cascadeButton;
-	QPushButton *tileButton;
+	QPushButton *addNewButton = nullptr;
+	QPushButton *cascadeButton = nullptr;
+	QPushButton *tileButton = nullptr;
 
-	QTabBar *tabBar;
+	QTabBar *tabBar = nullptr;
 
 	auto stackedLayWdg = OBJ_NAME(WDG(), "new-data-window-placeholder");
 	auto stackedLayWdgLay = NO_SPACING(NO_MARGIN(new QHBoxLayout(stackedLayWdg)));
@@ -4015,7 +4015,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	QListView *fileList;
+	QListView *fileList = nullptr;
 
 	lay->addWidget(OBJ_NAME(LBL("Dataset List"), "heading-label"));
 	lay->addWidget(fileList = OBJ_NAME(new QListView, "curve-params-data-set-list"));
@@ -4024,8 +4024,8 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	fileList->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
 	auto optLay = new QHBoxLayout;
-	QRadioButton *primBut;
-	QRadioButton *secBut;
+	QRadioButton *primBut = nullptr;
+	QRadioButton *secBut = nullptr;
 	//optLay->addWidget(primBut = RBT("Primary curve"));
 	//optLay->addWidget(secBut = RBT("Secondary curve"));
 	optLay->addWidget(primBut = new QRadioButton(primaryLineName));
@@ -4039,7 +4039,7 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 
 	auto stackLay = NO_SPACING(NO_MARGIN(new QStackedLayout));
 
-	QLabel *curveSettingLabel;
+	QLabel *curveSettingLabel = nullptr;
 	//lay->addWidget(curveSettingLabel = OBJ_NAME(LBL("Primary Curve"), "heading-label"));
 	lay->addWidget(curveSettingLabel = OBJ_NAME(new QLabel(primaryLineName), "heading-label"));
 
@@ -4064,14 +4064,14 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	for(int what = CurveParameters::START; what < CurveParameters::TOTAL_CURVES; ++what) {
 		auto paramsOwner = OBJ_NAME(WDG(), "curve-params-adjusting-owner");
 
-		QwtPlot *smallPlot;
-		QComboBox *penStyleCmb;
-		QComboBox *curveSymbolCmb;
-		QDoubleSpinBox *spin;
-		QPushButton *colorPbt;
-		QLabel *widthLbl;
-		QSpinBox *widthSpin;
-		QLineEdit *legendLed;
+		QwtPlot *smallPlot = nullptr;
+		QComboBox *penStyleCmb = nullptr;
+		QComboBox *curveSymbolCmb = nullptr;
+		QDoubleSpinBox *spin = nullptr;
+		QPushButton *colorPbt = nullptr;
+		QLabel *widthLbl = nullptr;
+		QSpinBox *widthSpin = nullptr;
+		QLineEdit *legendLed = nullptr;
 		auto paramsLay = NO_SPACING(NO_MARGIN(new QGridLayout(paramsOwner)));
 
 		paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Legend: "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
@@ -4264,8 +4264,8 @@ bool MainWindowUI::GetNewPen(QWidget *parent, QMap<QString, MainWindowUI::CurveP
 	lay->addSpacing(40);
 	
 	auto buttonLay = new QHBoxLayout;
-	QPushButton *okBut;
-	QPushButton *cancelBut;
+	QPushButton *okBut = nullptr;
+	QPushButton *cancelBut = nullptr;
 	buttonLay->addStretch(1);
 	buttonLay->addWidget(okBut = OBJ_NAME(PBT("Apply"), "secondary-button"));
 	buttonLay->addWidget(cancelBut = OBJ_NAME(PBT("Cancel"), "secondary-button"));
@@ -4347,7 +4347,7 @@ QString MainWindowUI::GetNewTitle(QWidget *parent, const QString &oldText) {
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	QLineEdit *titleLed;
+	QLineEdit *titleLed = nullptr;
 
 	auto paramsLay = new QHBoxLayout;
 	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Plot title: "), "experiment-params-comment"), "comment-placement", "left"));
@@ -4402,9 +4402,9 @@ bool MainWindowUI::GetNewAxisParams(QWidget *parent, MainWindowUI::AxisParameter
 	globalLay->addLayout(lay);
 	globalLay->addWidget(OBJ_NAME(WDG(), "curve-params-dialog-horizontal-spacing"));
 
-	QLineEdit *minLed;
-	QLineEdit *maxLed;
-	QLineEdit *stepLed;
+	QLineEdit *minLed = nullptr;
+	QLineEdit *maxLed = nullptr;
+	QLineEdit *stepLed = nullptr;
 
 	auto paramsLay = new QGridLayout;
 	paramsLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Min value: "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
@@ -4736,14 +4736,14 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	y2Combo->setView(y2ComboList);
 	y2Combo->addItems(QStringList() << NONE_Y_AXIS_VARIABLE << yAxisList);
 
-	QCheckBox *xChkBox;
-	QCheckBox *y1ChkBox;
-	QCheckBox *y2ChkBox;
+	QCheckBox *xChkBox = nullptr;
+	QCheckBox *y1ChkBox = nullptr;
+	QCheckBox *y2ChkBox = nullptr;
 
-	QPushButton *addDataPbt;
-	QPushButton *editLinesPbt;
-	QPushButton *savePlotPbt;
-	QPushButton *openFilePbt;
+	QPushButton *addDataPbt = nullptr;
+	QPushButton *editLinesPbt = nullptr;
+	QPushButton *savePlotPbt = nullptr;
+	QPushButton *openFilePbt = nullptr;
 
 	auto buttonLay = new QHBoxLayout;
 	buttonLay->addWidget(addDataPbt = OBJ_PROP(OBJ_NAME(PBT("Add Data\nFile(s)"), "secondary-button"), "add-name", "new-data-controls"));
@@ -4762,21 +4762,21 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	settingsGroupFrameLay->setColumnStretch(1, 1);
 	settingsGroupFrameLay->addLayout(buttonLay, 4, 0, 1, -1);
 
-	QGroupBox *advOptionsGroup;
-	QWidget *advOptionsGroupFrame;
-	QCheckBox *potGalvModeChk;
-	QCheckBox *openCircuitModeChk;
-	QComboBox *rangeCombo;
-	QPushButton *startManualExpPbt;
-	QPushButton *pauseManualExpPbt;
-	QPushButton *stopManualExpPbt;
-	QLineEdit *appliedPotLed;
-	QLineEdit *appliedCurLed;
-	QLineEdit *samplingIntLed;
-	QLabel *appliedPotLblLeft;
-	QLabel *appliedPotLblRight;
-	QLabel *appliedCurLblLeft;
-	QComboBox *appliedCurLblRight;
+	QGroupBox *advOptionsGroup = nullptr;
+	QWidget *advOptionsGroupFrame = nullptr;
+	QCheckBox *potGalvModeChk = nullptr;
+	QCheckBox *openCircuitModeChk = nullptr;
+	QComboBox *rangeCombo = nullptr;
+	QPushButton *startManualExpPbt = nullptr;
+	QPushButton *pauseManualExpPbt = nullptr;
+	QPushButton *stopManualExpPbt = nullptr;
+	QLineEdit *appliedPotLed = nullptr;
+	QLineEdit *appliedCurLed = nullptr;
+	QLineEdit *samplingIntLed = nullptr;
+	QLabel *appliedPotLblLeft = nullptr;
+	QLabel *appliedPotLblRight = nullptr;
+	QLabel *appliedCurLblLeft = nullptr;
+	QComboBox *appliedCurLblRight = nullptr;
 
 	#define POTENTIOSTATIC_TEXT "Potentiostatic"
 	#define GALVANOSTATIC_TEXT	"Galvanostatic"
@@ -4883,8 +4883,8 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	//settingsLay->addLayout(buttonLay, 8, 0, -1, -1);
 
 	auto controlButtonLay = new QHBoxLayout;
-	QPushButton *pauseExperiment;
-	QPushButton *stopExperiment;
+	QPushButton *pauseExperiment = nullptr;
+	QPushButton *stopExperiment = nullptr;
 
 	controlButtonLay->addWidget(pauseExperiment = OBJ_NAME(PBT("Pause experiment"), "control-button-blue"));
 	controlButtonLay->addWidget(stopExperiment = OBJ_NAME(PBT("Stop experiment"), "control-button-red"));
@@ -4901,12 +4901,12 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 
 	auto plotButtonsLay = NO_SPACING(NO_MARGIN(new QVBoxLayout));
 	
-	QPushButton *zoomInPbt;
-	QPushButton *zoomOutPbt;
-	QPushButton *showGridlinesPbt;
-	QPushButton *zoomToSelectionPbt;
-	QPushButton *panViewPbt;
-	QPushButton *resetZoomPbt;
+	QPushButton *zoomInPbt = nullptr;
+	QPushButton *zoomOutPbt = nullptr;
+	QPushButton *showGridlinesPbt = nullptr;
+	QPushButton *zoomToSelectionPbt = nullptr;
+	QPushButton *panViewPbt = nullptr;
+	QPushButton *resetZoomPbt = nullptr;
 
 	plotButtonsLay->addStretch(1);
 	plotButtonsLay->addWidget(showGridlinesPbt = OBJ_NAME(PBT(""), "plot-gridlines-button"));
