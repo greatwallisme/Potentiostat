@@ -133,7 +133,7 @@ private:
 	QWidget* GetNewDataWindowTab();
 	QWidget* CreateNewDataTabWidget(const QUuid&, ExperimentType, const QString&, const QStringList &xAxis, const QStringList &yAxis, const QString &filePath, const DataMap* = 0, bool isManualMode = false, HardwareModel_t = HardwareModel_t::PRIME);
 
-	QWidget* GetStatisticsTab();
+	QWidget* GetChannelStatusTab();
 
 	QWidget* GetSearchHardwareWidget();
 	QWidget* GetLogWidget();
@@ -170,11 +170,11 @@ private:
 		struct {
 			QPushButton *tabButton;
 		} manualExperiment;
-	} ui;
+	} m_ui;
 		
 	struct {
 		QWidget *userInputs;
-	} prebuiltExperimentData;
+	} m_prebuiltExperimentData;
 	
 	struct {
 		struct {
@@ -187,7 +187,7 @@ private:
 			QMap<QString, qint8> channel;
 			const AbstractExperiment *exp;
 		} manual;
-	} selectedHardware;
+	} m_selectedHardware;
 	
 	struct DataMapVisualization {
 		DataMap container;
@@ -242,9 +242,9 @@ private:
 		QWidget *paramsHeadWidget;
 		QVBoxLayout *paramsLay;
 		QTabBar *tabBar;
-	} builderTabs;
+	} m_builderTabs;
 
-	QMap<QString, AbstractBuilderElement*> elementsPtrMap;
+	QMap<QString, AbstractBuilderElement*> m_elementsPtrMap;
 
 	struct DataTabPtr {
 		enum {
@@ -272,8 +272,8 @@ private:
 		QMap<QUuid, DataMap> lastData;
 		QList<QMdiSubWindow*> dataWindowOrder;
 		bool firstDataTab = true;
-	} dataTabs;
+	} m_dataTabs;
 
-	MainWindow *mw;
-	QList<QMetaObject::Connection> connections;
+	MainWindow *m_mainWindow;
+	QList<QMetaObject::Connection> m_connections;
 };
