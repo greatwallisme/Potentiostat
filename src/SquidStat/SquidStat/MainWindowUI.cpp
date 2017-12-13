@@ -1457,7 +1457,21 @@ QWidget* MainWindowUI::GetStatisticsTab() {
 
 		dataTabs.dataTabPtrs[id] = tabPtr;
 	};
-	auto triggerIndex = [=](const QModelIndex &index) {
+	auto triggerIndex = [=](const QModelIndex &idx) {
+
+		// The parameter QModelIndex will have a non-null QUuid only if
+		// the double-click happened on the channel name of an active channel,
+		// meaning that the rest of the row doesn't work as a button.
+		// To allow the entire row to act as a button, we check if the column
+		// is non-zero (not the channel name column), and if so, essentially
+		// "move" the double click location to the first column of the same row.
+		// This allows us to preserve the pre-existing logic without modification.
+
+		QModelIndex index = idx;
+		if (idx.column() > 0) {
+			index = idx.sibling(idx.row(), 0);
+		}
+
 		auto id = index.data(Qt::UserRole).toUuid();
 		if (id == QUuid()) {
 			return;
