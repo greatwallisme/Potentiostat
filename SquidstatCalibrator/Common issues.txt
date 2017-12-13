@@ -1,0 +1,4 @@
+Common hardware problems:
+
+-ADC_dc data reports all zeroes, though multimeter data looks good
+	-ADC's aren't being powered, check 5V pin on MicroSD breakout board. D1 may be installed backwards
