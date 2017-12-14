@@ -3253,7 +3253,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	auto tabHeaderLay = NO_SPACING(NO_MARGIN(new QHBoxLayout()));
 
 	QPushButton *addNewButton = nullptr;
-	QPushButton *cascadeButton = nullptr;
 	QPushButton *tileButton = nullptr;
 
 	QTabBar *tabBar = nullptr;
@@ -3277,7 +3276,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabHeaderLay->addWidget(tabFrame);
 	tabHeaderLay->addWidget(addNewButton = OBJ_NAME(PBT("+"), "builder-tab-add-new"));
 	tabHeaderLay->addStretch(1);
-	tabHeaderLay->addWidget(cascadeButton = OBJ_NAME(PBT("Cascade"), "builder-tab-mdi"));
 	tabHeaderLay->addWidget(tileButton = OBJ_NAME(PBT("Tile"), "builder-tab-mdi"));
 
 	lay->addLayout(tabHeaderLay);
@@ -3289,11 +3287,9 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	tabBar->installEventFilter(new UniversalEventFilter(tabBar, [=](QObject *obj, QEvent *e) -> bool {
 		switch (e->type()) {
 		case QEvent::Hide:
-			cascadeButton->hide();
 			tileButton->hide();
 			break;
 		case QEvent::Show:
-			cascadeButton->show();
 			tileButton->show();
 			break;
 		}
@@ -3301,7 +3297,6 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 	}));
 
 	tabBar->hide();
-	cascadeButton->hide();
 	tileButton->hide();
 	
 	static QPushButton *closeTabButton = 0;
@@ -3465,7 +3460,7 @@ QWidget* MainWindowUI::GetNewDataWindowTab() {
 			m_dataTabs.dataWindowOrder.last()->showMaximized();
 		}
 	});
-	m_connections << QObject::connect(cascadeButton, &QPushButton::clicked, mdiArea, &QMdiArea::cascadeSubWindows);
+
 	m_connections << QObject::connect(tileButton, &QPushButton::clicked, mdiArea, &QMdiArea::tileSubWindows);
 
 	auto actionOnClosePbt = [=]() {
