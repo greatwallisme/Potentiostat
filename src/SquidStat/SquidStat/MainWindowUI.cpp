@@ -4685,7 +4685,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	auto realTimeGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto realTimeGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(realTimeGroupFrame)));
 	realTimeGroupLay->addWidget(realTimeGroupFrame);
-	realTimeGroup->setCheckable(true);
+	realTimeGroup->setCheckable(false); // checkable means collapsible
 
 	QStringList realTimeValueNames;
 	realTimeValueNames << xAxisList << yAxisList;
@@ -4709,7 +4709,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 	auto settingsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 	auto settingsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(settingsGroupFrame)));
 	settingsGroupLay->addWidget(settingsGroupFrame);
-	settingsGroup->setCheckable(true);
+	settingsGroup->setCheckable(false); // checkable means collapsible
 
 
 	settingsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("X axis = "), "experiment-params-comment"), "comment-placement", "left"), 1, 0);
@@ -4784,7 +4784,7 @@ QWidget* MainWindowUI::CreateNewDataTabWidget(const QUuid &id, ExperimentType ty
 		advOptionsGroupFrame = OBJ_NAME(new QFrame, "collapsible-group-box-frame");
 		auto advOptionsGroupFrameLay = NO_SPACING(NO_MARGIN(new QGridLayout(advOptionsGroupFrame)));
 		advOptionsGroupLay->addWidget(advOptionsGroupFrame);
-		advOptionsGroup->setCheckable(true);
+		advOptionsGroup->setCheckable(false); // checkable means collapsible
 
 		advOptionsGroupFrameLay->addWidget(OBJ_PROP(OBJ_NAME(LBL("Operating mode: "), "experiment-params-comment"), "comment-placement", "left"), 0, 0);
 		advOptionsGroupFrameLay->addWidget(appliedPotLblLeft = OBJ_PROP(OBJ_NAME(LBL("Applied potential: "), "experiment-params-comment"), "comment-placement", "left"), 3, 0);
