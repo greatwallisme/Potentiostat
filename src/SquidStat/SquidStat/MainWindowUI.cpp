@@ -84,6 +84,8 @@
 #include <QMdiArea>
 #include <QMdiSubWindow>
 
+#include <QApplication>
+
 #define FW_HEX_OPEN_PATH				"fw-hex-open-path"
 
 #define EXPERIMENT_VIEW_ALL_CATEGORY	"View All"
@@ -160,6 +162,23 @@ void MainWindowUI::CreateUI() {
 	SetLogSignalEmitterParent(m_mainWindow);
 	CreateCentralWidget();
 	CreateMenu();
+
+	InstallCheckBoxEventFilter();
+}
+void MainWindowUI::InstallCheckBoxEventFilter() {
+	qApp->installEventFilter(new UniversalEventFilter(qApp, [](QObject *obj, QEvent *e) -> bool {
+		QComboBox *cb = qobject_cast<QComboBox*>(obj);
+
+		if (0 == cb) {
+			return false;
+		}
+
+		if (e->type() == QEvent::Wheel) {
+			return true;
+		}
+
+		return false;
+	}));
 }
 void MainWindowUI::CreateMenu() {
 	auto menuBar = new QMenuBar;

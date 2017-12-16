@@ -58,6 +58,7 @@ public:
 	void DisconnectAll();
 
 private:
+	void InstallCheckBoxEventFilter();
 	static bool ReadCsvFile(const QString &fileName,  CsvFileData&);
 	static bool GetColor(QWidget *parent, QColor&);
 
