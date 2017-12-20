@@ -95,12 +95,12 @@ MainWindow::~MainWindow() {
 
 	CleanupCurrentHardware();
 
-	//ui->DisconnectAll();
+	//m_ui->DisconnectAll();
 
 	//CleanupExperiments();
 	//CleanupBuilderElements();
 
-	//delete ui;
+	//delete m_ui;
 }
 void MainWindow::CleanupExperiments() {
 	foreach(auto exp, prebuiltExperiments.customExpMap) {

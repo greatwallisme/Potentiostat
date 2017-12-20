@@ -17,6 +17,9 @@
 
 #define BUILDER_ELEMENT_SPACING		2
 
+// Uncomment the line below to visualize background map
+//#define DRAW_VISIBLE_BACKGROUND_MAP
+
 BuilderContainer::BuilderContainer(qint32 rep, Type t) :
 	repeats(rep),
 	type(t),
@@ -449,7 +452,8 @@ void BuilderWidget::paintEvent(QPaintEvent *e) {
 	QPainter painter(this);
 	
 	QList<QLine> lines;
-	//*
+
+#ifndef DRAW_VISIBLE_BACKGROUND_MAP
 	for (auto it = container.elements.begin(); it != container.elements.end(); ++it) {
 		if (it->type == BuilderContainer::SET) {
 			auto rect = it->w->rect();
@@ -476,9 +480,9 @@ void BuilderWidget::paintEvent(QPaintEvent *e) {
 
 		lines << GetLines(it->w, it->ld);
 	}
-	/*/
+#else
 	painter.drawImage(0, 0, background.map);
-	//*/
+#endif // DRAW_VISIBLE_BACKGROUND_MAP
 
 	painter.setPen(QPen(QColor("#80939a"), 2));
 	foreach(auto &line, lines) {
@@ -968,8 +972,13 @@ QColor GetColor(quint32 id) {
 	return QColor(colorName);
 }
 quint32 GetNexColorId(quint32 id) {
+
+#ifndef DRAW_VISIBLE_BACKGROUND_MAP
 	++id;
-	//id *= 123;
+#else
+	id *= 123;
+#endif // DRAW_VISIBLE_BACKGROUND_MAP
+
 	return id;
 }
 bool operator < (const QColor &a, const QColor &b) {
