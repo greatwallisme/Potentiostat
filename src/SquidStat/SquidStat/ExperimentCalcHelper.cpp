@@ -400,6 +400,7 @@ void ExperimentCalcHelperClass::GetSamplingParameters_pulse(HardwareModel_t HWve
 currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWversion, const cal_t * calData, double targetCurrent)
 {
 	int range;
+  double gain;
 	switch (HWversion)
 	{
 	case PRIME:
@@ -407,12 +408,14 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWv
 	case PICO:
 	case SOLO:
   case PLUS:
+      gain = 1;
     range = 3;
 		break;
 	case PLUS_2_0:
 	case SOLO_2_0:
 	case PRIME_2_0:
     range = 7;
+    gain = 9.91;
 		break;
 	default:
 		break;
@@ -421,7 +424,7 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange(HardwareModel_t HWv
   while (1)
   {
     float slope = MAX(calData->m_iN[range], calData->m_iP[range]);
-    if (fabs(targetCurrent) > fabs(slope * OVERCURRENT_LIMIT + calData->b_i[range]) && range > 0)
+    if (fabs(targetCurrent) > fabs(slope * OVERCURRENT_LIMIT / gain + calData->b_i[range]) && range > 0)
       range--;
     else
       break;
@@ -448,23 +451,18 @@ int16_t ExperimentCalcHelperClass::GetBINVoltageForDAC(const cal_t * calData, do
 ProcessedDCData ExperimentCalcHelperClass::ProcessDCDataPoint(const cal_t * calData, ExperimentalDcData rawData)
 {
   ProcessedDCData processedData;
-  double ewe = rawData.ADCrawData.ewe > 0 ? calData->m_eweP * rawData.ADCrawData.ewe + calData->b_ewe : calData->m_eweN * rawData.ADCrawData.ewe + calData->b_ewe;
+  double ewe = rawData.ADCrawData.ewe > 0 ? calData->m_eweP * rawData.ADCrawData.ewe / rawData.WEgain + calData->b_ewe : calData->m_eweN * rawData.ADCrawData.ewe / rawData.WEgain + calData->b_ewe;
   double ref = rawData.ADCrawData.ref > 0 ? calData->m_refP * rawData.ADCrawData.ref + calData->b_ref : calData->m_refN * rawData.ADCrawData.ref + calData->b_ref;
   double ece = rawData.ADCrawData.ece > 0 ? calData->m_eceP * rawData.ADCrawData.ece + calData->b_ece : calData->m_eceN * rawData.ADCrawData.ece + calData->b_ece;
-  //double ewe = rawData.ADCrawData.ewe;
-  //double ref = rawData.ADCrawData.ref;
-  //double ece = rawData.ADCrawData.ece;
   processedData.EWE = ewe;
-  processedData.EWE /= rawData.WEgain;
   processedData.ECE = ece - ref;
   int n = (int)rawData.currentRange;
   if (rawData.currentRange == OFF)
 
     processedData.current = 0;
   else
-    processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange] :
-                                                           calData->m_iN[(int)rawData.currentRange] * rawData.ADCrawData.current + calData->b_i[(int)rawData.currentRange];
-  processedData.current /= rawData.Igain;
+    processedData.current = rawData.ADCrawData.current > 0 ? calData->m_iP[(int)rawData.currentRange] * rawData.ADCrawData.current / rawData.Igain + calData->b_i[(int)rawData.currentRange] :
+                                                           calData->m_iN[(int)rawData.currentRange] * rawData.ADCrawData.current / rawData.Igain + calData->b_i[(int)rawData.currentRange];
   return processedData;
 }
 
@@ -741,7 +739,7 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
     /******************************************************/
     /* debugging only */
     std::ofstream fout;
-    QString filename = "C:/Users/Matt/Desktop/results";
+    QString filename = "C:/EISrawData/results";
     filename.append(QString::number(frequency));
     filename.append(".txt");
     fout.open(filename.toStdString(), std::ofstream::out);

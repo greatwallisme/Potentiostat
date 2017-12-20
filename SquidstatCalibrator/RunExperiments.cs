@@ -34,9 +34,16 @@ namespace SSC
         // Commanded setpoints
         static short[] _setpoints =
         {
-            -29475, -26200, -22925, -19650, -16375, -13100, -9825, -6550, -3275, -1500,
-                 0,
-              1500, 3275,   6550,   9825,  13100,  16375,  19650,  22925, 26200, 29475,
+            -27000, -24300, -21600, -18900,-16200,-13500,-10800,-8100,-5400,-2700,
+            0,
+            2700,5400,8100,10800,13500,16200,18900,21600,24300,27000
+        };
+
+        static short[] _v2CurrentSetpoints =
+        {
+              -27000,-27000, -24300, -21600, -18900,-16200,-13500,-10800,-8100,-5400,-2700, //redundant first point
+            0,
+            2700,5400,8100,10800,13500,16200,18900,21600,24300,27000
         };
 
         static short[] _v1CurrentSetpoints =
@@ -96,6 +103,8 @@ namespace SSC
                 // log the exchange so that you can print it to a csv file later
                 MeterExchanges.Add(e);
             }
+
+            WriteBytes(ref _squidstat, MANUAL_OCP_SET());
         }
 
         public static void RunAmmeter(byte range)
@@ -121,7 +130,8 @@ namespace SSC
                 if (i!=0)   //skip first point, since it's repeated
                     MeterExchanges.Add(e);
             }
-         }
+            WriteBytes(ref _squidstat, MANUAL_OCP_SET());
+        }
 
         public static void RunPicoammeter(byte range)
         {
@@ -145,6 +155,7 @@ namespace SSC
                 if (i != 0)   //skip first point, since it's repeated
                     MeterExchanges.Add(e);
             }
+            WriteBytes(ref _squidstat, MANUAL_OCP_SET());
         }
     }
 }
