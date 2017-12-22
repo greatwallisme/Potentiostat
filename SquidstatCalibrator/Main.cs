@@ -79,6 +79,10 @@ namespace SSC // Squidstat Calibrator
                 {
                     _setpoints = _v1CurrentSetpoints;
                 }
+                else if (_squidstatVersion == SquidstatVersions.V2)
+                {
+                    _setpoints = _v2CurrentSetpoints;
+                }
 
                 RunPicoammeter(range);
 
@@ -177,8 +181,12 @@ namespace SSC // Squidstat Calibrator
                     {
                         _setpoints = _v1CurrentSetpoints;
                     }
+                    else if (_squidstatVersion == SquidstatVersions.V2)
+                    {
+                        _setpoints = _v2CurrentSetpoints;
+                    }
 
-                    RunAmmeter(range);
+                        RunAmmeter(range);
 
                     _hp34401a.Close();
 

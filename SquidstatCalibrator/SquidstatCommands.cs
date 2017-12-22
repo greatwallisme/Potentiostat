@@ -55,6 +55,11 @@ namespace SSC
             return new byte[] { FRAME1, FRAME2, (byte)Cmd.SET_MANUAL_MODE, CHANNEL, 0x00, 0x00 };
         }
 
+        static byte[] MANUAL_OCP_SET()
+        {
+            return new byte[] { FRAME1, FRAME2, (byte)Cmd.MANUAL_OCP_SET, CHANNEL, 0x00, 0x00};
+        }
+
         static byte[] MANUAL_SAMPLING_PARAMS_SET(byte TimerDiv, uint TimerPeriod, ushort ADCBufSize) //TODO
         {
             ushort NDB = 7; // number of data bytes
