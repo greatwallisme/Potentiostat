@@ -30,8 +30,8 @@
 		dataheader.frequency,											\
 		(int16_t*)expDataRaw.data(),												\
 		numBufs,													\
-		dataheader.gainVoltage,										\
-		dataheader.gainCurrent,										\
+		dataheader.gainSettingVoltage,										\
+		dataheader.gainSettingCurrent,										\
 		numCycles,													\
 		&calData,													\
 		dataheader.IRange);

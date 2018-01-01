@@ -37,7 +37,10 @@ namespace SSC
             MANUAL_POT_SETPOINT_SET,
             MANUAL_OCP_SET,
             MANUAL_CURRENT_RANGING_MODE_SET,
-            RESET_TO_BOOTLOADER
+            RESET_TO_BOOTLOADER,
+            SET_COMP_RANGE,
+            SEND_CHANNEL_NAME,
+            SAVE_CHANNEL_NAME
         };
 
         static byte[] HANDSHAKE()
@@ -151,6 +154,11 @@ namespace SSC
             return new byte[] { FRAME1, FRAME2, (byte)Cmd.SEND_HW_DATA, CHANNEL, 0x00, 0x00 };
         }
 
+        static byte[] SEND_CHANNEL_NAME()
+        {
+            return new byte[] { FRAME1, FRAME2, (byte)Cmd.SEND_CHANNEL_NAME, CHANNEL, 0x00, 0x00 };
+        }
+
         enum HardwareModel_t
         {
             PRIME = 0,
@@ -217,9 +225,55 @@ namespace SSC
             
         }
 
+        class SAVE_CHANNEL_NAME
+        {
+            public string name;
+
+            public SAVE_CHANNEL_NAME()
+            {
+
+            }
+
+            public byte[] Bytes
+            {
+                get
+                {
+                    List<byte> bytes = new List<byte>();
+                    bytes.AddRange(System.Text.Encoding.ASCII.GetBytes(name));
+
+                    if (bytes.Count < 32)
+                    {
+                        byte[] padding = new byte[32 - bytes.Count];
+                        bytes.AddRange(padding);
+                    }
+
+                    if (bytes.Count > 32)
+                    {
+                        Console.WriteLine("ERR  Text exceeds 32 characters.");
+                        byte[] rval = new byte[0];
+                        return rval;
+                    }
+
+                    var cmd_ = new byte[] { FRAME1, FRAME2, (byte)Cmd.SAVE_CHANNEL_NAME, CHANNEL };
+                    List<byte> cmd = cmd_.ToList();
+
+                    ushort numDataBytes = 32;
+                    cmd.AddRange(BitConverter.GetBytes(numDataBytes));
+
+                    cmd.AddRange(bytes);
+
+                    return cmd.ToArray();
+                }
+            }
+
+        }
+
         class CAL_DATA
         {
             public float m_DACac;    //DACac mVAC-to-bin slope
+            public float m_DACircomp; //DACdc V-to-bin slope for iR compensation. Units = bits/V
+            public float m_DACwebias;   //DACdc V-to-bin slope for biasing WE gain stages. Units = bits/V
+            public float m_DACibias;    //DACdc V-to-bin slope for biasing I gain stages. Units = bits/V
 
             public float m_DACdcP_V;   //DACdc V-to-bin slope, x > 0. Units = bits/V
             public float m_DACdcN_V;   //DACdc V-to-bin slope, x < 0. Units = bits/V
@@ -245,6 +299,39 @@ namespace SSC
             public float[] m_DACdcN_I; //DACdc current mA-to-bin slope, x < 0.	Units = bits/mA
             public float[] b_DACdc_I;  //DACdc current mA-to-bin intercept		Units = bits
 
+            /* Phase angle calibration */
+            public float[] stagePhaseDelay;  // delay of each gain stage relative to a gain of 1
+                                            // [0] = Vgain2 stage delay (nanoseconds)
+                                            // [1] = Vgain5 stage delay (nanoseconds)
+                                            // [2] = Vgain10 stage delay (nanoseconds)
+                                            // [3] = Vgain10alt1 stage delay (nanoseconds)
+                                            // [4] = Vgain10alt2 stage delay (nanoseconds)
+                                            // [5] = Igain2 stage delay (nanoseconds)
+                                            // [6] = Igain5 stage delay (nanoseconds)
+                                            // [7] = Igain10 stage delay (nanoseconds)
+                                            // [8] = Igain10alt1 stage delay (nanoseconds)
+                                            // [9] = Igain10alt2 stage delay (nanoseconds)
+            public float[] stageDCGain;      // DC gain of each gain stage
+                                            // [0] = Vgain2 gain
+                                            // [1] = Vgain5 gain
+                                            // [2] = Vgain10 gain
+                                            // etc...
+            public float[] stageHFGain_A;    // Stage's gain above 50kHz, quadratic term [=] 1/Hz^2
+                                                 // [0] = Vgain2's quadratic term
+                                                 // [1] = Vgain5's quadratic term
+                                                 // [2] = Vgain10's quadratic term
+                                                 // etc...
+            public float[] stageHFGain_B;    // Stage's gain above 50kHz, linear term [=] 1/Hz
+                                                 // [0] = Vgain2's linear term
+                                                 // [1] = Vgain5's linear term
+                                                 // [2] = Vgain10's linear term
+                                                 // etc...
+            public float[] stageHFGain_C;    // Stage's gain above 50kHz, scalar term
+                                                 // [0] = Vgain2's scalar term
+                                                 // [1] = Vgain5's scalar term
+                                                 // [2] = Vgain10's scalar term
+                                                 // etc...
+
             public CAL_DATA()
             {
                 int N = _currentRanges.Count;
@@ -254,6 +341,12 @@ namespace SSC
                 m_DACdcP_I = new float[N];
                 m_DACdcN_I = new float[N];
                 b_DACdc_I = new float[N];
+
+                stagePhaseDelay = new float[10];
+                stageDCGain = new float[10];
+                stageHFGain_A = new float[10];
+                stageHFGain_B = new float[10];
+                stageHFGain_C = new float[10];
             }
 
             public CAL_DATA(byte[] b)
@@ -266,77 +359,95 @@ namespace SSC
                 m_DACdcN_I = new float[N];
                 b_DACdc_I = new float[N];
 
-                m_DACac = BitConverter.ToSingle(b, H + 4*0);
+                stagePhaseDelay = new float[10];
+                stageDCGain = new float[10];
+                stageHFGain_A = new float[10];
+                stageHFGain_B = new float[10];
+                stageHFGain_C = new float[10];
 
-                m_DACdcP_V = BitConverter.ToSingle(b, H + 4*1);
-                m_DACdcN_V = BitConverter.ToSingle(b, H + 4*2);
-                b_DACdc_V = BitConverter.ToSingle(b, H + 4*3);
+                int index = H;
+                m_DACac = BitConverter.ToSingle(b, index);      index += sizeof(Single);
+                m_DACircomp = BitConverter.ToSingle(b, index);  index += sizeof(Single);
+                m_DACwebias = BitConverter.ToSingle(b, index);  index += sizeof(Single);
+                m_DACibias = BitConverter.ToSingle(b, index);   index += sizeof(Single);
 
-                m_refP = BitConverter.ToSingle(b, H + 4*4);
-                m_refN = BitConverter.ToSingle(b, H + 4*5);
-                b_ref = BitConverter.ToSingle(b, H + 4*6);
+                m_DACdcP_V = BitConverter.ToSingle(b, index);   index += sizeof(Single);
+                m_DACdcN_V = BitConverter.ToSingle(b, index);   index += sizeof(Single);
+                b_DACdc_V = BitConverter.ToSingle(b, index);    index += sizeof(Single);
 
-                m_eweP = BitConverter.ToSingle(b, H + 4*7);
-                m_eweN = BitConverter.ToSingle(b, H + 4*8);
-                b_ewe = BitConverter.ToSingle(b, H + 4*9);
+                m_refP = BitConverter.ToSingle(b, index);     index += sizeof(Single);
+                m_refN = BitConverter.ToSingle(b, index);     index += sizeof(Single);
+                b_ref = BitConverter.ToSingle(b, index);      index += sizeof(Single);
 
-                m_eceP = BitConverter.ToSingle(b, H + 4*10);
-                m_eceN = BitConverter.ToSingle(b, H + 4*11);
-                b_ece = BitConverter.ToSingle(b, H + 4*12);
+                m_eweP = BitConverter.ToSingle(b, index);     index += sizeof(Single);
+                m_eweN = BitConverter.ToSingle(b, index);     index += sizeof(Single);
+                b_ewe = BitConverter.ToSingle(b, index);      index += sizeof(Single);
 
-                m_iP[0] = BitConverter.ToSingle(b, H + 4*13);
-                m_iP[1] = BitConverter.ToSingle(b, H + 4*14);
-                m_iP[2] = BitConverter.ToSingle(b, H + 4*15);
-                m_iP[3] = BitConverter.ToSingle(b, H + 4*16);
-                m_iP[4] = BitConverter.ToSingle(b, H + 4*17);
-                m_iP[5] = BitConverter.ToSingle(b, H + 4*18);
-                m_iP[6] = BitConverter.ToSingle(b, H + 4*19);
-                m_iP[7] = BitConverter.ToSingle(b, H + 4*20);
+                m_eceP = BitConverter.ToSingle(b, index);    index += sizeof(Single);
+                m_eceN = BitConverter.ToSingle(b, index);    index += sizeof(Single);
+                b_ece = BitConverter.ToSingle(b, index);     index += sizeof(Single);
 
-                m_iN[0] = BitConverter.ToSingle(b, H + 4 * 21);
-                m_iN[1] = BitConverter.ToSingle(b, H + 4 * 22);
-                m_iN[2] = BitConverter.ToSingle(b, H + 4 * 23);
-                m_iN[3] = BitConverter.ToSingle(b, H + 4 * 24);
-                m_iN[4] = BitConverter.ToSingle(b, H + 4 * 25);
-                m_iN[5] = BitConverter.ToSingle(b, H + 4 * 26);
-                m_iN[6] = BitConverter.ToSingle(b, H + 4 * 27);
-                m_iN[7] = BitConverter.ToSingle(b, H + 4 * 28);
+                for (int i = 0; i < 8; i++)
+                {
+                    m_iP[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
 
-                b_i[0] = BitConverter.ToSingle(b, H + 4 * 29);
-                b_i[1] = BitConverter.ToSingle(b, H + 4 * 30);
-                b_i[2] = BitConverter.ToSingle(b, H + 4 * 31);
-                b_i[3] = BitConverter.ToSingle(b, H + 4 * 32);
-                b_i[4] = BitConverter.ToSingle(b, H + 4 * 33);
-                b_i[5] = BitConverter.ToSingle(b, H + 4 * 34);
-                b_i[6] = BitConverter.ToSingle(b, H + 4 * 35);
-                b_i[7] = BitConverter.ToSingle(b, H + 4 * 36);
+                for (int i = 0; i < 8; i++)
+                {
+                    m_iN[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
 
-                m_DACdcP_I[0] = BitConverter.ToSingle(b, H + 4 * 37);
-                m_DACdcP_I[1] = BitConverter.ToSingle(b, H + 4 * 38);
-                m_DACdcP_I[2] = BitConverter.ToSingle(b, H + 4 * 39);
-                m_DACdcP_I[3] = BitConverter.ToSingle(b, H + 4 * 40);
-                m_DACdcP_I[4] = BitConverter.ToSingle(b, H + 4 * 41);
-                m_DACdcP_I[5] = BitConverter.ToSingle(b, H + 4 * 42);
-                m_DACdcP_I[6] = BitConverter.ToSingle(b, H + 4 * 43);
-                m_DACdcP_I[7] = BitConverter.ToSingle(b, H + 4 * 44);
+                for (int i = 0; i < 8; i++)
+                {
+                    b_i[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
 
-                m_DACdcN_I[0] = BitConverter.ToSingle(b, H + 4 * 45);
-                m_DACdcN_I[1] = BitConverter.ToSingle(b, H + 4 * 46);
-                m_DACdcN_I[2] = BitConverter.ToSingle(b, H + 4 * 47);
-                m_DACdcN_I[3] = BitConverter.ToSingle(b, H + 4 * 48);
-                m_DACdcN_I[4] = BitConverter.ToSingle(b, H + 4 * 49);
-                m_DACdcN_I[5] = BitConverter.ToSingle(b, H + 4 * 50);
-                m_DACdcN_I[6] = BitConverter.ToSingle(b, H + 4 * 51);
-                m_DACdcN_I[7] = BitConverter.ToSingle(b, H + 4 * 52);
+                for (int i = 0; i < 8; i++)
+                {
+                    m_DACdcP_I[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
 
-                b_DACdc_I[0] = BitConverter.ToSingle(b, H + 4 * 53);
-                b_DACdc_I[1] = BitConverter.ToSingle(b, H + 4 * 54);
-                b_DACdc_I[2] = BitConverter.ToSingle(b, H + 4 * 55);
-                b_DACdc_I[3] = BitConverter.ToSingle(b, H + 4 * 56);
-                b_DACdc_I[4] = BitConverter.ToSingle(b, H + 4 * 57);
-                b_DACdc_I[5] = BitConverter.ToSingle(b, H + 4 * 58);
-                b_DACdc_I[6] = BitConverter.ToSingle(b, H + 4 * 59);
-                b_DACdc_I[7] = BitConverter.ToSingle(b, H + 4 * 60);
+                for (int i = 0; i < 8; i++)
+                {
+                    m_DACdcN_I[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+
+                for (int i = 0; i < 8; i++)
+                {
+                    b_DACdc_I[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+
+                for (int i = 0; i < 10; i++)
+                {
+                    stagePhaseDelay[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+                for (int i = 0; i < 10; i++)
+                {
+                    stageDCGain[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+                for (int i = 0; i < 10; i++)
+                {
+                    stageHFGain_A[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+                for (int i = 0; i < 10; i++)
+                {
+                    stageHFGain_B[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
+                for (int i = 0; i < 10; i++)
+                {
+                    stageHFGain_C[i] = BitConverter.ToSingle(b, index);
+                    index += sizeof(Single);
+                }
             }
 
             public byte[] Bytes
@@ -350,12 +461,15 @@ namespace SSC
                     b.Add(FRAME2);
                     b.Add(((byte)Cmd.SAVE_CAL_DATA));
                     b.Add(CHANNEL);
-                    ushort numDataBytes = (13 + 6 * 8) * 4; // 13 floats, 6 arrays of 8 floats, floats are 4 bytes
+                    ushort numDataBytes = (16 + 6 * 8 + 5 * 10) * 4; // 16 floats, 6 arrays of 8 floats, 5 arrays of 10 floats, floats are 4 bytes
                     b.AddRange(BitConverter.GetBytes(numDataBytes));
 
                     // payload bytes
 
                     b.AddRange(BitConverter.GetBytes(m_DACac));
+                    b.AddRange(BitConverter.GetBytes(m_DACircomp));
+                    b.AddRange(BitConverter.GetBytes(m_DACwebias));
+                    b.AddRange(BitConverter.GetBytes(m_DACibias));
 
                     b.AddRange(BitConverter.GetBytes(m_DACdcP_V));
                     b.AddRange(BitConverter.GetBytes(m_DACdcN_V));
@@ -381,6 +495,12 @@ namespace SSC
                     Array.ForEach(m_DACdcN_I, x => b.AddRange(BitConverter.GetBytes(x)));
                     Array.ForEach(b_DACdc_I, x => b.AddRange(BitConverter.GetBytes(x)));
 
+                    Array.ForEach(stagePhaseDelay, x => b.AddRange(BitConverter.GetBytes(x)));
+                    Array.ForEach(stageDCGain, x => b.AddRange(BitConverter.GetBytes(x)));
+                    Array.ForEach(stageHFGain_A, x => b.AddRange(BitConverter.GetBytes(x)));
+                    Array.ForEach(stageHFGain_B, x => b.AddRange(BitConverter.GetBytes(x)));
+                    Array.ForEach(stageHFGain_C, x => b.AddRange(BitConverter.GetBytes(x)));
+
                     return b.ToArray();
                 }
             }
@@ -388,6 +508,9 @@ namespace SSC
             public void ToCsv(StreamWriter s)
             {
                 s.WriteLine(m_DACac);
+                s.WriteLine(m_DACircomp);
+                s.WriteLine(m_DACwebias);
+                s.WriteLine(m_DACibias);
                 s.WriteLine(m_DACdcP_V);
                 s.WriteLine(m_DACdcN_V);
                 s.WriteLine(b_DACdc_V);
@@ -408,6 +531,12 @@ namespace SSC
                 for (int i = 0; i < 8; i++) { s.WriteLine(m_DACdcP_I[i]); }
                 for (int i = 0; i < 8; i++) { s.WriteLine(m_DACdcN_I[i]); }
                 for (int i = 0; i < 8; i++) { s.WriteLine(b_DACdc_I[i]); }
+
+                for (int i = 0; i < 10; i++) { s.WriteLine(stagePhaseDelay[i]); }
+                for (int i = 0; i < 10; i++) { s.WriteLine(stageDCGain[i]); }
+                for (int i = 0; i < 10; i++) { s.WriteLine(stageHFGain_A[i]); }
+                for (int i = 0; i < 10; i++) { s.WriteLine(stageHFGain_B[i]); }
+                for (int i = 0; i < 10; i++) { s.WriteLine(stageHFGain_C[i]); }
             }
 
             public void FromCsv(string fileName)
@@ -415,6 +544,9 @@ namespace SSC
                 using (StreamReader reader = new StreamReader(fileName))
                 {
                     m_DACac = getNumFromCsv(reader);
+                    m_DACircomp = getNumFromCsv(reader);
+                    m_DACwebias = getNumFromCsv(reader);
+                    m_DACibias = getNumFromCsv(reader);
 
                     m_DACdcP_V = getNumFromCsv(reader);
                     m_DACdcN_V = getNumFromCsv(reader);
@@ -439,6 +571,12 @@ namespace SSC
                     for (int i = 0; i < 8; i++) { m_DACdcP_I[i] = getNumFromCsv(reader); }
                     for (int i = 0; i < 8; i++) { m_DACdcN_I[i] = getNumFromCsv(reader); }
                     for (int i = 0; i < 8; i++) { b_DACdc_I[i] = getNumFromCsv(reader); }
+
+                    for (int i = 0; i < 10; i++) { stagePhaseDelay[i] = getNumFromCsv(reader); }
+                    for (int i = 0; i < 10; i++) { stageDCGain[i] = getNumFromCsv(reader); }
+                    for (int i = 0; i < 10; i++) { stageHFGain_A[i] = getNumFromCsv(reader); }
+                    for (int i = 0; i < 10; i++) { stageHFGain_B[i] = getNumFromCsv(reader); }
+                    for (int i = 0; i < 10; i++) { stageHFGain_C[i] = getNumFromCsv(reader); }
                 }
             }
 
@@ -456,8 +594,8 @@ namespace SSC
             public override string ToString()
             {
                 return string.Format(
-                    "m_DACac=[{0}] m_DACdcP_V=[{}] m_DACdcN_V=[{}] b_DACdc_V=[{}] m_refP=[{}] m_refN=[{}] b_ref=[{}] m_eweP=[{}] m_eweN=[{}] b_ewe=[{}] m_eceP=[{}] m_eceN=[{}] b_ece=[{}] m_iP=[{}] m_iN=[{}] b_i=[{}] m_DACdcP_I=[{}] m_DACdcN_I=[{}] b_DACdc_I=[{}]",
-                     m_DACac,      m_DACdcP_V,     m_DACdcN_V,     b_DACdc_V,     m_refP,     m_refN,     b_ref,     m_eweP,     m_eweN,     b_ewe,     m_eceP,     m_eceN,     b_ece, string.Join(",", m_iP), string.Join(",", m_iN), string.Join(",", b_i), string.Join(",", m_DACdcP_I), string.Join(",", m_DACdcN_I), string.Join(",", b_DACdc_I)
+                    "m_DACac=[{0}] m_DACircomp=[{}] m_DACwebias=[{}]    m_DACibias=[{}] m_DACdcP_V=[{}] m_DACdcN_V=[{}] b_DACdc_V=[{}] m_refP=[{}] m_refN=[{}] b_ref=[{}] m_eweP=[{}] m_eweN=[{}] b_ewe=[{}] m_eceP=[{}] m_eceN=[{}] b_ece=[{}] m_iP=[{}] m_iN=[{}] b_i=[{}] m_DACdcP_I=[{}] m_DACdcN_I=[{}] b_DACdc_I=[{}] stagePhaseDelay=[{}] stageDCGain=[{}] stageHFGain_A=[{}] stageHFGain_B=[{}] stageHFGain_C=[{}]",
+                     m_DACac,      m_DACircomp,     m_DACwebias,        m_DACibias,     m_DACdcP_V,     m_DACdcN_V,     b_DACdc_V,     m_refP,     m_refN,     b_ref,     m_eweP,     m_eweN,     b_ewe,     m_eceP,     m_eceN,     b_ece, string.Join(",", m_iP), string.Join(",", m_iN), string.Join(",", b_i), string.Join(",", m_DACdcP_I), string.Join(",", m_DACdcN_I), string.Join(",", b_DACdc_I), string.Join(",", stagePhaseDelay), string.Join(",", stageDCGain), string.Join(",", stageHFGain_A), string.Join(",", stageHFGain_B), string.Join(",", stageHFGain_C)
                     );
             }
         };

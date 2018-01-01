@@ -274,6 +274,27 @@ namespace SSC // Squidstat Calibrator
                 WriteBytes(ref _squidstat, SEND_HW_DATA());
                 Thread.Sleep(500);
             }
+            else if (args[(int)Args.METER_NAME].ToLower() == "send_channel_name")
+            {
+                WriteBytes(ref _squidstat, SEND_CHANNEL_NAME());
+                Thread.Sleep(500);
+            }
+            else if (args[(int)Args.METER_NAME].ToLower() == "save_channel_name")
+            {
+                var cmd = new SAVE_CHANNEL_NAME();
+
+                using (var stream = File.Open(AppDomain.CurrentDomain.BaseDirectory + "\\save_channel_name.csv", FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    StreamReader reader = new StreamReader(stream);
+                    cmd.name = reader.ReadLine();
+                }
+
+                Thread.Sleep(500);
+                WriteBytes(ref _squidstat, cmd.Bytes);
+                Thread.Sleep(500);
+                WriteBytes(ref _squidstat, SEND_CHANNEL_NAME());
+                Thread.Sleep(500);
+            }
             else
             {
                 Console.WriteLine("Invalid meter: {0}", args[(int)Args.METER_NAME]);

@@ -521,7 +521,7 @@ currentRange_t ExperimentCalcHelperClass::GetMinCurrentRange_DACac(const cal_t *
 
   while (1)
   { 
-    if (ABS(targetCurrentAmp * calData->m_DACdcP_I[range] / calData->m_DACdcP_V) > 3.3 / 2)
+    if (ABS(targetCurrentAmp * calData->m_DACdcP_I[range] / calData->m_DACdcP_V) > 3.3 / 2)  //todo: this is no longer valid when slowADC is being used
       range--;
     else
       break;
@@ -636,7 +636,7 @@ double ExperimentCalcHelperClass::estimatePeriod(const ExperimentalAcData acData
 }
 
 /* Sinusoidal curve fitting */
-ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range)
+ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, ACgain_t gainSettingEWE, ACgain_t gainSettingI, double approxPeriod, const cal_t * calData, currentRange_t range)
 {
     int len = numACBuffers * ADCacBUF_SIZE;
     QVector<double> rawIData, rawVData, filteredIData, filteredVData;
@@ -649,7 +649,6 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
             rawVData.append(rawDataBuf[(2 * i + 1)*ADCacBUF_SIZE + j]);
         }
     }
-
 
     double Period_result = approxPeriod;
     if (frequency > HF_CUTOFF_VALUE)
@@ -667,7 +666,6 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
             rollingFilterSize = MAX(1, Period_result / 5);
         } while (fractionalChange > 0.0001 && numAttempts++ < 25);
     }
-
     int truncatedLen = (int)(floor(len / Period_result) * Period_result);
 
     /* Get Fourier data for fundamental + 10 harmonics */
@@ -693,40 +691,16 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
         + NormI[7] * NormI[8] / 7 + NormI[9] * NormI[10] / 9;
     double significance = 1 / (1 + sqrt(x) / exp(1));
 
-    //for (int i = 0; i < 50; i++)
-    //{
-    //    double altPeriod = Period_result * (0.995 + 0.01 / 50 * i);
-    //    //truncatedLen = (int)(floor(len / altPeriod) * altPeriod);
-    //    Ipt = SingleFrequencyFourier(rawIData, truncatedLen, altPeriod);
-    //    Vpt = SingleFrequencyFourier(rawVData, truncatedLen, altPeriod);
-    //    /******************************************************/
-    //    /* debugging only */
-    //    std::ofstream fout1;
-    //    QString filename1 = "C:/Users/Matt/Desktop/results.txt";
-    //    fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
-    //    fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
-    //    /******************************************************/
-    //}
-
-    //Ipt = SingleFrequencyFourier(rawIData, truncatedLen, Period_result);
-    //Vpt = SingleFrequencyFourier(rawVData, truncatedLen, Period_result);
-
-
-///******************************************************/
-///* debugging only */
-//std::ofstream fout1;
-//QString filename1 = "C:/Users/Matt/Desktop/results";
-//filename1.append(".txt");
-//fout1.open(filename1.toStdString(), std::ofstream::out | std::ofstream::app);
-//fout1 << frequency << '\t' << Ipt.ImpedanceMag << '\t' << Vpt.ImpedanceMag << '\t' << Ipt.phase - Vpt.phase << '\n';
-///******************************************************/
-
-
-    Ipt[0].ImpedanceMag /= gainI / fabs(calData->m_iP[range]) * 1000;
-    Vpt[0].ImpedanceMag /= gainEWE / fabs(calData->m_eweP);
+    /* Calculate impedance */
+    double Igain = getIgain(calData, frequency, gainSettingI);
+    double Vgain = getWEgain(calData, frequency, gainSettingEWE);
+    Ipt[0].ImpedanceMag /= Igain / fabs(calData->m_iP[range]) * 1000;
+    Vpt[0].ImpedanceMag /= Vgain / fabs(calData->m_eweP);
     ComplexDataPoint_t Z;
     Z.ImpedanceMag = Vpt[0].ImpedanceMag / Ipt[0].ImpedanceMag;
     Z.phase = Ipt[0].phase - Vpt[0].phase;
+    Z.phase -= getPhaseOffset(calData, frequency, gainSettingI, gainSettingEWE);
+
     if (Z.phase > 180)
         Z.phase -= 360;
     if (Z.phase < -180)
@@ -741,15 +715,456 @@ ComplexDataPoint_t ExperimentCalcHelperClass::AnalyzeFRA(double frequency, int16
     std::ofstream fout;
     QString filename = "C:/EISrawData/results";
     filename.append(QString::number(frequency));
+    filename.append("Hz");
+    filename.append(QString::number(Z.ImpedanceMag));
+    filename.append("Ohms.txt");
     filename.append(".txt");
     fout.open(filename.toStdString(), std::ofstream::out);
-        for (int i = 0; i < rawIData.count(); i++)
-        {
-            fout << rawIData[i] << '\t' << rawVData[i] << '\n';
-        }
+    fout << "period: " << Period_result << '\n';
+    for (int i = 0; i < rawIData.count(); i++)
+    {
+        fout << rawIData[i] << '\t' << rawVData[i] << '\n';
+    }
     /******************************************************/
 
     return Z;
+}
+
+double ExperimentCalcHelperClass::getPhaseOffset(const CalibrationData * calData, double frequency, ACgain_t IgainSetting, ACgain_t VgainSetting)
+{
+    double VComponent, IComponent;
+    switch (IgainSetting)
+    {
+    case AC_GAIN2:
+        IComponent = calData->stagePhaseDelay[5 + 0];
+        break;
+    case AC_GAIN5:
+        IComponent = calData->stagePhaseDelay[5 + 1];
+        break;
+    case AC_GAIN10:
+        IComponent = calData->stagePhaseDelay[5 + 2];
+        break;
+    case AC_GAIN20:
+        IComponent = calData->stagePhaseDelay[5 + 0] + calData->stagePhaseDelay[5 + 3];
+        break;
+    case AC_GAIN50:
+        IComponent = calData->stagePhaseDelay[5 + 1] + calData->stagePhaseDelay[5 + 3];
+        break;
+    case AC_GAIN100:
+        IComponent = calData->stagePhaseDelay[5 + 2] + calData->stagePhaseDelay[5 + 3];
+        break;
+    case AC_GAIN200:
+        IComponent = calData->stagePhaseDelay[5 + 0] + calData->stagePhaseDelay[5 + 3] + calData->stagePhaseDelay[5 + 4];
+        break;
+    case AC_GAIN500:
+        IComponent = calData->stagePhaseDelay[5 + 1] + calData->stagePhaseDelay[5 + 3] + calData->stagePhaseDelay[5 + 4];
+        break;
+    case AC_GAIN1000:
+        IComponent = calData->stagePhaseDelay[5 + 2] + calData->stagePhaseDelay[5 + 3] + calData->stagePhaseDelay[5 + 4];
+        break;
+    case AC_GAIN10_alt1:
+        IComponent = calData->stagePhaseDelay[5 + 3];
+        break;
+    case AC_GAIN10_alt2:
+        IComponent = calData->stagePhaseDelay[5 + 4];
+        break;
+    case AC_GAIN1:
+    default:
+        IComponent = 0;
+        break;
+    }
+    switch (VgainSetting)
+    {
+    case AC_GAIN1:
+        VComponent = 0;
+        break;
+    case AC_GAIN2:
+        VComponent = calData->stagePhaseDelay[0];
+        break;
+    case AC_GAIN5:
+        VComponent = calData->stagePhaseDelay[1];
+        break;
+    case AC_GAIN10:
+        VComponent = calData->stagePhaseDelay[2];
+        break;
+    case AC_GAIN20:
+        VComponent = calData->stagePhaseDelay[0] + calData->stagePhaseDelay[3];
+        break;
+    case AC_GAIN50:
+        VComponent = calData->stagePhaseDelay[1] + calData->stagePhaseDelay[3];
+        break;
+    case AC_GAIN100:
+        VComponent = calData->stagePhaseDelay[2] + calData->stagePhaseDelay[3];
+        break;
+    case AC_GAIN200:
+        VComponent = calData->stagePhaseDelay[0] + calData->stagePhaseDelay[3] + calData->stagePhaseDelay[4];
+        break;
+    case AC_GAIN500:
+        VComponent = calData->stagePhaseDelay[1] + calData->stagePhaseDelay[3] + calData->stagePhaseDelay[4];
+        break;
+    case AC_GAIN1000:
+        VComponent = calData->stagePhaseDelay[2] + calData->stagePhaseDelay[3] + calData->stagePhaseDelay[4];
+        break;
+    case AC_GAIN10_alt1:
+        VComponent = calData->stagePhaseDelay[3];
+        break;
+    case AC_GAIN10_alt2:
+        VComponent = calData->stagePhaseDelay[4];
+        break;
+    default:
+        VComponent = 0;
+        break;
+    }
+
+    return VComponent + IComponent;
+}
+
+double ExperimentCalcHelperClass::getIgain(const CalibrationData * calData, double _freq, ACgain_t IgainSetting)
+{
+    float frequency = (float)_freq;
+    double a[] = { 0, 0, 0 }, b[] = { 0, 0, 0 }, c[] = { 1, 1, 1 };
+    switch (IgainSetting)
+    {
+    case AC_GAIN2:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 0];
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 0];
+            b[0] = calData->stageHFGain_B[5 + 0];
+            c[0] = calData->stageHFGain_C[5 + 0];
+        }
+        break;
+    case AC_GAIN5:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 1];
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 1];
+            b[0] = calData->stageHFGain_B[5 + 1];
+            c[0] = calData->stageHFGain_C[5 + 1];
+        }
+        break;
+    case AC_GAIN10:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 2];
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 2];
+            b[0] = calData->stageHFGain_B[5 + 2];
+            c[0] = calData->stageHFGain_C[5 + 2];
+        }
+        break;
+    case AC_GAIN20:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 0];
+            c[1] = calData->stageDCGain[5 + 3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 0];
+            b[0] = calData->stageHFGain_B[5 + 0];
+            c[0] = calData->stageHFGain_C[5 + 0];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+        }
+        break;
+    case AC_GAIN50:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 1];
+            c[1] = calData->stageDCGain[5 + 3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 1];
+            b[0] = calData->stageHFGain_B[5 + 1];
+            c[0] = calData->stageHFGain_C[5 + 1];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+        }
+        break;
+    case AC_GAIN100:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 2];
+            c[1] = calData->stageDCGain[5 + 3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 2];
+            b[0] = calData->stageHFGain_B[5 + 2];
+            c[0] = calData->stageHFGain_C[5 + 2];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+        }
+        break;
+    case AC_GAIN200:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 0];
+            c[1] = calData->stageDCGain[5 + 3];
+            c[2] = calData->stageDCGain[5 + 4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 0];
+            b[0] = calData->stageHFGain_B[5 + 0];
+            c[0] = calData->stageHFGain_C[5 + 0];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+            a[2] = calData->stageHFGain_A[5 + 4];
+            b[2] = calData->stageHFGain_B[5 + 4];
+            c[2] = calData->stageHFGain_C[5 + 4];
+        }
+        break;
+    case AC_GAIN500:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 1];
+            c[1] = calData->stageDCGain[5 + 3];
+            c[2] = calData->stageDCGain[5 + 4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 1];
+            b[0] = calData->stageHFGain_B[5 + 1];
+            c[0] = calData->stageHFGain_C[5 + 1];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+            a[2] = calData->stageHFGain_A[5 + 4];
+            b[2] = calData->stageHFGain_B[5 + 4];
+            c[2] = calData->stageHFGain_C[5 + 4];
+        }
+        break;
+    case AC_GAIN1000:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[5 + 2];
+            c[1] = calData->stageDCGain[5 + 3];
+            c[2] = calData->stageDCGain[5 + 4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 2];
+            b[0] = calData->stageHFGain_B[5 + 2];
+            c[0] = calData->stageHFGain_C[5 + 2];
+            a[1] = calData->stageHFGain_A[5 + 3];
+            b[1] = calData->stageHFGain_B[5 + 3];
+            c[1] = calData->stageHFGain_C[5 + 3];
+            a[2] = calData->stageHFGain_A[5 + 4];
+            b[2] = calData->stageHFGain_B[5 + 4];
+            c[2] = calData->stageHFGain_C[5 + 4];
+        }
+        break;
+    case AC_GAIN10_alt1:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 3];
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 3];
+            b[0] = calData->stageHFGain_B[5 + 3];
+            c[0] = calData->stageHFGain_C[5 + 3];
+        }
+        break;
+    case AC_GAIN10_alt2:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 4];
+        else
+        {
+            a[0] = calData->stageHFGain_A[5 + 4];
+            b[0] = calData->stageHFGain_B[5 + 4];
+            c[0] = calData->stageHFGain_C[5 + 4];
+        }
+        break;
+    case AC_GAIN1:
+    default:
+        break;
+    }
+    double IgainDC = a[0] * pow(frequency, 2) + b[0] * frequency + c[0];
+    IgainDC *= a[1] * pow(frequency, 2) + b[1] * frequency + c[1];
+    IgainDC *= a[2] * pow(frequency, 2) + b[2] * frequency + c[2];
+    return IgainDC;
+}
+
+double ExperimentCalcHelperClass::getWEgain(const CalibrationData * calData, double _freq, ACgain_t WEgainSetting)
+{
+    float frequency = (float)_freq;
+    double a[] = { 0, 0, 0 }, b[] = { 0, 0, 0 }, c[] = { 1, 1, 1 };
+    switch (WEgainSetting)
+    {
+    case AC_GAIN2:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[0];
+        else
+        {
+            a[0] = calData->stageHFGain_A[0];
+            b[0] = calData->stageHFGain_B[0];
+            c[0] = calData->stageHFGain_C[0];
+        }
+        break;
+    case AC_GAIN5:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[1];
+        else
+        {
+            a[0] = calData->stageHFGain_A[1];
+            b[0] = calData->stageHFGain_B[1];
+            c[0] = calData->stageHFGain_C[1];
+        }
+        break;
+    case AC_GAIN10:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[2];
+        else
+        {
+            a[0] = calData->stageHFGain_A[2];
+            b[0] = calData->stageHFGain_B[2];
+            c[0] = calData->stageHFGain_C[2];
+        }
+        break;
+    case AC_GAIN20:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[0];
+            c[1] = calData->stageDCGain[3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[0];
+            b[0] = calData->stageHFGain_B[0];
+            c[0] = calData->stageHFGain_C[0];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+        }
+        break;
+    case AC_GAIN50:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[1];
+            c[1] = calData->stageDCGain[3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[1];
+            b[0] = calData->stageHFGain_B[1];
+            c[0] = calData->stageHFGain_C[1];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+        }
+        break;
+    case AC_GAIN100:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[2];
+            c[1] = calData->stageDCGain[3];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[2];
+            b[0] = calData->stageHFGain_B[2];
+            c[0] = calData->stageHFGain_C[2];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+        }
+        break;
+    case AC_GAIN200:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[0];
+            c[1] = calData->stageDCGain[3];
+            c[2] = calData->stageDCGain[4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[0];
+            b[0] = calData->stageHFGain_B[0];
+            c[0] = calData->stageHFGain_C[0];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+            a[2] = calData->stageHFGain_A[4];
+            b[2] = calData->stageHFGain_B[4];
+            c[2] = calData->stageHFGain_C[4];
+        }
+        break;
+    case AC_GAIN500:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[1];
+            c[1] = calData->stageDCGain[3];
+            c[2] = calData->stageDCGain[4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[1];
+            b[0] = calData->stageHFGain_B[1];
+            c[0] = calData->stageHFGain_C[1];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+            a[2] = calData->stageHFGain_A[4];
+            b[2] = calData->stageHFGain_B[4];
+            c[2] = calData->stageHFGain_C[4];
+        }
+        break;
+    case AC_GAIN1000:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+        {
+            c[0] = calData->stageDCGain[2];
+            c[1] = calData->stageDCGain[3];
+            c[2] = calData->stageDCGain[4];
+        }
+        else
+        {
+            a[0] = calData->stageHFGain_A[2];
+            b[0] = calData->stageHFGain_B[2];
+            c[0] = calData->stageHFGain_C[2];
+            a[1] = calData->stageHFGain_A[3];
+            b[1] = calData->stageHFGain_B[3];
+            c[1] = calData->stageHFGain_C[3];
+            a[2] = calData->stageHFGain_A[4];
+            b[2] = calData->stageHFGain_B[4];
+            c[2] = calData->stageHFGain_C[4];
+        }
+        break;
+    case AC_GAIN10_alt1:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 3];
+        else
+        {
+            a[0] = calData->stageHFGain_A[3];
+            b[0] = calData->stageHFGain_B[3];
+            c[0] = calData->stageHFGain_C[3];
+        }
+        break;
+    case AC_GAIN10_alt2:
+        if (frequency <= SLOW_FAST_ADC_CUTOFF_FREQ)
+            c[0] = calData->stageDCGain[5 + 4];
+        else
+        {
+            a[0] = calData->stageHFGain_A[4];
+            b[0] = calData->stageHFGain_B[4];
+            c[0] = calData->stageHFGain_C[4];
+        }
+        break;
+    case AC_GAIN1:
+    default:
+        break;
+    }
+    double WEgainDC = a[0] * pow(frequency, 2) + b[0] * frequency + c[0];
+    WEgainDC *= a[1] * pow(frequency, 2) + b[1] * frequency + c[1];
+    WEgainDC *= a[2] * pow(frequency, 2) + b[2] * frequency + c[2];
+    return WEgainDC;
 }
 
 //=============================================================================

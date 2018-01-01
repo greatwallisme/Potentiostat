@@ -1400,8 +1400,8 @@ void MainWindow::UpdateFirmware(const QString &instName, const HexRecords &fw) {
             /*debugging: for some reason this is causing premature firing of QEventLoop::quit*/
             //QTimer::singleShot(5000, &loop, &QEventLoop::quit);
       loop.exec();
-      if (!flashProgramedFlag)
-          LOG() << "error line 1403";
+      //if (!flashProgramedFlag)
+      //    LOG() << "error line 1403";
       QThread::msleep(1);
 		}
 		if (it != fw.end()) {

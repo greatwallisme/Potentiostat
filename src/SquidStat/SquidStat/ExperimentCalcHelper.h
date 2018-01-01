@@ -46,12 +46,12 @@ public:
   static double estimatePeriod(const ExperimentalAcData);
 
   /* sinusoidal curve-fitting */
-  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
-
-  ComplexDataPoint_t ExperimentCalcHelperClass::PhaseAngleCalibration(double frequency, uint16_t * rawDataBuf, uint8_t numACBuffers, double gainEWE, double gainI, double approxPeriod, const cal_t * calData, currentRange_t range);
+  static ComplexDataPoint_t AnalyzeFRA(double frequency, int16_t * rawDataBuf, uint8_t numACBuffers, ACgain_t gainSettingEWE, ACgain_t gainSettingI, double approxPeriod, const cal_t * calData, currentRange_t range);
+  static double getPhaseOffset(const CalibrationData * calData, double frequency, ACgain_t IgainSetting, ACgain_t VgainSetting);
+  static double getIgain(const CalibrationData * calData, double frequency, ACgain_t IgainSetting);
+  static double getWEgain(const CalibrationData * calData, double frequency, ACgain_t WEgainSetting);
 
 private:
-  /* Newton-raphson method */
   static ComplexDataPoint_t SingleFrequencyFourier(QVector<double> data, int size, double period, int harmonic);
   static double GetPeriod(QVector<double> const xbuf_smoothed);
   static QVector<double> rollingAverage(QVector<double> rawData, int rollingAvgWidth);
